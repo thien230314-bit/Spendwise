@@ -82,7 +82,7 @@ SpendWise là ứng dụng Mobile hỗ trợ cá nhân quản lý thu chi, đồ
 | Mục đích | Góp đủ một tổng dự kiến để thực hiện hoạt động | Góp/chi linh hoạt theo cơ chế Quỹ Nhóm MoMo tham khảo |
 | Quy mô | Tối đa **30** người, gồm chủ nhóm | Tối đa **6** người = chủ nhóm + 5 |
 | Mức góp | Hệ thống tính theo tổng dự kiến và người có nghĩa vụ góp | Góp linh hoạt, không có mức góp bắt buộc kiểu cố định |
-| Chi tiền | Phải đạt điều kiện góp đủ; chủ nhóm duyệt; kiểm soát tiền khóa | Theo cơ chế yêu cầu chi/rút và duyệt kiểu MoMo; không vượt số dư |
+| Chi tiền | Phải đạt điều kiện góp đủ; chủ nhóm chi trực tiếp; thành viên chi trực tiếp nếu được chủ nhóm bật CanSpend (mặc định OFF), không cần chủ duyệt từng khoản; kiểm soát tiền khóa & ngưỡng chi lớn | Theo cơ chế yêu cầu chi/rút và duyệt kiểu MoMo; chủ nhóm duyệt; không vượt số dư |
 | Thay đổi thành viên | Tính lại mức góp theo quyết định chủ nhóm | Theo mô hình MoMo trong giới hạn SpendWise |
 | Hoạt động mới | Có kết thúc hoạt động và biểu quyết | Không áp quy trình riêng loại 1 |
 | Giải tán | Chia lại/hoàn đúng quyền lợi, quỹ = 0 | **Ngoại lệ SpendWise:** chia số dư theo tỷ lệ đóng góp; quỹ = 0 |
@@ -90,7 +90,7 @@ SpendWise là ứng dụng Mobile hỗ trợ cá nhân quản lý thu chi, đồ
 
 ### 4.4. Hai lịch sử riêng, không làm mất liên kết
 
-**ĐÃ CHỐT:** Giao diện nhóm có **Lịch sử hoạt động nhóm** (mời/nhận lời mời, tham gia, rời/kick, thay đổi vai trò, bỏ phiếu, mở bầu cử, chuyển chủ, chỉnh tổng dự kiến, cấp/tắt quyền chi, báo cáo/tạm dừng khoản chi, chủ nhóm quá hạn phản hồi, hoàn thành hoạt động, giải tán) và **Lịch sử giao dịch** (đóng góp, yêu cầu/duyệt/từ chối chi, khoản chi chờ thực hiện, chi, hoàn tiền, chuyển tiếp). Hai danh sách **hiển thị riêng**, không trộn hoạt động phi tài chính với bút toán tiền.
+**ĐÃ CHỐT:** Giao diện nhóm có **Lịch sử hoạt động nhóm** (mời/nhận lời mời, tham gia, rời/kick, thay đổi vai trò, bỏ phiếu, mở bầu cử, chuyển chủ, chỉnh tổng dự kiến, bật/tắt quyền chi CanSpend, báo cáo/tạm dừng khoản chi, chủ nhóm quá hạn phản hồi, hoàn thành hoạt động, giải tán) và **Lịch sử giao dịch** (đóng góp, chi trực tiếp Fixed, yêu cầu/duyệt/từ chối chi Free, khoản chi chờ thực hiện, chi, hoàn tiền, chuyển tiếp). Hai danh sách **hiển thị riêng**, không trộn hoạt động phi tài chính với bút toán tiền.
 
 Mỗi bản ghi cần người/hệ thống thực hiện, hành động, thời điểm server, trạng thái, tham chiếu có liên quan; giao dịch tiền có số tiền, nguồn/đích, người nhận, mục đích và bằng chứng nếu đính kèm. Có mã liên kết hai lịch sử khi một hoạt động gây ra giao dịch (ví dụ rời nhóm dẫn đến hoàn tiền). Không User/chủ nhóm nào tự sửa/xóa lịch sử gốc; điều chỉnh dùng bút toán/sự kiện mới có tham chiếu ngược. Thông báo nhóm sử dụng dữ liệu nghiệp vụ đã lưu, không tự bịa thành công.
 
@@ -116,7 +116,7 @@ Mỗi bản ghi cần người/hệ thống thực hiện, hành động, thời
 
 **ĐÃ CHỐT (v1.2):** Chủ nhóm còn mở app không có nghĩa là nhóm đang được quản lý. Điều kiện 15 ngày ở mục 4.5 chỉ bắt được chủ nhóm biến mất, không bắt được chủ nhóm vẫn đăng nhập nhưng không làm gì.
 
-1. Ba việc sau **phải được chủ nhóm phản hồi** (đồng ý hoặc từ chối đều là phản hồi hợp lệ) trong thời hạn: (a) đơn xin rời của thành viên đã góp/chi (mục 5.8.1); (b) yêu cầu chi đang chờ duyệt (mục 5.7); (c) sau khi hoạt động đã Hoàn thành/Đóng, chọn chia lại/giải tán hoặc đề xuất hoạt động mới (mục 5.9).
+1. Ba việc sau **phải được chủ nhóm phản hồi** (đồng ý hoặc từ chối đều là phản hồi hợp lệ) trong thời hạn: (a) đơn xin rời của thành viên đã góp/chi (mục 5.8.1); (b) yêu cầu chi/rút đang chờ duyệt thuộc nhóm Free (loại 2) hoặc các yêu cầu chi bắt buộc phê duyệt theo quy trình áp dụng; (c) sau khi hoạt động đã Hoàn thành/Đóng, chọn chia lại/giải tán hoặc đề xuất hoạt động mới (mục 5.9). (Lưu ý: Đối với nhóm Fixed - loại 1, thành viên được bật CanSpend thực hiện chi trực tiếp, không tạo yêu cầu chi chờ chủ duyệt).
 2. **THAM SỐ MẶC ĐỊNH:** thời hạn **7 ngày**, tính từ lúc đơn (a) hoặc yêu cầu (b) được gửi, hoặc từ lúc hoạt động (c) được đóng.
 3. Quá hạn mà chủ nhóm chưa phản hồi, người đang bị chờ (với (c) là bất kỳ thành viên nào còn quyền lợi tiền trong nhóm) có nút **“Yêu cầu xử lý”**, gồm hai đường: (i) mở ticket Support tự động gắn mã nhóm và mã yêu cầu; (ii) được mở **bầu lại chủ nhóm** theo mục 4.5, điểm 4–10. Trong cuộc bầu này **chủ nhóm hiện tại không nằm trong danh sách cử tri** (giống trường hợp không hoạt động) nhưng vẫn giữ đầy đủ quyền lợi tiền. Vòng xác nhận vẫn cần trên 50% tổng cử tri hợp lệ.
 4. **Không tự duyệt thay chủ nhóm.** Quá hạn không làm đơn xin rời hay khoản chi tự được chấp thuận, không có tiền nào tự di chuyển. Hệ thống chỉ mở đường xử lý; mọi khoản hoàn/chi sau đó vẫn phải qua kiểm tra bảo toàn ở mục 9.4.
@@ -190,17 +190,21 @@ Mỗi bản ghi cần người/hệ thống thực hiện, hành động, thời
 4. Nếu đã chi hoặc hoàn, **không thể đơn giản lấy tổng đóng góp gốc trừ nghĩa vụ mới** để kết luận số dư khóa bằng bao nhiêu: còn phải đối chiếu ledger, khoản đã phân bổ cho chi phí, đã rút/hoàn, chuyển kỳ. Không được tạo khoản khóa lớn hơn tiền thực được bảo vệ.
 5. Khi chia quỹ, hoàn **khoản dư thực còn bảo vệ** cho đúng người trước; chỉ sau đó phân chia quỹ khả dụng còn lại theo trọng số đã quyết toán. **Không dùng tiền dư vừa hoàn làm trọng số lần hai.** Phần công thức ledger đầy đủ khi đã phát sinh chi nằm trong **BLOCKER mục 12**.
 
-### 5.7. Quyền đề nghị chi và khoản chi
+### 5.7. Quyền chi tiền và thực hiện khoản chi (v1.3 — ĐÃ CHỐT)
 
-1. Chủ nhóm (không phải Admin hệ thống) bật/tắt quyền gửi yêu cầu chi riêng cho từng thành viên; ghi lại sự kiện bật/tắt vào **Lịch sử hoạt động nhóm**.
-2. Thành viên được bật quyền mới gửi yêu cầu; chủ nhóm duyệt/từ chối. Chủ nhóm có thể tự đề nghị và tự duyệt khoản của mình, **nhưng không có quyền sửa ledger, bỏ qua điều kiện chi hoặc che lịch sử**.
-3. Mỗi khoản đề nghị/chi phải có **số tiền, mục đích, người nhận, người đề nghị, người duyệt, thời điểm** và trạng thái. Hỗ trợ **đính kèm chứng từ/hình ảnh/hóa đơn** phù hợp, có tham chiếu được khi tra cứu. Quy tắc bắt buộc chứng từ cho mọi khoản chi hay loại chi nào chưa được người dùng ấn định, **không tự chặn tất cả giao dịch nếu thiếu ảnh**.
-4. Chi thành công thì ghi giao dịch tài chính bất biến, cập nhật số dư qua Backend và thông báo cho các thành viên. Lưu rõ kênh/đích chi đúng với API được phép, không bịa người nhận hoặc ghi thành công khi tiền chưa đi.
+1. **Quyền chi tiền (`CanSpend`):** Chủ nhóm (không phải Admin hệ thống) có quyền bật/tắt `CanSpend` (ON/OFF) cho từng thành viên; ghi lại sự kiện bật/tắt vào **Lịch sử hoạt động nhóm**. Thành viên mới tham gia mặc định **OFF**.
+2. **Cơ chế chi tiền theo trạng thái `CanSpend`:**
+   - **OFF:** Thành viên không được trực tiếp chi tiền từ quỹ.
+   - **ON:** Thành viên được **trực tiếp thực hiện khoản chi**, **KHÔNG phải gửi yêu cầu để chủ nhóm phê duyệt từng khoản**.
+   - Chủ nhóm có quyền thực hiện khoản chi theo vai trò chủ nhóm, không cần tự phê duyệt từng khoản của mình.
+   - Cả chủ nhóm và thành viên đều **không có quyền sửa ledger, bỏ qua điều kiện chi hoặc che lịch sử**.
+3. **Thuộc tính khoản chi:** Mỗi khoản chi phải có **số tiền, mục đích, người nhận, người thực hiện, thời điểm** và trạng thái. Hỗ trợ **đính kèm chứng từ/hình ảnh/hóa đơn** phù hợp, có tham chiếu được khi tra cứu. Quy tắc bắt buộc chứng từ cho mọi khoản chi hay loại chi nào chưa được người dùng ấn định, **không tự chặn tất cả giao dịch nếu thiếu ảnh**.
+4. **Ghi nhận và thông báo:** Chi thành công thì ghi giao dịch tài chính bất biến, cập nhật số dư qua Backend và thông báo cho các thành viên. Lưu rõ kênh/đích chi đúng với API được phép, không bịa người nhận hoặc ghi thành công khi tiền chưa đi.
 5. Sai sót phải có giao dịch điều chỉnh mới, có chứng cứ/lý do và liên kết giao dịch cũ; không sửa/xóa bút toán gốc.
-6. Các phê duyệt đồng thời phải kiểm tra nguyên tử tiền chi được, tiền dư khóa, mục tiêu góp, giới hạn chi và trạng thái hoạt động. **CHƯA CHỐT — BLOCKER:** Quy trình chuyển tiền ra khỏi quỹ/đích người nhận ngoài ví SpendWise nếu Backend/đối tác chưa có luồng hợp lệ.
-7. **Khoản chi lớn phải chờ (v1.2 — ĐÃ CHỐT cơ chế):** khoản chi từ ngưỡng trở lên **không được thực hiện ngay khi duyệt** mà vào trạng thái **Chờ thực hiện** trong một khoảng thời gian; áp dụng cho mọi khoản chi, **kể cả khoản do chính chủ nhóm đề nghị và tự duyệt**. **THAM SỐ MẶC ĐỊNH:** ngưỡng = từ **20% số dư quỹ có thể chi** (cách tính ở câu sau); thời gian chờ **24 giờ**. Các khoản chi **của cả nhóm** trong 24 giờ liên tiếp được **cộng dồn** và so với số dư quỹ có thể chi ở đầu khoảng 24 giờ đó, không phân biệt người đề nghị hay người nhận, để không lách bằng cách chia nhỏ hoặc chia cho nhiều tài khoản. Ngưỡng tính bằng số nguyên đồng, làm tròn xuống. Khoản dưới ngưỡng (kể cả sau khi cộng dồn) vẫn thực hiện ngay như trước.
-8. **Thông báo trước khi tiền đi (v1.2):** ngay khi khoản chi vào trạng thái Chờ thực hiện, hệ thống gửi thông báo cho **toàn bộ thành viên** gồm người đề nghị, người duyệt, số tiền, người nhận, mục đích và thời điểm dự kiến thực hiện. Thực hiện xong thì thông báo kết quả như điểm 4. Mọi thành viên đều xem được trạng thái này, không chỉ chủ nhóm.
-9. **Nút “Báo cáo” khoản chi (v1.2):** trong thời gian Chờ thực hiện, **bất kỳ thành viên nào** của nhóm (không cần quyền chi) được báo cáo khoản chi kèm lý do. Khoản bị báo cáo chuyển sang **Tạm dừng**, không tự thực hiện khi hết thời gian chờ, đồng thời mở ticket Support gắn mã nhóm và mã khoản chi. Chỉ tạm dừng đúng khoản đó, không khóa các khoản khác hay phần còn lại của nhóm, và **không ai tự di chuyển tiền**; khoản Tạm dừng chỉ được thực hiện hoặc hủy theo kết quả xử lý của người có thẩm quyền theo tài liệu Admin riêng. Chủ nhóm hoặc người đề nghị cũng có thể hủy khoản đang Chờ thực hiện hoặc đang Tạm dừng (hủy chỉ kết thúc khoản chi, không xóa lịch sử và báo cáo), để một khoản bị treo không chặn việc đóng hoạt động hay giải tán; mọi hành động đều ghi lịch sử. Báo cáo ác ý lặp lại xử lý qua Support.
+6. **Kiểm tra an toàn bắt buộc:** Mọi khoản chi vẫn bắt buộc tuân thủ xác thực/PIN, số dư thực, nghĩa vụ góp (mục tiêu góp hoàn thành), tiền dư khóa, trạng thái hoạt động, giới hạn chi và tính nguyên tử ở Backend trong cùng thao tác ghi, kể cả khi có nhiều thao tác đồng thời. Bật `CanSpend` (ON) tuyệt đối không được bỏ qua các điều kiện an toàn này. **CHƯA CHỐT — BLOCKER:** Quy trình chuyển tiền ra khỏi quỹ/đích người nhận ngoài ví SpendWise nếu Backend/đối tác chưa có luồng hợp lệ.
+7. **Khoản chi lớn phải chờ (v1.2 — ĐÃ CHỐT cơ chế):** khoản chi từ ngưỡng trở lên **không được thực hiện ngay** mà vào trạng thái **Chờ thực hiện** trong một khoảng thời gian; áp dụng cho mọi khoản chi, **kể cả khoản do chính chủ nhóm hoặc thành viên có CanSpend = ON thực hiện**. **THAM SỐ MẶC ĐỊNH:** ngưỡng = từ **20% số dư quỹ có thể chi** (cách tính ở câu sau); thời gian chờ **24 giờ**. Các khoản chi **của cả nhóm** trong 24 giờ liên tiếp được **cộng dồn** và so với số dư quỹ có thể chi ở đầu khoảng 24 giờ đó, không phân biệt người thực hiện hay người nhận, để không lách bằng cách chia nhỏ hoặc chia cho nhiều tài khoản. Ngưỡng tính bằng số nguyên đồng, làm tròn xuống. Khoản dưới ngưỡng (kể cả sau khi cộng dồn) vẫn thực hiện ngay như trước.
+8. **Thông báo trước khi tiền đi (v1.2):** ngay khi khoản chi vào trạng thái Chờ thực hiện, hệ thống gửi thông báo cho **toàn bộ thành viên** gồm người thực hiện, số tiền, người nhận, mục đích và thời điểm dự kiến thực hiện. Thực hiện xong thì thông báo kết quả như điểm 4. Mọi thành viên đều xem được trạng thái này, không chỉ chủ nhóm.
+9. **Nút “Báo cáo” khoản chi (v1.2):** trong thời gian Chờ thực hiện, **bất kỳ thành viên nào** của nhóm (không cần quyền chi) được báo cáo khoản chi kèm lý do. Khoản bị báo cáo chuyển sang **Tạm dừng**, không tự thực hiện khi hết thời gian chờ, đồng thời mở ticket Support gắn mã nhóm và mã khoản chi. Chỉ tạm dừng đúng khoản đó, không khóa các khoản khác hay phần còn lại của nhóm, và **không ai tự di chuyển tiền**; khoản Tạm dừng chỉ được thực hiện hoặc hủy theo kết quả xử lý của người có thẩm quyền theo tài liệu Admin riêng. Chủ nhóm hoặc người thực hiện khoản chi cũng có thể hủy khoản đang Chờ thực hiện hoặc đang Tạm dừng (hủy chỉ kết thúc khoản chi, không xóa lịch sử và báo cáo), để một khoản bị treo không chặn việc đóng hoạt động hay giải tán; mọi hành động đều ghi lịch sử. Báo cáo ác ý lặp lại xử lý qua Support.
 10. **Giữ chỗ tiền (v1.2):** số tiền của khoản Chờ thực hiện/Tạm dừng được giữ chỗ (hold), không dùng cho khoản chi hoặc hoàn khác và không làm đổi quyền lợi tiền của từng người. Cách tính hoàn khi rời/kick lúc đang có tiền giữ chỗ thuộc BLOCKER mục 12 (điểm 3 và 10); không tự chọn công thức.
 
 ### 5.8. Rời nhóm, kick và hoàn tiền — nhóm loại 1
@@ -444,3 +448,17 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
 5. **Điều kiện vận hành tiền thật** (12.7) và hai BLOCKER mới (12 điểm 10–11).
 6. **Không thay đổi:** hai loại nhóm, một chủ nhóm và bầu lại 15 ngày, hai kiểu khóa, đóng hoạt động, kick hoàn tiền, lịch sử tách đôi, mã nhóm SPW, giới hạn 10 nhóm/100 bạn, loại bỏ Money Request và toàn bộ BLOCKER cũ.
 7. **Tham số mặc định chờ Product Owner xác nhận:** ngưỡng 20% số dư quỹ, thời gian chờ 24 giờ, hạn phản hồi 7 ngày, nhắc bỏ phiếu khi còn 6 giờ.
+
+---
+
+## PHỤ LỤC C — Changelog v1.2 → v1.3: Quyền chi trực tiếp nhóm Fixed (CanSpend)
+
+1. **Quyết định Product Owner mới nhất (Thay thế cơ chế yêu cầu/duyệt từng khoản ở nhóm Fixed):**
+   - Chủ nhóm có quyền bật/tắt `CanSpend` (ON/OFF) cho từng thành viên (mặc định thành viên mới là **OFF**).
+   - **OFF:** Thành viên không được trực tiếp chi tiền từ quỹ.
+   - **ON:** Thành viên được **trực tiếp thực hiện khoản chi**, **KHÔNG phải gửi yêu cầu để chủ nhóm phê duyệt từng khoản**.
+   - Chủ nhóm thực hiện chi trực tiếp theo vai trò, không cần tự phê duyệt từng khoản của mình.
+2. **Bảo toàn các điều kiện an toàn và kiểm soát rủi ro:**
+   - Mọi khoản chi trực tiếp vẫn bắt buộc tuân thủ PIN/xác thực, số dư thực tế, mục tiêu góp đã hoàn thành, kiểm tra tiền khóa, trạng thái hoạt động và tính nguyên tử ở Backend.
+   - Khoản chi lớn vẫn chịu ngưỡng 20%, cộng dồn 24 giờ, thời gian chờ 24 giờ, thông báo trước cho toàn nhóm và nút Báo cáo/Tạm dừng của thành viên. Trạng thái ON không được bỏ qua các điều kiện này.
+3. **Nhóm loại 2 (Free):** Giữ nguyên cơ chế thành viên gửi yêu cầu chi/rút để chủ nhóm duyệt.

@@ -92,6 +92,20 @@ public sealed class TransfersController(
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
+    [HttpPost("p2p")]
+    [EnableRateLimiting("financial")]
+    public async Task<ActionResult<TransferDto>> P2P(
+        P2PTransferRequest request,
+        CancellationToken ct)
+    {
+        // Chuyển tiền P2P giữa hai tài khoản User trên SpendWise
+        var userId = UserId();
+        var command = new SpendWise.Application.Features.Transfers.Commands.P2PTransfer.P2PTransferCommand(userId, request);
+        var result = await mediator.Send(command, ct);
+
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
+
     private Guid UserId()
     {
         // Lấy định danh từ phiên đã xác thực, không tin UserId do client gửi.

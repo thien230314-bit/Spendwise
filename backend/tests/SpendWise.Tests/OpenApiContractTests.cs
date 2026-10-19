@@ -237,8 +237,8 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             Assert.True(paths.TryGetProperty(route.Key, out var path));
             foreach (var method in route.Value) Assert.True(path.TryGetProperty(method, out _));
         }
-        Assert.Equal(179 + v1Routes.Count, paths.EnumerateObject().Count());
-        Assert.Equal(217 + v1Routes.Sum(p => p.Value.Length), operationCount);
+        Assert.Equal(180 + v1Routes.Count, paths.EnumerateObject().Count());
+        Assert.Equal(218 + v1Routes.Sum(p => p.Value.Length), operationCount);
         output.WriteLine("OpenAPI paths={0}; operations={1}", paths.EnumerateObject().Count(), operationCount);
     }
 

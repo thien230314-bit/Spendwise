@@ -72,6 +72,21 @@ internal static class TransferFeatureSupport
         }
     }
 
+    public static void EnsureReplayMatches(
+        Transfer existing,
+        P2PTransferRequest request)
+    {
+        // Replay P2P phải khớp ví nguồn, người nhận, số tiền và mô tả.
+        var matches = existing.SourceWalletId == request.SourceWalletId
+            && existing.RecipientUserId == request.RecipientUserId
+            && existing.Amount == request.Amount
+            && existing.Description == request.Description.Trim();
+        if (!matches)
+        {
+            throw IdempotencyConflict();
+        }
+    }
+
     public static FinancialTransaction CreateHistory(
         Guid ownerUserId,
         Guid walletId,

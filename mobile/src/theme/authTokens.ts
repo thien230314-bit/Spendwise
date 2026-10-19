@@ -1,0 +1,108 @@
+import { fontStyles } from './fonts';
+
+// Notebook materials from locked frontend/src/index.css. Existing form tokens stay unchanged.
+const notebookMaterial = {
+  onFacingPage: '#FFFFFF',
+  ringMetal: '#CA8A04',
+  ringGradient: 'linear-gradient(135deg, #FDE047 0%, #CA8A04 35%, #713F12 70%, #EAB308 100%)',
+  ringHighlight: 'rgba(255,255,255,0.85)',
+  ringShadow: '0 3px 6px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.5)',
+};
+export const authNotebookLight = {
+  ...notebookMaterial,
+  cover: '#2F1D12',
+  coverGradient: 'linear-gradient(140deg, #442D1E 0%, #2F1D12 45%, #1F1109 100%)',
+  coverShadow: '0 30px 70px -15px rgba(35,20,10,0.45), 0 12px 28px -8px rgba(35,20,10,0.25), inset 0 1px 1.5px rgba(255,255,255,0.25)',
+  facingPage: '#102920',
+  facingGradient: 'linear-gradient(135deg, #17382B 0%, #102920 50%, #0A1B14 100%)',
+  pageShadow: '-3px 0 0 -0.5px #F2EEE3, -6px 0 0 -1px #E8E2D2, -9px 0 0 -1.5px #DCD4C0, 3px 0 0 -0.5px #F2EEE3, 6px 0 0 -1px #E8E2D2, 9px 0 0 -1.5px #DCD4C0, 0 16px 40px -10px rgba(25,18,10,0.25)',
+  fold: 'rgba(30,20,10,0.32)',
+  foldGradient: 'linear-gradient(to bottom, transparent 0%, rgba(30,20,10,0.04) 20%, rgba(30,20,10,0.18) 42%, rgba(30,20,10,0.32) 50%, rgba(30,20,10,0.18) 58%, rgba(30,20,10,0.04) 80%, transparent 100%)',
+  pageCurve: 'linear-gradient(to bottom, rgba(30,20,10,0.16), rgba(30,20,10,0.07) 35%, rgba(30,20,10,0.01) 75%, transparent)',
+  hole: '#231B14',
+};
+export const authNotebookDark = {
+  ...notebookMaterial,
+  cover: '#101914',
+  coverGradient: 'linear-gradient(140deg, #1B2620 0%, #101914 45%, #080D0A 100%)',
+  coverShadow: '0 35px 80px -15px rgba(0,0,0,0.85), 0 15px 30px -8px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.12)',
+  facingPage: '#0D2018',
+  facingGradient: 'linear-gradient(135deg, #132B21 0%, #0D2018 50%, #07130F 100%)',
+  pageShadow: '-3px 0 0 -0.5px #182230, -6px 0 0 -1px #131B26, -9px 0 0 -1.5px #0D141E, 3px 0 0 -0.5px #182230, 6px 0 0 -1px #131B26, 9px 0 0 -1.5px #0D141E, 0 18px 45px -10px rgba(0,0,0,0.75)',
+  fold: 'rgba(0,0,0,0.75)',
+  foldGradient: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.5) 42%, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.5) 58%, rgba(0,0,0,0.15) 80%, transparent 100%)',
+  pageCurve: 'linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.16) 35%, rgba(0,0,0,0.02) 75%, transparent)',
+  hole: '#080D14',
+};
+
+// Locked Web AuthPage/index.css identity, isolated from product-screen tokens.
+const common = { focus: '#10B981', button: '#059669', onButton: '#FFFFFF', registration: '#FBBF24', registrationBorder: '#FDE68A', onRegistration: '#0C0A09', radius: 10, paperRadius: 15 };
+export const authLight = {
+  ...common,
+  text: '#0F172A',
+  muted: '#64748B',
+  label: '#334155',
+  paper: '#FCFBF7',
+  input: '#FFFFFF',
+  border: '#E2E8F0',
+  placeholder: '#94A3B8',
+  link: '#059669',
+  soft: '#ECFDF5',
+  error: '#9F1239',
+  errorBackground: '#FFF1F2',
+  errorBorder: '#FDA4AF',
+  leather: '#2F1D12',
+  leatherDark: '#1F1109',
+  paperEdge: '#DCD4C0',
+  paperEdge2: '#E8E2D2',
+  paperEdge3: '#F2EEE3',
+  brassCorner1: '#F5D799',
+  brassCorner2: '#C49658',
+  brassCorner3: '#754E1D',
+  ribbon: '#059669',
+  ribbonLight: '#10B981',
+  ribbonDark: '#047857',
+  deskMat: '#1A120B',
+};
+export const authDark = {
+  ...common,
+  text: '#E5E7EB',
+  muted: '#9CA3AF',
+  label: '#CBD5E1',
+  paper: '#101622',
+  input: '#151B22',
+  border: 'rgba(255,255,255,0.1)',
+  placeholder: '#6B7280',
+  link: '#34D399',
+  soft: '#052E26',
+  error: '#FDA4AF',
+  errorBackground: '#3F0D20',
+  errorBorder: '#9F1239',
+  leather: '#101914',
+  leatherDark: '#080D0A',
+  paperEdge: '#0D141E',
+  paperEdge2: '#131B26',
+  paperEdge3: '#182230',
+  brassCorner1: '#F5D799',
+  brassCorner2: '#C49658',
+  brassCorner3: '#754E1D',
+  ribbon: '#047857',
+  ribbonLight: '#10B981',
+  ribbonDark: '#064E3B',
+  deskMat: '#0B0F12',
+};
+export const authType = {
+  title: { ...fontStyles.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.6 },
+  subtitle: { ...fontStyles.body, fontSize: 13, lineHeight: 21 },
+  body: { ...fontStyles.body, fontSize: 14, lineHeight: 22 },
+  label: { ...fontStyles.semibold, fontSize: 11, lineHeight: 18, letterSpacing: 0.65, textTransform: 'uppercase' },
+  input: { ...fontStyles.medium, fontSize: 16, lineHeight: 24 },
+  control: { ...fontStyles.bold, fontSize: 15, lineHeight: 22 },
+  link: { ...fontStyles.medium, fontSize: 13, lineHeight: 20 },
+} as const;
+export const authEffects = {
+  registration: 'linear-gradient(90deg, #FBBF24, #FCD34D, #FBBF24)',
+  button: 'linear-gradient(90deg, #059669, #10B981, #059669)',
+  lightDesk: 'radial-gradient(ellipse at 50% 18%, rgba(255,252,240,0.65), transparent 75%), repeating-linear-gradient(to bottom, transparent 0px, transparent 148px, rgba(90,48,18,0.3) 149px, rgba(255,255,255,0.55) 150px), repeating-linear-gradient(to bottom, #DFCBAF 0px, #DFCBAF 150px, #D6C0A1 150px, #D6C0A1 300px, #CCA785 300px, #CCA785 450px, #E2CEB4 450px, #E2CEB4 600px), repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(110,60,20,0.05) 4px, transparent 6px)',
+  darkDesk: 'radial-gradient(ellipse at 50% 16%, rgba(251,191,36,0.16), transparent 70%), repeating-linear-gradient(to bottom, transparent 0px, transparent 148px, rgba(0,0,0,0.8) 149px, rgba(255,255,255,0.045) 150px), repeating-linear-gradient(to bottom, #1B140F 0px, #1B140F 150px, #140F0C 150px, #140F0C 300px, #1F1712 300px, #1F1712 450px, #18120E 450px, #18120E 600px)',
+} as const;

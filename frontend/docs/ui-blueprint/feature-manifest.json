@@ -1,0 +1,3886 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "appName": "SpendWise Web Application",
+  "generatedAt": "2026-10-12T15:15:00.000Z",
+  "metrics": {
+    "totalDeclaredRoutes": 36,
+    "totalUniqueScreens": 28,
+    "userScreensCount": 11,
+    "adminScreensCount": 13,
+    "publicAuthScreensCount": 4,
+    "devPreviewScreensCount": 1,
+    "totalInventorySections": 83,
+    "totalTrackedFeatures": 146,
+    "verificationCounts": {
+      "BROWSER_VERIFIED": 34,
+      "SOURCE_VERIFIED": 112,
+      "UNVERIFIED": 0,
+      "CONFLICT": 0
+    }
+  },
+  "pages": [
+    {
+      "pageId": "USER-DASHBOARD",
+      "route": "/dashboard",
+      "role": "User",
+      "nameVi": "Tổng quan tài chính",
+      "nameEn": "Financial Dashboard",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/dashboard/DashboardPage.tsx",
+        "src/features/dashboard/components/GreetingHeader.tsx",
+        "src/features/dashboard/components/PrimaryBalancePanel.tsx",
+        "src/features/dashboard/components/FinancialSummaryCards.tsx",
+        "src/features/dashboard/components/AttentionSection.tsx",
+        "src/features/dashboard/components/LastSixMonthsBarChart.tsx",
+        "src/features/dashboard/components/CurrentMonthCategoryDonut.tsx",
+        "src/features/dashboard/components/RecentTransactionsList.tsx"
+      ],
+      "verificationStatus": "BROWSER_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "DASH-SEC-01",
+          "title": "Greeting Header",
+          "component": "GreetingHeader.tsx",
+          "featureIds": [
+            "DASH-001",
+            "DASH-002"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-02",
+          "title": "Available Balance & Quick Actions",
+          "component": "PrimaryBalancePanel.tsx",
+          "featureIds": [
+            "DASH-003",
+            "DASH-004A",
+            "DASH-004B",
+            "DASH-004C",
+            "DASH-004D"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-03",
+          "title": "Financial KPI Metrics 2x2",
+          "component": "FinancialSummaryCards.tsx",
+          "featureIds": [
+            "DASH-005",
+            "DASH-006",
+            "DASH-007",
+            "DASH-008",
+            "DASH-009"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-04",
+          "title": "Attention Section",
+          "component": "AttentionSection.tsx",
+          "featureIds": [
+            "DASH-010"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-05",
+          "title": "6 Months Trend Bar Chart",
+          "component": "LastSixMonthsBarChart.tsx",
+          "featureIds": [
+            "DASH-011"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-06",
+          "title": "Current Month Category Donut",
+          "component": "CurrentMonthCategoryDonut.tsx",
+          "featureIds": [
+            "DASH-012"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "DASH-SEC-07",
+          "title": "Recent Transactions Feed",
+          "component": "RecentTransactionsList.tsx",
+          "featureIds": [
+            "DASH-013"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "DASH-001",
+          "title": "Personalized Greeting",
+          "sectionId": "DASH-SEC-01",
+          "uiType": "header-text",
+          "trigger": "render",
+          "handler": "getTimeOfDay(locale)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị lời chào theo thời gian thực (Chào buổi sáng / Buổi chiều / Buổi tối) kèm tên hiển thị của người dùng và huy hiệu vai trò.",
+          "apiDependencies": "none (tính toán cục bộ qua getTimeOfDay(locale) và useAuth().currentUser)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "rendered",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/GreetingHeader.tsx:GreetingHeader"
+        },
+        {
+          "featureId": "DASH-002",
+          "title": "Toggle Balance Privacy Eye",
+          "sectionId": "DASH-SEC-01",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "useBalanceVisibility().toggleVisibility()",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn vào icon mắt để che/hiện số tiền tài chính trên toàn bộ giao diện thành dạng •••••••• nhằm bảo vệ quyền riêng tư.",
+          "apiDependencies": "none (BalanceVisibilityProvider / localStorage: spendwise_balance_hidden)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "visible, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật localStorage và trigger re-render tất cả thành phần hiển thị số dư.",
+          "evidence": "src/providers/BalanceVisibilityProvider.tsx:toggleVisibility"
+        },
+        {
+          "featureId": "DASH-003",
+          "title": "Total Available Balance Display",
+          "sectionId": "DASH-SEC-02",
+          "uiType": "currency-hero",
+          "trigger": "render",
+          "handler": "formatMoney(totalBalance)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị tổng số dư khả dụng tức thời của tất cả các ví cá nhân cộng lại, định dạng tiền tệ theo locale (₫ hoặc $).",
+          "apiDependencies": "FinancialProvider: dashboardSummary.totalBalance",
+          "validation": "Giá trị số dư >= 0, hiển thị tabular-nums.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/PrimaryBalancePanel.tsx:PrimaryBalancePanel"
+        },
+        {
+          "featureId": "DASH-004A",
+          "parentFeatureId": "DASH-004",
+          "title": "Nút Thao tác nhanh: Ghi nhận Thu nhập",
+          "sectionId": "DASH-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleOpenIncomeModal()",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn nút Thu (+) màu xanh lục trên thanh thao tác nhanh để mở modal ghi nhận khoản thu nhập mới vào ví mặc định.",
+          "apiDependencies": "FinancialProvider: addTransaction (type: income)",
+          "validation": "Số tiền thu > 0, danh mục bắt buộc.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Tăng số dư ví và cập nhật danh sách giao dịch gần đây.",
+          "evidence": "src/features/dashboard/DashboardPage.tsx:handleOpenIncomeModal"
+        },
+        {
+          "featureId": "DASH-004B",
+          "parentFeatureId": "DASH-004",
+          "title": "Nút Thao tác nhanh: Ghi nhận Chi tiêu",
+          "sectionId": "DASH-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleOpenExpenseModal()",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn nút Chi (-) màu đỏ trên thanh thao tác nhanh để mở modal ghi nhận khoản chi tiêu mới từ ví.",
+          "apiDependencies": "FinancialProvider: addTransaction (type: expense)",
+          "validation": "Số tiền chi > 0, số dư ví phải đủ chi trả nếu không cho phép âm.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Giảm số dư ví, cập nhật ngân sách danh mục và KPI chi tiêu.",
+          "evidence": "src/features/dashboard/DashboardPage.tsx:handleOpenExpenseModal"
+        },
+        {
+          "featureId": "DASH-004C",
+          "parentFeatureId": "DASH-004",
+          "title": "Nút Thao tác nhanh: Chuyển tiền",
+          "sectionId": "DASH-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "navigate(\"/transfer\")",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn nút Chuyển màu xanh dương để điều hướng trực tiếp sang trang Chuyển tiền cá nhân (/transfer).",
+          "apiDependencies": "none (react-router navigate)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, clicked",
+          "navigationTarget": "/transfer",
+          "sideEffects": "Thay đổi route trang.",
+          "evidence": "src/features/dashboard/components/PrimaryBalancePanel.tsx:navigate"
+        },
+        {
+          "featureId": "DASH-004D",
+          "parentFeatureId": "DASH-004",
+          "title": "Nút Thao tác nhanh: Quỹ nhóm",
+          "sectionId": "DASH-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "navigate(\"/groups\")",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn nút Nhóm màu tím để điều hướng trực tiếp sang trang Quản trị quỹ nhóm (/groups).",
+          "apiDependencies": "none (react-router navigate)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, clicked",
+          "navigationTarget": "/groups",
+          "sideEffects": "Thay đổi route trang.",
+          "evidence": "src/features/dashboard/components/PrimaryBalancePanel.tsx:navigate"
+        },
+        {
+          "featureId": "DASH-005",
+          "title": "Current Month Income Metric",
+          "sectionId": "DASH-SEC-03",
+          "uiType": "kpi-card",
+          "trigger": "render",
+          "handler": "dashboardSummary.totalIncome",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ KPI tổng số tiền thu nhập nhận được trong tháng lịch hiện tại.",
+          "apiDependencies": "FinancialProvider: dashboardSummary.totalIncome",
+          "validation": "Định dạng tiền tệ theo locale.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/FinancialSummaryCards.tsx:FinancialSummaryCards"
+        },
+        {
+          "featureId": "DASH-006",
+          "title": "Current Month Expense Metric",
+          "sectionId": "DASH-SEC-03",
+          "uiType": "kpi-card",
+          "trigger": "render",
+          "handler": "dashboardSummary.totalExpenses",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ KPI tổng số tiền đã chi tiêu trong tháng lịch hiện tại.",
+          "apiDependencies": "FinancialProvider: dashboardSummary.totalExpenses",
+          "validation": "Định dạng tiền tệ theo locale.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/FinancialSummaryCards.tsx:FinancialSummaryCards"
+        },
+        {
+          "featureId": "DASH-007",
+          "title": "Available Budget Remaining Metric",
+          "sectionId": "DASH-SEC-03",
+          "uiType": "kpi-card",
+          "trigger": "render",
+          "handler": "dashboardSummary.budgetRemaining",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ KPI hạn mức ngân sách khả dụng còn lại chưa chi hết trong tháng.",
+          "apiDependencies": "FinancialProvider: dashboardSummary.budgetRemaining",
+          "validation": "Hiển thị màu đỏ nếu ngân sách bị âm (vượt định mức).",
+          "permissions": "Role: User",
+          "states": "loading, loaded, warning, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/FinancialSummaryCards.tsx:FinancialSummaryCards"
+        },
+        {
+          "featureId": "DASH-008",
+          "title": "Group Fund & Obligations Metric",
+          "sectionId": "DASH-SEC-03",
+          "uiType": "kpi-card",
+          "trigger": "render",
+          "handler": "groupFundBalance, userPendingFundObligations",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ KPI tổng số dư quỹ trong các nhóm tham gia và các nghĩa vụ đóng quỹ còn tồn đọng.",
+          "apiDependencies": "GroupProvider: groupFundBalance, userPendingFundObligations",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/FinancialSummaryCards.tsx:FinancialSummaryCards"
+        },
+        {
+          "featureId": "DASH-009",
+          "title": "Net Cash Flow Ratio Bar",
+          "sectionId": "DASH-SEC-03",
+          "uiType": "progress-ratio-bar",
+          "trigger": "render",
+          "handler": "Income vs Expense dynamic calculation",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị thanh tỷ lệ phần trăm dòng tiền thuần giữa Thu nhập và Chi tiêu.",
+          "apiDependencies": "none (tính toán tỷ lệ từ totalIncome và totalExpenses)",
+          "validation": "Tỷ lệ từ 0% đến 100%.",
+          "permissions": "Role: User",
+          "states": "rendered",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/FinancialSummaryCards.tsx:NetCashFlowRatio"
+        },
+        {
+          "featureId": "DASH-010",
+          "title": "Attention Center Warning Banner",
+          "sectionId": "DASH-SEC-04",
+          "uiType": "alert-banner",
+          "trigger": "render",
+          "handler": "attentionItems from useFinancial()",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị banner cảnh báo khi có danh mục vượt hạn mức ngân sách hoặc tài khoản ngân hàng cần đồng bộ lại.",
+          "apiDependencies": "FinancialProvider: attentionItems",
+          "validation": "Tự động ẩn nếu không có cảnh báo nào cần xử lý.",
+          "permissions": "Role: User",
+          "states": "empty, warning, critical",
+          "navigationTarget": "/budget hoặc /wallet tùy thuộc vào loại cảnh báo",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/AttentionSection.tsx:AttentionSection"
+        },
+        {
+          "featureId": "DASH-011",
+          "title": "6 Months Cash Flow Bar Chart",
+          "sectionId": "DASH-SEC-05",
+          "uiType": "svg-bar-chart",
+          "trigger": "render / toggle mode",
+          "handler": "getLast6CalendarMonths()",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị biểu đồ cột SVG trực quan hóa biến động Thu nhập vs Chi tiêu trong 6 tháng gần nhất.",
+          "apiDependencies": "FinancialProvider: transactions lọc theo 6 tháng lịch",
+          "validation": "Tự động co giãn theo trục Y tương ứng với số tiền tối đa.",
+          "permissions": "Role: User",
+          "states": "loading, rendered, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/LastSixMonthsBarChart.tsx:LastSixMonthsBarChart"
+        },
+        {
+          "featureId": "DASH-012",
+          "title": "Category Expense Donut Chart",
+          "sectionId": "DASH-SEC-06",
+          "uiType": "svg-donut-chart",
+          "trigger": "render / toggle tabs",
+          "handler": "Category percentage & SVG geometry",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị biểu đồ Donut SVG phân bổ tỷ trọng chi tiêu theo từng danh mục trong tháng hiện tại kèm chú thích phần trăm.",
+          "apiDependencies": "FinancialProvider: expensesByCategory",
+          "validation": "Tổng góc của các cung tròn bằng 360 độ (100%).",
+          "permissions": "Role: User",
+          "states": "loading, rendered, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/CurrentMonthCategoryDonut.tsx:CurrentMonthCategoryDonut"
+        },
+        {
+          "featureId": "DASH-013",
+          "title": "Recent Five Transactions Feed",
+          "sectionId": "DASH-SEC-07",
+          "uiType": "data-list",
+          "trigger": "render",
+          "handler": "recentTransactions slice(0, 5)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách 5 giao dịch gần đây nhất kèm icon danh mục, tên người nhận/gửi và số tiền biến động; có nút Xem tất cả sang /transactions.",
+          "apiDependencies": "FinancialProvider: recentTransactions (slice 0..5)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "/transactions",
+          "sideEffects": "none",
+          "evidence": "src/features/dashboard/components/RecentTransactionsList.tsx:RecentTransactionsList"
+        }
+      ]
+    },
+    {
+      "pageId": "USER-WALLET",
+      "route": "/wallet",
+      "role": "User",
+      "nameVi": "Ví của tôi & Ngân hàng",
+      "nameEn": "My Wallets & Bank Hub",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/wallet/WalletPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "WALLET-SEC-01",
+          "title": "Balance & Action Banner",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-001",
+            "WALLET-002",
+            "WALLET-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "WALLET-SEC-02",
+          "title": "Internal Wallets Deck",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-004",
+            "WALLET-005A",
+            "WALLET-005B",
+            "WALLET-005C",
+            "WALLET-005D"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "WALLET-SEC-03",
+          "title": "SePay Open Banking Hub",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-006",
+            "WALLET-007A",
+            "WALLET-007B",
+            "WALLET-007C"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "WALLET-SEC-04",
+          "title": "Bank Transactions Feed",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-008"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "WALLET-SEC-05",
+          "title": "Internal Activities List",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-009"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "WALLET-SEC-06",
+          "title": "Modals & Pin Verification",
+          "component": "WalletPage.tsx",
+          "featureIds": [
+            "WALLET-005A",
+            "WALLET-005B",
+            "WALLET-005D"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "WALLET-001",
+          "title": "Total Wallet Balance Summary",
+          "sectionId": "WALLET-SEC-01",
+          "uiType": "currency-display",
+          "trigger": "render",
+          "handler": "formatMoney(totalBalance)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị tổng số dư tài sản trên tất cả các ví cá nhân, kèm nút ẩn/hiện mắt.",
+          "apiDependencies": "FinancialProvider: totalBalance",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loaded, hidden",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/wallet/WalletPage.tsx:totalBalance"
+        },
+        {
+          "featureId": "WALLET-002",
+          "title": "TestMode Wallet Top-Up Action",
+          "sectionId": "WALLET-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "handleOpenTopUpModal()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Nạp tiền để mở modal nạp tiền từ tài khoản TestMode vào ví nội bộ được chọn.",
+          "apiDependencies": "bankApiService.createWalletTopUp",
+          "validation": "Số tiền nạp tối thiểu 10.000 ₫, tối đa 50.000.000 ₫.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Tăng số dư ví nội bộ tương ứng sau khi hoàn tất nạp.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleOpenTopUpModal"
+        },
+        {
+          "featureId": "WALLET-003",
+          "title": "Internal Wallet Transfer",
+          "sectionId": "WALLET-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setIsTransferOpen(true)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Chuyển giữa các ví để mở modal chuyển dịch số dư giữa 2 ví cá nhân nội bộ không mất phí.",
+          "apiDependencies": "FinancialProvider: transferBetweenWallets",
+          "validation": "Ví nguồn khác ví đích; số tiền chuyển <= số dư khả dụng của ví nguồn.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, transferring, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Trừ số dư ví nguồn, cộng số dư ví đích, ghi nhận lịch sử giao dịch.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleOpenTransferModal"
+        },
+        {
+          "featureId": "WALLET-004",
+          "title": "Internal Wallet Cards List",
+          "sectionId": "WALLET-SEC-02",
+          "uiType": "cards-deck",
+          "trigger": "render",
+          "handler": "wallets.map()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị lưới danh sách các thẻ ví nội bộ (Ví chính, Ví chi tiêu,...) với tên, số tài khoản, số dư và huy hiệu Mặc định.",
+          "apiDependencies": "FinancialProvider: wallets",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/wallet/WalletPage.tsx:wallets.map"
+        },
+        {
+          "featureId": "WALLET-005A",
+          "parentFeatureId": "WALLET-005",
+          "title": "Tạo ví nội bộ mới",
+          "sectionId": "WALLET-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleOpenCreateWalletModal()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Tạo ví mới, mở modal nhập tên ví, loại tiền tệ và số dư ban đầu.",
+          "apiDependencies": "FinancialProvider: createWallet",
+          "validation": "Tên ví 2-50 ký tự; số dư khởi tạo >= 0.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Thêm ví mới vào danh sách ví cá nhân.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleCreateWallet",
+          "sharedSectionIds": [
+            "WALLET-SEC-06"
+          ]
+        },
+        {
+          "featureId": "WALLET-005B",
+          "parentFeatureId": "WALLET-005",
+          "title": "Đổi tên và sửa thông tin ví",
+          "sectionId": "WALLET-SEC-02",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "handleOpenEditWalletModal(wallet)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Chỉnh sửa trên thẻ ví để đổi tên hiển thị của ví.",
+          "apiDependencies": "FinancialProvider: editWallet",
+          "validation": "Tên ví 2-50 ký tự, không được để trống.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cập nhật tên ví trên toàn hệ thống.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleEditWallet",
+          "sharedSectionIds": [
+            "WALLET-SEC-06"
+          ]
+        },
+        {
+          "featureId": "WALLET-005C",
+          "parentFeatureId": "WALLET-005",
+          "title": "Đặt ví làm mặc định",
+          "sectionId": "WALLET-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleSetDefaultWallet(wallet.id)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đặt làm mặc định trên thẻ ví để chỉ định ví này nhận tiền và ưu tiên trích nợ.",
+          "apiDependencies": "FinancialProvider: setDefaultWallet",
+          "validation": "Ví phải đang ở trạng thái hoạt động (Active).",
+          "permissions": "Role: User",
+          "states": "idle, updating, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Huy hiệu Mặc định chuyển sang ví mới được chọn.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleSetDefaultWallet"
+        },
+        {
+          "featureId": "WALLET-005D",
+          "parentFeatureId": "WALLET-005",
+          "title": "Đóng/xóa ví nội bộ (Yêu cầu PIN)",
+          "sectionId": "WALLET-SEC-02",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleCloseWalletWithPin(wallet.id)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đóng ví, mở modal xác thực mã PIN bảo mật 6 số để xóa/đóng ví.",
+          "apiDependencies": "FinancialProvider: deleteWallet(id, pin)",
+          "validation": "Số dư ví bắt buộc phải bằng 0; mã PIN 6 số phải khớp.",
+          "permissions": "Role: User",
+          "states": "idle, pin_challenge, deleting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Ví bị loại bỏ khỏi danh sách sử dụng.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleCloseWalletWithPin",
+          "sharedSectionIds": [
+            "WALLET-SEC-06"
+          ]
+        },
+        {
+          "featureId": "WALLET-006",
+          "title": "SePay Open Banking Connections Hub",
+          "sectionId": "WALLET-SEC-03",
+          "uiType": "banking-hub-card",
+          "trigger": "render",
+          "handler": "bankConnections",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách các tài khoản ngân hàng kết nối qua cổng SePay Open Banking kèm thương hiệu, số tài khoản masked và trạng thái kết nối.",
+          "apiDependencies": "bankApiService.getBankConnections",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/wallet/WalletPage.tsx:bankConnections"
+        },
+        {
+          "featureId": "WALLET-007A",
+          "parentFeatureId": "WALLET-007",
+          "title": "Đồng bộ kết nối ngân hàng tức thời (Sync Connection)",
+          "sectionId": "WALLET-SEC-03",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleSyncConnection(conn.id, conn.bankBrandName)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đồng bộ ngay trên thẻ ngân hàng Active để kéo giao dịch mới nhất từ SePay và cập nhật thời gian lastSyncedAt.",
+          "apiDependencies": "bankApiService.syncBankConnection(id)",
+          "validation": "Chỉ khả dụng với tài khoản Active và môi trường thực.",
+          "permissions": "Role: User",
+          "states": "idle, syncing, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật danh sách biến động số dư ngân hàng.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleSyncConnection"
+        },
+        {
+          "featureId": "WALLET-007B",
+          "parentFeatureId": "WALLET-007",
+          "title": "Hủy liên kết tài khoản ngân hàng (Unlink Bank)",
+          "sectionId": "WALLET-SEC-03",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleStartUnlinkConnection(conn)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Hủy liên kết, mở modal xác nhận rủi ro ngừng đồng bộ và gọi API hủy liên kết khi xác nhận.",
+          "apiDependencies": "bankApiService.unlinkBankConnection(id)",
+          "validation": "Bắt buộc người dùng nhấn xác nhận trong dialog.",
+          "permissions": "Role: User",
+          "states": "idle, confirming, unlinking, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Ngừng đồng bộ dữ liệu giao dịch tự động từ ngân hàng đối tác.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleStartUnlinkConnection"
+        },
+        {
+          "featureId": "WALLET-007C",
+          "parentFeatureId": "WALLET-007",
+          "title": "Tái kích hoạt / Liên kết lại ngân hàng (Reactivate / Re-link Bank)",
+          "sectionId": "WALLET-SEC-03",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "handleOpenConnectBank(conn.bankBrandName)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Liên kết lại khi tài khoản ở trạng thái Unlinked hoặc lỗi để khởi tạo luồng cấp quyền kết nối ngân hàng mới.",
+          "apiDependencies": "bankApiService.createBankLinkSession",
+          "validation": "Tài khoản ở trạng thái Unlinked, Pending hoặc Error.",
+          "permissions": "Role: User",
+          "states": "idle, opening_session, redirecting_or_modal",
+          "navigationTarget": "Hosted SePay link hoặc TestMode Challenge modal",
+          "sideEffects": "Khởi tạo phiên cấp quyền Open Banking mới.",
+          "evidence": "src/features/wallet/WalletPage.tsx:handleOpenConnectBank"
+        },
+        {
+          "featureId": "WALLET-008",
+          "title": "Bank Transactions Feed & Classification",
+          "sectionId": "WALLET-SEC-04",
+          "uiType": "filtered-table",
+          "trigger": "render / filter click",
+          "handler": "filteredBankTransactions, setClassifyingBankTx",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị bảng biến động số dư ngân hàng liên kết, hỗ trợ lọc Tất cả / Tiền vào (Credit) / Tiền ra (Debit) và nút phân loại danh mục chi tiêu.",
+          "apiDependencies": "bankApiService.getBankTransactions, updateBankTransactionCategory",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, filtering, classifying",
+          "navigationTarget": "none",
+          "sideEffects": "Gán danh mục ngân sách cho giao dịch ngân hàng.",
+          "evidence": "src/features/wallet/WalletPage.tsx:filteredBankTransactions"
+        },
+        {
+          "featureId": "WALLET-009",
+          "title": "Internal Activity Log",
+          "sectionId": "WALLET-SEC-05",
+          "uiType": "feed-list",
+          "trigger": "render",
+          "handler": "recentInternalActivities",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách các đợt nạp tiền, rút tiền và luân chuyển giữa các ví nội bộ.",
+          "apiDependencies": "FinancialProvider: transactions lọc theo ví nội bộ",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/wallet/WalletPage.tsx:internalActivities"
+        }
+      ]
+    },
+    {
+      "pageId": "USER-TRANSACTIONS",
+      "route": "/transactions",
+      "role": "User",
+      "nameVi": "Lịch sử & Quản lý giao dịch",
+      "nameEn": "Transactions Management",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/transactions/TransactionsPage.tsx",
+        "src/features/transactions/components/RecurringTransactionsTab.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "TXN-SEC-01",
+          "title": "Header & 3 Tabs Navigation",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-001A",
+            "TXN-001B",
+            "TXN-001C",
+            "TXN-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-02",
+          "title": "Search & Multi-Filter Toolbar",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-003",
+            "TXN-004",
+            "TXN-005",
+            "TXN-006",
+            "TXN-007"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-03",
+          "title": "Transactions Table & Pagination",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-008",
+            "TXN-009"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-04",
+          "title": "Recurring Transactions Tab",
+          "component": "RecurringTransactionsTab.tsx",
+          "featureIds": [
+            "TXN-010"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-05",
+          "title": "Classification Rules Tab",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-011"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-06",
+          "title": "Evidence & Attachments Drawer",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-012"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "TXN-SEC-07",
+          "title": "Evidence & Attachment Viewer Drawer",
+          "component": "TransactionsPage.tsx",
+          "featureIds": [
+            "TXN-012"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "TXN-001A",
+          "parentFeatureId": "TXN-001",
+          "title": "Chuyển Tab Lịch sử giao dịch (History Tab Switch)",
+          "sectionId": "TXN-SEC-01",
+          "uiType": "tab-button",
+          "trigger": "click",
+          "handler": "handleTabChange(\"history\")",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn tab Lịch sử để hiển thị bảng lịch sử giao dịch toàn diện, thanh tìm kiếm và bộ lọc đa năng; cập nhật query URL ?tab=history.",
+          "apiDependencies": "none (local state & useSearchParams)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, inactive",
+          "navigationTarget": "/transactions?tab=history",
+          "sideEffects": "Hiển thị các section TXN-SEC-02 và TXN-SEC-03.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:handleTabChange"
+        },
+        {
+          "featureId": "TXN-001B",
+          "parentFeatureId": "TXN-001",
+          "title": "Chuyển Tab Giao dịch định kỳ (Recurring Tab Switch)",
+          "sectionId": "TXN-SEC-01",
+          "uiType": "tab-button",
+          "trigger": "click",
+          "handler": "handleTabChange(\"recurring\")",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn tab Định kỳ để hiển thị màn hình quản lý các khoản chi lặp lại theo chu kỳ tuần/tháng; cập nhật query URL ?tab=recurring.",
+          "apiDependencies": "recurringService.getRecurring",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, inactive",
+          "navigationTarget": "/transactions?tab=recurring",
+          "sideEffects": "Ẩn bảng lịch sử, render RecurringTransactionsTab.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:handleTabChange"
+        },
+        {
+          "featureId": "TXN-001C",
+          "parentFeatureId": "TXN-001",
+          "title": "Chuyển Tab Quy tắc phân loại tự động (Rules Tab Switch)",
+          "sectionId": "TXN-SEC-01",
+          "uiType": "tab-button",
+          "trigger": "click",
+          "handler": "handleTabChange(\"rules\")",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn tab Quy tắc để hiển thị giao diện quản lý quy tắc tự động nhận diện từ khóa gán danh mục; cập nhật query URL ?tab=rules.",
+          "apiDependencies": "transactionClassificationService",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, inactive",
+          "navigationTarget": "/transactions?tab=rules",
+          "sideEffects": "Ẩn bảng lịch sử, render TransactionRulesTab.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:handleTabChange"
+        },
+        {
+          "featureId": "TXN-002",
+          "title": "Add New Transaction Modal",
+          "sectionId": "TXN-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setIsCreateTxModalOpen(true)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Thêm giao dịch (+) để mở modal ghi nhận giao dịch thu/chi thủ công kèm số tiền, danh mục, ví nguồn và hóa đơn.",
+          "apiDependencies": "FinancialProvider: addTransaction",
+          "validation": "Số tiền > 0, danh mục và ví nguồn là bắt buộc.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cập nhật danh sách giao dịch và điều chỉnh số dư ví.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:handleOpenAddModal"
+        },
+        {
+          "featureId": "TXN-003",
+          "title": "Omni Search Input",
+          "sectionId": "TXN-SEC-02",
+          "uiType": "search-input",
+          "trigger": "input",
+          "handler": "setSearchQuery(query)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhập từ khóa vào ô tìm kiếm để lọc giao dịch tức thời theo tiêu đề, ghi chú, mã tham chiếu hoặc đối tác giao dịch.",
+          "apiDependencies": "none (client-side filtering)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "empty, searching, results, no_results",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc tức thì danh sách giao dịch hiển thị trong bảng.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:searchTerm"
+        },
+        {
+          "featureId": "TXN-004",
+          "title": "Transaction Type Filter",
+          "sectionId": "TXN-SEC-02",
+          "uiType": "pill-filters",
+          "trigger": "click",
+          "handler": "setTypeFilter(type)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn lọc theo loại giao dịch: Tất cả / Thu nhập / Chi tiêu / Chuyển tiền / Nạp ví.",
+          "apiDependencies": "none (client-side filtering qua typeFilter)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active_filter",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật bảng giao dịch theo loại được chọn.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:typeFilter"
+        },
+        {
+          "featureId": "TXN-005",
+          "title": "Source Wallet Filter",
+          "sectionId": "TXN-SEC-02",
+          "uiType": "select-dropdown",
+          "trigger": "change",
+          "handler": "setWalletFilter(id)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn ví tài khoản từ dropdown để chỉ hiển thị các giao dịch phát sinh trên ví đó.",
+          "apiDependencies": "none (client-side filtering qua walletFilter)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "selected_wallet",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc bảng giao dịch theo walletId.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:walletFilter"
+        },
+        {
+          "featureId": "TXN-006",
+          "title": "Category Filter",
+          "sectionId": "TXN-SEC-02",
+          "uiType": "select-dropdown",
+          "trigger": "change",
+          "handler": "setCategoryFilter(id)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn danh mục chi tiêu từ dropdown để chỉ hiển thị các giao dịch thuộc danh mục được chỉ định.",
+          "apiDependencies": "none (client-side filtering qua categoryFilter)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "selected_category",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc bảng giao dịch theo category.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:categoryFilter"
+        },
+        {
+          "featureId": "TXN-007",
+          "title": "Amount Threshold Filter",
+          "sectionId": "TXN-SEC-02",
+          "uiType": "pill-filters",
+          "trigger": "click",
+          "handler": "setAmountFilter(range)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn hạn mức số tiền: Dưới 100k, 100k - 1M, hoặc Trên 1M để phân tầng giao dịch.",
+          "apiDependencies": "none (client-side filtering qua amountFilter)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "selected_threshold",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc bảng giao dịch theo khoảng số tiền.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:amountFilter"
+        },
+        {
+          "featureId": "TXN-008",
+          "title": "Detailed Transactions Data Table",
+          "sectionId": "TXN-SEC-03",
+          "uiType": "data-table",
+          "trigger": "render",
+          "handler": "filteredTransactions.map()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị bảng chi tiết các giao dịch gồm: Ngày giờ, Danh mục, Tiêu đề, Ví nguồn, Số tiền (xanh/đỏ), và nút Xem chi tiết.",
+          "apiDependencies": "FinancialProvider: transactions",
+          "validation": "Định dạng tiền tệ và ngày tháng theo locale.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:filteredTransactions.map"
+        },
+        {
+          "featureId": "TXN-009",
+          "title": "Pagination Load More Action",
+          "sectionId": "TXN-SEC-03",
+          "uiType": "load-more-button",
+          "trigger": "click",
+          "handler": "setVisibleCount(prev + PAGE_SIZE)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Tải thêm hoặc chuyển trang để hiển thị các trang giao dịch tiếp theo.",
+          "apiDependencies": "none (phân trang client-side PAGE_SIZE = 10)",
+          "validation": "Chỉ hiển thị khi số lượng giao dịch vượt quá kích thước 1 trang.",
+          "permissions": "Role: User",
+          "states": "idle, loading_more, has_more, no_more",
+          "navigationTarget": "none",
+          "sideEffects": "Mở rộng số lượng item hiển thị trong danh sách.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:displayedCount"
+        },
+        {
+          "featureId": "TXN-010",
+          "title": "Recurring Payments Schedule & Management",
+          "sectionId": "TXN-SEC-04",
+          "uiType": "crud-table",
+          "trigger": "render / create",
+          "handler": "recurringService.getRecurring(), createRecurring()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Xem danh sách các giao dịch định kỳ, tạo mới lịch thanh toán tự động hoặc dừng theo dõi khoản lặp lại.",
+          "apiDependencies": "recurringService.getRecurring, createRecurring, deleteRecurring",
+          "validation": "Số tiền định kỳ > 0, chu kỳ (ngày trong tháng/tuần) phải hợp lệ.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, creating, deleting, empty",
+          "navigationTarget": "none (tab content)",
+          "sideEffects": "Hệ thống tự động nhắc nhở khi đến ngày thanh toán định kỳ.",
+          "evidence": "src/features/transactions/components/RecurringTransactionsTab.tsx:RecurringTransactionsTab"
+        },
+        {
+          "featureId": "TXN-011",
+          "title": "Auto-Categorization Rules Config",
+          "sectionId": "TXN-SEC-05",
+          "uiType": "rules-engine-table",
+          "trigger": "render / add",
+          "handler": "transactionClassificationService",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Cấu hình và quản lý các từ khóa nhận diện để hệ thống tự động gán nhãn danh mục cho giao dịch ngân hàng.",
+          "apiDependencies": "transactionClassificationService.getRules, createRule, deleteRule",
+          "validation": "Từ khóa khớp không được trùng lặp, độ dài >= 2 ký tự.",
+          "permissions": "Role: User",
+          "states": "loading, loaded, adding_rule, deleting_rule, empty",
+          "navigationTarget": "none (tab content)",
+          "sideEffects": "Tự động áp dụng phân loại cho các giao dịch mới kéo về từ SePay.",
+          "evidence": "src/features/transactions/components/TransactionRulesTab.tsx:TransactionRulesTab"
+        },
+        {
+          "featureId": "TXN-012",
+          "title": "Receipt Evidence Upload & Inspection",
+          "sectionId": "TXN-SEC-06",
+          "uiType": "drawer-attachment-viewer",
+          "trigger": "click",
+          "handler": "uploadEvidenceItems",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào icon đính kèm để mở drawer xem tệp ảnh biên lai, hóa đơn chứng từ hoặc tải lên ảnh mới cho giao dịch.",
+          "apiDependencies": "evidenceApiService.uploadEvidence, getEvidence",
+          "validation": "Hỗ trợ định dạng PNG, JPG, PDF; dung lượng tối đa 5MB.",
+          "permissions": "Role: User",
+          "states": "idle, drawer_open, uploading, previewing, error",
+          "navigationTarget": "none (drawer)",
+          "sideEffects": "Lưu trữ tệp chứng từ liên kết với transactionId.",
+          "evidence": "src/features/transactions/TransactionsPage.tsx:selectedTxForEvidence",
+          "sharedSectionIds": [
+            "TXN-SEC-07"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "USER-TRANSFER",
+      "route": "/transfer",
+      "role": "User",
+      "nameVi": "Chuyển tiền trực tiếp",
+      "nameEn": "Direct Money Transfer",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/transfer/TransferPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "XFER-SEC-01",
+          "title": "Source Wallet & Balance",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-001"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "XFER-SEC-02",
+          "title": "Recipient Lookup & Friend Quick Pick",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-002",
+            "TRANSFER-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "XFER-SEC-03",
+          "title": "Amount & Note Input",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-004",
+            "TRANSFER-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "XFER-SEC-04",
+          "title": "Security PIN Verification",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "XFER-SEC-05",
+          "title": "Receipt & Recent Transfers",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-007",
+            "TRANSFER-008"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "XFER-SEC-06",
+          "title": "Recent Direct Payments History",
+          "component": "TransferPage.tsx",
+          "featureIds": [
+            "TRANSFER-008"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "TRANSFER-001",
+          "title": "Source Account Selection & Balance Validation",
+          "sectionId": "XFER-SEC-01",
+          "uiType": "account-picker",
+          "trigger": "select",
+          "handler": "sourceBalance check",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn ví nguồn để trích tiền và hiển thị số dư khả dụng tức thời của ví đó; kiểm tra số dư có đủ chuyển hay không.",
+          "apiDependencies": "FinancialProvider: wallets",
+          "validation": "Số dư ví nguồn phải >= số tiền muốn chuyển.",
+          "permissions": "Role: User",
+          "states": "wallet_selected, insufficient_funds",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/transfer/TransferPage.tsx:sourceWallet"
+        },
+        {
+          "featureId": "TRANSFER-002",
+          "title": "Recipient 10-Digit VN Phone Lookup",
+          "sectionId": "XFER-SEC-02",
+          "uiType": "phone-lookup-input",
+          "trigger": "input / blur",
+          "handler": "transfersApiService.getRecipientByPhone(phone)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhập số điện thoại người nhận (10 số VN) để hệ thống tra cứu tự động họ tên và trạng thái tài khoản người nhận.",
+          "apiDependencies": "transfersApiService.getRecipientByPhone(phone)",
+          "validation": "Đúng định dạng số điện thoại Việt Nam (bắt đầu bằng 0, 10 số); không được tự chuyển cho chính mình.",
+          "permissions": "Role: User",
+          "states": "idle, searching, found, not_found, self_transfer_error",
+          "navigationTarget": "none",
+          "sideEffects": "Hiển thị avatar, tên người nhận và kiểm tra tài khoản khả dụng.",
+          "evidence": "src/features/transfer/TransferPage.tsx:handlePhoneLookup"
+        },
+        {
+          "featureId": "TRANSFER-003",
+          "title": "Favorite Friends Quick Selection Carousel",
+          "sectionId": "XFER-SEC-02",
+          "uiType": "avatars-carousel",
+          "trigger": "click",
+          "handler": "setSelectedRecipient(friend)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn chọn 1 người bạn trong hàng danh bạ bạn bè đánh dấu sao để tự động điền số điện thoại và thông tin người nhận.",
+          "apiDependencies": "friendService.getFriends",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "Tự động kích hoạt trạng thái tìm thấy người nhận (found).",
+          "evidence": "src/features/transfer/TransferPage.tsx:favoriteFriends"
+        },
+        {
+          "featureId": "TRANSFER-004",
+          "title": "Amount Input with Currency Mask & Words",
+          "sectionId": "XFER-SEC-03",
+          "uiType": "masked-currency-input",
+          "trigger": "input",
+          "handler": "moneyToWords(amount)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhập số tiền chuyển kèm định dạng phân tách hàng nghìn tự động và dịch số tiền thành chữ tiếng Việt tức thời bên dưới.",
+          "apiDependencies": "none (moneyToWords utility)",
+          "validation": "Số tiền tối thiểu 1.000 ₫, tối đa 50.000.000 ₫/lệnh.",
+          "permissions": "Role: User",
+          "states": "entering_amount, valid, out_of_range",
+          "navigationTarget": "none",
+          "sideEffects": "Hiển thị văn bản đọc số tiền thành chữ.",
+          "evidence": "src/features/transfer/TransferPage.tsx:moneyToWords"
+        },
+        {
+          "featureId": "TRANSFER-005",
+          "title": "Transfer Message Note Input",
+          "sectionId": "XFER-SEC-03",
+          "uiType": "text-input",
+          "trigger": "input",
+          "handler": "setNote(value)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhập lời nhắn / nội dung chuyển tiền gửi tới người nhận.",
+          "apiDependencies": "none (form state)",
+          "validation": "Độ dài tối đa 200 ký tự.",
+          "permissions": "Role: User",
+          "states": "typing",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/transfer/TransferPage.tsx:transferNote"
+        },
+        {
+          "featureId": "TRANSFER-006",
+          "title": "Two-Factor 6-Digit PIN Transfer Authorization",
+          "sectionId": "XFER-SEC-04",
+          "uiType": "pin-challenge-modal",
+          "trigger": "form-submit",
+          "handler": "challengePinWithValue(pin) -> transfersApiService.createTransfer",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn Tiếp tục để mở modal kiểm tra lại thông tin lệnh chuyển và yêu cầu nhập mã PIN bảo mật 6 số để xác nhận chuyển tiền.",
+          "apiDependencies": "transfersApiService.executeDirectTransfer(payload, pin)",
+          "validation": "Bắt buộc nhập đúng mã PIN 6 số; khóa tạm thời nếu nhập sai quá 5 lần.",
+          "permissions": "Role: User",
+          "states": "idle, review_modal, pin_challenge, transferring, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Trừ số dư ví người gửi, cộng tiền cho người nhận, phát sinh thông báo SignalR.",
+          "evidence": "src/features/transfer/TransferPage.tsx:handleConfirmTransferWithPin"
+        },
+        {
+          "featureId": "TRANSFER-007",
+          "title": "Transfer Success Receipt Display",
+          "sectionId": "XFER-SEC-05",
+          "uiType": "receipt-card",
+          "trigger": "transfer-complete",
+          "handler": "activePayment presentation",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ biên nhận chuyển tiền thành công gồm mã giao dịch, thời gian, người nhận, số tiền và nút Chuyển lệnh mới hoặc Về trang chủ.",
+          "apiDependencies": "none (kết quả trả về từ lệnh chuyển tiền)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "success_receipt",
+          "navigationTarget": "/dashboard hoặc reset form",
+          "sideEffects": "none",
+          "evidence": "src/features/transfer/TransferPage.tsx:transferSuccessData"
+        },
+        {
+          "featureId": "TRANSFER-008",
+          "title": "Direct Payments Activity Feed",
+          "sectionId": "XFER-SEC-05",
+          "uiType": "history-feed",
+          "trigger": "render",
+          "handler": "allTransfers.map()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách các lệnh chuyển tiền trực tiếp gần nhất giữa người dùng và bạn bè.",
+          "apiDependencies": "transfersApiService.getRecentTransfers",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/transfer/TransferPage.tsx:recentTransfersList",
+          "sharedSectionIds": [
+            "XFER-SEC-06"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "USER-BUDGET",
+      "route": "/budget",
+      "role": "User",
+      "nameVi": "Quản lý ngân sách",
+      "nameEn": "Category Budgets",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/budget/BudgetPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "BDG-SEC-01",
+          "title": "Dynamic Month Selector & Header",
+          "component": "BudgetPage.tsx",
+          "featureIds": [
+            "BUDGET-001",
+            "BUDGET-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "BDG-SEC-02",
+          "title": "Monthly Budget Overview Gauge",
+          "component": "BudgetPage.tsx",
+          "featureIds": [
+            "BUDGET-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "BDG-SEC-03",
+          "title": "Category Budgets Cards Grid",
+          "component": "BudgetPage.tsx",
+          "featureIds": [
+            "BUDGET-004",
+            "BUDGET-005A",
+            "BUDGET-005B"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "BDG-SEC-04",
+          "title": "Child Transactions Drill-Down Drawer",
+          "component": "BudgetPage.tsx",
+          "featureIds": [
+            "BUDGET-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "BDG-SEC-05",
+          "title": "Rollover & Threshold Alerts Config",
+          "component": "BudgetPage.tsx",
+          "featureIds": [
+            "BUDGET-007"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "BUDGET-001",
+          "title": "Dynamic Month Selector (MM/YYYY)",
+          "sectionId": "BDG-SEC-01",
+          "uiType": "select-picker",
+          "trigger": "change",
+          "handler": "loadBudgetsForMonth(y, m)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chọn tháng/năm trên thanh điều hướng để xem tình hình ngân sách của các tháng quá khứ, tháng hiện tại hoặc lập kế hoạch cho tháng tới.",
+          "apiDependencies": "FinancialProvider: loadBudgetsForMonth(year, month)",
+          "validation": "Khoảng thời gian trong phạm vi -6 tháng đến +6 tháng.",
+          "permissions": "Role: User",
+          "states": "month_selected, loading_month_data",
+          "navigationTarget": "none",
+          "sideEffects": "Tải lại toàn bộ ngân sách và giao dịch tương ứng với tháng được chọn.",
+          "evidence": "src/features/budget/BudgetPage.tsx:loadBudgetsForMonth"
+        },
+        {
+          "featureId": "BUDGET-002",
+          "title": "Create Category Budget Action",
+          "sectionId": "BDG-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setIsCreateModalOpen(true)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Thiết lập ngân sách (+) để mở modal tạo mới hạn mức chi tiêu cho danh mục trong tháng.",
+          "apiDependencies": "FinancialProvider: createBudget",
+          "validation": "Hạn mức > 0; mỗi danh mục chỉ có 1 ngân sách duy nhất trong 1 tháng.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Thêm thẻ ngân sách mới vào lưới danh mục của tháng.",
+          "evidence": "src/features/budget/BudgetPage.tsx:handleCreateBudget"
+        },
+        {
+          "featureId": "BUDGET-003",
+          "title": "Total Budget Progress Gauge",
+          "sectionId": "BDG-SEC-02",
+          "uiType": "progress-gauge",
+          "trigger": "render",
+          "handler": "Total vs Spent dynamic calculation",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thước đo tổng thể tiến độ ngân sách tháng gồm: Tổng hạn mức, Đã chi, Số dư còn lại và tỷ lệ phần trăm đã tiêu.",
+          "apiDependencies": "none (tính toán tổng hợp từ budgets và transactions tháng)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "safe (<80%), warning (80-99%), overbudget (>=100%)",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/budget/BudgetPage.tsx:totalBudgetGauge"
+        },
+        {
+          "featureId": "BUDGET-004",
+          "title": "Category Budget Card with Color Warnings",
+          "sectionId": "BDG-SEC-03",
+          "uiType": "budget-card",
+          "trigger": "render",
+          "handler": "Safe (<80%), Warning (80-99%), Danger (>=100%)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ ngân sách từng danh mục kèm thanh tiến độ đổi màu xanh/vàng/đỏ theo tỷ lệ chi tiêu thực tế.",
+          "apiDependencies": "FinancialProvider: budgets",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "emerald (<80%), amber (80-99%), rose (>=100%)",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/budget/BudgetPage.tsx:budgets.map"
+        },
+        {
+          "featureId": "BUDGET-005A",
+          "parentFeatureId": "BUDGET-005",
+          "title": "Chỉnh sửa hạn mức ngân sách danh mục (Edit Budget)",
+          "sectionId": "BDG-SEC-03",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "handleOpenEdit(budget) / editBudget(id, data)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Sửa trên thẻ ngân sách để điều chỉnh số tiền hạn mức, cờ chuyển tiếp số dư (rollover) và cờ thông báo cảnh báo 80%.",
+          "apiDependencies": "FinancialProvider: editBudget",
+          "validation": "Hạn mức ngân sách mới phải >= 10.000 ₫.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cập nhật lại hạn mức và tính toán lại thước đo tổng thể.",
+          "evidence": "src/features/budget/BudgetPage.tsx:handleOpenEdit"
+        },
+        {
+          "featureId": "BUDGET-005B",
+          "parentFeatureId": "BUDGET-005",
+          "title": "Xóa ngân sách danh mục với xác thực PIN (Delete Budget)",
+          "sectionId": "BDG-SEC-03",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "setDeletingBudget(budget) / deleteBudget(id, pin)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Thùng rác trên thẻ ngân sách, mở dialog xác nhận và yêu cầu nhập mã PIN bảo mật 6 số để xóa ngân sách.",
+          "apiDependencies": "FinancialProvider: deleteBudget(id, pin)",
+          "validation": "Bắt buộc nhập đúng mã PIN bảo mật 6 số của tài khoản.",
+          "permissions": "Role: User",
+          "states": "idle, confirm_dialog, pin_challenge, deleting, success, error",
+          "navigationTarget": "none (dialog)",
+          "sideEffects": "Loại bỏ ngân sách danh mục khỏi tháng hiện tại.",
+          "evidence": "src/features/budget/BudgetPage.tsx:deleteBudget"
+        },
+        {
+          "featureId": "BUDGET-006",
+          "title": "Budget Child Transactions Drill-Down",
+          "sectionId": "BDG-SEC-04",
+          "uiType": "drawer-list",
+          "trigger": "click",
+          "handler": "isTransactionInSelectedMonth(tx, selectedMonth)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào một thẻ ngân sách để mở drawer xem danh sách toàn bộ các giao dịch chi tiêu con thuộc danh mục đó trong tháng.",
+          "apiDependencies": "FinancialProvider: transactions lọc theo categoryId và selectedMonth",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "drawer_open, loaded, empty",
+          "navigationTarget": "none (drawer)",
+          "sideEffects": "none",
+          "evidence": "src/features/budget/BudgetPage.tsx:selectedBudgetForDetails"
+        },
+        {
+          "featureId": "BUDGET-007",
+          "title": "Rollover and 80% Threshold Alerts Toggle",
+          "sectionId": "BDG-SEC-05",
+          "uiType": "toggle-switch",
+          "trigger": "change",
+          "handler": "formRollover, formAlertsEnabled",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Bật/tắt switch Tự động chuyển tiếp số dư chưa tiêu sang tháng sau (Rollover) và Cảnh báo khi chạm 80% định mức.",
+          "apiDependencies": "FinancialProvider: editBudget",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "toggled_on, toggled_off",
+          "navigationTarget": "none",
+          "sideEffects": "Lưu cấu hình rollover và alert threshold vào ngân sách.",
+          "evidence": "src/features/budget/BudgetPage.tsx:formRollover"
+        }
+      ]
+    },
+    {
+      "pageId": "USER-GOALS",
+      "route": "/goals",
+      "role": "User",
+      "nameVi": "Mục tiêu tích lũy",
+      "nameEn": "Savings Goals",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/goals/GoalsPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "GOAL-SEC-01",
+          "title": "Savings Overview & Action Header",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-001",
+            "GOAL-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GOAL-SEC-02",
+          "title": "Active Goals Cards Grid",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-003",
+            "GOAL-004",
+            "GOAL-005",
+            "GOAL-006A",
+            "GOAL-006B"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GOAL-SEC-03",
+          "title": "Goal Contribution and Withdrawal Modals",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-007"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GOAL-SEC-04",
+          "title": "Create / Edit Goal Modal",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GOAL-SEC-05",
+          "title": "Contribute Modal",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-004"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GOAL-SEC-06",
+          "title": "Withdraw Modal",
+          "component": "GoalsPage.tsx",
+          "featureIds": [
+            "GOAL-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "GOAL-001",
+          "title": "Overall Savings Summary Statistics",
+          "sectionId": "GOAL-SEC-01",
+          "uiType": "summary-metric",
+          "trigger": "render",
+          "handler": "overallStats (Target, Saved, %)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thống kê tổng quan mục tiêu: Tổng số mục tiêu đang chạy, Tổng tiền tích lũy, Tổng tiền đích và % hoàn thành.",
+          "apiDependencies": "FinancialProvider: goals",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/goals/GoalsPage.tsx:overallStats"
+        },
+        {
+          "featureId": "GOAL-002",
+          "title": "Create Goal Action",
+          "sectionId": "GOAL-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setIsCreateOpen(true)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Tạo mục tiêu mới (+) để mở modal tạo mục tiêu tích lũy với tên, icon, số tiền đích và ngày hoàn thành dự kiến.",
+          "apiDependencies": "FinancialProvider: createGoal",
+          "validation": "Tên mục tiêu 2-100 ký tự; số tiền đích > 0; ngày hoàn thành phải sau ngày hiện tại.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Thêm mục tiêu mới vào danh sách mục tiêu tích lũy.",
+          "evidence": "src/features/goals/GoalsPage.tsx:handleCreateGoal",
+          "sharedSectionIds": [
+            "GOAL-SEC-04"
+          ]
+        },
+        {
+          "featureId": "GOAL-003",
+          "title": "Savings Goal Progress Card",
+          "sectionId": "GOAL-SEC-02",
+          "uiType": "goal-progress-card",
+          "trigger": "render",
+          "handler": "Days left countdown & progress bar",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ tiến độ từng mục tiêu tích lũy gồm: Icon đại diện, Tên, Đã gom / Mục tiêu, Thanh tiến độ %, Đếm ngược số ngày còn lại.",
+          "apiDependencies": "FinancialProvider: goals",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, completed, overdue",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/goals/GoalsPage.tsx:goals.map"
+        },
+        {
+          "featureId": "GOAL-004",
+          "title": "Contribute from Wallet to Goal",
+          "sectionId": "GOAL-SEC-02",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setContributingGoal(goal)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Nạp tiền tích lũy trên thẻ mục tiêu để mở modal trích tiền từ ví cá nhân chuyển vào quỹ mục tiêu kèm xác thực PIN.",
+          "apiDependencies": "FinancialProvider: contributeToGoal(id, amount, walletId, pin)",
+          "validation": "Số tiền nạp > 0 và <= số dư khả dụng của ví nguồn; bắt buộc xác thực PIN 6 số.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, pin_challenge, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Trừ tiền ví nguồn, tăng số dư tích lũy của mục tiêu.",
+          "evidence": "src/features/goals/GoalsPage.tsx:contributeToGoal",
+          "sharedSectionIds": [
+            "GOAL-SEC-05"
+          ]
+        },
+        {
+          "featureId": "GOAL-005",
+          "title": "Withdraw from Goal to Wallet",
+          "sectionId": "GOAL-SEC-02",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "setWithdrawingGoal(goal)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Rút tiền về ví trên thẻ mục tiêu để mở modal rút tiền từ quỹ mục tiêu về ví chỉ định kèm xác thực PIN.",
+          "apiDependencies": "FinancialProvider: withdrawFromGoal(id, amount, walletId, pin)",
+          "validation": "Số tiền rút > 0 và <= số dư hiện có trong mục tiêu; bắt buộc xác thực PIN 6 số.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, pin_challenge, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Giảm số dư tích lũy của mục tiêu, cộng tiền vào ví đích.",
+          "evidence": "src/features/goals/GoalsPage.tsx:withdrawFromGoal",
+          "sharedSectionIds": [
+            "GOAL-SEC-06"
+          ]
+        },
+        {
+          "featureId": "GOAL-006A",
+          "parentFeatureId": "GOAL-006",
+          "title": "Chỉnh sửa thông tin mục tiêu tích lũy (Edit Goal)",
+          "sectionId": "GOAL-SEC-02",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "handleOpenEdit(goal) / editGoal(id, data)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Sửa trên thẻ mục tiêu để mở modal cập nhật tên mục tiêu, danh mục liên kết, hạn chót hoặc số tiền đích.",
+          "apiDependencies": "FinancialProvider: editGoal",
+          "validation": "Tên mục tiêu 2-100 ký tự; số tiền đích >= số tiền đã tích lũy.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cập nhật lại thông tin hiển thị và tiến độ mục tiêu.",
+          "evidence": "src/features/goals/GoalsPage.tsx:handleOpenEdit"
+        },
+        {
+          "featureId": "GOAL-006B",
+          "parentFeatureId": "GOAL-006",
+          "title": "Xóa mục tiêu tích lũy với xác thực PIN (Delete Goal)",
+          "sectionId": "GOAL-SEC-02",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "setDeletingGoal(goal) / deleteGoal(id, pin)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Thùng rác trên thẻ mục tiêu, mở dialog xác nhận và yêu cầu nhập mã PIN bảo mật 6 số để xóa bỏ hoàn toàn mục tiêu.",
+          "apiDependencies": "FinancialProvider: deleteGoal(id, pin)",
+          "validation": "Số dư tích lũy trong mục tiêu phải bằng 0 (nếu còn tiền phải rút hết trước khi xóa); mã PIN 6 số phải chính xác.",
+          "permissions": "Role: User",
+          "states": "idle, confirm_dialog, pin_challenge, deleting, success, error",
+          "navigationTarget": "none (dialog)",
+          "sideEffects": "Xóa mục tiêu khỏi danh sách hoạt động.",
+          "evidence": "src/features/goals/GoalsPage.tsx:deleteGoal"
+        },
+        {
+          "featureId": "GOAL-007",
+          "title": "Security PIN Verification for Goal Transfers",
+          "sectionId": "GOAL-SEC-03",
+          "uiType": "pin-challenge",
+          "trigger": "action-confirm",
+          "handler": "challengePinWithValue(pin) -> contributeToGoal / withdrawFromGoal",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Xác thực mã PIN bảo mật 6 số khi thực hiện nạp tiền hoặc rút tiền từ quỹ mục tiêu để bảo vệ an toàn dòng tiền.",
+          "apiDependencies": "SecurityPinChallengeProvider: challengePinWithValue",
+          "validation": "Đúng mã PIN 6 số bảo mật của người dùng.",
+          "permissions": "Role: User",
+          "states": "pin_input, verifying, pin_valid, pin_invalid",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cấp quyền thực thi giao dịch tài chính.",
+          "evidence": "src/features/goals/GoalsPage.tsx:challengePinWithValue"
+        }
+      ]
+    },
+    {
+      "pageId": "USER-GROUPS",
+      "route": "/groups",
+      "role": "User",
+      "nameVi": "Quỹ nhóm & Chi tiêu chung",
+      "nameEn": "Shared Group Funds",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/groups/GroupsPage.tsx",
+        "src/pages/GroupDetailPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "GRP-SEC-01",
+          "title": "Groups Summary & New Group CTA",
+          "component": "GroupsPage.tsx",
+          "featureIds": [
+            "GROUP-001",
+            "GROUP-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GRP-SEC-02",
+          "title": "My Groups Cards Grid",
+          "component": "GroupsPage.tsx",
+          "featureIds": [
+            "GROUP-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GRP-SEC-03",
+          "title": "Group Fund Rounds & Members",
+          "component": "GroupDetailPage.tsx",
+          "featureIds": [
+            "GROUP-004",
+            "GROUP-005",
+            "GROUP-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GRP-SEC-04",
+          "title": "Group Detail Page Hub",
+          "component": "GroupDetailPage.tsx",
+          "featureIds": [
+            "GROUP-004"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GRP-SEC-05",
+          "title": "Group Fund Rounds & Contributions",
+          "component": "GroupDetailPage.tsx",
+          "featureIds": [
+            "GROUP-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "GRP-SEC-06",
+          "title": "Group Members & Invite Friends",
+          "component": "GroupDetailPage.tsx",
+          "featureIds": [
+            "GROUP-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "GROUP-001",
+          "title": "My Groups Summary Statistics",
+          "sectionId": "GRP-SEC-01",
+          "uiType": "summary-metric",
+          "trigger": "render",
+          "handler": "useGroup().groups.length",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thống kê tổng quan quỹ nhóm của người dùng: Tổng số nhóm đang tham gia và tổng số tiền quỹ trong các nhóm chung.",
+          "apiDependencies": "GroupProvider: groups, totalGroupBalance",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/groups/GroupsPage.tsx:groupStats"
+        },
+        {
+          "featureId": "GROUP-002",
+          "title": "Create Shared Group Modal",
+          "sectionId": "GRP-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "groupApiService.createGroup",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Tạo nhóm mới (+) để mở modal tạo nhóm chung với tên nhóm, mục tiêu quỹ, ảnh bìa và thêm bạn bè làm thành viên.",
+          "apiDependencies": "groupApiService.createGroup",
+          "validation": "Tên nhóm 2-100 ký tự; mục tiêu quỹ >= 0; tối thiểu 1 thành viên.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, creating, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Tạo nhóm mới và điều hướng người tạo vào trang chi tiết nhóm.",
+          "evidence": "src/features/groups/GroupsPage.tsx:handleCreateGroup"
+        },
+        {
+          "featureId": "GROUP-003",
+          "title": "Group Card with Member Avatars & Balance",
+          "sectionId": "GRP-SEC-02",
+          "uiType": "group-card",
+          "trigger": "render",
+          "handler": "groups.map()",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị thẻ nhóm gồm ảnh đại diện nhóm, tên nhóm, số thành viên, số dư quỹ hiện tại, vai trò người dùng (Trưởng nhóm/Thành viên) và nút Vào nhóm.",
+          "apiDependencies": "GroupProvider: groups",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loaded, empty",
+          "navigationTarget": "/groups/:groupId",
+          "sideEffects": "none",
+          "evidence": "src/features/groups/GroupsPage.tsx:groups.map"
+        },
+        {
+          "featureId": "GROUP-004",
+          "title": "Fund Round Contribution Tracker",
+          "sectionId": "GRP-SEC-03",
+          "uiType": "fund-round-table",
+          "trigger": "render / pay",
+          "handler": "contributeToFundRound",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị và theo dõi các đợt vận động đóng quỹ nhóm (Fund Rounds), tỷ lệ hoàn thành nghĩa vụ của từng thành viên.",
+          "apiDependencies": "groupApiService.getGroupRounds, contributeToRound",
+          "validation": "Số tiền đóng quỹ phải phù hợp với định mức đợt vận động.",
+          "permissions": "Role: User (thành viên nhóm)",
+          "states": "loading, loaded, contributing, completed",
+          "navigationTarget": "none (tab content)",
+          "sideEffects": "Ghi nhận bút toán đóng tiền vào quỹ nhóm.",
+          "evidence": "src/features/groups/tabs/GroupFundTab.tsx:GroupFundTab",
+          "sharedSectionIds": [
+            "GRP-SEC-04"
+          ]
+        },
+        {
+          "featureId": "GROUP-005",
+          "title": "Invite Friends to Group",
+          "sectionId": "GRP-SEC-03",
+          "uiType": "member-invite-picker",
+          "trigger": "click",
+          "handler": "groupApiService.inviteMember",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Mở modal mời bạn bè từ danh bạ vào nhóm bằng số điện thoại hoặc email.",
+          "apiDependencies": "groupApiService.inviteMember",
+          "validation": "Người được mời phải là bạn bè hoặc người dùng có tài khoản hợp lệ.",
+          "permissions": "Role: User (Trưởng nhóm hoặc thành viên có quyền mời)",
+          "states": "idle, modal_open, inviting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Gửi thông báo lời mời tham gia nhóm tới người nhận.",
+          "evidence": "src/features/groups/modals/InviteMemberModal.tsx:InviteMemberModal",
+          "sharedSectionIds": [
+            "GRP-SEC-05"
+          ]
+        },
+        {
+          "featureId": "GROUP-006",
+          "title": "Group Shared Expense Logging",
+          "sectionId": "GRP-SEC-03",
+          "uiType": "expense-form",
+          "trigger": "submit",
+          "handler": "groupApiService.createExpense",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Ghi nhận chi tiêu chung từ quỹ nhóm hoặc ghi nhận chia tiền (split bill) giữa các thành viên.",
+          "apiDependencies": "groupApiService.logGroupExpense",
+          "validation": "Số tiền chi tiêu > 0; số dư quỹ nhóm phải đủ chi trả.",
+          "permissions": "Role: User (Trưởng nhóm hoặc người được phân quyền chi)",
+          "states": "idle, modal_open, logging, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Trừ số dư quỹ nhóm và lưu lịch sử chi tiêu nhóm.",
+          "evidence": "src/features/groups/modals/AddSharedExpenseModal.tsx:AddSharedExpenseModal",
+          "sharedSectionIds": [
+            "GRP-SEC-06"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "USER-FRIENDS",
+      "route": "/friends",
+      "role": "User",
+      "nameVi": "Danh bạ bạn bè & Liên hệ",
+      "nameEn": "Friends & Contacts",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/friends/FriendsPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "FRND-SEC-01",
+          "title": "Friends Header & Add Action",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-001",
+            "FRIEND-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "FRND-SEC-02",
+          "title": "Friends Cards & Quick Actions",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-003",
+            "FRIEND-004",
+            "FRIEND-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "FRND-SEC-03",
+          "title": "Pending Requests & Mutual Drawer",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-006",
+            "FRIEND-007"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "FRND-SEC-04",
+          "title": "Friends Cards & Interactions Grid",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-003",
+            "FRIEND-004",
+            "FRIEND-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "FRND-SEC-05",
+          "title": "Pending Friend Requests Tray",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "FRND-SEC-06",
+          "title": "Friend Profile & Mutual Tx Drawer",
+          "component": "FriendsPage.tsx",
+          "featureIds": [
+            "FRIEND-007"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "FRIEND-001",
+          "title": "Send Friend Request by Phone or Email",
+          "sectionId": "FRND-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "friendService.sendFriendRequest",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Thêm bạn (+) để mở modal nhập số điện thoại hoặc email gửi lời mời kết bạn.",
+          "apiDependencies": "friendService.sendFriendRequest",
+          "validation": "Đúng định dạng SĐT hoặc Email; không được tự gửi kết bạn cho chính mình.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, sending, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Tạo lời mời kết bạn ở trạng thái Pending.",
+          "evidence": "src/features/friends/FriendsPage.tsx:handleSendFriendRequest"
+        },
+        {
+          "featureId": "FRIEND-002",
+          "title": "Friends and Pending Requests Tabs",
+          "sectionId": "FRND-SEC-01",
+          "uiType": "tabs",
+          "trigger": "click",
+          "handler": "setActiveTab",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chuyển đổi giữa 2 tab: Danh sách bạn bè hiện tại và Lời mời kết bạn đang chờ duyệt (kèm badge số lượng chờ).",
+          "apiDependencies": "none (tab state activeTab)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "friends_tab, requests_tab",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc danh sách hiển thị tương ứng.",
+          "evidence": "src/features/friends/FriendsPage.tsx:activeTab"
+        },
+        {
+          "featureId": "FRIEND-003",
+          "title": "Toggle Favorite Star Status",
+          "sectionId": "FRND-SEC-02",
+          "uiType": "star-toggle",
+          "trigger": "click",
+          "handler": "friendService.toggleFavorite",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào icon ngôi sao trên thẻ bạn bè để bật/tắt trạng thái Bạn thân (Favorite), đưa bạn bè lên đầu danh sách chuyển tiền nhanh.",
+          "apiDependencies": "friendService.toggleFavorite(friendId)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "favorite, unfavorite",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật trường isFavorite của bạn bè trong danh bạ.",
+          "evidence": "src/features/friends/FriendsPage.tsx:handleToggleFavorite",
+          "sharedSectionIds": [
+            "FRND-SEC-04"
+          ]
+        },
+        {
+          "featureId": "FRIEND-004",
+          "title": "Edit Nickname Customization",
+          "sectionId": "FRND-SEC-02",
+          "uiType": "inline-edit",
+          "trigger": "click",
+          "handler": "friendService.setNickname",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Chỉnh sửa biệt danh trên thẻ bạn bè để đặt tên gọi thân mật tùy chỉnh (ví dụ: Mẹ yêu, Anh Tuấn Cty).",
+          "apiDependencies": "friendService.setNickname(friendId, nickname)",
+          "validation": "Biệt danh tối đa 50 ký tự.",
+          "permissions": "Role: User",
+          "states": "idle, editing, saving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Hiển thị biệt danh thay cho họ tên gốc trong các giao dịch cá nhân.",
+          "evidence": "src/features/friends/FriendsPage.tsx:handleSetNickname",
+          "sharedSectionIds": [
+            "FRND-SEC-04"
+          ]
+        },
+        {
+          "featureId": "FRIEND-005",
+          "title": "One-Click Quick Transfer to Friend",
+          "sectionId": "FRND-SEC-02",
+          "uiType": "quick-action-button",
+          "trigger": "click",
+          "handler": "navigate('/transfer?phone=...')",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Chuyển tiền trên thẻ bạn bè để chuyển hướng trực tiếp sang trang /transfer kèm số điện thoại bạn bè được điền sẵn.",
+          "apiDependencies": "none (react-router navigate)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active, clicked",
+          "navigationTarget": "/transfer?phone={friendPhone}",
+          "sideEffects": "Chuyển trang và kích hoạt tìm kiếm người nhận tại trang Transfer.",
+          "evidence": "src/features/friends/FriendsPage.tsx:handleQuickTransfer",
+          "sharedSectionIds": [
+            "FRND-SEC-04"
+          ]
+        },
+        {
+          "featureId": "FRIEND-006",
+          "title": "Accept or Reject Pending Request",
+          "sectionId": "FRND-SEC-03",
+          "uiType": "action-buttons",
+          "trigger": "click",
+          "handler": "friendService.acceptRequest, rejectRequest",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Chấp nhận hoặc Từ chối trên thẻ lời mời kết bạn nhận được trong tab Lời mời.",
+          "apiDependencies": "friendService.acceptRequest, rejectRequest",
+          "validation": "Lời mời phải ở trạng thái Pending.",
+          "permissions": "Role: User",
+          "states": "idle, accepting, rejecting, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Thêm bạn bè vào danh sách hoặc xóa bỏ lời mời kết bạn.",
+          "evidence": "src/features/friends/FriendsPage.tsx:handleAcceptRequest",
+          "sharedSectionIds": [
+            "FRND-SEC-05"
+          ]
+        },
+        {
+          "featureId": "FRIEND-007",
+          "title": "Mutual Transactions History Drawer",
+          "sectionId": "FRND-SEC-03",
+          "uiType": "drawer-history",
+          "trigger": "click",
+          "handler": "friendMutualTransactions view",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào một người bạn để mở drawer xem thông tin hồ sơ và lịch sử các giao dịch chuyển tiền qua lại giữa hai người.",
+          "apiDependencies": "transfersApiService.getMutualTransfers(friendId)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "drawer_open, loading, loaded, empty",
+          "navigationTarget": "none (drawer)",
+          "sideEffects": "none",
+          "evidence": "src/features/friends/FriendsPage.tsx:selectedFriendForDrawer",
+          "sharedSectionIds": [
+            "FRND-SEC-06"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "USER-NOTIFICATIONS",
+      "route": "/notifications",
+      "role": "User",
+      "nameVi": "Trung tâm thông báo",
+      "nameEn": "Notification Center",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/notifications/NotificationsPage.tsx",
+        "src/features/notifications/AccountPrefModal.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "NOTIF-SEC-01",
+          "title": "Header & Batch Controls",
+          "component": "NotificationsPage.tsx",
+          "featureIds": [
+            "NOTIF-001",
+            "NOTIF-002",
+            "NOTIF-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "NOTIF-SEC-02",
+          "title": "Notifications Feed & Deep-link Action",
+          "component": "NotificationsPage.tsx",
+          "featureIds": [
+            "NOTIF-004",
+            "NOTIF-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "NOTIF-SEC-03",
+          "title": "Channel Preferences Modal",
+          "component": "AccountPrefModal.tsx",
+          "featureIds": [
+            "NOTIF-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "NOTIF-SEC-04",
+          "title": "Notification Detail Modal",
+          "component": "NotificationsPage.tsx",
+          "featureIds": [
+            "NOTIF-004",
+            "NOTIF-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "NOTIF-SEC-05",
+          "title": "Notification Channels Preferences Modal",
+          "component": "AccountPrefModal.tsx",
+          "featureIds": [
+            "NOTIF-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "NOTIF-001",
+          "title": "Mark All as Read Action",
+          "sectionId": "NOTIF-SEC-01",
+          "uiType": "action-button",
+          "trigger": "click",
+          "handler": "notificationsApiService.markAllAsRead",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đánh dấu đã đọc tất cả để xóa trạng thái chưa đọc của toàn bộ thông báo chỉ bằng 1 thao tác.",
+          "apiDependencies": "notificationsApiService.markAllAsRead",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "idle, updating, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật unreadCount về 0 trên chuông thông báo toàn trang.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:handleMarkAllAsRead"
+        },
+        {
+          "featureId": "NOTIF-002",
+          "title": "Clear Read Notifications",
+          "sectionId": "NOTIF-SEC-01",
+          "uiType": "action-button",
+          "trigger": "click",
+          "handler": "notificationsApiService.clearRead",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Xóa thông báo đã đọc để dọn dẹp hòm thư, loại bỏ các thông báo cũ đã xem.",
+          "apiDependencies": "notificationsApiService.clearReadNotifications",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "idle, clearing, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Xóa các thông báo đã đọc khỏi danh sách hiển thị.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:handleClearRead"
+        },
+        {
+          "featureId": "NOTIF-003",
+          "title": "Notification Category Filter Tabs",
+          "sectionId": "NOTIF-SEC-01",
+          "uiType": "filter-tabs",
+          "trigger": "click",
+          "handler": "setTypeFilter",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chuyển tab lọc danh mục thông báo: Tất cả / Giao dịch / Bảo mật / Quỹ nhóm / Bạn bè / Hệ thống.",
+          "apiDependencies": "none (client-side filtering categoryFilter)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "active_category_tab",
+          "navigationTarget": "none",
+          "sideEffects": "Lọc danh sách thông báo theo danh mục được chọn.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:categoryFilter"
+        },
+        {
+          "featureId": "NOTIF-004",
+          "title": "Interactive Notification Item with Deep Link Navigation",
+          "sectionId": "NOTIF-SEC-02",
+          "uiType": "interactive-card",
+          "trigger": "click",
+          "handler": "handleNotificationClick(item)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào một thông báo để đánh dấu đã đọc và điều hướng thông minh tới trang nghiệp vụ liên quan (ví dụ: chi tiết giao dịch, trang bạn bè).",
+          "apiDependencies": "notificationsApiService.markAsRead(id)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "unread, read, clicked",
+          "navigationTarget": "deep-link target (ví dụ /transactions, /friends)",
+          "sideEffects": "Giảm số lượng thông báo chưa đọc và chuyển trang tương ứng.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:handleNotificationClick",
+          "sharedSectionIds": [
+            "NOTIF-SEC-04"
+          ]
+        },
+        {
+          "featureId": "NOTIF-005",
+          "title": "Delete Single Notification",
+          "sectionId": "NOTIF-SEC-02",
+          "uiType": "icon-button",
+          "trigger": "click",
+          "handler": "notificationsApiService.deleteNotification(id)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn icon Thùng rác trên từng item thông báo để xóa riêng lẻ thông báo đó.",
+          "apiDependencies": "notificationsApiService.deleteNotification(id)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "idle, deleting, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Loại bỏ thông báo khỏi danh sách hiển thị.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:handleDeleteNotification",
+          "sharedSectionIds": [
+            "NOTIF-SEC-04"
+          ]
+        },
+        {
+          "featureId": "NOTIF-006",
+          "title": "Notification Channel Preferences Config",
+          "sectionId": "NOTIF-SEC-03",
+          "uiType": "modal-toggles",
+          "trigger": "click",
+          "handler": "AccountPrefModal",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Cài đặt thông báo để mở modal cấu hình bật/tắt nhận thông báo qua Email, In-app và Thông báo đẩy cho từng kênh.",
+          "apiDependencies": "notificationsApiService.updateChannelPreferences",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, saving, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Cập nhật cấu hình kênh nhận thông báo của tài khoản.",
+          "evidence": "src/features/notifications/NotificationsPage.tsx:handleOpenPreferencesModal",
+          "sharedSectionIds": [
+            "NOTIF-SEC-05"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "USER-SUPPORT",
+      "route": "/support",
+      "role": "User",
+      "nameVi": "Hỗ trợ & Khiếu nại",
+      "nameEn": "Support & Disputes",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/support/SupportDisputesPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "SUP-SEC-01",
+          "title": "Two-Tab Navigation & Cases",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-001",
+            "SUPPORT-002",
+            "SUPPORT-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "SUP-SEC-02",
+          "title": "Disputes Management & Evidence",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-004",
+            "SUPPORT-005"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "SUP-SEC-03",
+          "title": "Two-Way Chat Thread Drawer",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-006"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "SUP-SEC-04",
+          "title": "Case & Dispute Message Thread Drawer",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "SUP-SEC-05",
+          "title": "Create Support Ticket Modal",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        },
+        {
+          "sectionId": "SUP-SEC-06",
+          "title": "File Dispute Against Tx Modal",
+          "component": "SupportDisputesPage.tsx",
+          "featureIds": [
+            "SUPPORT-004"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "SUPPORT-001",
+          "title": "Support Cases vs Disputes Tab Switcher",
+          "sectionId": "SUP-SEC-01",
+          "uiType": "tabs",
+          "trigger": "click",
+          "handler": "setActiveTab",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Chuyển đổi giữa 2 tab chính: Yêu cầu hỗ trợ (Support Cases) và Khiếu nại tài chính (Financial Disputes); đồng bộ với URL.",
+          "apiDependencies": "none (tab state activeTab)",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "cases_tab, disputes_tab",
+          "navigationTarget": "/support hoặc /disputes",
+          "sideEffects": "Chuyển đổi danh sách hiển thị giữa phiếu hỗ trợ và khiếu nại.",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:activeTab"
+        },
+        {
+          "featureId": "SUPPORT-002",
+          "title": "Create Support Case Action",
+          "sectionId": "SUP-SEC-01",
+          "uiType": "button-modal",
+          "trigger": "click",
+          "handler": "casesApiService.createCase",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Gửi yêu cầu (+) để mở modal tạo phiếu hỗ trợ mới với tiêu đề, danh mục, mức độ ưu tiên, mô tả và tệp đính kèm.",
+          "apiDependencies": "casesApiService.createCase",
+          "validation": "Tiêu đề 5-200 ký tự; mô tả chi tiết >= 10 ký tự; chọn danh mục hợp lệ.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Tạo phiếu hỗ trợ mới với mã CAS-xxxxx ở trạng thái Open.",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:handleCreateCase",
+          "sharedSectionIds": [
+            "SUP-SEC-05"
+          ]
+        },
+        {
+          "featureId": "SUPPORT-003",
+          "title": "Support Ticket Status Tracking",
+          "sectionId": "SUP-SEC-01",
+          "uiType": "status-table",
+          "trigger": "render",
+          "handler": "casesList view",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách các phiếu hỗ trợ kèm mã phiếu, ngày tạo, danh mục, mức độ ưu tiên và trạng thái xử lý (Mới, Đang xử lý, Đã giải quyết, Đã đóng).",
+          "apiDependencies": "casesApiService.getUserCases",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:casesList",
+          "sharedSectionIds": [
+            "SUP-SEC-04"
+          ]
+        },
+        {
+          "featureId": "SUPPORT-004",
+          "title": "File Financial Transaction Dispute",
+          "sectionId": "SUP-SEC-02",
+          "uiType": "dispute-modal",
+          "trigger": "click",
+          "handler": "casesApiService.createDispute",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Tạo khiếu nại (+) để mở modal chọn giao dịch nghi vấn, nhập lý do tranh chấp, số tiền đòi bồi hoàn và đính kèm bằng chứng.",
+          "apiDependencies": "casesApiService.createDispute",
+          "validation": "Bắt buộc chọn 1 giao dịch hợp lệ; số tiền đòi bồi hoàn <= số tiền giao dịch gốc.",
+          "permissions": "Role: User",
+          "states": "idle, modal_open, submitting, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Khởi tạo hồ sơ tranh chấp tài chính chuyển đến Admin thẩm định.",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:handleCreateDispute",
+          "sharedSectionIds": [
+            "SUP-SEC-06"
+          ]
+        },
+        {
+          "featureId": "SUPPORT-005",
+          "title": "Dispute Investigation Status & Refund Progress",
+          "sectionId": "SUP-SEC-02",
+          "uiType": "timeline-view",
+          "trigger": "render",
+          "handler": "disputesList",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị danh sách các khiếu nại tài chính và tiến độ thẩm tra của Admin qua thước đo tiến trình (Tiếp nhận -> Đang thẩm tra -> Yêu cầu bổ sung -> Hoàn tiền / Bác bỏ).",
+          "apiDependencies": "casesApiService.getUserDisputes",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, empty",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:disputesList"
+        },
+        {
+          "featureId": "SUPPORT-006",
+          "title": "Two-Way Communication Chat Thread",
+          "sectionId": "SUP-SEC-03",
+          "uiType": "chat-drawer",
+          "trigger": "click",
+          "handler": "casesApiService.sendMessage",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn vào một phiếu hỗ trợ hoặc khiếu nại để mở drawer nhắn tin trao đổi 2 chiều trực tiếp với chuyên viên hỗ trợ của SpendWise.",
+          "apiDependencies": "casesApiService.getCaseDetails, sendMessage",
+          "validation": "Tin nhắn gửi đi không được để trống.",
+          "permissions": "Role: User (chủ sở hữu phiếu)",
+          "states": "drawer_open, loading_thread, sending_message, success, error",
+          "navigationTarget": "none (drawer)",
+          "sideEffects": "Thêm tin nhắn vào luồng hội thoại của ticket.",
+          "evidence": "src/features/support/SupportDisputesPage.tsx:selectedCaseForThread"
+        }
+      ]
+    },
+    {
+      "pageId": "USER-SETTINGS",
+      "route": "/settings",
+      "role": "User",
+      "nameVi": "Cài đặt tài khoản & Bảo mật",
+      "nameEn": "Account & Security Settings",
+      "layout": "AppShell",
+      "sourceFiles": [
+        "src/features/settings/SettingsPage.tsx"
+      ],
+      "verificationStatus": "BROWSER_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "SET-SEC-01",
+          "title": "Profile Form",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-001"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "SET-SEC-02",
+          "title": "Display & Preferences",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-002",
+            "SET-003",
+            "SET-004"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "SET-SEC-03",
+          "title": "Security PIN 6-Digit",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-005",
+            "SET-006"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "SET-SEC-04",
+          "title": "Password & Trusted Devices",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-007",
+            "SET-008"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "SET-SEC-05",
+          "title": "Logout Action",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-009"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        },
+        {
+          "sectionId": "SET-SEC-06",
+          "title": "Logout Action Area",
+          "component": "SettingsPage.tsx",
+          "featureIds": [
+            "SET-009"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "SET-001",
+          "title": "Profile Information Update (Name, Phone)",
+          "sectionId": "SET-SEC-01",
+          "uiType": "form",
+          "trigger": "submit",
+          "handler": "authApiService.updateProfile",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Xem và cập nhật thông tin hồ sơ cá nhân: Họ và tên, Số điện thoại. Địa chỉ email là định danh cố định không thể sửa (read-only).",
+          "apiDependencies": "authApiService.updateProfile",
+          "validation": "Họ tên 2-100 ký tự tiếng Việt hợp lệ; SĐT đúng 10 số VN.",
+          "permissions": "Role: User",
+          "states": "idle, editing, saving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật currentUser trong AuthProvider.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleUpdateProfile"
+        },
+        {
+          "featureId": "SET-002",
+          "title": "Theme Toggle (Light, Dark, System)",
+          "sectionId": "SET-SEC-02",
+          "uiType": "segmented-control",
+          "trigger": "click",
+          "handler": "setTheme",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Chuyển đổi giao diện ứng dụng giữa 3 chế độ: Sáng (Light), Tối (Dark), và Tự động theo hệ điều hành (System).",
+          "apiDependencies": "useTheme: setTheme",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "light, dark, system",
+          "navigationTarget": "none",
+          "sideEffects": "Thêm/xóa class dark trên thẻ html và lưu spendwise_theme vào localStorage.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleThemeChange"
+        },
+        {
+          "featureId": "SET-003",
+          "title": "Language Selector (vi-VN, en-US)",
+          "sectionId": "SET-SEC-02",
+          "uiType": "select-dropdown",
+          "trigger": "change",
+          "handler": "setLocale",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Chuyển đổi ngôn ngữ hiển thị giữa Tiếng Việt (vi-VN) và Tiếng Anh (en-US).",
+          "apiDependencies": "useI18n: setLocale",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "vi-VN, en-US",
+          "navigationTarget": "none",
+          "sideEffects": "Re-render toàn bộ nhãn giao diện và lưu spendwise_locale vào localStorage.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleLocaleChange"
+        },
+        {
+          "featureId": "SET-004",
+          "title": "Default Hide Balance Privacy Switch",
+          "sectionId": "SET-SEC-02",
+          "uiType": "toggle-switch",
+          "trigger": "change",
+          "handler": "localStorage preference",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Bật/tắt switch Mặc định ẩn số dư khi mở ứng dụng để tự động che số tiền mỗi khi khởi động lại.",
+          "apiDependencies": "useBalanceVisibility: setDefaultHidden",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "toggled_on, toggled_off",
+          "navigationTarget": "none",
+          "sideEffects": "Lưu cấu hình mặc định vào localStorage.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleDefaultHideBalance"
+        },
+        {
+          "featureId": "SET-005",
+          "title": "Change 6-Digit Security PIN Flow",
+          "sectionId": "SET-SEC-03",
+          "uiType": "stepped-pin-form",
+          "trigger": "submit",
+          "handler": "securityPinService.changePin",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Thiết lập hoặc đổi mã PIN bảo mật 6 số qua quy trình 3 bước: Nhập PIN cũ -> Nhập PIN mới 6 số -> Xác nhận lại PIN mới.",
+          "apiDependencies": "securityPinService.changePin",
+          "validation": "PIN phải đủ 6 chữ số; không cho phép PIN yếu (123456, 111111, 000000,...); PIN mới và xác nhận phải khớp.",
+          "permissions": "Role: User",
+          "states": "idle, entering_old, entering_new, confirming_new, submitting, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật mã PIN bảo mật trong hệ thống an ninh.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleChangePin"
+        },
+        {
+          "featureId": "SET-006",
+          "title": "Forgot PIN Recovery Trigger",
+          "sectionId": "SET-SEC-03",
+          "uiType": "link-modal",
+          "trigger": "click",
+          "handler": "passwordRecoveryService",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn Quên mã PIN để yêu cầu hệ thống gửi email chứa liên kết token một lần cấp lại mã PIN qua route /reset-pin?token=...",
+          "apiDependencies": "securityPinService.requestPinReset",
+          "validation": "none (dựa trên email tài khoản hiện tại)",
+          "permissions": "Role: User",
+          "states": "idle, sending_email, email_sent, error",
+          "navigationTarget": "none",
+          "sideEffects": "Gửi email chứa liên kết đặt lại mã PIN.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleForgotPin"
+        },
+        {
+          "featureId": "SET-007",
+          "title": "Change Account Password with Strength Meter",
+          "sectionId": "SET-SEC-04",
+          "uiType": "form",
+          "trigger": "submit",
+          "handler": "authApiService.changePassword",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Đổi mật khẩu tài khoản: Nhập mật khẩu hiện tại và đặt mật khẩu mới với thanh đo độ mạnh (Password Strength Meter).",
+          "apiDependencies": "authApiService.changePassword",
+          "validation": "Tối thiểu 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.",
+          "permissions": "Role: User",
+          "states": "idle, entering, submitting, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật mật khẩu tài khoản và ghi nhận sự kiện bảo mật.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleChangePassword"
+        },
+        {
+          "featureId": "SET-008",
+          "title": "Trusted Devices Sessions Audit & Revocation",
+          "sectionId": "SET-SEC-04",
+          "uiType": "device-list",
+          "trigger": "click",
+          "handler": "revokeDevice",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Xem danh sách các phiên thiết bị tin cậy đang đăng nhập và nhấn Thu hồi để đăng xuất từ xa khỏi thiết bị khác.",
+          "apiDependencies": "authApiService.getTrustedDevices, revokeDevice",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "loading, loaded, revoking, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Hủy phiên đăng nhập của thiết bị bị thu hồi.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleRevokeDevice"
+        },
+        {
+          "featureId": "SET-009",
+          "title": "Safe Account Logout Action",
+          "sectionId": "SET-SEC-05",
+          "uiType": "destructive-button",
+          "trigger": "click",
+          "handler": "logout() -> clean tokens -> redirect /login",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đăng xuất (màu đỏ ở cuối trang) để xóa token phiên, hủy phiên API và điều hướng người dùng về trang /login.",
+          "apiDependencies": "useAuth: logout()",
+          "validation": "none",
+          "permissions": "Role: User",
+          "states": "idle, logging_out",
+          "navigationTarget": "/login",
+          "sideEffects": "Xóa sessionStorage và localStorage token, reset AuthProvider state.",
+          "evidence": "src/features/settings/SettingsPage.tsx:handleLogout",
+          "sharedSectionIds": [
+            "SET-SEC-06"
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "AUTH-LOGIN",
+      "route": "/login",
+      "role": "Public",
+      "nameVi": "Đăng nhập SpendWise",
+      "nameEn": "Sign In",
+      "layout": "DeskTabletop",
+      "sourceFiles": [
+        "src/features/auth/AuthPage.tsx",
+        "src/features/auth/LoginPage.tsx"
+      ],
+      "verificationStatus": "BROWSER_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "AUTH-SEC-01",
+          "title": "Login Credentials Form",
+          "component": "AuthPage.tsx",
+          "featureIds": [
+            "AUTH-001",
+            "AUTH-002",
+            "AUTH-003",
+            "AUTH-004"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "AUTH-001",
+          "title": "Credentials Login Submit",
+          "sectionId": "AUTH-SEC-01",
+          "uiType": "form",
+          "trigger": "submit",
+          "handler": "initiateLogin(identifier, password)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhập thông tin định danh (Email hoặc Số điện thoại) và Mật khẩu, nhấn Đăng nhập để gửi xác thực thông tin đăng nhập tới máy chủ.",
+          "apiDependencies": "authApiService.login(identifier, password)",
+          "validation": "Email hợp lệ hoặc SĐT 10 số VN; mật khẩu không được để trống.",
+          "permissions": "Role: Public",
+          "states": "idle, submitting, invalid_credentials, pin_challenge_required, success",
+          "navigationTarget": "/dashboard (User) hoặc /admin (SystemAdmin) hoặc mở PIN challenge modal",
+          "sideEffects": "Lưu token vào phiên nếu không yêu cầu 2FA PIN.",
+          "evidence": "src/features/auth/AuthPage.tsx:handleLoginSubmit"
+        },
+        {
+          "featureId": "AUTH-002",
+          "title": "Two-Factor 6-Digit PIN Login Verification",
+          "sectionId": "AUTH-SEC-01",
+          "uiType": "pin-challenge",
+          "trigger": "submit",
+          "handler": "completePinVerify(pin)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị modal yêu cầu nhập mã PIN bảo mật 6 số khi đăng nhập vào tài khoản đã kích hoạt mã PIN 2 lớp.",
+          "apiDependencies": "authApiService.verifyLoginPin(ticket, pin)",
+          "validation": "Đúng 6 chữ số.",
+          "permissions": "Role: Public (sau bước mật khẩu hợp lệ)",
+          "states": "modal_open, pin_input, verifying, error, success",
+          "navigationTarget": "/dashboard (User) hoặc /admin (SystemAdmin)",
+          "sideEffects": "Cấp phát token chính thức và lưu vào sessionStorage.",
+          "evidence": "src/features/auth/AuthPage.tsx:handlePinVerify"
+        },
+        {
+          "featureId": "AUTH-003",
+          "title": "Forgot Password Recovery Modal",
+          "sectionId": "AUTH-SEC-01",
+          "uiType": "modal",
+          "trigger": "click",
+          "handler": "passwordRecoveryService.forgotPassword",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn Quên mật khẩu? để mở modal nhập email yêu cầu cấp lại liên kết khôi phục mật khẩu qua thư điện tử.",
+          "apiDependencies": "authApiService.forgotPassword(email)",
+          "validation": "Đúng định dạng email đã đăng ký.",
+          "permissions": "Role: Public",
+          "states": "idle, modal_open, sending, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Gửi thư điện tử chứa token đặt lại mật khẩu.",
+          "evidence": "src/features/auth/AuthPage.tsx:handleForgotPassword"
+        },
+        {
+          "featureId": "AUTH-004",
+          "title": "Forgot Security PIN Modal",
+          "sectionId": "AUTH-SEC-01",
+          "uiType": "modal",
+          "trigger": "click",
+          "handler": "securityPinService.requestPinReset",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Nhấn Quên mã PIN? trong modal xác thực PIN để yêu cầu gửi mã token cấp lại PIN qua email.",
+          "apiDependencies": "securityPinService.requestPinReset(email)",
+          "validation": "Email tài khoản hợp lệ.",
+          "permissions": "Role: Public",
+          "states": "idle, sending, success, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "Gửi email chứa liên kết đến trang /reset-pin?token=...",
+          "evidence": "src/features/auth/AuthPage.tsx:handleForgotPin"
+        }
+      ]
+    },
+    {
+      "pageId": "AUTH-REGISTER",
+      "route": "/register",
+      "role": "Public",
+      "nameVi": "Đăng ký tài khoản",
+      "nameEn": "Sign Up",
+      "layout": "DeskTabletop",
+      "sourceFiles": [
+        "src/features/auth/AuthPage.tsx",
+        "src/features/auth/RegisterPage.tsx"
+      ],
+      "verificationStatus": "BROWSER_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "AUTH-SEC-02",
+          "title": "Register 3-Step Flow",
+          "component": "AuthPage.tsx",
+          "featureIds": [
+            "AUTH-005",
+            "AUTH-006",
+            "AUTH-007"
+          ],
+          "verificationStatus": "BROWSER_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "AUTH-005",
+          "title": "Register Form Submission (Step 1)",
+          "sectionId": "AUTH-SEC-02",
+          "uiType": "form",
+          "trigger": "submit",
+          "handler": "initiateRegister",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Bước 1 Đăng ký: Nhập Họ tên, Email, Số điện thoại, Mật khẩu và Nhập lại mật khẩu; kiểm tra trùng lặp email thời gian thực.",
+          "apiDependencies": "authApiService.register(payload)",
+          "validation": "Họ tên 2-100 ký tự VN; SĐT đúng 10 số; Email chưa tồn tại; Mật khẩu >= 8 ký tự đáp ứng độ mạnh.",
+          "permissions": "Role: Public",
+          "states": "form_entry, validating_email, submitting, error, next_step",
+          "navigationTarget": "none (chuyển sang Step 2 OTP)",
+          "sideEffects": "Máy chủ tạo tài khoản ở trạng thái chờ xác thực và phát sinh mã OTP 8 chữ số.",
+          "evidence": "src/features/auth/AuthPage.tsx:handleRegisterStep1"
+        },
+        {
+          "featureId": "AUTH-006",
+          "title": "Verify 8-Digit Email OTP (Step 2)",
+          "sectionId": "AUTH-SEC-02",
+          "uiType": "otp-verification-screen",
+          "trigger": "submit",
+          "handler": "verifyRegistrationEmail(otp)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Bước 2 Đăng ký: Nhập mã OTP 8 chữ số nhận được qua email; có bộ đếm cooldown 60s để gửi lại OTP.",
+          "apiDependencies": "authApiService.verifyEmailOtp(email, otp), authApiService.resendEmailOtp(email)",
+          "validation": "Đúng 8 chữ số; OTP chưa hết hạn.",
+          "permissions": "Role: Public",
+          "states": "entering_otp, verifying, cooldown_active, error, success",
+          "navigationTarget": "none (chuyển sang Step 3 PIN setup)",
+          "sideEffects": "Xác thực email thành công, mở khóa bước thiết lập PIN.",
+          "evidence": "src/features/auth/AuthPage.tsx:handleVerifyOtp"
+        },
+        {
+          "featureId": "AUTH-007",
+          "title": "Initial 6-Digit PIN Setup (Step 3)",
+          "sectionId": "AUTH-SEC-02",
+          "uiType": "pin-setup-screen",
+          "trigger": "submit",
+          "handler": "completePinSetup(pin, confirmPin)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Bước 3 Đăng ký: Thiết lập mã PIN bảo mật 6 số lần đầu gồm 2 lần nhập (Nhập PIN -> Nhập lại xác nhận PIN) để hoàn tất đăng ký.",
+          "apiDependencies": "authApiService.setupInitialPin(email, pin, confirmPin)",
+          "validation": "Đủ 6 chữ số; không dùng PIN yếu (123456, 111111,...); hai lần nhập phải khớp.",
+          "permissions": "Role: Public",
+          "states": "entering_pin, confirming_pin, completing, success, error",
+          "navigationTarget": "/dashboard",
+          "sideEffects": "Kích hoạt tài khoản hoàn tất và tự động đăng nhập vào Dashboard.",
+          "evidence": "src/features/auth/AuthPage.tsx:handleCompletePinSetup"
+        }
+      ]
+    },
+    {
+      "pageId": "AUTH-RESET-PIN",
+      "route": "/reset-pin",
+      "role": "Public",
+      "nameVi": "Khôi phục mã PIN bảo mật",
+      "nameEn": "Reset Security PIN",
+      "layout": "CenteredCard",
+      "sourceFiles": [
+        "src/features/auth/ResetPinPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "AUTH-SEC-03",
+          "title": "Token PIN Reset Screen",
+          "component": "ResetPinPage.tsx",
+          "featureIds": [
+            "AUTH-008"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "AUTH-008",
+          "title": "One-Time Token Security PIN Reset",
+          "sectionId": "AUTH-SEC-03",
+          "uiType": "token-form",
+          "trigger": "submit",
+          "handler": "securityPinService.resetPinWithToken(token, pin)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Xác thực token đặt lại mã PIN từ URL (/reset-pin?token=...), hiển thị giao diện nhập PIN mới 6 số và xác nhận đổi PIN.",
+          "apiDependencies": "securityPinService.validatePinResetToken, resetPinWithToken",
+          "validation": "Token phải hợp lệ và chưa hết hạn; mã PIN mới đủ 6 chữ số.",
+          "permissions": "Role: Public (Token required)",
+          "states": "token_validating, token_invalid, token_valid, resetting, success, error",
+          "navigationTarget": "/login sau khi thành công",
+          "sideEffects": "Cập nhật mã PIN mới cho tài khoản sở hữu token.",
+          "evidence": "src/features/auth/ResetPinPage.tsx:ResetPinPage"
+        }
+      ]
+    },
+    {
+      "pageId": "SYS-FORBIDDEN",
+      "route": "/forbidden",
+      "role": "Public",
+      "nameVi": "Truy cập bị từ chối 403",
+      "nameEn": "403 Forbidden",
+      "layout": "CenteredCard",
+      "sourceFiles": [
+        "src/pages/ForbiddenPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "AUTH-SEC-04",
+          "title": "403 Forbidden Screen",
+          "component": "ForbiddenPage.tsx",
+          "featureIds": [
+            "AUTH-009"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "AUTH-009",
+          "title": "Role-Aware Recovery Navigation",
+          "sectionId": "AUTH-SEC-04",
+          "uiType": "error-screen",
+          "trigger": "click",
+          "handler": "navigate(defaultRolePath)",
+          "verificationStatus": "BROWSER_VERIFIED",
+          "expectedBehavior": "Hiển thị màn hình 403 Forbidden khi người dùng truy cập trang không đúng quyền hạn (ví dụ User cố vào /admin) kèm nút quay về trang chủ vai trò hợp lệ.",
+          "apiDependencies": "none (useAuth currentUser role check)",
+          "validation": "none",
+          "permissions": "Role: Public / Authenticated",
+          "states": "forbidden_displayed",
+          "navigationTarget": "/dashboard (nếu là User) hoặc /admin (nếu là Admin) hoặc /login",
+          "sideEffects": "none",
+          "evidence": "src/pages/ForbiddenPage.tsx:ForbiddenPage"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-OVERVIEW",
+      "route": "/admin",
+      "role": "SystemAdmin",
+      "nameVi": "Tổng quan điều hành hệ thống",
+      "nameEn": "Admin System Overview",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminOverviewPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-OVR-SEC-01",
+          "title": "System KPIs & Health Radar",
+          "component": "AdminOverviewPage.tsx",
+          "featureIds": [
+            "ADM-OVR-001",
+            "ADM-OVR-002",
+            "ADM-OVR-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-OVR-001",
+          "title": "Realtime System Telemetry & KPIs Feed",
+          "sectionId": "ADM-OVR-SEC-01",
+          "uiType": "kpi-grid",
+          "trigger": "render",
+          "handler": "systemOperationsService.getSystemStats",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị 4 thẻ KPI sức khỏe hệ thống: Tổng số người dùng hoạt động, Khối lượng giao dịch 24h, Cảnh báo rủi ro mở, và Trạng thái API.",
+          "apiDependencies": "systemOperationsService.getSystemStats",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminOverviewPage.tsx:systemStats"
+        },
+        {
+          "featureId": "ADM-OVR-002",
+          "title": "Global Maintenance Mode Switch",
+          "sectionId": "ADM-OVR-SEC-01",
+          "uiType": "emergency-switch",
+          "trigger": "click",
+          "handler": "systemOperationsService.toggleMaintenanceMode",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn switch chuyển đổi trạng thái Bảo trì toàn hệ thống (Maintenance Mode) để chặn người dùng thường đăng nhập khi nâng cấp.",
+          "apiDependencies": "systemOperationsService.toggleMaintenanceMode",
+          "validation": "Yêu cầu quyền SystemAdmin tối cao.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, toggling, active, inactive, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật cờ bảo trì toàn hệ thống; người dùng thường sẽ nhận thông báo bảo trì.",
+          "evidence": "src/features/admin/AdminOverviewPage.tsx:handleToggleMaintenance"
+        },
+        {
+          "featureId": "ADM-OVR-003",
+          "title": "System Cache Purge Action",
+          "sectionId": "ADM-OVR-SEC-01",
+          "uiType": "button",
+          "trigger": "click",
+          "handler": "systemOperationsService.purgeCache",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Xóa cache hệ thống để dọn sạch bộ nhớ đệm Redis / In-memory, buộc hệ thống tải lại cấu hình mới nhất từ cơ sở dữ liệu.",
+          "apiDependencies": "systemOperationsService.purgeCache",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, purging, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Làm rỗng cache hệ thống.",
+          "evidence": "src/features/admin/AdminOverviewPage.tsx:handlePurgeCache"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-USERS",
+      "route": "/admin/users",
+      "role": "SystemAdmin",
+      "nameVi": "Quản trị người dùng & Phân quyền",
+      "nameEn": "User Management",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminUsersPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-USR-SEC-01",
+          "title": "Users Management Directory",
+          "component": "AdminUsersPage.tsx",
+          "featureIds": [
+            "ADM-USR-001",
+            "ADM-USR-002",
+            "ADM-USR-003",
+            "ADM-USR-004"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-USR-001",
+          "title": "User Search & Multi-Status Filtering",
+          "sectionId": "ADM-USR-SEC-01",
+          "uiType": "filter-toolbar",
+          "trigger": "input / filter",
+          "handler": "systemOperationsService.getGlobalUsers",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Tìm kiếm người dùng theo tên, email, SĐT; lọc theo vai trò (User/SystemAdmin) và trạng thái (Active/Suspended/Locked/Pending).",
+          "apiDependencies": "systemOperationsService.getGlobalUsers(params)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, filtering, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật danh sách bảng quản trị người dùng.",
+          "evidence": "src/features/admin/AdminUsersPage.tsx:usersList"
+        },
+        {
+          "featureId": "ADM-USR-002",
+          "title": "Administrative Account Lock and Unlock",
+          "sectionId": "ADM-USR-SEC-01",
+          "uiType": "action-button",
+          "trigger": "click",
+          "handler": "systemOperationsService.lockUser",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Khóa hoặc mở khóa tài khoản người dùng khi phát hiện nghi vấn gian lận hoặc vi phạm chính sách nền tảng.",
+          "apiDependencies": "systemOperationsService.updateUserStatus(userId, status)",
+          "validation": "Không được phép tự khóa tài khoản của chính mình.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, locking, unlocking, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Thu hồi toàn bộ token của tài khoản bị khóa và chặn đăng nhập.",
+          "evidence": "src/features/admin/AdminUsersPage.tsx:handleLockUnlockUser"
+        },
+        {
+          "featureId": "ADM-USR-003",
+          "title": "Force Password Change on Next Login",
+          "sectionId": "ADM-USR-SEC-01",
+          "uiType": "action-button",
+          "trigger": "click",
+          "handler": "systemOperationsService.forcePasswordChange",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Đặt cờ bắt buộc người dùng phải đổi mật khẩu ở lần đăng nhập tiếp theo vì lý do an toàn bảo mật.",
+          "apiDependencies": "systemOperationsService.forcePasswordChange(userId)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, applying, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Ghi nhận cờ ForcePasswordChange = true trong cơ sở dữ liệu.",
+          "evidence": "src/features/admin/AdminUsersPage.tsx:handleForcePasswordChange"
+        },
+        {
+          "featureId": "ADM-USR-004",
+          "title": "Role Assignment (User <-> SystemAdmin)",
+          "sectionId": "ADM-USR-SEC-01",
+          "uiType": "select-dialog",
+          "trigger": "change",
+          "handler": "systemOperationsService.updateUserRole",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Thay đổi quyền hạn vai trò tài khoản giữa User và SystemAdmin kèm xác thực mật khẩu/PIN quản trị viên.",
+          "apiDependencies": "systemOperationsService.assignUserRole(userId, role)",
+          "validation": "Yêu cầu xác nhận cảnh báo nâng cấp quyền quản trị.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, updating_role, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật claim vai trò trong JWT token ở lần đăng nhập tới của tài khoản.",
+          "evidence": "src/features/admin/AdminUsersPage.tsx:handleRoleChange"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-TRANSACTIONS",
+      "route": "/admin/transactions",
+      "role": "SystemAdmin",
+      "nameVi": "Giám sát giao dịch toàn hệ thống",
+      "nameEn": "Global Transactions Audit",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminTransactionsPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-TX-SEC-01",
+          "title": "Global Audit Ledger",
+          "component": "AdminTransactionsPage.tsx",
+          "featureIds": [
+            "ADM-TX-001",
+            "ADM-TX-002",
+            "ADM-TX-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-TX-001",
+          "title": "Global System Transactions Query",
+          "sectionId": "ADM-TX-SEC-01",
+          "uiType": "query-table",
+          "trigger": "render / search",
+          "handler": "systemOperationsService.getAllTransactions",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Truy vấn toàn bộ giao dịch trên hệ thống theo mã bút toán, thời gian, loại giao dịch (Nạp/Rút/Chuyển) và hạn mức tiền.",
+          "apiDependencies": "systemOperationsService.getGlobalTransactions(filter)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, filtering, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminTransactionsPage.tsx:transactionsList"
+        },
+        {
+          "featureId": "ADM-TX-002",
+          "title": "Transaction Forensic Inspector",
+          "sectionId": "ADM-TX-SEC-01",
+          "uiType": "drawer-inspector",
+          "trigger": "click",
+          "handler": "viewAuditLog(txId)",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Xem dấu vết pháp y của giao dịch: IP nguồn, User-Agent, chữ ký số bảo mật và chi tiết gói tin xử lý.",
+          "apiDependencies": "systemOperationsService.getTransactionForensics(id)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, modal_open, loading_forensics, loaded, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminTransactionsPage.tsx:selectedTxForensics"
+        },
+        {
+          "featureId": "ADM-TX-003",
+          "title": "Administrative Force Transaction Reversal",
+          "sectionId": "ADM-TX-SEC-01",
+          "uiType": "critical-action-modal",
+          "trigger": "click",
+          "handler": "systemOperationsService.reverseTransaction",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Thực thi đảo ngược giao dịch lỗi (Force Reverse Tx) để hoàn tiền lại số dư trong trường hợp giao dịch bị treo hoặc xử lý sai lệch.",
+          "apiDependencies": "systemOperationsService.reverseTransaction(id, reason, adminPin)",
+          "validation": "Bắt buộc nhập lý do đảo ngược và xác thực mã PIN quản trị viên.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, dialog_open, reversing, success, error",
+          "navigationTarget": "none (dialog)",
+          "sideEffects": "Phát sinh bút toán đảo ngược trên sổ cái kép và hoàn tiền vào ví người dùng.",
+          "evidence": "src/features/admin/AdminTransactionsPage.tsx:handleReverseTx"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-LEDGER",
+      "route": "/admin/ledger",
+      "role": "SystemAdmin",
+      "nameVi": "Kiểm toán sổ cái kép (General Ledger)",
+      "nameEn": "Double-Entry General Ledger",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminLedgerPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-LDG-SEC-01",
+          "title": "Double-Entry Verification",
+          "component": "AdminLedgerPage.tsx",
+          "featureIds": [
+            "ADM-LDG-001",
+            "ADM-LDG-002",
+            "ADM-LDG-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-LDG-001",
+          "title": "Double-Entry Accounting Balance Verification (Debit == Credit)",
+          "sectionId": "ADM-LDG-SEC-01",
+          "uiType": "balance-meter",
+          "trigger": "render",
+          "handler": "systemOperationsService.getLedgerBalance",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Kiểm tra cân bằng kế toán kép: Tổng Nợ (Debit) == Tổng Có (Credit); cảnh báo màu đỏ tức thì nếu phát hiện lệch dù chỉ 1 đồng.",
+          "apiDependencies": "systemOperationsService.getLedgerBalanceVerification",
+          "validation": "Tổng Nợ phải bằng đúng Tổng Có.",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, balanced, unbalanced_alert, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminLedgerPage.tsx:ledgerVerification"
+        },
+        {
+          "featureId": "ADM-LDG-002",
+          "title": "Journal Entries Table Query",
+          "sectionId": "ADM-LDG-SEC-01",
+          "uiType": "journal-table",
+          "trigger": "render",
+          "handler": "systemOperationsService.getJournalEntries",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Tra cứu bảng các bút toán sổ nhật ký chung (Journal Entries) kèm tài khoản kế toán ghi nợ/ghi có.",
+          "apiDependencies": "systemOperationsService.getJournalEntries(filter)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminLedgerPage.tsx:journalEntries"
+        },
+        {
+          "featureId": "ADM-LDG-003",
+          "title": "Export General Ledger CSV / Excel",
+          "sectionId": "ADM-LDG-SEC-01",
+          "uiType": "export-button",
+          "trigger": "click",
+          "handler": "downloadLedgerFile",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Xuất file để kết xuất toàn bộ dữ liệu sổ cái kế toán kép ra tệp định dạng CSV hoặc Excel phục vụ kiểm toán tài chính.",
+          "apiDependencies": "systemOperationsService.exportLedger(format)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, exporting, downloaded, error",
+          "navigationTarget": "none (tải file trực tiếp về máy)",
+          "sideEffects": "Tải tệp tin về máy tính người dùng.",
+          "evidence": "src/features/admin/AdminLedgerPage.tsx:handleExportLedger"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-RISK",
+      "route": "/admin/risk",
+      "role": "SystemAdmin",
+      "nameVi": "Cảnh báo rủi ro & Gian lận",
+      "nameEn": "Anti-Fraud & Risk Radar",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminRiskPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-RSK-SEC-01",
+          "title": "Risk Radar & Fraud Alerts",
+          "component": "AdminRiskPage.tsx",
+          "featureIds": [
+            "ADM-RSK-001",
+            "ADM-RSK-002",
+            "ADM-RSK-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-RSK-001",
+          "title": "Realtime Anti-Fraud Risk Radar Feed",
+          "sectionId": "ADM-RSK-SEC-01",
+          "uiType": "radar-feed",
+          "trigger": "render",
+          "handler": "systemOperationsService.getRiskAlerts",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hiển thị dòng cảnh báo rủi ro gian lận thời gian thực (đăng nhập từ dải IP lạ, chuyển tiền dồn dập, sai PIN liên tiếp) phân loại theo mức độ.",
+          "apiDependencies": "systemOperationsService.getFraudAlertsStream",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "streaming, alert_low, alert_medium, alert_critical",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminRiskPage.tsx:fraudAlerts"
+        },
+        {
+          "featureId": "ADM-RSK-002",
+          "title": "Emergency Instant Account Freeze Action",
+          "sectionId": "ADM-RSK-SEC-01",
+          "uiType": "emergency-button",
+          "trigger": "click",
+          "handler": "systemOperationsService.freezeAccount",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Đóng băng tài khoản khẩn cấp (Emergency Account Freeze) để khóa ngay lập tức chiều chuyển tiền của tài khoản có dấu hiệu bị hack.",
+          "apiDependencies": "systemOperationsService.freezeAccount(userId, reason, adminPin)",
+          "validation": "Bắt buộc nhập lý do đóng băng và mã PIN quản trị viên.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, confirming, freezing, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Đóng băng tài khoản, chặn mọi giao dịch ghi nợ khỏi ví.",
+          "evidence": "src/features/admin/AdminRiskPage.tsx:handleEmergencyFreeze"
+        },
+        {
+          "featureId": "ADM-RSK-003",
+          "title": "Risk Policy Rules Threshold Tuning",
+          "sectionId": "ADM-RSK-SEC-01",
+          "uiType": "slider-config",
+          "trigger": "change",
+          "handler": "systemOperationsService.updateRiskPolicy",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Tinh chỉnh các ngưỡng quy tắc phát hiện rủi ro: Số lần sai PIN tối đa trước khi khóa, Hạn mức giao dịch đáng ngờ trong ngày.",
+          "apiDependencies": "systemOperationsService.updateRiskRules(thresholds)",
+          "validation": "Các ngưỡng giá trị phải là số nguyên dương hợp lệ.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, editing, saving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật cấu hình bộ lọc rủi ro của hệ thống.",
+          "evidence": "src/features/admin/AdminRiskPage.tsx:handleUpdateRiskRules"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-DISPUTES",
+      "route": "/admin/disputes",
+      "role": "SystemAdmin",
+      "nameVi": "Xử lý khiếu nại giao dịch",
+      "nameEn": "Dispute Resolution Console",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminDisputesPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-DSP-SEC-01",
+          "title": "Disputes Adjudication Worklist",
+          "component": "AdminDisputesPage.tsx",
+          "featureIds": [
+            "ADM-DSP-001",
+            "ADM-DSP-002",
+            "ADM-DSP-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-DSP-001",
+          "title": "Dispute Triage Queue & SLA Monitor",
+          "sectionId": "ADM-DSP-SEC-01",
+          "uiType": "kanban-queue",
+          "trigger": "render",
+          "handler": "casesApiService.getAdminDisputes",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Quản lý hàng đợi khiếu nại tài chính phân theo mức độ khẩn cấp và theo dõi thời hạn cam kết giải quyết (SLA 24h / 48h).",
+          "apiDependencies": "casesApiService.getAdminDisputes(params)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, filtering, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminDisputesPage.tsx:disputesQueue"
+        },
+        {
+          "featureId": "ADM-DSP-002",
+          "title": "Dispute Evidence Dossier Inspector",
+          "sectionId": "ADM-DSP-SEC-01",
+          "uiType": "evidence-inspector",
+          "trigger": "click",
+          "handler": "casesApiService.getDisputeEvidence",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Xem hồ sơ chứng cứ khiếu nại: Ảnh biên lai thanh toán, lịch sử giao dịch gốc, văn bản giải trình và đối chất giữa các bên.",
+          "apiDependencies": "casesApiService.getDisputeEvidence(id)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, modal_open, loading_evidence, loaded, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminDisputesPage.tsx:selectedDisputeEvidence"
+        },
+        {
+          "featureId": "ADM-DSP-003",
+          "title": "Execute Direct Refund to User Wallet",
+          "sectionId": "ADM-DSP-SEC-01",
+          "uiType": "adjudication-action",
+          "trigger": "click",
+          "handler": "casesApiService.resolveDispute",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Thực thi phán quyết bồi hoàn: Chấp thuận hoàn tiền vào ví người dùng hoặc Bác bỏ khiếu nại kèm văn bản giải trình căn cứ.",
+          "apiDependencies": "casesApiService.resolveDispute(id, { decision, refundAmount, note, adminPin })",
+          "validation": "Bắt buộc nhập lý do phán quyết và xác thực mã PIN quản trị viên.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, confirming, resolving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cộng tiền bồi hoàn vào ví người dùng (nếu duyệt) và cập nhật trạng thái khiếu nại.",
+          "evidence": "src/features/admin/AdminDisputesPage.tsx:handleResolveDispute"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-SUPPORT",
+      "route": "/admin/support",
+      "role": "SystemAdmin",
+      "nameVi": "Trung tâm hỗ trợ khách hàng",
+      "nameEn": "Support Ticketing Operations",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminSupportPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-SPT-SEC-01",
+          "title": "Ticketing Operations & Live Chat",
+          "component": "AdminSupportPage.tsx",
+          "featureIds": [
+            "ADM-SPT-001",
+            "ADM-SPT-002",
+            "ADM-SPT-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-SPT-001",
+          "title": "Ticket Worklist & Agent Assignment",
+          "sectionId": "ADM-SPT-SEC-01",
+          "uiType": "ticket-board",
+          "trigger": "render / assign",
+          "handler": "casesApiService.getAdminCases",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Quản lý danh sách phiếu hỗ trợ theo trạng thái (Mới, Đang xử lý, Chờ khách hàng, Đã đóng) và phân công chuyên viên CS phụ trách.",
+          "apiDependencies": "casesApiService.getAdminCases, assignCase",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, assigning, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "Gán người phụ trách xử lý ticket.",
+          "evidence": "src/features/admin/AdminSupportPage.tsx:casesWorklist"
+        },
+        {
+          "featureId": "ADM-SPT-002",
+          "title": "Agent Live Reply Chat & Canned Responses",
+          "sectionId": "ADM-SPT-SEC-01",
+          "uiType": "live-chat-panel",
+          "trigger": "send",
+          "handler": "casesApiService.sendMessage",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Không gian nhắn tin trực tiếp với khách hàng trong ticket, hỗ trợ gửi câu trả lời mẫu (canned responses) và đính kèm tệp tin.",
+          "apiDependencies": "casesApiService.sendMessage, getCannedResponses",
+          "validation": "Nội dung tin nhắn không được để trống.",
+          "permissions": "Role: SystemAdmin",
+          "states": "thread_open, sending, message_sent, error",
+          "navigationTarget": "none",
+          "sideEffects": "Lưu tin nhắn vào hội thoại ticket và gửi thông báo tới người dùng.",
+          "evidence": "src/features/admin/AdminSupportPage.tsx:handleSendMessage"
+        },
+        {
+          "featureId": "ADM-SPT-003",
+          "title": "Resolve and Close Support Ticket",
+          "sectionId": "ADM-SPT-SEC-01",
+          "uiType": "close-action",
+          "trigger": "click",
+          "handler": "casesApiService.closeCase",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Đóng phiếu hỗ trợ và ghi nhận kết luận giải quyết vấn đề sau khi đã hỗ trợ thành công cho người dùng.",
+          "apiDependencies": "casesApiService.closeCase(id, resolutionSummary)",
+          "validation": "Bắt buộc nhập tóm tắt kết quả xử lý.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, closing, closed, error",
+          "navigationTarget": "none",
+          "sideEffects": "Chuyển trạng thái ticket sang Closed.",
+          "evidence": "src/features/admin/AdminSupportPage.tsx:handleCloseCase"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-AUDIT",
+      "route": "/admin/audit",
+      "role": "SystemAdmin",
+      "nameVi": "Nhật ký kiểm toán bảo mật",
+      "nameEn": "Security Audit Trails",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminAuditPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-ADT-SEC-01",
+          "title": "Tamper-Evident Audit Trails",
+          "component": "AdminAuditPage.tsx",
+          "featureIds": [
+            "ADM-ADT-001",
+            "ADM-ADT-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-ADT-001",
+          "title": "Audit Stream Query by Actor and Entity",
+          "sectionId": "ADM-ADT-SEC-01",
+          "uiType": "audit-table",
+          "trigger": "filter",
+          "handler": "systemOperationsService.getAuditLogs",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Tìm kiếm và lọc dòng nhật ký kiểm toán an ninh hệ thống theo Actor, Loại hành động, Thực thể bị tác động, mốc thời gian và địa chỉ IP.",
+          "apiDependencies": "systemOperationsService.getAuditLogs(filter)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, filtering, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminAuditPage.tsx:auditLogs"
+        },
+        {
+          "featureId": "ADM-ADT-002",
+          "title": "Export Tamper-Evident Audit Log File",
+          "sectionId": "ADM-ADT-SEC-01",
+          "uiType": "export-button",
+          "trigger": "click",
+          "handler": "exportAuditCsv",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Nhấn nút Xuất file để kết xuất toàn bộ chuỗi nhật ký kiểm toán an ninh không thể chối bỏ (Tamper-evident Audit Trail) ra tệp CSV.",
+          "apiDependencies": "systemOperationsService.exportAuditLogs(filter)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, exporting, downloaded, error",
+          "navigationTarget": "none (tải file trực tiếp về máy)",
+          "sideEffects": "Tải tệp tin nhật ký kiểm toán về máy.",
+          "evidence": "src/features/admin/AdminAuditPage.tsx:handleExportAuditLogs"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-BANKING",
+      "route": "/admin/banking",
+      "role": "SystemAdmin",
+      "nameVi": "Cổng ngân hàng & Môi trường Sandbox",
+      "nameEn": "Open Banking & Sandbox Engine",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminBankingPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-BNK-SEC-01",
+          "title": "Gateway Health & Sandbox Mock Payment",
+          "component": "AdminBankingPage.tsx",
+          "featureIds": [
+            "ADM-BNK-001",
+            "ADM-BNK-002",
+            "ADM-BNK-003"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-BNK-001",
+          "title": "Bank Gateway Telemetry & SePay Webhook Status",
+          "sectionId": "ADM-BNK-SEC-01",
+          "uiType": "status-board",
+          "trigger": "render",
+          "handler": "bankApiService.getGatewayHealth",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Giám sát trạng thái kết nối tới các tài khoản ngân hàng liên kết, tình trạng cổng SePay và độ trễ tiếp nhận Webhook.",
+          "apiDependencies": "bankApiService.getAdminBankConnections, getAdminSePayStatus",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, active, degraded, error",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminBankingPage.tsx:adminBankConnections"
+        },
+        {
+          "featureId": "ADM-BNK-002",
+          "title": "Giám sát giao dịch ngân hàng đồng bộ (Synced Bank Transactions Monitor)",
+          "sectionId": "ADM-BNK-SEC-01",
+          "uiType": "data-table",
+          "trigger": "render / search query",
+          "handler": "bankApiService.getAdminBankTransactions",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Kiểm tra danh sách các giao dịch đồng bộ từ tài khoản ngân hàng kết nối qua cổng SePay; tìm kiếm theo thương hiệu ngân hàng, số tài khoản masked, nội dung chuyển khoản và mã giao dịch đối tác.",
+          "apiDependencies": "bankApiService.getAdminBankTransactions(filter)",
+          "validation": "Chỉ cho phép tra cứu, không cho phép Admin tự ý can thiệp tạo bút toán giả.",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, loaded, empty, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cung cấp dữ liệu phục vụ đối soát và thẩm tra giao dịch.",
+          "evidence": "src/features/admin/AdminBankingPage.tsx:adminBankTransactions"
+        },
+        {
+          "featureId": "ADM-BNK-003",
+          "title": "Raw Inbound Webhook Payload Inspector",
+          "sectionId": "ADM-BNK-SEC-01",
+          "uiType": "raw-json-inspector",
+          "trigger": "click",
+          "handler": "viewWebhookPayload",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Kiểm tra chi tiết gói tin Webhook thô (Raw Payload) nhận từ SePay, trạng thái xử lý (Processed/Unmatched/Failed) và mã lỗi nếu có.",
+          "apiDependencies": "bankApiService.getAdminBankIntegrationEvents",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, modal_open, inspecting_payload, loaded, error",
+          "navigationTarget": "none (modal)",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminBankingPage.tsx:selectedEventPayload"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-RECONCILIATION",
+      "route": "/admin/reconciliation",
+      "role": "SystemAdmin",
+      "nameVi": "Đối soát dòng tiền ngân hàng",
+      "nameEn": "Bank Statement Reconciliation",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminReconciliationPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-RCN-SEC-01",
+          "title": "Reconciliation Engine & Discrepancy Resolver",
+          "component": "AdminReconciliationPage.tsx",
+          "featureIds": [
+            "ADM-RCN-001",
+            "ADM-RCN-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-RCN-001",
+          "title": "Automated Statement Reconciliation Runner",
+          "sectionId": "ADM-RCN-SEC-01",
+          "uiType": "reconciliation-dashboard",
+          "trigger": "click",
+          "handler": "systemOperationsService.runReconciliation",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Kích hoạt quy trình chạy đối soát dòng tiền tự động giữa sao kê ngân hàng thu thập qua SePay và sổ cái SpendWise theo chu kỳ ngày/tháng.",
+          "apiDependencies": "systemOperationsService.runReconciliation(cycleDate)",
+          "validation": "Chọn ngày đối soát hợp lệ.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, running_reconciliation, completed, error",
+          "navigationTarget": "none",
+          "sideEffects": "Phát hiện các khoản chênh lệch (variances) và cập nhật báo cáo đối soát.",
+          "evidence": "src/features/admin/AdminReconciliationPage.tsx:handleRunReconciliation"
+        },
+        {
+          "featureId": "ADM-RCN-002",
+          "title": "Variance Discrepancy Manual Resolution",
+          "sectionId": "ADM-RCN-SEC-01",
+          "uiType": "action-table",
+          "trigger": "resolve",
+          "handler": "systemOperationsService.resolveVariance",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Xử lý chênh lệch đối soát: Khớp thủ công các giao dịch sai lệch về thời gian hoặc đánh dấu điều chỉnh sai lệch kế toán.",
+          "apiDependencies": "systemOperationsService.resolveReconciliationDiscrepancy(id, action, adminPin)",
+          "validation": "Bắt buộc nhập lý do điều chỉnh và xác thực PIN quản trị viên.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, resolving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Cập nhật trạng thái đối soát của bút toán sang Resolved.",
+          "evidence": "src/features/admin/AdminReconciliationPage.tsx:handleResolveDiscrepancy"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-HEALTH",
+      "route": "/admin/health",
+      "role": "SystemAdmin",
+      "nameVi": "Giám sát sức khỏe hạ tầng",
+      "nameEn": "Infrastructure Health Monitor",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminHealthPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-HLT-SEC-01",
+          "title": "Service Node Pulse & Telemetry",
+          "component": "AdminHealthPage.tsx",
+          "featureIds": [
+            "ADM-HLT-001",
+            "ADM-HLT-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-HLT-001",
+          "title": "Service Node Pulse Ping (.NET 10, SQL Server, AI Provider, SePay, SignalR)",
+          "sectionId": "ADM-HLT-SEC-01",
+          "uiType": "pulse-grid",
+          "trigger": "poll / click refresh",
+          "handler": "casesApiService.getAdminHealth",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Hệ thống gửi yêu cầu kiểm tra tình trạng tức thời của các nút hạ tầng cốt lõi: Backend API (.NET 10.0), SQL Server Database, AI Provider, SePay Gateway, SignalR Realtime Hub, Notifications Outbox, và Background Services.",
+          "apiDependencies": "casesApiService.getAdminHealth()",
+          "validation": "Truy vấn định kỳ hoặc khi nhấn nút Kiểm tra ngay (Refresh).",
+          "permissions": "Role: SystemAdmin",
+          "states": "loading, healthy, degraded, unhealthy, error",
+          "navigationTarget": "none",
+          "sideEffects": "Hiển thị huy hiệu trạng thái (Healthy, Degraded, Unhealthy) cho từng node.",
+          "evidence": "src/features/admin/AdminHealthPage.tsx:fetchHealth"
+        },
+        {
+          "featureId": "ADM-HLT-002",
+          "title": "Latency p95 and Memory Telemetry",
+          "sectionId": "ADM-HLT-SEC-01",
+          "uiType": "telemetry-charts",
+          "trigger": "render",
+          "handler": "systemOperationsService.getMetrics",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Theo dõi độ trễ phản hồi thời gian thực (p50, p95, p99 ms) và dung lượng tài nguyên bộ nhớ hệ thống tiêu thụ.",
+          "apiDependencies": "casesApiService.getAdminHealth",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "telemetry_rendered",
+          "navigationTarget": "none",
+          "sideEffects": "none",
+          "evidence": "src/features/admin/AdminHealthPage.tsx:lastChecked"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-CONFIG",
+      "route": "/admin/configuration",
+      "role": "SystemAdmin",
+      "nameVi": "Cấu hình tham số hệ thống",
+      "nameEn": "System Master Configuration",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminConfigurationPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-CFG-SEC-01",
+          "title": "Global Parameters & Policy Caps",
+          "component": "AdminConfigurationPage.tsx",
+          "featureIds": [
+            "ADM-CFG-001",
+            "ADM-CFG-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-CFG-001",
+          "title": "Global Financial Caps and Policy Limits Configuration",
+          "sectionId": "ADM-CFG-SEC-01",
+          "uiType": "policy-form",
+          "trigger": "submit",
+          "handler": "systemOperationsService.updateConfiguration",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Cập nhật các tham số vận hành tài chính và chính sách bảo mật: Hạn mức chuyển tiền tối đa đơn/ngày, số lần thử PIN tối đa, thời hạn Access Token.",
+          "apiDependencies": "systemOperationsService.updateSystemConfiguration(configs, adminPin)",
+          "validation": "Hạn mức chuyển tiền > 0; số lần thử PIN từ 3 đến 10; mã PIN admin chính xác.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, editing, saving, success, error",
+          "navigationTarget": "none",
+          "sideEffects": "Áp dụng các hạn mức mới trên toàn hệ sinh thái SpendWise.",
+          "evidence": "src/features/admin/AdminConfigurationPage.tsx:handleSaveConfiguration"
+        },
+        {
+          "featureId": "ADM-CFG-002",
+          "title": "Publish System-Wide Emergency Announcement Banner",
+          "sectionId": "ADM-CFG-SEC-01",
+          "uiType": "announcement-editor",
+          "trigger": "publish",
+          "handler": "systemOperationsService.publishAnnouncement",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Soạn thảo thông điệp cảnh báo và bật/tắt thanh banner thông báo khẩn cấp toàn trang (màu đỏ hoặc vàng) hiển thị tới mọi người dùng.",
+          "apiDependencies": "systemOperationsService.publishEmergencyBanner(bannerConfig)",
+          "validation": "Tiêu đề thông báo không được để trống.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, active_banner, inactive_banner, saving",
+          "navigationTarget": "none",
+          "sideEffects": "Phát thông báo khẩn cấp tới client qua SignalR.",
+          "evidence": "src/features/admin/AdminConfigurationPage.tsx:handlePublishEmergencyBanner"
+        }
+      ]
+    },
+    {
+      "pageId": "ADMIN-FLAGS",
+      "route": "/admin/feature-flags",
+      "role": "SystemAdmin",
+      "nameVi": "Quản lý cờ tính năng (Feature Flags)",
+      "nameEn": "Feature Flags Manager",
+      "layout": "AdminAppShell",
+      "sourceFiles": [
+        "src/features/admin/AdminFeatureFlagsPage.tsx"
+      ],
+      "verificationStatus": "SOURCE_VERIFIED",
+      "sections": [
+        {
+          "sectionId": "ADM-FLG-SEC-01",
+          "title": "Feature Flags Registry & Rollout Controls",
+          "component": "AdminFeatureFlagsPage.tsx",
+          "featureIds": [
+            "ADM-FLG-001",
+            "ADM-FLG-002"
+          ],
+          "verificationStatus": "SOURCE_VERIFIED"
+        }
+      ],
+      "features": [
+        {
+          "featureId": "ADM-FLG-001",
+          "title": "Instant Zero-Downtime Feature Flag Toggle",
+          "sectionId": "ADM-FLG-SEC-01",
+          "uiType": "toggle-table",
+          "trigger": "toggle",
+          "handler": "systemOperationsService.toggleFeatureFlag",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Bật/tắt tức thời các cờ tính năng hệ thống (Trợ lý tài chính AI, Cổng ngân hàng SePay, Quỹ nhóm nâng cao, Giao diện tối V2) mà không cần deploy lại code.",
+          "apiDependencies": "systemOperationsService.toggleFeatureFlag(flagKey, enabled)",
+          "validation": "none",
+          "permissions": "Role: SystemAdmin",
+          "states": "enabled, disabled, updating",
+          "navigationTarget": "none",
+          "sideEffects": "Kích hoạt hoặc vô hiệu hóa module tính năng tương ứng trên toàn hệ thống.",
+          "evidence": "src/features/admin/AdminFeatureFlagsPage.tsx:handleToggleFlag"
+        },
+        {
+          "featureId": "ADM-FLG-002",
+          "title": "Gradual Rollout Percentage Slider",
+          "sectionId": "ADM-FLG-SEC-01",
+          "uiType": "percentage-slider",
+          "trigger": "change",
+          "handler": "systemOperationsService.setRolloutPercentage",
+          "verificationStatus": "SOURCE_VERIFIED",
+          "expectedBehavior": "Điều chỉnh thanh trượt tỷ lệ phần trăm (0% - 100%) triển khai dần tính năng mới tới các nhóm người dùng ngẫu nhiên trước khi phát hành toàn diện.",
+          "apiDependencies": "systemOperationsService.updateRolloutPercentage(flagKey, percentage)",
+          "validation": "Tỷ lệ từ 0 đến 100%.",
+          "permissions": "Role: SystemAdmin",
+          "states": "idle, sliding, saved, error",
+          "navigationTarget": "none",
+          "sideEffects": "Phân bổ tỷ lệ tiếp cận tính năng cho người dùng theo hàm băm userId.",
+          "evidence": "src/features/admin/AdminFeatureFlagsPage.tsx:handleUpdateRolloutPercentage"
+        }
+      ]
+    }
+  ]
+}

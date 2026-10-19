@@ -1,0 +1,9 @@
+title = "SpendWise public source secret scan"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Reviewed false positive: public category taxonomy key, not an API credential"
+regexTarget = "match"
+regexes = ['''(?i)key\s*[:=]\s*["']categories\.p2p["']''']

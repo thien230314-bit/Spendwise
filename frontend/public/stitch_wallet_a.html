@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SpendWise Wallet - Editorial Finance Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Space+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+              "on-primary-fixed-variant": "#004e5c",
+              "on-tertiary-fixed-variant": "#92002a",
+              "on-background": "#dae2fd",
+              "tertiary-container": "#ff7f8b",
+              "error": "#ffb4ab",
+              "outline": "#869397",
+              "on-secondary-fixed-variant": "#005236",
+              "surface-container": "#171f33",
+              "on-tertiary": "#67001b",
+              "secondary": "#4edea3",
+              "primary-container": "#06b6d4",
+              "tertiary-fixed": "#ffdadb",
+              "on-secondary-fixed": "#002113",
+              "inverse-primary": "#00687a",
+              "surface-container-high": "#222a3d",
+              "secondary-fixed": "#6ffbbe",
+              "on-error": "#690005",
+              "on-secondary-container": "#00311f",
+              "surface-bright": "#31394d",
+              "background": "#0b1326",
+              "surface-tint": "#4cd7f6",
+              "primary-fixed": "#acedff",
+              "on-surface": "#dae2fd",
+              "on-tertiary-container": "#7d0023",
+              "on-primary-container": "#00424f",
+              "inverse-surface": "#dae2fd",
+              "surface-dim": "#0b1326",
+              "on-surface-variant": "#bcc9cd",
+              "surface-variant": "#2d3449",
+              "secondary-container": "#00a572",
+              "tertiary": "#ffb2b7",
+              "surface-container-lowest": "#060e20",
+              "on-primary": "#003640",
+              "outline-variant": "#3d494c",
+              "surface": "#0b1326",
+              "primary-fixed-dim": "#4cd7f6",
+              "on-secondary": "#003824",
+              "on-error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#ffb2b7",
+              "surface-container-low": "#131b2e",
+              "surface-container-highest": "#2d3449",
+              "on-tertiary-fixed": "#40000d",
+              "on-primary-fixed": "#001f26",
+              "secondary-fixed-dim": "#4edea3",
+              "primary": "#4cd7f6",
+              "inverse-on-surface": "#283044",
+              "error-container": "#93000a"
+            },
+            "borderRadius": {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px"
+            },
+            "spacing": {
+              "space-sm": "0.5rem",
+              "space-lg": "1rem",
+              "space-xs": "0.25rem",
+              "space-md": "0.75rem",
+              "gutter": "0.75rem",
+              "space-xl": "1.5rem",
+              "margin": "1rem"
+            },
+            "fontFamily": {
+              "body-md": ["Inter"],
+              "headline-lg": ["Space Grotesk"],
+              "headline-xl": ["Space Grotesk"],
+              "body-lg": ["Inter"],
+              "telemetry-lg": ["JetBrains Mono"],
+              "body-sm": ["Inter"],
+              "telemetry-md": ["JetBrains Mono"],
+              "telemetry-sm": ["JetBrains Mono"],
+              "label-caps": ["JetBrains Mono"],
+              "headline-md": ["Space Grotesk"]
+            },
+            "fontSize": {
+              "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+              "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+              "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+              "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+              "telemetry-lg": ["20px", {"lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+              "body-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400"}],
+              "telemetry-md": ["14px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500"}],
+              "telemetry-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+              "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+              "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="w-full px-margin flex items-center justify-between border-b border-outline-variant bg-surface-dim dark:bg-surface-dim z-50 docked full-width top-0 h-14">
+<div class="flex items-center gap-space-xl">
+<h1 class="text-headline-md font-headline-md font-bold tracking-tight text-primary dark:text-primary">APEX TELEMETRY // DESK</h1>
+<div class="hidden md:flex items-center gap-space-lg">
+<a class="border-b-2 border-primary dark:border-primary text-primary dark:text-primary font-telemetry-md text-telemetry-md pb-1" href="#">TERMINAL</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">LIQUIDITY</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">LEDGER</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">ANALYTICS</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">AUDIT</a>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<button class="hidden lg:flex items-center gap-space-xs px-space-md py-space-xs bg-surface-container rounded border border-outline-variant text-telemetry-sm text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">hub</span>
+                PRIVACY: MASK
+            </button>
+<div class="flex items-center gap-space-sm pl-space-sm border-l border-outline-variant">
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">tune</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant border border-primary flex items-center justify-center font-telemetry-sm text-primary font-bold">
+                    RC
+                </div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 relative">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-14 bottom-0 w-64 flex flex-col justify-between py-space-md border-r border-outline-variant bg-surface-container-lowest dark:bg-surface-container-lowest z-40 hidden md:flex">
+<div class="flex flex-col gap-space-xs">
+<div class="px-space-md pb-space-md border-b border-outline-variant mb-space-sm">
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-primary">ALPHA-01 DESK</div>
+<div class="text-telemetry-sm font-telemetry-sm text-on-surface-variant mt-1 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary inline-block animate-pulse"></span>
+                        SYS LATENCY: 4MS
+                    </div>
+</div>
+<a class="bg-surface-container-high dark:bg-surface-container-high border-l-2 border-primary dark:border-primary text-primary dark:text-primary font-telemetry-md text-telemetry-md px-space-md py-space-sm flex items-center gap-space-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    COCKPIT
+                </a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container dark:hover:bg-surface-container px-space-md py-space-sm flex items-center gap-space-sm transition-colors" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+                    ORDERBOOK
+                </a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container dark:hover:bg-surface-container px-space-md py-space-sm flex items-center gap-space-sm transition-colors" href="#">
+<span class="material-symbols-outlined">shield</span>
+                    RISK DESK
+                </a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container dark:hover:bg-surface-container px-space-md py-space-sm flex items-center gap-space-sm transition-colors" href="#">
+<span class="material-symbols-outlined">account_balance</span>
+                    TREASURY
+                </a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container dark:hover:bg-surface-container px-space-md py-space-sm flex items-center gap-space-sm transition-colors" href="#">
+<span class="material-symbols-outlined">dns</span>
+                    NODE AUDIT
+                </a>
+</div>
+<div class="px-space-md flex flex-col gap-space-sm">
+<button class="w-full py-2 bg-primary text-on-primary font-telemetry-md rounded font-bold hover:brightness-110 transition-all">
+                    ROUTE DISPATCH
+                </button>
+<div class="border-t border-outline-variant pt-space-md flex flex-col gap-space-xs">
+<a class="text-on-surface-variant font-telemetry-sm hover:text-on-surface flex items-center gap-space-sm py-1" href="#">
+<span class="material-symbols-outlined text-sm">settings</span> CONFIG
+                    </a>
+<a class="text-on-surface-variant font-telemetry-sm hover:text-on-surface flex items-center gap-space-sm py-1" href="#">
+<span class="material-symbols-outlined text-sm">lock</span> SECURE LOCK
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-space-xl flex flex-col gap-space-xl max-w-[1440px] mx-auto">
+<!-- Section 1: Balance & Quick Action Hero Banner (WALLET-SEC-01) -->
+<section class="rounded-xl bg-surface-container border border-outline-variant p-space-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-space-lg relative overflow-hidden shadow-lg">
+<div class="absolute -right-10 -bottom-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-space-xs z-10">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary inline-block"></span>
+<span class="text-label-caps font-label-caps text-primary tracking-widest">VÍ CỦA TÔI & NGÂN HÀNG LIÊN KẾT</span>
+</div>
+<div class="flex items-baseline gap-space-md flex-wrap mt-1">
+<h2 class="text-headline-lg font-headline-lg text-on-surface">TỔNG SỐ DƯ TẤT CẢ VÍ:</h2>
+<span class="text-telemetry-lg font-telemetry-lg text-secondary text-2xl font-bold" id="total-balance">125.450.000 ₫</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md z-10 flex-wrap">
+<button class="px-space-md py-space-sm bg-surface-variant border border-outline-variant rounded-lg text-telemetry-md font-telemetry-md text-on-surface hover:border-primary transition-colors flex items-center gap-space-xs" onclick="toggleBalance()">
+<span class="material-symbols-outlined text-base" id="eye-icon">visibility</span>
+<span id="privacy-text">Ẩn số dư</span>
+</button>
+<button class="px-space-xl py-space-sm bg-secondary text-on-secondary-fixed font-telemetry-md font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-space-xs shadow-md" onclick="openModal('topup-modal')">
+<span class="material-symbols-outlined">add</span>
+                        + Nạp tiền ví
+                    </button>
+<button class="px-space-xl py-space-sm bg-surface-container-high border border-outline-variant text-on-surface font-telemetry-md rounded-lg hover:border-primary transition-all flex items-center gap-space-xs" onclick="openModal('transfer-modal')">
+<span class="material-symbols-outlined">swap_horiz</span>
+                        Chuyển giữa các ví
+                    </button>
+</div>
+</section>
+<!-- Section 2: Internal Wallets Deck (WALLET-SEC-02) -->
+<section class="flex flex-col gap-space-md">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Danh sách ví nội bộ SpendWise</h3>
+</div>
+<button class="px-space-md py-space-xs bg-surface-container-high border border-outline-variant rounded text-telemetry-sm font-telemetry-sm text-primary hover:bg-surface-variant transition-colors flex items-center gap-space-xs" onclick="openModal('create-wallet-modal')">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+                        + Tạo ví mới
+                    </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Wallet 1 -->
+<div class="rounded-xl bg-surface-container-low border border-outline-variant p-space-lg flex flex-col justify-between gap-space-lg relative group hover:border-primary transition-all">
+<div class="flex justify-between items-start">
+<div>
+<span class="px-2 py-0.5 bg-primary/10 border border-primary/30 text-primary rounded text-label-caps font-label-caps">Mặc định</span>
+<h4 class="text-headline-md font-headline-md text-on-surface mt-2">Ví Chi Tiêu Chính</h4>
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface-variant">SPW-889921</span>
+</div>
+<div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Sửa/đổi tên ví"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Đặt làm mặc định"><span class="material-symbols-outlined text-sm">star</span></button>
+</div>
+</div>
+<div>
+<div class="text-telemetry-sm text-on-surface-variant">Khả dụng</div>
+<div class="text-telemetry-lg font-telemetry-lg text-secondary font-bold">85.200.000 ₫</div>
+</div>
+</div>
+<!-- Wallet 2 -->
+<div class="rounded-xl bg-surface-container-low border border-outline-variant p-space-lg flex flex-col justify-between gap-space-lg relative group hover:border-primary transition-all">
+<div class="flex justify-between items-start">
+<div>
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded text-label-caps font-label-caps">Phụ trợ</span>
+<h4 class="text-headline-md font-headline-md text-on-surface mt-2">Ví Tiết Kiệm Dự Phòng</h4>
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface-variant">SPW-110294</span>
+</div>
+<div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Sửa/đổi tên ví"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Đặt làm mặc định"><span class="material-symbols-outlined text-sm">star_outline</span></button>
+</div>
+</div>
+<div>
+<div class="text-telemetry-sm text-on-surface-variant">Khả dụng</div>
+<div class="text-telemetry-lg font-telemetry-lg text-secondary font-bold">32.250.000 ₫</div>
+</div>
+</div>
+<!-- Wallet 3 -->
+<div class="rounded-xl bg-surface-container-low border border-outline-variant p-space-lg flex flex-col justify-between gap-space-lg relative group hover:border-primary transition-all">
+<div class="flex justify-between items-start">
+<div>
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded text-label-caps font-label-caps">Nhóm</span>
+<h4 class="text-headline-md font-headline-md text-on-surface mt-2">Ví Quỹ Nhóm & Sinh Hoạt</h4>
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface-variant">SPW-449102</span>
+</div>
+<div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Sửa/đổi tên ví"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-primary" title="Đặt làm mặc định"><span class="material-symbols-outlined text-sm">star_outline</span></button>
+<button class="p-1 hover:bg-error-container/20 rounded text-on-surface-variant hover:text-error" onclick="openModal('close-wallet-modal')" title="Đóng ví"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</div>
+<div>
+<div class="text-telemetry-sm text-on-surface-variant">Khả dụng</div>
+<div class="text-telemetry-lg font-telemetry-lg text-secondary font-bold">8.000.000 ₫</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: SePay Open Banking Hub (WALLET-SEC-03) -->
+<section class="rounded-xl bg-surface-container border border-outline-variant p-space-xl flex flex-col gap-space-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-space-md">
+<div>
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary">hub</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">SePay Open Banking Hub</h3>
+</div>
+<p class="text-telemetry-sm text-on-surface-variant mt-1">Cổng kết nối thanh toán tự động qua API ngân hàng trực tuyến.</p>
+</div>
+<div class="flex items-center gap-space-md flex-wrap">
+<button class="px-space-md py-space-xs bg-surface-variant border border-outline-variant rounded text-telemetry-sm font-telemetry-sm text-on-surface hover:border-primary transition-colors flex items-center gap-space-xs" onclick="syncBanks()">
+<span class="material-symbols-outlined text-sm" id="sync-icon">sync</span>
+                            Đồng bộ ngay
+                        </button>
+<button class="px-space-md py-space-xs bg-primary text-on-primary font-telemetry-sm font-bold rounded hover:brightness-110 transition-all flex items-center gap-space-xs" onclick="openModal('link-bank-modal')">
+<span class="material-symbols-outlined text-sm">add_card</span>
+                            Liên kết thêm ngân hàng
+                        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Bank Card 1 -->
+<div class="p-space-md rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-space-sm">
+<div class="flex justify-between items-center">
+<span class="font-telemetry-md font-bold text-on-surface">Vietcombank Digibank</span>
+<span class="px-2 py-0.5 bg-secondary/10 text-secondary border border-secondary/30 rounded text-label-caps">Hoạt động</span>
+</div>
+<div class="text-telemetry-sm text-on-surface-variant font-telemetry-sm">Stk: ****9821 • Chủ TK: NGUYEN VAN A</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant text-telemetry-sm">
+<span class="text-on-surface-variant">Đã đồng bộ 2 phút trước</span>
+<button class="text-error hover:underline text-xs" onclick="unlinkBank('Vietcombank')">Hủy liên kết</button>
+</div>
+</div>
+<!-- Bank Card 2 -->
+<div class="p-space-md rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-space-sm">
+<div class="flex justify-between items-center">
+<span class="font-telemetry-md font-bold text-on-surface">ACB Online</span>
+<span class="px-2 py-0.5 bg-secondary/10 text-secondary border border-secondary/30 rounded text-label-caps">Hoạt động</span>
+</div>
+<div class="text-telemetry-sm text-on-surface-variant font-telemetry-sm">Stk: ****4321 • Chủ TK: NGUYEN VAN A</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant text-telemetry-sm">
+<span class="text-on-surface-variant">Đã đồng bộ 5 phút trước</span>
+<button class="text-error hover:underline text-xs" onclick="unlinkBank('ACB')">Hủy liên kết</button>
+</div>
+</div>
+<!-- Bank Card 3 -->
+<div class="p-space-md rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-space-sm">
+<div class="flex justify-between items-center">
+<span class="font-telemetry-md font-bold text-on-surface">TestMode Sandbox</span>
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant border border-outline-variant rounded text-label-caps">Mock API</span>
+</div>
+<div class="text-telemetry-sm text-on-surface-variant font-telemetry-sm">Stk: ****0000 • Môi trường giả lập</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant text-telemetry-sm">
+<span class="text-on-surface-variant">Trực tuyến</span>
+<button class="text-error hover:underline text-xs" onclick="unlinkBank('Sandbox')">Hủy liên kết</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4 & 5: Feeds Grid (7 cols / 5 cols) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Section 4: Bank Transactions Feed (WALLET-SEC-04 - Left 7 cols) -->
+<section class="lg:col-span-7 rounded-xl bg-surface-container border border-outline-variant p-space-lg flex flex-col gap-space-md">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Bảng biến động số dư SePay</h3>
+</div>
+<span class="text-telemetry-sm text-on-surface-variant">5 bản ghi gần nhất</span>
+</div>
+<div class="flex flex-col divide-y divide-outline-variant">
+<!-- Record 1 -->
+<div class="py-space-md flex justify-between items-center hover:bg-surface-container-high px-2 rounded transition-colors">
+<div class="flex flex-col">
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface">VCB • Chuyển khoản từ CTY ABC</span>
+<span class="text-xs text-on-surface-variant">24/10/2023 - 14:32</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-telemetry-md font-telemetry-md text-secondary font-bold">+15.000.000 ₫</span>
+<span class="px-1.5 py-0.2 bg-secondary/10 text-secondary rounded text-[10px] mt-1">Lương / Thu nhập</span>
+</div>
+</div>
+<!-- Record 2 -->
+<div class="py-space-md flex justify-between items-center hover:bg-surface-container-high px-2 rounded transition-colors">
+<div class="flex flex-col">
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface">ACB • Thanh toán hóa đơn điện</span>
+<span class="text-xs text-on-surface-variant">24/10/2023 - 10:15</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-telemetry-md font-telemetry-md text-error font-bold">-1.250.000 ₫</span>
+<span class="px-1.5 py-0.2 bg-error/10 text-error rounded text-[10px] mt-1">Hóa đơn & Tiện ích</span>
+</div>
+</div>
+<!-- Record 3 -->
+<div class="py-space-md flex justify-between items-center hover:bg-surface-container-high px-2 rounded transition-colors">
+<div class="flex flex-col">
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface">VCB • Mua sắm siêu thị WinMart</span>
+<span class="text-xs text-on-surface-variant">23/10/2023 - 19:45</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-telemetry-md font-telemetry-md text-error font-bold">-450.000 ₫</span>
+<span class="px-1.5 py-0.2 bg-error/10 text-error rounded text-[10px] mt-1">Ăn uống & Mua sắm</span>
+</div>
+</div>
+<!-- Record 4 -->
+<div class="py-space-md flex justify-between items-center hover:bg-surface-container-high px-2 rounded transition-colors">
+<div class="flex flex-col">
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface">ACB • Hoàn tiền chiến dịch Cashback</span>
+<span class="text-xs text-on-surface-variant">22/10/2023 - 08:00</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-telemetry-md font-telemetry-md text-secondary font-bold">+120.000 ₫</span>
+<span class="px-1.5 py-0.2 bg-secondary/10 text-secondary rounded text-[10px] mt-1">Hoàn tiền</span>
+</div>
+</div>
+<!-- Record 5 -->
+<div class="py-space-md flex justify-between items-center hover:bg-surface-container-high px-2 rounded transition-colors">
+<div class="flex flex-col">
+<span class="text-telemetry-sm font-telemetry-sm text-on-surface">VCB • Chuyển tiền bạn bè</span>
+<span class="text-xs text-on-surface-variant">21/10/2023 - 21:10</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-telemetry-md font-telemetry-md text-error font-bold">-500.000 ₫</span>
+<span class="px-1.5 py-0.2 bg-error/10 text-error rounded text-[10px] mt-1">Chuyển khoản</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 5: Internal Wallet Activities (WALLET-SEC-05 - Right 5 cols) -->
+<section class="lg:col-span-5 rounded-xl bg-surface-container border border-outline-variant p-space-lg flex flex-col gap-space-md">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary">history</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Lịch sử hoạt động ví nội bộ</h3>
+</div>
+<span class="text-telemetry-sm text-on-surface-variant">Thời gian thực</span>
+</div>
+<div class="flex flex-col gap-space-md">
+<!-- Activity 1 -->
+<div class="p-space-sm rounded bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-8 h-8 rounded bg-secondary/10 text-secondary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+</div>
+<div class="flex flex-col">
+<span class="text-telemetry-sm text-on-surface font-bold">Nạp tiền vào Ví Chi Tiêu</span>
+<span class="text-[11px] text-on-surface-variant">Từ VCB ****9821</span>
+</div>
+</div>
+<span class="text-telemetry-md font-telemetry-md text-secondary font-bold">+5.000.000 ₫</span>
+</div>
+<!-- Activity 2 -->
+<div class="p-space-sm rounded bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-sm">swap_horiz</span>
+</div>
+<div class="flex flex-col">
+<span class="text-telemetry-sm text-on-surface font-bold">Chuyển giữa ví</span>
+<span class="text-[11px] text-on-surface-variant">Ví Chính ➔ Quỹ Nhóm</span>
+</div>
+</div>
+<span class="text-telemetry-md font-telemetry-md text-on-surface font-bold">2.000.000 ₫</span>
+</div>
+<!-- Activity 3 -->
+<div class="p-space-sm rounded bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-8 h-8 rounded bg-error/10 text-error flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-sm">arrow_upward</span>
+</div>
+<div class="flex flex-col">
+<span class="text-telemetry-sm text-on-surface font-bold">Rút tiền mặt / Ngoại ví</span>
+<span class="text-[11px] text-on-surface-variant">Từ Ví Tiết Kiệm</span>
+</div>
+</div>
+<span class="text-telemetry-md font-telemetry-md text-error font-bold">-1.000.000 ₫</span>
+</div>
+<!-- Activity 4 -->
+<div class="p-space-sm rounded bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-8 h-8 rounded bg-surface-variant text-on-surface flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-sm">edit</span>
+</div>
+<div class="flex flex-col">
+<span class="text-telemetry-sm text-on-surface font-bold">Đổi tên ví nội bộ</span>
+<span class="text-[11px] text-on-surface-variant">"Ví Du Lịch" ➔ "Ví Quỹ Nhóm"</span>
+</div>
+</div>
+<span class="text-telemetry-sm text-on-surface-variant">Cập nhật</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<!-- Section 6: Modals & Security Interaction Overlay (WALLET-SEC-06) -->
+<!-- Top-up Modal -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center hidden" id="topup-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-md rounded-xl p-space-xl flex flex-col gap-space-lg shadow-2xl">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<h3 class="text-headline-md font-headline-md text-on-surface">+ Nạp tiền vào ví</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('topup-modal')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="flex flex-col gap-space-md">
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Chọn ví nhận</label>
+<select class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md">
+<option>Ví Chi Tiêu Chính (SPW-889921)</option>
+<option>Ví Tiết Kiệm Dự Phòng (SPW-110294)</option>
+<option>Ví Quỹ Nhóm & Sinh Hoạt (SPW-449102)</option>
+</select>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Nguồn tiền SePay</label>
+<select class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md">
+<option>Vietcombank Digibank ****9821</option>
+<option>ACB Online ****4321</option>
+</select>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Số tiền nạp (₫)</label>
+<input class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md" type="text" value="1.000.000"/>
+</div>
+</div>
+<div class="flex justify-end gap-space-md pt-space-md border-t border-outline-variant">
+<button class="px-space-md py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('topup-modal')">Hủy</button>
+<button class="px-space-md py-space-sm bg-primary text-on-primary font-bold rounded font-telemetry-md" onclick="triggerPinModal('topup')">Xác nhận nạp</button>
+</div>
+</div>
+</div>
+<!-- Internal Transfer Modal -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center hidden" id="transfer-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-md rounded-xl p-space-xl flex flex-col gap-space-lg shadow-2xl">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<h3 class="text-headline-md font-headline-md text-on-surface">Chuyển giữa các ví nội bộ</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('transfer-modal')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="flex flex-col gap-space-md">
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Từ ví nguồn</label>
+<select class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md">
+<option>Ví Chi Tiêu Chính (85.200.000 ₫)</option>
+<option>Ví Tiết Kiệm Dự Phòng (32.250.000 ₫)</option>
+</select>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Đến ví đích</label>
+<select class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md">
+<option>Ví Quỹ Nhóm & Sinh Hoạt (8.000.000 ₫)</option>
+<option>Ví Tiết Kiệm Dự Phòng (32.250.000 ₫)</option>
+</select>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Số tiền chuyển (₫)</label>
+<input class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md" type="text" value="500.000"/>
+</div>
+</div>
+<div class="flex justify-end gap-space-md pt-space-md border-t border-outline-variant">
+<button class="px-space-md py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('transfer-modal')">Hủy</button>
+<button class="px-space-md py-space-sm bg-primary text-on-primary font-bold rounded font-telemetry-md" onclick="triggerPinModal('transfer')">Tiếp tục</button>
+</div>
+</div>
+</div>
+<!-- Create Wallet Modal -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center hidden" id="create-wallet-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-md rounded-xl p-space-xl flex flex-col gap-space-lg shadow-2xl">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<h3 class="text-headline-md font-headline-md text-on-surface">+ Tạo ví nội bộ mới</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('create-wallet-modal')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="flex flex-col gap-space-md">
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Tên ví</label>
+<input class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md" placeholder="Ví Đầu Tư / Ví Du Lịch..." type="text"/>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Mô tả mục đích</label>
+<textarea class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md h-20" placeholder="Ghi chú chi tiết..."></textarea>
+</div>
+</div>
+<div class="flex justify-end gap-space-md pt-space-md border-t border-outline-variant">
+<button class="px-space-md py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('create-wallet-modal')">Hủy</button>
+<button class="px-space-md py-space-sm bg-primary text-on-primary font-bold rounded font-telemetry-md" onclick="closeModal('create-wallet-modal'); alert('Đã tạo ví thành công!');">Tạo ví</button>
+</div>
+</div>
+</div>
+<!-- Link Bank Modal -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center hidden" id="link-bank-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-md rounded-xl p-space-xl flex flex-col gap-space-lg shadow-2xl">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<h3 class="text-headline-md font-headline-md text-on-surface">Liên kết ngân hàng qua SePay</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('link-bank-modal')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="flex flex-col gap-space-md">
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Chọn ngân hàng</label>
+<select class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md">
+<option>Techcombank</option>
+<option>MB Bank</option>
+<option>VPBank</option>
+<option>TPBank</option>
+</select>
+</div>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Số tài khoản / Số thẻ</label>
+<input class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md" placeholder="Nhập số tài khoản..." type="text"/>
+</div>
+</div>
+<div class="flex justify-end gap-space-md pt-space-md border-t border-outline-variant">
+<button class="px-space-md py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('link-bank-modal')">Hủy</button>
+<button class="px-space-md py-space-sm bg-primary text-on-primary font-bold rounded font-telemetry-md" onclick="closeModal('link-bank-modal'); alert('Đã khởi tạo yêu cầu liên kết SePay!');">Xác thực API</button>
+</div>
+</div>
+</div>
+<!-- Close Wallet Modal -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center hidden" id="close-wallet-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-md rounded-xl p-space-xl flex flex-col gap-space-lg shadow-2xl">
+<div class="flex justify-between items-center pb-space-sm border-b border-outline-variant">
+<h3 class="text-headline-md font-headline-md text-error">Xác nhận đóng ví</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('close-wallet-modal')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="flex flex-col gap-space-md">
+<p class="text-body-md text-on-surface-variant">Để đóng ví này, số dư hiện tại phải bằng 0 ₫ và bạn cần nhập mã PIN bảo mật 6 chữ số.</p>
+<div>
+<label class="text-telemetry-sm text-on-surface-variant block mb-1">Nhập mã PIN 6 chữ số</label>
+<input class="w-full bg-background border border-outline-variant rounded p-space-sm text-on-surface font-telemetry-md tracking-widest text-center text-lg" maxlength="6" placeholder="******" type="password"/>
+</div>
+</div>
+<div class="flex justify-end gap-space-md pt-space-md border-t border-outline-variant">
+<button class="px-space-md py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('close-wallet-modal')">Hủy</button>
+<button class="px-space-md py-space-sm bg-error text-on-error font-bold rounded font-telemetry-md" onclick="closeModal('close-wallet-modal'); alert('Đã đóng ví thành công.');">Đóng ví vĩnh viễn</button>
+</div>
+</div>
+</div>
+<!-- PIN 6-digit confirmation overlay (WALLET-SEC-06) -->
+<div class="fixed inset-0 bg-background/90 backdrop-blur-md z-50 flex items-center justify-center hidden" id="pin-modal">
+<div class="bg-surface-container border border-outline-variant w-full max-w-sm rounded-xl p-space-xl flex flex-col items-center gap-space-lg shadow-2xl text-center">
+<div class="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">lock</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">Xác thực giao dịch</h3>
+<p class="text-telemetry-sm text-on-surface-variant mt-1">Nhập mã PIN bảo mật 6 chữ số để hoàn tất lệnh.</p>
+</div>
+<div class="flex gap-2 justify-center my-2">
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+<input class="w-10 h-10 text-center bg-background border border-outline-variant rounded text-on-surface font-telemetry-lg" maxlength="1" type="password"/>
+</div>
+<div class="flex gap-space-md w-full pt-2">
+<button class="flex-1 py-space-sm bg-surface-variant text-on-surface rounded font-telemetry-md" onclick="closeModal('pin-modal')">Hủy</button>
+<button class="flex-1 py-space-sm bg-primary text-on-primary font-bold rounded font-telemetry-md" onclick="completeTransaction()">Xác nhận</button>
+</div>
+</div>
+</div>
+<!-- JavaScript Interactions -->
+<script>
+        let balanceHidden = false;
+        function toggleBalance() {
+            balanceHidden = !balanceHidden;
+            const balanceEl = document.getElementById('total-balance');
+            const privacyText = document.getElementById('privacy-text');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (balanceHidden) {
+                balanceEl.textContent = '••••••••••••';
+                privacyText.textContent = 'Hiện số dư';
+                eyeIcon.textContent = 'visibility_off';
+            } else {
+                balanceEl.textContent = '125.450.000 ₫';
+                privacyText.textContent = 'Ẩn số dư';
+                eyeIcon.textContent = 'visibility';
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function triggerPinModal(type) {
+            closeModal('topup-modal');
+            closeModal('transfer-modal');
+            openModal('pin-modal');
+        }
+
+        function completeTransaction() {
+            closeModal('pin-modal');
+            alert('Giao dịch hoàn tất và đã được ghi sổ hệ thống!');
+        }
+
+        function syncBanks() {
+            const icon = document.getElementById('sync-icon');
+            icon.classList.add('animate-spin');
+            setTimeout(() => {
+                icon.classList.remove('animate-spin');
+                alert('Đã đồng bộ thành công với SePay Open Banking!');
+            }, 1000);
+        }
+
+        function unlinkBank(name) {
+            if(confirm('Bạn có chắc chắn muốn hủy liên kết ngân hàng ' + name + '?')) {
+                alert('Đã hủy liên kết thành công.');
+            }
+        }
+    </script>
+</body></html>

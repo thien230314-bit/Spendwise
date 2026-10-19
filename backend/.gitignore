@@ -1,0 +1,29 @@
+# Build output
+**/bin/
+**/obj/
+TestResults/
+coverage/
+
+# IDE state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local configuration and secrets
+appsettings.Local.json
+appsettings.*.local.json
+.env
+.env.*
+!.env.example
+
+# Logs and local databases
+*.log
+*.db
+*.db-shm
+*.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db

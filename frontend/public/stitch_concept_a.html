@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Điều Khiển Tài Chính - Financial Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              900: '#064e3b',
+              950: '#022c22',
+            },
+            slate: {
+              850: '#151f32',
+              900: '#0f172a',
+              950: '#080d1a',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom subtle scrollbar & sleek transitions */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b1120; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    
+    .glow-emerald {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.15);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.12);
+    }
+    .masked-balance {
+      filter: blur(8px);
+      user-select: none;
+      transition: filter 0.25s ease;
+    }
+    .chart-bar {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .chart-bar:hover {
+      filter: brightness(1.2);
+      transform: translateY(-3px);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen selection:bg-brand-500 selection:text-slate-950">
+
+  <!-- Desktop App Shell Container (Max 1440px desktop grid) -->
+  <div class="min-h-screen flex flex-col bg-[#070b14] text-slate-100">
+    
+    <!-- Top Navigation Bar (Editorial Brand Header) -->
+    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-8 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-8">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-emerald-300 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">FinVanguard</span>
+            <span class="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 ml-2 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">Pro Tier</span>
+          </div>
+        </div>
+
+        <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+          <a href="#" class="px-3 py-1.5 rounded-lg bg-slate-850 text-brand-400 font-semibold border border-slate-700/60">Tổng quan</a>
+          <a href="#" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">Giao dịch</a>
+          <a href="#" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">Ngân sách</a>
+          <a href="#" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">Quỹ nhóm</a>
+          <a href="#" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">Báo cáo thuế</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Live Connection Status -->
+        <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>4 Tài khoản đã đồng bộ</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="relative p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-all" aria-label="Thông báo">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"></path>
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
+        </button>
+
+        <!-- User Profile Avatar & Name -->
+        <div class="flex items-center gap-3 pl-2 border-l border-slate-800">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm text-white border border-indigo-400/30">
+            TA
+          </div>
+          <div class="hidden xl:block text-left text-xs">
+            <div class="font-bold text-slate-200">Trần Tuấn Anh</div>
+            <div class="text-slate-500 font-mono">Premium ID: #8824</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Canvas Container (1440px Constrained) -->
+    <main class="w-full max-w-[1440px] mx-auto px-6 lg:px-10 py-8 flex-1 space-y-8">
+      
+      <!-- ===================================================================== -->
+      <!-- SECTION 1: Greeting & Personalization (Header full-width)             -->
+      <!-- ===================================================================== -->
+      <section class="bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-950 border border-slate-800/90 rounded-2xl p-6 lg:p-7 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/25">
+              <svg class="w-3.5 h-3.5 text-brand-400 animate-spin" style="animation-duration: 4s;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.2L12 16.8 5.7 21.2l2.3-7.2-6-4.6h7.6z"/>
+              </svg>
+              <span>Giám đốc tài chính cá nhân</span>
+            </span>
+            <span class="text-xs font-medium text-slate-400">• Định danh xác thực sinh trắc học</span>
+          </div>
+
+          <h1 class="text-2xl lg:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <span>Chào buổi sáng, Tuấn Anh</span>
+            <span class="text-xl">✨</span>
+          </h1>
+          <p class="text-sm text-slate-400 font-normal">Hôm nay tình hình tài chính của bạn đang vượt 14.8% mục tiêu tiết kiệm quý 4.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Date Chip -->
+          <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-850 border border-slate-700/80 text-xs font-mono text-slate-300 shadow-inner">
+            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"></path>
+            </svg>
+            <span class="font-semibold text-slate-200">Thứ Ba, 13/10/2026</span>
+          </div>
+
+          <!-- Privacy Toggle Button -->
+          <button id="togglePrivacyBtn" onclick="toggleBalancePrivacy()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-all text-xs font-medium focus:ring-2 focus:ring-brand-500/40">
+            <svg id="eyeIcon" class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+            </svg>
+            <span id="privacyLabel">Ẩn số dư</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 2 & 3: Asymmetric Hero Grid (5 Cols + 7 Cols)                  -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- SECTION 2: Main Balance & Quick Actions (5 Cols Asymmetric) -->
+        <section class="lg:col-span-5 relative overflow-hidden bg-gradient-to-b from-slate-900 to-[#0e1726] border border-slate-800 rounded-2xl p-7 flex flex-col justify-between shadow-2xl glow-emerald">
+          <!-- Background Ambient Glow & Watermark -->
+          <div class="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                <span class="text-xs font-bold tracking-wider uppercase text-slate-400">TỔNG SỐ DƯ KHẢ DỤNG</span>
+              </div>
+              <span class="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-brand-950 text-brand-400 border border-brand-800/60">+3.4% so với tuần trước</span>
+            </div>
+
+            <!-- Primary Metric Value -->
+            <div class="my-4">
+              <div class="balance-sensitive text-4xl xl:text-5xl font-black font-mono tracking-tight text-white flex items-baseline gap-2">
+                <span>125.450.000</span>
+                <span class="text-2xl xl:text-3xl font-semibold text-brand-400">₫</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-brand-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                </svg>
+                <span>Đồng bộ từ các ví cá nhân và tài khoản ngân hàng liên kết</span>
+              </p>
+            </div>
+
+            <!-- Mini breakdown badges -->
+            <div class="grid grid-cols-2 gap-2.5 pt-4 border-t border-slate-800/80 mb-7 text-xs">
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
+                <div class="text-slate-400 text-[11px]">Vietcombank Digital</div>
+                <div class="balance-sensitive font-mono font-bold text-slate-200 mt-0.5">85.000.000 ₫</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
+                <div class="text-slate-400 text-[11px]">Ví Momo & Apple Cash</div>
+                <div class="balance-sensitive font-mono font-bold text-slate-200 mt-0.5">40.450.000 ₫</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Quick Action Buttons -->
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">Thao tác nhanh</div>
+            <div class="grid grid-cols-4 gap-2.5">
+              
+              <!-- 1. + Thu -->
+              <button class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-950 hover:bg-brand-950/60 border border-slate-800 hover:border-brand-500/50 transition-all duration-200 hover:scale-105">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/15 group-hover:bg-emerald-500 text-emerald-400 group-hover:text-slate-950 flex items-center justify-center mb-1.5 transition-colors">
+                  <svg class="w-5 h-5 font-bold" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                  </svg>
+                </div>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-300">+ Thu</span>
+              </button>
+
+              <!-- 2. - Chi -->
+              <button class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-950 hover:bg-rose-950/50 border border-slate-800 hover:border-rose-500/50 transition-all duration-200 hover:scale-105">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/15 group-hover:bg-rose-500 text-rose-400 group-hover:text-white flex items-center justify-center mb-1.5 transition-colors">
+                  <svg class="w-5 h-5 font-bold" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15"></path>
+                  </svg>
+                </div>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-rose-300">- Chi</span>
+              </button>
+
+              <!-- 3. Chuyển -->
+              <button class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-950 hover:bg-sky-950/50 border border-slate-800 hover:border-sky-500/50 transition-all duration-200 hover:scale-105">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/15 group-hover:bg-sky-500 text-sky-400 group-hover:text-white flex items-center justify-center mb-1.5 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"></path>
+                  </svg>
+                </div>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-sky-300">Chuyển</span>
+              </button>
+
+              <!-- 4. Nhóm -->
+              <button class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-950 hover:bg-purple-950/50 border border-slate-800 hover:border-purple-500/50 transition-all duration-200 hover:scale-105">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/15 group-hover:bg-purple-500 text-purple-400 group-hover:text-white flex items-center justify-center mb-1.5 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"></path>
+                  </svg>
+                </div>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-purple-300">Nhóm</span>
+              </button>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Financial Overview 2x2 Grid + Net Ratio Bar (7 Cols) -->
+        <section class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-7 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h2 class="text-base font-bold text-white tracking-tight">Tổng Quan Chỉ Số Tháng Này</h2>
+                <p class="text-xs text-slate-400">Số liệu cập nhật thời gian thực theo chu kỳ kế toán</p>
+              </div>
+              <span class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700/60">Tháng 10/2026</span>
+            </div>
+
+            <!-- 2x2 Metric Tiles -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              
+              <!-- Metric 1: Thu nhập tháng này -->
+              <div class="bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-400">Thu nhập tháng này</span>
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="balance-sensitive font-mono font-bold text-xl text-emerald-400">45.200.000 ₫</div>
+                <div class="text-[11px] text-slate-500 mt-1 font-medium">85% từ Lương & Cổ tức</div>
+              </div>
+
+              <!-- Metric 2: Chi tiêu tháng này -->
+              <div class="bg-slate-950/80 border border-slate-800 hover:border-rose-500/40 rounded-xl p-4 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-400">Chi tiêu tháng này</span>
+                  <div class="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 4.5-15 15m0 0h11.25m-11.25 0V8.25"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="balance-sensitive font-mono font-bold text-xl text-rose-400">-28.450.000 ₫</div>
+                <div class="text-[11px] text-slate-500 mt-1 font-medium">Đã dùng 63% tổng ngân sách</div>
+              </div>
+
+              <!-- Metric 3: Ngân sách còn lại -->
+              <div class="bg-slate-950/80 border border-slate-800 hover:border-sky-500/40 rounded-xl p-4 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-400">Ngân sách còn lại</span>
+                  <div class="w-7 h-7 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="balance-sensitive font-mono font-bold text-xl text-sky-300">16.550.000 ₫</div>
+                <div class="text-[11px] text-slate-500 mt-1 font-medium">Còn 18 ngày trong kỳ chi tiêu</div>
+              </div>
+
+              <!-- Metric 4: Quỹ nhóm & Nghĩa vụ -->
+              <div class="bg-slate-950/80 border border-slate-800 hover:border-purple-500/40 rounded-xl p-4 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-400">Quỹ nhóm & Nghĩa vụ</span>
+                  <div class="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <div class="balance-sensitive font-mono font-bold text-xl text-purple-300">5.000.000 ₫</div>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">Cần đóng: 500.000 ₫</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1 font-medium">3 nhóm bạn bè & gia đình</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Net Flow Bar: Dòng tiền ròng -->
+          <div class="bg-slate-950/90 rounded-xl p-4 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between text-xs mb-2.5">
+              <span class="text-slate-400 font-medium">Dòng tiền ròng thực tế:</span>
+              <span class="balance-sensitive font-mono font-bold text-sm text-brand-400">+16.750.000 ₫</span>
+            </div>
+            
+            <!-- Dual Progress Bar (Thu: 61% | Chi: 39%) -->
+            <div class="w-full h-3 bg-slate-850 rounded-full overflow-hidden flex p-0.5 border border-slate-800">
+              <div class="h-full bg-gradient-to-r from-emerald-500 to-brand-400 rounded-l-full" style="width: 61%" title="Thu nhập: 61%"></div>
+              <div class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-r-full ml-0.5" style="width: 39%" title="Chi tiêu: 39%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono mt-2">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-400"></span>
+                <span>Thu: <strong class="text-slate-200">61%</strong> (45.2M)</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <span>Chi: <strong class="text-slate-200">39%</strong> (28.4M)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 4: Financial Attention Banner (Full width amber alert)        -->
+      <!-- ===================================================================== -->
+      <section class="relative overflow-hidden bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-slate-900/80 border border-amber-500/40 rounded-2xl p-5 shadow-lg glow-amber flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-start sm:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+            <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"></path>
+            </svg>
+          </div>
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Cảnh báo tài chính cần xử lý ngay</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/10 text-amber-300">Ưu tiên cao</span>
+            </div>
+            <p class="text-sm font-semibold text-slate-100">
+              Hạn mức danh mục Ẩm thực đã chi <span class="text-amber-400 font-bold">92%</span> ngân sách tháng này.
+              <span class="text-slate-400 font-normal hidden md:inline">Chỉ còn 720.000 ₫ cho 18 ngày tiếp theo.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+          <button class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md hover:shadow-amber-500/20 flex items-center gap-1.5">
+            <span>Xem chi tiết</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 5 & 6: Analytics Grid (6-Month Bars + Category Donut)         -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- SECTION 5: Six-Month Cash Flow Analytics Bar Chart (7 Cols) -->
+        <section class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-7 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <div>
+                <h3 class="text-base font-bold text-white tracking-tight">Biến Động Dòng Tiền 6 Tháng</h3>
+                <p class="text-xs text-slate-400">Xu hướng thu chi chu kỳ từ Tháng 5 đến Tháng 10</p>
+              </div>
+
+              <!-- Filter Toggle: Chi tiêu / Thu nhập -->
+              <div class="inline-flex p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
+                <button id="btnChiTieu" onclick="switchBarMode('chi')" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-bold transition-all">Chi tiêu</button>
+                <button id="btnThuNhap" onclick="switchBarMode('thu')" class="px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Thu nhập</button>
+              </div>
+            </div>
+
+            <!-- Interactive SVG Bar Chart -->
+            <div class="relative w-full h-64 bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-end">
+              <!-- Y-axis guide gridlines -->
+              <div class="absolute inset-x-4 top-4 bottom-10 flex flex-col justify-between pointer-events-none opacity-20">
+                <div class="border-b border-slate-500 flex justify-end text-[9px] font-mono text-slate-400">40M</div>
+                <div class="border-b border-slate-500 flex justify-end text-[9px] font-mono text-slate-400">30M</div>
+                <div class="border-b border-slate-500 flex justify-end text-[9px] font-mono text-slate-400">20M</div>
+                <div class="border-b border-slate-500 flex justify-end text-[9px] font-mono text-slate-400">10M</div>
+              </div>
+
+              <!-- Bars Representation -->
+              <div class="grid grid-cols-6 h-48 items-end gap-3 sm:gap-6 px-4 z-10">
+                
+                <!-- T5 -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">26.2M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400" style="height: 65%;"></div>
+                  <span class="text-xs font-semibold text-slate-400 mt-2 font-mono group-hover:text-white">T5</span>
+                </div>
+
+                <!-- T6 -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">28.5M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400" style="height: 71%;"></div>
+                  <span class="text-xs font-semibold text-slate-400 mt-2 font-mono group-hover:text-white">T6</span>
+                </div>
+
+                <!-- T7 -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">34.8M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400" style="height: 87%;"></div>
+                  <span class="text-xs font-semibold text-slate-400 mt-2 font-mono group-hover:text-white">T7</span>
+                </div>
+
+                <!-- T8 -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">31.0M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400" style="height: 77%;"></div>
+                  <span class="text-xs font-semibold text-slate-400 mt-2 font-mono group-hover:text-white">T8</span>
+                </div>
+
+                <!-- T9 -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">33.4M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400" style="height: 83%;"></div>
+                  <span class="text-xs font-semibold text-slate-400 mt-2 font-mono group-hover:text-white">T9</span>
+                </div>
+
+                <!-- T10 (Current month highlight) -->
+                <div class="group flex flex-col items-center h-full justify-end cursor-pointer">
+                  <div class="text-[10px] font-mono text-brand-300 opacity-0 group-hover:opacity-100 transition-opacity mb-1 bg-slate-800 px-1 rounded">28.4M</div>
+                  <div class="chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-900 via-rose-500 to-amber-400 rounded-t-md border-t-2 border-amber-300 shadow-lg shadow-rose-500/20" style="height: 71%;"></div>
+                  <span class="text-xs font-bold text-amber-400 mt-2 font-mono">T10 *</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary footer -->
+          <div class="pt-4 mt-4 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+              <span>Tổng 6 tháng: <strong class="text-slate-200">182.400.000 ₫</strong></span>
+            </span>
+            <span class="text-slate-500">•</span>
+            <span>TB: <strong class="text-brand-400">30.400.000 ₫/tháng</strong></span>
+          </div>
+        </section>
+
+        <!-- SECTION 6: Category Distribution Donut Chart (5 Cols) -->
+        <section class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-7 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-bold text-white tracking-tight">Cơ Cấu Phân Bổ Tháng</h3>
+                <p class="text-xs text-slate-400">Tỷ trọng chi tiêu theo danh mục tiêu dùng</p>
+              </div>
+
+              <!-- Filter Toggle: Chi tiêu / Thu nhập -->
+              <div class="inline-flex p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
+                <button class="px-2.5 py-1 rounded-lg bg-slate-800 text-white">Chi tiêu</button>
+                <button class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Thu nhập</button>
+              </div>
+            </div>
+
+            <!-- Donut Visual with SVG Ring + Center Total -->
+            <div class="relative flex items-center justify-center my-4">
+              <svg class="w-48 h-48 transform -rotate-90" viewBox="0 0 160 160">
+                <!-- Track background -->
+                <circle cx="80" cy="80" r="62" stroke="#1e293b" stroke-width="18" fill="transparent" />
+                
+                <!-- Segment 1: An uong (38%) -> stroke-dasharray: (0.38 * 389.5) = 148, offset: 0 -->
+                <circle cx="80" cy="80" r="62" stroke="#f43f5e" stroke-width="18" fill="transparent"
+                  stroke-dasharray="148 390" stroke-dashoffset="0" class="hover:stroke-rose-400 transition-all cursor-pointer" />
+                
+                <!-- Segment 2: Nha cua (24%) -> stroke-dasharray: (0.24 * 389.5) = 93.5, offset: -148 -->
+                <circle cx="80" cy="80" r="62" stroke="#0ea5e9" stroke-width="18" fill="transparent"
+                  stroke-dasharray="93.5 390" stroke-dashoffset="-148" class="hover:stroke-sky-400 transition-all cursor-pointer" />
+                
+                <!-- Segment 3: Mua sam (18%) -> stroke-dasharray: (0.18 * 389.5) = 70.1, offset: -241.5 -->
+                <circle cx="80" cy="80" r="62" stroke="#a855f7" stroke-width="18" fill="transparent"
+                  stroke-dasharray="70.1 390" stroke-dashoffset="-241.5" class="hover:stroke-purple-400 transition-all cursor-pointer" />
+                
+                <!-- Segment 4: Giai tri (12%) -> stroke-dasharray: (0.12 * 389.5) = 46.7, offset: -311.6 -->
+                <circle cx="80" cy="80" r="62" stroke="#eab308" stroke-width="18" fill="transparent"
+                  stroke-dasharray="46.7 390" stroke-dashoffset="-311.6" class="hover:stroke-amber-400 transition-all cursor-pointer" />
+                
+                <!-- Segment 5: Khac (8%) -> stroke-dasharray: (0.08 * 389.5) = 31.2, offset: -358.3 -->
+                <circle cx="80" cy="80" r="62" stroke="#64748b" stroke-width="18" fill="transparent"
+                  stroke-dasharray="31.2 390" stroke-dashoffset="-358.3" class="hover:stroke-slate-300 transition-all cursor-pointer" />
+              </svg>
+
+              <!-- Donut Center Information -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Tổng Đã Chi</span>
+                <span class="balance-sensitive text-lg font-bold font-mono text-white">28.45M ₫</span>
+                <span class="text-[10px] text-rose-400 font-semibold mt-0.5">38% Ăn uống</span>
+              </div>
+            </div>
+
+            <!-- Category Legend with Percentages -->
+            <div class="space-y-2 mt-4 text-xs">
+              <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-950/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                  <span class="font-medium text-slate-200">Ăn uống & Nhà hàng</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-slate-400 font-mono">10.811.000 ₫</span>
+                  <span class="font-bold font-mono text-rose-400 w-8 text-right">38%</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-950/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+                  <span class="font-medium text-slate-200">Nhà cửa & Hóa đơn</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-slate-400 font-mono">6.828.000 ₫</span>
+                  <span class="font-bold font-mono text-sky-400 w-8 text-right">24%</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-950/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+                  <span class="font-medium text-slate-200">Mua sắm thiết bị</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-slate-400 font-mono">5.121.000 ₫</span>
+                  <span class="font-bold font-mono text-purple-400 w-8 text-right">18%</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-950/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span class="font-medium text-slate-200">Giải trí & Du lịch</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-slate-400 font-mono">3.414.000 ₫</span>
+                  <span class="font-bold font-mono text-amber-400 w-8 text-right">12%</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-950/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+                  <span class="font-medium text-slate-300">Khác & Dự phòng</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-slate-400 font-mono">2.276.000 ₫</span>
+                  <span class="font-bold font-mono text-slate-400 w-8 text-right">8%</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 7: Recent Transactions Feed (Full Width Table / Feed)         -->
+      <!-- ===================================================================== -->
+      <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-7 shadow-2xl">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <h3 class="text-base font-bold text-white tracking-tight">Giao Dịch Gần Đây</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/10 text-brand-400 border border-brand-500/20">Thời gian thực</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">5 bản ghi phát sinh gần nhất được ghi nhận từ cổng ngân hàng</p>
+          </div>
+
+          <button class="px-4 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700/80 transition-all flex items-center gap-2">
+            <span>Xem tất cả giao dịch</span>
+            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Transactions List -->
+        <div class="divide-y divide-slate-800/80">
+          
+          <!-- Item 1: Income (Salary) -->
+          <div class="py-4 flex items-center justify-between hover:bg-slate-950/40 px-3 rounded-xl transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0v7.5c0 .621.504 1.125 1.125 1.125H12m0-8.625v8.625M12 4.5h7.5A2.25 2.25 0 0 1 21.75 6.75v7.5A2.25 2.25 0 0 1 19.5 16.5H12"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white">Thanh toán lương tháng 10 - Tech Corp</div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-slate-300 font-medium">Vietcombank Digital</span>
+                  <span>•</span>
+                  <span class="font-mono">13/10/2026 09:15</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-300">Thu nhập cố định</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="balance-sensitive font-mono font-bold text-base text-emerald-400">+35.000.000 ₫</div>
+              <div class="text-[11px] text-slate-500 font-medium">Hoàn tất</div>
+            </div>
+          </div>
+
+          <!-- Item 2: Expense (Dining) -->
+          <div class="py-4 flex items-center justify-between hover:bg-slate-950/40 px-3 rounded-xl transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white">Ăn tối đối tác - Pizza 4P's Saigon</div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-slate-300 font-medium">Ví Momo QR</span>
+                  <span>•</span>
+                  <span class="font-mono">12/10/2026 20:30</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] bg-rose-950/60 text-rose-300 border border-rose-800/40">Ẩm thực</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="balance-sensitive font-mono font-bold text-base text-rose-400">-1.450.000 ₫</div>
+              <div class="text-[11px] text-slate-500 font-medium">Hoàn tất</div>
+            </div>
+          </div>
+
+          <!-- Item 3: Expense (Software Subscription) -->
+          <div class="py-4 flex items-center justify-between hover:bg-slate-950/40 px-3 rounded-xl transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75v-4.5m0 4.5h4.5m-4.5 0 6-6m-3 18c-8.284 0-15-6.716-15-15V4.5A2.25 2.25 0 0 1 4.5 2.25h4.5a2.25 2.25 0 0 1 2.25 2.25v2.25"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white">Gói bản quyền phần mềm Figma & Cloud</div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-slate-300 font-medium">Thẻ Visa Techcombank</span>
+                  <span>•</span>
+                  <span class="font-mono">11/10/2026 14:00</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] bg-purple-950/60 text-purple-300 border border-purple-800/40">Công việc</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="balance-sensitive font-mono font-bold text-base text-rose-400">-790.000 ₫</div>
+              <div class="text-[11px] text-slate-500 font-medium">Định kỳ tháng</div>
+            </div>
+          </div>
+
+          <!-- Item 4: Transfer (Group Fund Contribution) -->
+          <div class="py-4 flex items-center justify-between hover:bg-slate-950/40 px-3 rounded-xl transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white">Đóng quỹ dã ngoại - Nhóm Trekking Fansipan</div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-slate-300 font-medium">Quỹ Nhóm FinVanguard</span>
+                  <span>•</span>
+                  <span class="font-mono">10/10/2026 11:20</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] bg-sky-950/60 text-sky-300 border border-sky-800/40">Quỹ Nhóm</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="balance-sensitive font-mono font-bold text-base text-rose-400">-500.000 ₫</div>
+              <div class="text-[11px] text-emerald-400 font-medium">Đã ghi sổ nhóm</div>
+            </div>
+          </div>
+
+          <!-- Item 5: Income (Freelance Project) -->
+          <div class="py-4 flex items-center justify-between hover:bg-slate-950/40 px-3 rounded-xl transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white">Thù lao tư vấn thiết kế UI/UX Q3</div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-slate-300 font-medium">Vietcombank Digital</span>
+                  <span>•</span>
+                  <span class="font-mono">09/10/2026 16:45</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-300">Ngoại giao dịch</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="balance-sensitive font-mono font-bold text-base text-emerald-400">+10.200.000 ₫</div>
+              <div class="text-[11px] text-slate-500 font-medium">Hoàn tất</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Editorial Footer Note -->
+      <footer class="pt-6 pb-12 border-t border-slate-900 flex flex-wrap items-center justify-between text-xs text-slate-500">
+        <div>
+          <span>FinVanguard Personal Wealth OS © 2026. Chuẩn mã hóa cấp ngân hàng AES-256.</span>
+        </div>
+        <div class="flex items-center gap-4 mt-2 sm:mt-0 font-medium">
+          <a href="#" class="hover:text-slate-300">Chính sách bảo mật</a>
+          <a href="#" class="hover:text-slate-300">Điều khoản sử dụng</a>
+          <a href="#" class="hover:text-slate-300">Hỗ trợ kỹ thuật 24/7</a>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- Interactive JavaScript Logic for Privacy Masking & Chart Toggle -->
+  <script>
+    let isMasked = false;
+
+    function toggleBalancePrivacy() {
+      isMasked = !isMasked;
+      const sensitiveElements = document.querySelectorAll('.balance-sensitive');
+      const label = document.getElementById('privacyLabel');
+      const icon = document.getElementById('eyeIcon');
+
+      sensitiveElements.forEach(el => {
+        if (isMasked) {
+          el.classList.add('masked-balance');
+        } else {
+          el.classList.remove('masked-balance');
+        }
+      });
+
+      if (isMasked) {
+        label.textContent = "Hiện số dư";
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+        `;
+      } else {
+        label.textContent = "Ẩn số dư";
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        `;
+      }
+    }
+
+    function switchBarMode(mode) {
+      const btnChi = document.getElementById('btnChiTieu');
+      const btnThu = document.getElementById('btnThuNhap');
+      const bars = document.querySelectorAll('.chart-bar');
+
+      if (mode === 'thu') {
+        btnThu.className = "px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold transition-all";
+        btnChi.className = "px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+        
+        // Example mock income heights
+        const incomeHeights = ['75%', '85%', '92%', '78%', '88%', '95%'];
+        bars.forEach((bar, index) => {
+          bar.className = "chart-bar w-full max-w-[42px] bg-gradient-to-t from-emerald-950 to-emerald-400 rounded-t-md border-t border-emerald-300";
+          bar.style.height = incomeHeights[index] || '80%';
+        });
+      } else {
+        btnChi.className = "px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-bold transition-all";
+        btnThu.className = "px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+        
+        const expenseHeights = ['65%', '71%', '87%', '77%', '83%', '71%'];
+        bars.forEach((bar, index) => {
+          if (index === 5) {
+            bar.className = "chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-900 via-rose-500 to-amber-400 rounded-t-md border-t-2 border-amber-300 shadow-lg shadow-rose-500/20";
+          } else {
+            bar.className = "chart-bar w-full max-w-[42px] bg-gradient-to-t from-rose-950 to-rose-500 rounded-t-md border-t border-rose-400";
+          }
+          bar.style.height = expenseHeights[index] || '70%';
+        });
+      }
+    }
+  </script>
+</body>
+</html>

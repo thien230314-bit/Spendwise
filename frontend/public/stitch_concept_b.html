@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>APEX TELEMETRY // TRUNG TÂM VẬN HÀNH TÀI CHÍNH</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#00a572",
+            "outline": "#869397",
+            "secondary": "#4edea3",
+            "primary-fixed-dim": "#4cd7f6",
+            "on-surface": "#dae2fd",
+            "on-error-container": "#ffdad6",
+            "on-secondary-container": "#00311f",
+            "tertiary-container": "#ff7f8b",
+            "surface-container-low": "#131b2e",
+            "error": "#ffb4ab",
+            "on-error": "#690005",
+            "on-secondary-fixed": "#002113",
+            "on-tertiary-container": "#7d0023",
+            "surface-tint": "#4cd7f6",
+            "error-container": "#93000a",
+            "inverse-on-surface": "#283044",
+            "tertiary-fixed": "#ffdadb",
+            "primary-fixed": "#acedff",
+            "on-background": "#dae2fd",
+            "secondary-fixed-dim": "#4edea3",
+            "on-tertiary": "#67001b",
+            "surface-container-lowest": "#060e20",
+            "on-secondary": "#003824",
+            "surface-container-high": "#222a3d",
+            "tertiary": "#ffb2b7",
+            "surface-variant": "#2d3449",
+            "on-secondary-fixed-variant": "#005236",
+            "surface-bright": "#31394d",
+            "on-tertiary-fixed-variant": "#92002a",
+            "secondary-fixed": "#6ffbbe",
+            "background": "#0b1326",
+            "on-surface-variant": "#bcc9cd",
+            "primary": "#4cd7f6",
+            "on-tertiary-fixed": "#40000d",
+            "on-primary-container": "#00424f",
+            "inverse-primary": "#00687a",
+            "tertiary-fixed-dim": "#ffb2b7",
+            "surface-container": "#171f33",
+            "surface-dim": "#0b1326",
+            "primary-container": "#06b6d4",
+            "outline-variant": "#3d494c",
+            "on-primary-fixed-variant": "#004e5c",
+            "inverse-surface": "#dae2fd",
+            "on-primary-fixed": "#001f26",
+            "surface": "#0b1326",
+            "surface-container-highest": "#2d3449",
+            "on-primary": "#003640"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "0.75rem",
+            "space-lg": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "gutter": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xl": "1.5rem"
+          },
+          "fontFamily": {
+            "label-caps": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-md": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "telemetry-sm": ["JetBrains Mono"],
+            "telemetry-md": ["JetBrains Mono"],
+            "body-sm": ["Inter"],
+            "headline-xl": ["Space Grotesk"],
+            "body-md": ["Inter"],
+            "telemetry-lg": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-md": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "telemetry-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "telemetry-md": ["14px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "telemetry-lg": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
+<!-- TOP NAV BAR (Section 1 Header Container mapping JSON) -->
+<header class="w-full px-margin flex items-center justify-between border-b border-outline-variant bg-surface-dim dark:bg-surface-dim z-50 h-14 sticky top-0">
+<div class="flex items-center gap-space-lg">
+<div class="text-headline-md font-headline-md font-bold tracking-tight text-primary dark:text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">terminal</span>
+        APEX TELEMETRY // DESK
+      </div>
+<nav class="hidden md:flex items-center gap-space-lg ml-6">
+<a class="border-b-2 border-primary dark:border-primary text-primary dark:text-primary font-telemetry-md text-telemetry-md pb-1" href="#">TERMINAL</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">LIQUIDITY</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">LEDGER</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">ANALYTICS</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-telemetry-md text-telemetry-md hover:text-on-surface dark:hover:text-on-surface pb-1 transition-colors" href="#">AUDIT</a>
+</nav>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="hidden lg:flex items-center bg-surface-container px-3 py-1.5 rounded border border-outline-variant text-telemetry-sm text-on-surface-variant gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span>SYS LATENCY: 4MS</span>
+</div>
+<button class="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-telemetry-sm font-telemetry-sm text-primary rounded transition-all">
+        PRIVACY: MASK
+      </button>
+<button class="px-3 py-1.5 bg-primary-container text-on-primary-container font-telemetry-sm font-bold rounded hover:brightness-110 transition-all">
+        EXECUTE ROUTE
+      </button>
+<div class="flex items-center gap-2 pl-2 border-l border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="hub">hub</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="tune">tune</span>
+<div class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center font-telemetry-sm text-primary font-bold ml-1">
+          TA
+        </div>
+</div>
+</div>
+</header>
+<!-- MAIN COCKPIT CONTAINER -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto p-space-lg flex flex-col gap-space-lg">
+<!-- SECTION 1: Operating Header Strip (Full width) -->
+<section class="bg-surface-container border border-outline-variant rounded-xl p-space-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-space-md shadow-lg">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="inline-block w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-secondary tracking-widest">TRUNG TÂM VẬN HÀNH TÀI CHÍNH • TRỰC TUYẾN</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mt-1">
+          Chào buổi sáng, Tuấn Anh — Bảng chỉ huy dòng tiền đa nguồn
+        </h1>
+</div>
+<div class="flex items-center gap-space-md flex-wrap">
+<div class="bg-surface-container-low border border-outline-variant px-3 py-2 rounded font-telemetry-sm text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="schedule">schedule</span>
+<span>Thứ Hai, 12/10/2026 | 19:20:59 ICT</span>
+</div>
+<button class="px-4 py-2 bg-surface-container-high border border-outline-variant hover:border-primary text-telemetry-sm font-telemetry-sm text-on-surface rounded flex items-center gap-2 transition-all" id="privacyToggle" onclick="togglePrivacy()">
+<span class="material-symbols-outlined text-primary text-base" data-icon="visibility">visibility</span>
+<span id="privacyText">Che số liệu nhạy cảm</span>
+</button>
+</div>
+</section>
+<!-- SECTION 2: High-Density 4-Column Balanced Telemetry Strip (Row 1 - 4 equal columns) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Column 1: SỐ DƯ KHẢ DỤNG TỨC THỜI -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant">SỐ DƯ KHẢ DỤNG TỨC THỜI</span>
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/40 text-secondary font-telemetry-sm text-[11px]">+3.4% tuần</span>
+</div>
+<div class="my-3">
+<div class="font-telemetry-lg text-telemetry-lg text-on-surface tracking-tight sensitive-data">125.450.000 ₫</div>
+</div>
+<div class="pt-2 border-t border-outline-variant/50 flex justify-between items-center text-[11px] text-on-surface-variant">
+<span>Ví hoạt động: 3 ví</span>
+<span class="text-primary font-telemetry-sm">VCB • MoMo • Quỹ</span>
+</div>
+</div>
+<!-- Column 2: DÒNG TIỀN VÀO/RA THÁNG -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant">DÒNG TIỀN VÀO/RA THÁNG</span>
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/40 text-primary font-telemetry-sm text-[11px]">Net +</span>
+</div>
+<div class="my-2 flex flex-col gap-1">
+<div class="flex justify-between text-telemetry-sm">
+<span class="text-on-surface-variant">Thu:</span>
+<span class="text-secondary font-bold sensitive-data">+45.200.000 ₫</span>
+</div>
+<div class="flex justify-between text-telemetry-sm">
+<span class="text-on-surface-variant">Chi:</span>
+<span class="text-error font-bold sensitive-data">-28.450.000 ₫</span>
+</div>
+</div>
+<div class="pt-2 border-t border-outline-variant/55 flex justify-between items-center text-[11px] text-on-surface-variant">
+<span>Ròng (Net):</span>
+<span class="text-primary font-telemetry-sm font-bold sensitive-data">+16.750.000 ₫</span>
+</div>
+</div>
+<!-- Column 3: RUNWAY & ĐỊNH MỨC CHI -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant">RUNWAY &amp; ĐỊNH MỨC CHI</span>
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/40 text-secondary font-telemetry-sm text-[11px]">An toàn</span>
+</div>
+<div class="my-3">
+<div class="font-telemetry-lg text-telemetry-lg text-on-surface sensitive-data">16.550.000 ₫</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 63%"></div>
+</div>
+</div>
+<div class="pt-2 border-t border-outline-variant/50 flex justify-between items-center text-[11px] text-on-surface-variant">
+<span>Đã dùng: 63% định mức</span>
+<span class="text-secondary font-telemetry-sm">Còn 18 ngày</span>
+</div>
+</div>
+<!-- Column 4: QUỸ NHÓM & NGHĨA VỤ -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant">QUỸ NHÓM &amp; NGHĨA VỤ</span>
+<span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 font-telemetry-sm text-[11px]">Sắp hạn</span>
+</div>
+<div class="my-2 flex flex-col gap-1">
+<div class="font-telemetry-lg text-telemetry-lg text-on-surface sensitive-data">5.000.000 ₫</div>
+<div class="text-[11px] text-on-surface-variant">Nghĩa vụ nộp: <strong class="text-tertiary sensitive-data">500.000 ₫</strong></div>
+</div>
+<div class="pt-2 border-t border-outline-variant/50 flex justify-between items-center text-[11px] text-on-surface-variant">
+<span>Hạn đóng:</span>
+<span class="text-tertiary font-telemetry-sm font-bold">15/10/2026</span>
+</div>
+</div>
+</div>
+<!-- SECTION 3: Rapid Action Cockpit & Cash Flow Balance Strip (Full width) -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-lg flex flex-col gap-space-md shadow-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-space-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="bolt">bolt</span>
+<span class="font-headline-md text-headline-md text-on-surface">BẢNG ĐIỀU KHIỂN TÁC NGHIỆP NHANH</span>
+</div>
+<!-- 4 Primary Operational Buttons -->
+<div class="flex items-center gap-3 flex-wrap">
+<button class="px-4 py-2 bg-secondary/15 border border-secondary text-secondary font-telemetry-sm rounded hover:bg-secondary/25 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="add_circle">add_circle</span>
+<span>+ Ghi nhận Thu</span>
+</button>
+<button class="px-4 py-2 bg-error/15 border border-error text-error font-telemetry-sm rounded hover:bg-error/25 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="remove_circle">remove_circle</span>
+<span>- Ghi nhận Chi</span>
+</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container font-telemetry-sm font-bold rounded hover:brightness-110 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="send">send</span>
+<span>Lệnh Chuyển tiền</span>
+</button>
+<button class="px-4 py-2 bg-purple-500/20 border border-purple-400 text-purple-300 font-telemetry-sm rounded hover:bg-purple-500/30 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="group">group</span>
+<span>Điều phối Quỹ nhóm</span>
+</button>
+</div>
+</div>
+<!-- Integrated Cash Flow Balance bar -->
+<div class="pt-3 border-t border-outline-variant flex flex-col gap-2">
+<div class="flex justify-between items-center text-telemetry-sm">
+<span class="text-on-surface-variant font-label-caps">TỶ TRỌNG CÂN ĐỐI DÒNG TIỀN THÁNG</span>
+<span class="text-secondary font-bold sensitive-data">Thu 61% (45.2M) vs Chi 39% (28.45M) • Thặng dư: +16.75M</span>
+</div>
+<div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden flex">
+<div class="bg-secondary h-full relative group transition-all" style="width: 61%" title="Thu nhập: 61%"></div>
+<div class="bg-error h-full relative group transition-all" style="width: 39%" title="Chi tiêu: 39%"></div>
+</div>
+</div>
+</div>
+<!-- SECTION 4: System Alerts & Attention Log (Amber notice strip) -->
+<div class="bg-amber-950/30 border border-amber-500/50 rounded-xl p-space-md flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-start md:items-center gap-3">
+<span class="material-symbols-outlined text-amber-400 text-2xl mt-0.5 md:mt-0" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div class="text-telemetry-sm text-amber-200">
+<strong class="font-label-caps text-amber-400">CẢNH BÁO HẠN MỨC NGÂN SÁCH:</strong> 
+          Danh mục Ẩm thực đạt <span class="font-bold underline">92%</span> ngưỡng cảnh báo (đã chi <span class="sensitive-data">7.360.000 ₫</span> / <span class="sensitive-data">8.000.000 ₫</span> định mức tháng). Còn <span class="sensitive-data">640.000 ₫</span> cho 18 ngày tiếp theo.
+        </div>
+</div>
+<button class="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-telemetry-sm font-bold rounded transition-all whitespace-nowrap">
+        Điều chỉnh ngay
+      </button>
+</div>
+<!-- 2-COLUMN GRID SECTION (Section 5 & Section 6) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- SECTION 5: 6-Month Flow Telemetry (Grid left 7 cols) -->
+<div class="lg:col-span-7 bg-surface-container border border-outline-variant rounded-xl p-space-lg flex flex-col justify-between shadow-lg">
+<div class="flex justify-between items-center mb-6">
+<div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">LỊCH SỬ BIẾN ĐỘNG DÒNG TIỀN 6 THÁNG</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-1">Biểu đồ Phân tích Đa kỳ</h2>
+</div>
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded p-1 gap-1">
+<button class="px-3 py-1 bg-primary text-on-primary font-telemetry-sm rounded text-xs font-bold transition-all">Chi tiêu</button>
+<button class="px-3 py-1 text-on-surface-variant font-telemetry-sm rounded text-xs hover:text-on-surface transition-all">Thu nhập</button>
+</div>
+</div>
+<!-- High-contrast bar chart visualization for T5-T10 -->
+<div class="h-64 flex items-end justify-between gap-3 px-2 pt-6 pb-2 border-b border-outline-variant relative">
+<!-- Baseline indicator -->
+<div class="absolute w-full left-0 border-t border-dashed border-primary/40 flex justify-between px-2 text-[10px] text-primary" style="bottom: 58%;">
+<span class="bg-surface-container px-1 -translate-y-2">Baseline TB: 30.4M/tháng</span>
+</div>
+<!-- T5 -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+<span class="text-[10px] font-telemetry-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity sensitive-data">28.2M</span>
+<div class="w-full bg-primary/40 hover:bg-primary transition-all rounded-t" style="height: 55%;"></div>
+<span class="font-telemetry-sm text-xs text-on-surface-variant">T5</span>
+</div>
+<!-- T6 -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+<span class="text-[10px] font-telemetry-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity sensitive-data">31.0M</span>
+<div class="w-full bg-primary/40 hover:bg-primary transition-all rounded-t" style="height: 62%;"></div>
+<span class="font-telemetry-sm text-xs text-on-surface-variant">T6</span>
+</div>
+<!-- T7 -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+<span class="text-[10px] font-telemetry-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity sensitive-data">27.5M</span>
+<div class="w-full bg-primary/40 hover:bg-primary transition-all rounded-t" style="height: 52%;"></div>
+<span class="font-telemetry-sm text-xs text-on-surface-variant">T7</span>
+</div>
+<!-- T8 -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+<span class="text-[10px] font-telemetry-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity sensitive-data">29.8M</span>
+<div class="w-full bg-primary/40 hover:bg-primary transition-all rounded-t" style="height: 59%;"></div>
+<span class="font-telemetry-sm text-xs text-on-surface-variant">T8</span>
+</div>
+<!-- T9 (Peak marker) -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group relative">
+<span class="absolute -top-6 px-1.5 py-0.5 rounded bg-primary text-on-primary font-telemetry-sm text-[10px] font-bold sensitive-data">32.8M</span>
+<span class="text-[10px] font-telemetry-sm text-primary font-bold">PEAK</span>
+<div class="w-full bg-primary hover:brightness-110 transition-all rounded-t shadow-[0_0_12px_rgba(76,215,246,0.4)]" style="height: 75%;"></div>
+<span class="font-telemetry-sm text-xs text-primary font-bold">T9</span>
+</div>
+<!-- T10 (Current) -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+<span class="text-[10px] font-telemetry-sm text-on-surface opacity-0 group-hover:opacity-100 transition-opacity sensitive-data">28.4M</span>
+<div class="w-full bg-secondary hover:brightness-110 transition-all rounded-t" style="height: 58%;"></div>
+<span class="font-telemetry-sm text-xs text-secondary font-bold">T10</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 text-telemetry-sm text-on-surface-variant">
+<span>Trung bình giai đoạn: <strong class="text-on-surface sensitive-data">30.400.000 ₫/tháng</strong></span>
+<span class="text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="trending_down">trending_down</span>
+            -2.4% so với đỉnh T9
+          </span>
+</div>
+</div>
+<!-- SECTION 6: Category Breakdown Telemetry (Grid right 5 cols) -->
+<div class="lg:col-span-5 bg-surface-container border border-outline-variant rounded-xl p-space-lg flex flex-col justify-between shadow-lg">
+<div>
+<div class="flex justify-between items-center mb-4">
+<div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">PHÂN TÍCH CƠ CẤU CHI TIẾU</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-1">Tháng T10/2026 (5 Nhóm)</h2>
+</div>
+<span class="text-telemetry-sm text-primary bg-primary/10 px-2 py-1 rounded border border-primary/30 sensitive-data">Tổng: 28.45M ₫</span>
+</div>
+<!-- Precision donut telemetry ring simulation / progress bars -->
+<div class="space-y-3 mt-4">
+<div>
+<div class="flex justify-between text-telemetry-sm mb-1">
+<span class="text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  Ẩm thực &amp; Nhà hàng (38%)
+                </span>
+<span class="text-on-surface font-bold sensitive-data">10.81M ₫</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 38%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-telemetry-sm mb-1">
+<span class="text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                  Nhà cửa &amp; Hóa đơn (24%)
+                </span>
+<span class="text-on-surface font-bold sensitive-data">6.83M ₫</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 24%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-telemetry-sm mb-1">
+<span class="text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                  Mua sắm thiết bị (18%)
+                </span>
+<span class="text-on-surface font-bold sensitive-data">5.12M ₫</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-purple-400 h-full rounded-full" style="width: 18%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-telemetry-sm mb-1">
+<span class="text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  Giải trí &amp; Du lịch (12%)
+                </span>
+<span class="text-on-surface font-bold sensitive-data">3.41M ₫</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-amber-400 h-full rounded-full" style="width: 12%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-telemetry-sm mb-1">
+<span class="text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+                  Khác &amp; Dự phòng (8%)
+                </span>
+<span class="text-on-surface font-bold sensitive-data">2.28M ₫</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 8%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant mt-4 flex justify-between items-center text-[11px] text-on-surface-variant">
+<span>Trạng thái kiểm soát: <strong class="text-secondary">Ổn định</strong></span>
+<span class="text-primary hover:underline cursor-pointer">Chi tiết phân bổ &gt;</span>
+</div>
+</div>
+</div>
+<!-- SECTION 7: Financial Event Ledger (Full width bottom) -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-space-lg flex flex-col gap-space-md shadow-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-space-md">
+<div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">NHẬT KÝ 5 GIAO DỊCH PHÁT SINH GẦN NHẤT</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-1">Sổ cái Thời gian thực (Live Ledger)</h2>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-3 py-1.5 bg-surface-container-high border border-outline-variant hover:border-primary text-telemetry-sm font-telemetry-sm text-on-surface rounded flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-base" data-icon="download">download</span>
+<span>Xuất CSV</span>
+</button>
+<button class="px-3 py-1.5 bg-primary-container text-on-primary-container font-telemetry-sm font-bold rounded hover:brightness-110 transition-all flex items-center gap-2">
+<span>Mở toàn bộ sổ cái (Ledger)</span>
+<span class="material-symbols-outlined text-base" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- High-density data table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant">
+<th class="py-2.5 px-3">THỜI GIAN</th>
+<th class="py-2.5 px-3">ĐỐI TÁC / NỘI DUNG</th>
+<th class="py-2.5 px-3">NGUỒN TÀI KHOẢN</th>
+<th class="py-2.5 px-3">DANH MỤC</th>
+<th class="py-2.5 px-3 text-right">BIẾN ĐỘNG SỐ DƯ (DELTA)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-telemetry-sm">
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3 px-3 text-on-surface-variant font-telemetry-sm">12/10 18:45</td>
+<td class="py-3 px-3 font-medium text-on-surface">Nhà hàng Sen Việt Quận 1</td>
+<td class="py-3 px-3 text-on-surface-variant">VCB Digital</td>
+<td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 text-[11px]">Ẩm thực</span></td>
+<td class="py-3 px-3 text-right font-bold text-error sensitive-data">-1.450.000 ₫</td>
+</tr>
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3 px-3 text-on-surface-variant font-telemetry-sm">12/10 14:10</td>
+<td class="py-3 px-3 font-medium text-on-surface">Lương Tháng 10 - TechCorp VN</td>
+<td class="py-3 px-3 text-on-surface-variant">VCB Digital</td>
+<td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-secondary/10 text-secondary border border-secondary/30 text-[11px]">Thu nhập</span></td>
+<td class="py-3 px-3 text-right font-bold text-secondary sensitive-data">+38.500.000 ₫</td>
+</tr>
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3 px-3 text-on-surface-variant font-telemetry-sm">11/10 20:30</td>
+<td class="py-3 px-3 font-medium text-on-surface">Thanh toán Điện lực EVN HCM</td>
+<td class="py-3 px-3 text-on-surface-variant">Ví MoMo</td>
+<td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/30 text-[11px]">Nhà cửa</span></td>
+<td class="py-3 px-3 text-right font-bold text-error sensitive-data">-1.220.000 ₫</td>
+</tr>
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3 px-3 text-on-surface-variant font-telemetry-sm">10/10 09:15</td>
+<td class="py-3 px-3 font-medium text-on-surface">Chuyển quỹ nhóm đi chơi Đà Lạt</td>
+<td class="py-3 px-3 text-on-surface-variant">Tiền mặt quỹ</td>
+<td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-purple-400/10 text-purple-300 border border-purple-400/30 text-[11px]">Quỹ nhóm</span></td>
+<td class="py-3 px-3 text-right font-bold text-error sensitive-data">-500.000 ₫</td>
+</tr>
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3 px-3 text-on-surface-variant font-telemetry-sm">09/10 16:00</td>
+<td class="py-3 px-3 font-medium text-on-surface">Hoàn tiền CashBack Thẻ Visa</td>
+<td class="py-3 px-3 text-on-surface-variant">VCB Digital</td>
+<td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-secondary/10 text-secondary border border-secondary/30 text-[11px]">Hoàn tiền</span></td>
+<td class="py-3 px-3 text-right font-bold text-secondary sensitive-data">+350.000 ₫</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- FOOTER STATUS BAR -->
+<footer class="w-full py-4 px-margin border-t border-outline-variant bg-surface-dim mt-auto flex flex-col md:flex-row justify-between items-center text-telemetry-sm text-on-surface-variant gap-2">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span>KẾT NỐI AN TOÀN TLS 1.3 • MÃ HÓA ĐẦU CUỐI 256-BIT</span>
+</div>
+<div>
+<span>APEX TELEMETRY DESK V4.8.2 • 2026 QUANTITATIVE COCKPIT</span>
+</div>
+</footer>
+<!-- SCRIPT FOR PRIVACY TOGGLE INTERACTION -->
+<script>
+    let isMasked = false;
+    function togglePrivacy() {
+      isMasked = !isMasked;
+      const elements = document.querySelectorAll('.sensitive-data');
+      const textElem = document.getElementById('privacyText');
+      
+      elements.forEach(el => {
+        if (!el.dataset.original) {
+          el.dataset.original = el.innerText;
+        }
+        if (isMasked) {
+          el.innerText = '••••••••';
+          textElem.innerText = 'Hiển thị số liệu';
+        } else {
+          el.innerText = el.dataset.original;
+          textElem.innerText = 'Che số liệu nhạy cảm';
+        }
+      });
+    }
+  </script>
+</body></html>

@@ -1,0 +1,8 @@
+{
+  "name": "SpendWise2",
+  "description": "Modern financial management platform with personal wallet, budgets, transactions, and financial insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

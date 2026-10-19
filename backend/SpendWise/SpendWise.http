@@ -1,0 +1,20 @@
+@SpendWise_HostAddress = http://localhost:5159
+
+### Public ping
+GET {{SpendWise_HostAddress}}/api/ping
+Accept: application/json
+
+### Health check
+GET {{SpendWise_HostAddress}}/health
+Accept: application/json
+
+### Development user login
+POST {{SpendWise_HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept-Language: vi-VN
+
+{
+  "identifier": "minhanh@spendwise.local",
+  "password": "Demo@12345",
+  "deviceName": "SpendWise.http"
+}

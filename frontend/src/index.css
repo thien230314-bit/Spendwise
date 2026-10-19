@@ -1,0 +1,1905 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Be Vietnam Pro', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #F8FAFC;
+    color: #0F172A;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  html.dark body,
+  .dark body {
+    background-color: #090D16;
+    color: #F1F5F9;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+.font-fraunces {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.font-mono-plex {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ================= REALISTIC DESK TABLETOP (MẶT BÀN LÀM VIỆC) ================= */
+
+/* Light Mode: Bàn làm việc gỗ sồi tự nhiên Bắc Âu (Scandinavian Honey Oak Desk) */
+:root:not(.dark) {
+  --desk-wood-bg: #d7c1a2;
+  --desk-plank-1: #dfcbaf;
+  --desk-plank-2: #d6c0a1;
+  --desk-plank-3: #cca785;
+  --desk-plank-4: #e2ceb4;
+  --desk-seam: rgba(90, 48, 18, 0.3);
+  --desk-seam-highlight: rgba(255, 255, 255, 0.55);
+  --desk-grain-fine: rgba(110, 60, 20, 0.05);
+  --desk-lamp-glow: radial-gradient(ellipse 95% 75% at 50% 18%, rgba(255, 252, 240, 0.82) 0%, rgba(255, 244, 222, 0.42) 42%, rgba(240, 222, 195, 0.1) 75%, transparent 100%);
+  --desk-vignette: radial-gradient(circle at 50% 50%, transparent 55%, rgba(65, 35, 12, 0.3) 100%);
+  --desk-mat-bg: linear-gradient(145deg, #2d2017 0%, #1e150f 50%, #170f0a 100%);
+  --desk-mat-border: rgba(217, 168, 98, 0.35);
+  --desk-mat-shadow: 0 35px 70px -15px rgba(45, 25, 10, 0.45), 0 15px 30px -8px rgba(45, 25, 10, 0.3);
+  --desk-book-ambient-shadow: 0 45px 85px -12px rgba(45, 25, 10, 0.48), 0 20px 40px -8px rgba(45, 25, 10, 0.32), 0 6px 14px -2px rgba(45, 25, 10, 0.28);
+}
+
+/* Dark Mode: Bàn làm việc gỗ óc chó hun khói cao cấp (Executive Smoked Dark Walnut Desk) */
+.dark {
+  --desk-wood-bg: #140f0c;
+  --desk-plank-1: #1b140f;
+  --desk-plank-2: #140f0c;
+  --desk-plank-3: #1f1712;
+  --desk-plank-4: #18120e;
+  --desk-seam: rgba(0, 0, 0, 0.8);
+  --desk-seam-highlight: rgba(255, 255, 255, 0.045);
+  --desk-grain-fine: rgba(255, 255, 255, 0.022);
+  --desk-lamp-glow: radial-gradient(ellipse 90% 70% at 50% 16%, rgba(251, 191, 36, 0.16) 0%, rgba(217, 119, 6, 0.07) 38%, rgba(16, 185, 129, 0.025) 70%, transparent 100%);
+  --desk-vignette: radial-gradient(circle at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.85) 100%);
+  --desk-mat-bg: linear-gradient(145deg, #10161b 0%, #0a0e12 50%, #06090c 100%);
+  --desk-mat-border: rgba(52, 211, 153, 0.22);
+  --desk-mat-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.9), 0 20px 40px -8px rgba(0, 0, 0, 0.7);
+  --desk-book-ambient-shadow: 0 50px 95px -12px rgba(0, 0, 0, 0.95), 0 25px 45px -8px rgba(0, 0, 0, 0.8), 0 8px 18px -2px rgba(0, 0, 0, 0.65);
+}
+
+/* Mặt bàn gỗ tự nhiên bao quanh toàn bộ không gian làm việc */
+.desk-tabletop-container {
+  position: relative;
+  background-color: var(--desk-wood-bg);
+  /* Lớp vân gỗ ghép thanh (Wood planks) với đường chỉ nối ván và thớ gỗ mịn (Grain) */
+  background-image: 
+    /* Đường rãnh nối ghép ván gỗ chạy ngang bàn (Plank seams every 150px) */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 148px,
+      var(--desk-seam) 149px,
+      var(--desk-seam-highlight) 150px
+    ),
+    /* Sắc độ xen kẽ giữa các tấm ván gỗ tự nhiên */
+    repeating-linear-gradient(
+      to bottom,
+      var(--desk-plank-1) 0px,
+      var(--desk-plank-1) 150px,
+      var(--desk-plank-2) 150px,
+      var(--desk-plank-2) 300px,
+      var(--desk-plank-3) 300px,
+      var(--desk-plank-3) 450px,
+      var(--desk-plank-4) 450px,
+      var(--desk-plank-4) 600px
+    ),
+    /* Thớ sợi gỗ mịn chạy dọc theo sớ gỗ */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 3px,
+      var(--desk-grain-fine) 4px,
+      transparent 6px
+    );
+  background-attachment: fixed;
+  transition: background-color 0.35s ease, background-image 0.35s ease;
+}
+
+/* Đèn bàn ấm áp rọi xuống khu vực làm việc (Desk Lamp Pool) */
+.desk-lamp-glow-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--desk-lamp-glow);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.35s ease;
+}
+
+/* Độ tối ngoại vi xung quanh mặt bàn (Desk Edge Vignette) */
+.desk-wood-vignette {
+  position: absolute;
+  inset: 0;
+  background: var(--desk-vignette);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.35s ease;
+}
+
+/* Thảm lót bàn da cao cấp (Executive Leather Desk Blotter Mat) */
+.desk-leather-mat {
+  position: absolute;
+  inset: -6px -28px -12px -28px;
+  border-radius: 28px;
+  background: var(--desk-mat-bg);
+  box-shadow: 
+    var(--desk-mat-shadow),
+    inset 0 0 0 1px var(--desk-mat-border),
+    inset 0 2px 4px rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  z-index: 0;
+  transition: all 0.35s ease;
+}
+
+/* Đường chỉ may thủ công viền thảm da (Perimeter saddle-stitch groove) */
+.desk-leather-mat::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 22px;
+  border: 1px dashed var(--desk-mat-border);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (max-width: 1023px) {
+  .desk-leather-mat {
+    inset: -2px -6px -6px -6px;
+    border-radius: 24px;
+  }
+}
+
+/* 3D Notebook Page Flip Auth Animation (Realistic Open Spiral / Ring Binder Notebook) */
+.auth-book-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 990px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 2600px;
+  perspective-origin: 50% 50%;
+  padding: 16px 20px;
+  z-index: 10;
+}
+
+/* Đổ bóng tiếp xúc thực tế của cuốn sổ lên mặt bàn gỗ (Desk Ambient Occlusion Shadow) */
+.auth-book-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 20px 10px 14px 10px;
+  border-radius: 28px;
+  background: transparent;
+  box-shadow: var(--desk-book-ambient-shadow);
+  pointer-events: none;
+  z-index: 0;
+  transition: box-shadow 0.35s ease;
+}
+
+/* Outer Notebook Leather Cover Base */
+.notebook-leather-cover {
+  position: absolute;
+  inset: 2px 6px;
+  border-radius: 24px;
+  background: linear-gradient(140deg, #1b2620 0%, #101914 45%, #080d0a 100%);
+  box-shadow: 
+    0 35px 80px -15px rgba(0, 0, 0, 0.85),
+    0 15px 30px -8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.light .notebook-leather-cover,
+html.light .notebook-leather-cover,
+:root:not(.dark) .notebook-leather-cover {
+  background: linear-gradient(140deg, #442d1e 0%, #2f1d12 45%, #1f1109 100%);
+  box-shadow: 
+    0 30px 70px -15px rgba(35, 20, 10, 0.45),
+    0 12px 28px -8px rgba(35, 20, 10, 0.25),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.25),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* Bìa da cao cấp trơn láng bao quanh sổ */
+.notebook-leather-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* 4 Góc bọc kim loại bảo vệ sổ (Brass Metal Corner Brackets) */
+.notebook-corner {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.notebook-corner::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f5d799 0%, #c49658 40%, #754e1d 80%, #dfb776 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.notebook-corner.top-left { top: 0; left: 0; }
+.notebook-corner.top-left::before {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  border-top-left-radius: 24px;
+}
+
+.notebook-corner.top-right { top: 0; right: 0; }
+.notebook-corner.top-right::before {
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  border-top-right-radius: 24px;
+}
+
+.notebook-corner.bottom-left { bottom: 0; left: 0; }
+.notebook-corner.bottom-left::before {
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+  border-bottom-left-radius: 24px;
+}
+
+.notebook-corner.bottom-right { bottom: 0; right: 0; }
+.notebook-corner.bottom-right::before {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  border-bottom-right-radius: 24px;
+}
+
+/* Quai cài bút da sổ tay (Pen Holder Loop) ở mép phải */
+.notebook-pen-loop {
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 90px;
+  background: linear-gradient(to right, #1a251f, #0d1511);
+  border-radius: 0 8px 8px 0;
+  box-shadow: 3px 2px 8px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(0, 0, 0, 0.6);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.light .notebook-pen-loop,
+html.light .notebook-pen-loop,
+:root:not(.dark) .notebook-pen-loop {
+  background: linear-gradient(to right, #3d2719, #25160d);
+  box-shadow: 3px 2px 8px rgba(35, 20, 10, 0.35);
+}
+
+.notebook-pen {
+  position: absolute;
+  left: 2px;
+  width: 8px;
+  height: 120px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #242c38 0%, #475569 50%, #1e293b 100%);
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.notebook-pen-clip {
+  position: absolute;
+  top: 18px;
+  right: -2px;
+  width: 2.5px;
+  height: 38px;
+  background: linear-gradient(to bottom, #f5d799, #c49658, #754e1d);
+  border-radius: 2px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Dây ruy-băng lụa đánh dấu trang sổ (Satin Bookmark Ribbon) kẹp ở trang Đăng nhập */
+.notebook-ribbon-bookmark {
+  position: absolute;
+  left: calc(50% + 22px);
+  top: -10px;
+  width: 16px;
+  height: 50%;
+  max-height: 335px;
+  background: linear-gradient(
+    to right,
+    #047857 0%,
+    #10b981 35%,
+    #059669 70%,
+    #047857 100%
+  );
+  box-shadow: 
+    3px 6px 14px rgba(0, 0, 0, 0.45),
+    inset 0 0 4px rgba(0, 0, 0, 0.3);
+  z-index: 25;
+  pointer-events: none;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 12px), 0 100%);
+  opacity: 0.96;
+  transform-origin: top center;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Chi tiết gập mép ruy-băng ở đỉnh gáy sổ */
+.notebook-ribbon-bookmark::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent);
+  pointer-events: none;
+}
+
+.light .notebook-ribbon-bookmark,
+html.light .notebook-ribbon-bookmark,
+:root:not(.dark) .notebook-ribbon-bookmark {
+  background: linear-gradient(
+    to right,
+    #065f46 0%,
+    #059669 35%,
+    #10b981 70%,
+    #047857 100%
+  );
+  box-shadow: 
+    2px 5px 12px rgba(20, 15, 10, 0.3),
+    inset 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+/* KHI CHUYỂN SANG TRANG ĐĂNG KÝ (active):
+   Trang phân mục (auth-toggle-box, z-index: 50) lật đè lên trang Đăng nhập.
+   Ruy-băng dài nửa trang (50%) được kẹp tự nhiên bên trong trang Đăng nhập:
+   - Đỉnh ruy-băng nhô lên tự nhiên tại đỉnh gáy sổ (top: -10px).
+   - Thân ruy-băng nằm êm ái bên trong giữa 2 trang giấy.
+*/
+.auth-container.active .notebook-ribbon-bookmark {
+  box-shadow: 
+    1px 3px 8px rgba(0, 0, 0, 0.5),
+    inset 0 0 3px rgba(0, 0, 0, 0.35);
+}
+
+.light .auth-container.active .notebook-ribbon-bookmark,
+html.light .auth-container.active .notebook-ribbon-bookmark,
+:root:not(.dark) .auth-container.active .notebook-ribbon-bookmark {
+  box-shadow: 
+    1px 3px 8px rgba(35, 20, 10, 0.35),
+    inset 0 0 3px rgba(0, 0, 0, 0.25);
+}
+
+/* ================= OPEN NOTEBOOK PAPER CONTAINER ================= */
+.auth-container {
+  position: relative;
+  width: 940px;
+  max-width: 95vw;
+  min-height: 670px;
+  background: #101622;
+  border-radius: 15px;
+  /* Hiệu ứng xếp chồng nhiều lớp mép giấy sổ (Stacked Paper Edges) ở hai bên */
+  box-shadow: 
+    /* Lớp giấy dày bên trái */
+    -3px 0 0 -0.5px #182230,
+    -6px 0 0 -1px #131b26,
+    -9px 0 0 -1.5px #0d141e,
+    /* Lớp giấy dày bên phải */
+    3px 0 0 -0.5px #182230,
+    6px 0 0 -1px #131b26,
+    9px 0 0 -1.5px #0d141e,
+    /* Bóng đổ của khối giấy lên bìa da */
+    0 18px 45px -10px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transform-style: preserve-3d;
+  z-index: 10;
+}
+
+.light .auth-container,
+html.light .auth-container,
+:root:not(.dark) .auth-container {
+  background: #FCFBF7;
+  box-shadow: 
+    /* Lớp giấy ngà dày bên trái */
+    -3px 0 0 -0.5px #f2eee3,
+    -6px 0 0 -1px #e8e2d2,
+    -9px 0 0 -1.5px #dcd4c0,
+    /* Lớp giấy ngà dày bên phải */
+    3px 0 0 -0.5px #f2eee3,
+    6px 0 0 -1px #e8e2d2,
+    9px 0 0 -1.5px #dcd4c0,
+    /* Bóng đổ lên bìa da */
+    0 16px 40px -10px rgba(25, 18, 10, 0.25),
+    0 0 0 1px rgba(20, 15, 10, 0.08);
+}
+
+/* Rãnh gáy sổ tự nhiên giữa 2 trang mở */
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 46px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.15) 20%,
+    rgba(0, 0, 0, 0.5) 42%,
+    rgba(0, 0, 0, 0.75) 50%,
+    rgba(0, 0, 0, 0.5) 58%,
+    rgba(0, 0, 0, 0.15) 80%,
+    transparent 100%
+  );
+  z-index: 60;
+  pointer-events: none;
+}
+
+.light .auth-container::before,
+html.light .auth-container::before,
+:root:not(.dark) .auth-container::before {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(30, 20, 10, 0.04) 20%,
+    rgba(30, 20, 10, 0.18) 42%,
+    rgba(30, 20, 10, 0.32) 50%,
+    rgba(30, 20, 10, 0.18) 58%,
+    rgba(30, 20, 10, 0.04) 80%,
+    transparent 100%
+  );
+}
+
+/* Gáy khâu / rãnh nếp gấp vi mô giữa sổ */
+.auth-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.9) 15%,
+    rgba(0, 0, 0, 0.98) 50%,
+    rgba(0, 0, 0, 0.9) 85%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  box-shadow: 
+    -0.5px 0 2px rgba(0, 0, 0, 0.8),
+    1px 0 1px rgba(255, 255, 255, 0.08);
+  z-index: 61;
+  pointer-events: none;
+}
+
+.light .auth-container::after,
+html.light .auth-container::after,
+:root:not(.dark) .auth-container::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(25, 15, 10, 0.1) 0%,
+    rgba(25, 15, 10, 0.45) 15%,
+    rgba(25, 15, 10, 0.6) 50%,
+    rgba(25, 15, 10, 0.45) 85%,
+    rgba(25, 15, 10, 0.1) 100%
+  );
+  box-shadow: 
+    -0.5px 0 1px rgba(25, 15, 10, 0.25),
+    1px 0 1.5px rgba(255, 255, 255, 0.9);
+}
+
+/* ================= NOTEBOOK SPINE RING BINDER (CÒNG SỔ LÒ XO KIM LOẠI) ================= */
+.notebook-spine-rings {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 65;
+}
+
+.notebook-ring-unit {
+  position: absolute;
+  width: 100%;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3px;
+  transform: translateY(-50%);
+}
+
+/* Lỗ đục giấy tròn (Punched paper holes) ở 2 bên gáy */
+.notebook-hole {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #080d14;
+  box-shadow: 
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.light .notebook-hole,
+html.light .notebook-hole,
+:root:not(.dark) .notebook-hole {
+  background: #231b14;
+  box-shadow: 
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+/* Vòng còng kim loại mạ vàng đồng (Brass Metallic Ring Loop) uốn cong */
+.notebook-ring-loop {
+  position: relative;
+  flex: 1;
+  height: 13px;
+  margin: 0 -2px;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background: 
+    linear-gradient(135deg, #fde047 0%, #ca8a04 35%, #713f12 70%, #eab308 100%) border-box;
+  box-shadow: 
+    0 3px 6px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.notebook-ring-sheen {
+  position: absolute;
+  top: 1px;
+  left: 20%;
+  right: 20%;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 1px;
+  filter: blur(0.2px);
+}
+
+/* ================= TRANG GIẤY SỔ (NOTEBOOK PAPER PAGES) ================= */
+.auth-form-box {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 36px 36px;
+  z-index: 2;
+  overflow-y: auto;
+  border-radius: 15px;
+}
+
+/* Trang sổ bên phải: FORM ĐĂNG NHẬP */
+.auth-form-box.login {
+  right: 0;
+  left: auto;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  /* Bề mặt giấy sổ mịn màng, cao cấp, không đường kẻ rối mắt */
+  background-color: #101622;
+}
+
+.light .auth-form-box.login,
+html.light .auth-form-box.login,
+:root:not(.dark) .auth-form-box.login {
+  /* Giấy sổ màu ngà tự nhiên cao cấp, bề mặt trơn sạch */
+  background-color: #FCFBF7;
+}
+
+/* Hiệu ứng bóng uốn lòng máng gần gáy sổ bên trái trang Login */
+.auth-form-box.login::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 48px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.16) 35%,
+    rgba(0, 0, 0, 0.02) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.light .auth-form-box.login::before,
+html.light .auth-form-box.login::before,
+:root:not(.dark) .auth-form-box.login::before {
+  background: linear-gradient(
+    to right,
+    rgba(30, 20, 10, 0.16) 0%,
+    rgba(30, 20, 10, 0.07) 35%,
+    rgba(30, 20, 10, 0.01) 75%,
+    transparent 100%
+  );
+}
+
+/* Khi lật sang Đăng ký: Trang Đăng nhập vẫn nằm nguyên vẹn trên giấy sổ, chỉ ngắt pointer-events khi bị trang phân mục che */
+.auth-container.active .auth-form-box.login {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Trang sổ bên trái: FORM ĐĂNG KÝ */
+.auth-form-box.register {
+  left: 0;
+  right: auto;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: none;
+  /* Bề mặt giấy sổ mịn màng, cao cấp, không đường kẻ rối mắt */
+  background-color: #101622;
+}
+
+.light .auth-form-box.register,
+html.light .auth-form-box.register,
+:root:not(.dark) .auth-form-box.register {
+  /* Giấy sổ màu ngà tự nhiên cao cấp, bề mặt trơn sạch */
+  background-color: #FCFBF7;
+}
+
+/* Hiệu ứng bóng uốn lòng máng gần gáy sổ bên phải trang Register */
+.auth-form-box.register::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 48px;
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.16) 35%,
+    rgba(0, 0, 0, 0.02) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.light .auth-form-box.register::before,
+html.light .auth-form-box.register::before,
+:root:not(.dark) .auth-form-box.register::before {
+  background: linear-gradient(
+    to left,
+    rgba(30, 20, 10, 0.16) 0%,
+    rgba(30, 20, 10, 0.07) 35%,
+    rgba(30, 20, 10, 0.01) 75%,
+    transparent 100%
+  );
+}
+
+/* Khi lật mở trang phân mục để lộ trang Đăng ký: trang đã có sẵn trên giấy sổ, chỉ kích hoạt pointer-events */
+.auth-container.active .auth-form-box.register {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* KHÓA THAO TÁC TRÊN 2 TRANG SỔ TRONG SUỐT QUÁ TRÌNH LẬT TRANG (CHỈ MỞ LẠI KHI QUA TRANG HOÀN TOÀN)
+   Các nút ngoài cuốn sổ (nút chọn theme dark/light, nút chọn ngôn ngữ) vẫn hoạt động bình thường */
+.auth-container.is-flipping,
+.auth-container.is-flipping * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* ================= TRANG PHÂN MỤC SỔ TAY LẬT 3D (NOTEBOOK DIVIDER LEAF) ================= */
+.auth-toggle-box {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  transform-origin: right center; /* Ghim đúng tại gáy còng ở giữa */
+  transform-style: preserve-3d;
+  transition: transform 1.1s cubic-bezier(0.645, 0.045, 0.355, 1);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Khi bấm "ĐĂNG KÝ NGAY": Trang phân mục sổ tay lật qua phải (rotateY +180deg) */
+.auth-container.active .auth-toggle-box {
+  transform: rotateY(180deg);
+}
+
+/* Mặt trang phân mục sổ tay: Chất liệu giấy da/kraft dày dặn cao cấp */
+.auth-toggle-panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #ffffff;
+  background: 
+    linear-gradient(135deg, #132b21 0%, #0d2018 50%, #07130f 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px 32px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  pointer-events: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65);
+  transform-style: preserve-3d;
+}
+
+.light .auth-toggle-panel,
+html.light .auth-toggle-panel,
+:root:not(.dark) .auth-toggle-panel {
+  background: 
+    linear-gradient(135deg, #17382b 0%, #102920 50%, #0a1b14 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 35px rgba(25, 18, 10, 0.45);
+}
+
+/* Họa tiết watermark êm dịu của trang phân mục sổ */
+.auth-toggle-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Mặt trước trang phân mục: Bên trái (Chưa có tài khoản -> Đăng ký ngay) */
+.auth-toggle-panel.toggle-left {
+  transform: rotateY(0deg) translateZ(1px);
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.65),
+    inset -12px 0 20px -4px rgba(0, 0, 0, 0.55),
+    inset -1px 0 0 rgba(0, 0, 0, 0.8);
+}
+
+.light .auth-toggle-panel.toggle-left,
+html.light .auth-toggle-panel.toggle-left,
+:root:not(.dark) .auth-toggle-panel.toggle-left {
+  box-shadow: 
+    0 12px 32px rgba(25, 18, 10, 0.35),
+    inset -12px 0 20px -4px rgba(0, 0, 0, 0.3),
+    inset -1px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Lỗ khuyết đục gáy còng của trang phân mục bên trái (Spine notch perforations) */
+.auth-toggle-panel.toggle-left::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  right: 6px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #c49658 0px,
+    #c49658 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  box-shadow: 0.5px 0 1px rgba(0, 0, 0, 0.8), -0.5px 0 0.5px rgba(0, 0, 0, 0.5);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Mặt sau trang phân mục: Khi lật sang bên phải (Đã có tài khoản -> Đăng nhập ngay) */
+.auth-toggle-panel.toggle-right {
+  transform: rotateY(180deg) translateZ(1px);
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.65),
+    inset 12px 0 20px -4px rgba(0, 0, 0, 0.55),
+    inset 1px 0 0 rgba(0, 0, 0, 0.8);
+}
+
+.light .auth-toggle-panel.toggle-right,
+html.light .auth-toggle-panel.toggle-right,
+:root:not(.dark) .auth-toggle-panel.toggle-right {
+  box-shadow: 
+    0 12px 32px rgba(25, 18, 10, 0.35),
+    inset 12px 0 20px -4px rgba(0, 0, 0, 0.3),
+    inset 1px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Lỗ khuyết đục gáy còng của trang phân mục khi lật sang phải */
+.auth-toggle-panel.toggle-right::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 6px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #c49658 0px,
+    #c49658 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  box-shadow: -0.5px 0 1px rgba(0, 0, 0, 0.8), 0.5px 0 0.5px rgba(0, 0, 0, 0.5);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Responsive: Giữ NGUYÊN hiệu ứng lật trang ngang (rotateY) trên mọi kích thước màn hình */
+@media screen and (max-width: 768px) {
+  .auth-book-wrapper {
+    padding: 10px 8px;
+  }
+
+  .auth-container {
+    width: 100%;
+    min-height: 640px;
+    margin: 10px auto;
+  }
+
+  .auth-form-box {
+    padding: 24px 18px;
+  }
+
+  .auth-toggle-panel {
+    padding: 24px 16px;
+  }
+
+  .notebook-pen-loop {
+    display: none;
+  }
+
+  .notebook-ribbon-bookmark {
+    left: calc(50% + 14px);
+    width: 13px;
+    top: -8px;
+    height: 50%;
+    max-height: 310px;
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .auth-container {
+    min-height: 620px;
+  }
+
+  .auth-form-box {
+    padding: 20px 12px;
+  }
+
+  .auth-toggle-panel {
+    padding: 20px 12px;
+  }
+
+  .notebook-ribbon-bookmark {
+    left: calc(50% + 11px);
+    width: 10px;
+    top: -6px;
+    height: 50%;
+    max-height: 290px;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.6);
+}
+
+/* ================= DESK STATIONERY PENS (BÚT TO ĐẶT NGOÀI CUỐN SỔ) ================= */
+
+/* Vùng chứa các bút bên ngoài cuốn sổ */
+.desk-stationery-item {
+  position: absolute;
+  pointer-events: auto;
+  user-select: none;
+  z-index: 4;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+  cursor: pointer;
+}
+
+.desk-stationery-item:hover {
+  filter: brightness(1.1);
+}
+
+/* Hiệu ứng bóng đổ chân thực trên mặt bàn (Dark vs Light) */
+.desk-pen-shadow {
+  filter: drop-shadow(10px 18px 20px rgba(0, 0, 0, 0.58)) drop-shadow(3px 6px 8px rgba(0, 0, 0, 0.42));
+}
+
+.light .desk-pen-shadow,
+html.light .desk-pen-shadow,
+:root:not(.dark) .desk-pen-shadow {
+  filter: drop-shadow(8px 16px 18px rgba(45, 25, 15, 0.38)) drop-shadow(3px 5px 7px rgba(45, 25, 15, 0.22));
+}
+
+/* 1. CÂY BÚT CHÌ GỖ TO (BIG CLASSIC HEXAGONAL CEDAR WOOD PENCIL) */
+.desk-big-pencil {
+  position: relative;
+  width: 18px;
+  height: 275px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ngòi chì graphite đen đậm sắc nét */
+.desk-pencil-lead {
+  width: 5px;
+  height: 14px;
+  background: #18181b;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Nón gỗ gọt để lộ vân gỗ tuyết tùng tự nhiên */
+.desk-pencil-wood {
+  width: 17px;
+  height: 32px;
+  background: linear-gradient(to bottom, #d4a373 0%, #e29578 40%, #bc6c25 100%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Thân bút chì to vát 3 mặt lục giác 3D */
+.desk-pencil-shaft {
+  width: 18px;
+  height: 180px;
+  display: flex;
+}
+
+.desk-pencil-facet-left {
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to bottom, #ca8a04, #a16207);
+}
+
+.desk-pencil-facet-center {
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to bottom, #fde047, #eab308);
+  position: relative;
+}
+
+/* Nhãn dập chữ chìm mã chì 2B mạ vàng nổi bật */
+.desk-pencil-facet-center::after {
+  content: '';
+  position: absolute;
+  top: 45px;
+  left: 1px;
+  width: 4px;
+  height: 65px;
+  background: linear-gradient(to bottom, rgba(113, 63, 18, 0.9), rgba(113, 63, 18, 0.6));
+  border-radius: 1px;
+}
+
+.desk-pencil-facet-right {
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to bottom, #eab308, #ca8a04);
+}
+
+/* Khâu đồng to có 3 đường rãnh ép (Brass Ferrule) */
+.desk-pencil-ferrule {
+  width: 18px;
+  height: 22px;
+  background: linear-gradient(to right, #78350f, #d97706, #fef3c7 50%, #b45309 85%, #78350f);
+  border-top: 1.5px solid #451a03;
+  border-bottom: 1.5px solid #451a03;
+  position: relative;
+}
+
+.desk-pencil-ferrule::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.desk-pencil-ferrule::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Đầu tẩy gôm hồng cổ điển to bản */
+.desk-pencil-eraser {
+  width: 17px;
+  height: 25px;
+  background: linear-gradient(to right, #fb7185 0%, #f43f5e 45%, #fda4af 75%, #e11d48 100%);
+  border-radius: 0 0 5px 5px;
+}
+
+
+/* 2. CÂY BÚT MÁY TO SANG TRỌNG (BIG LUXURY GOLD FOUNTAIN PEN) */
+.desk-big-fountain-pen {
+  position: relative;
+  width: 22px;
+  height: 295px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ngòi bút máy to mạ vàng 18K chạm khắc tinh tế */
+.desk-fountain-nib {
+  width: 17px;
+  height: 40px;
+  background: linear-gradient(135deg, #fef08a 0%, #eab308 45%, #ca8a04 80%, #854d0e 100%);
+  clip-path: polygon(50% 0%, 95% 45%, 82% 100%, 18% 100%, 5% 45%);
+  position: relative;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Rãnh dẫn mực và lỗ thở vàng */
+.desk-fountain-nib::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5px;
+  height: 25px;
+  background: #713f12;
+}
+
+.desk-fountain-nib::after {
+  content: '';
+  position: absolute;
+  top: 23px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #713f12;
+  border-radius: 50%;
+}
+
+/* Cổ bút kim loại màu đen xám bóng mạ vòng vàng (Section grip) */
+.desk-fountain-grip {
+  width: 16px;
+  height: 42px;
+  background: linear-gradient(to right, #0f172a 0%, #334155 45%, #1e293b 80%, #0f172a 100%);
+  border-top: 2px solid #ca8a04;
+  border-bottom: 2.5px solid #ca8a04;
+}
+
+/* Vòng đai khâu mạ vàng to kết nối */
+.desk-fountain-band {
+  width: 22px;
+  height: 6px;
+  background: linear-gradient(to right, #ca8a04 0%, #fef08a 45%, #ca8a04 80%, #713f12 100%);
+  border-radius: 1px;
+}
+
+/* Thân bút to sơn mài đen tuyền bóng (Piano Black Lacquer) hoặc xanh đen */
+.desk-fountain-barrel {
+  width: 21px;
+  height: 110px;
+  background: linear-gradient(to right, #09090b 0%, #27272a 30%, #3f3f46 50%, #18181b 80%, #09090b 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.desk-fountain-barrel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 5px;
+  width: 3px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.45);
+  filter: blur(1px);
+}
+
+/* Nắp bút to gài ngược phía sau (Cap) */
+.desk-fountain-cap {
+  width: 22px;
+  height: 95px;
+  background: linear-gradient(to right, #09090b 0%, #18181b 30%, #27272a 50%, #09090b 100%);
+  border-top: 3px solid #ca8a04;
+  border-radius: 0 0 6px 6px;
+  position: relative;
+}
+
+/* Cài bút kim loại mạ vàng uốn cong (Clip) */
+.desk-fountain-clip {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 66px;
+  background: linear-gradient(to bottom, #fef08a, #ca8a04, #854d0e);
+  border-radius: 2.5px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.desk-fountain-clip::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 7.5px;
+  height: 7.5px;
+  background: #eab308;
+  border-radius: 50%;
+}
+
+
+/* 3. CÂY BÚT ĐIỆN TỬ TO (BIG MODERN DIGITAL STYLUS / SMART PEN) */
+.desk-big-digital-stylus {
+  position: relative;
+  width: 18px;
+  height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Đầu ngòi stylus silicon mờ chính xác (Precision fine stylus nib) */
+.desk-stylus-nib {
+  width: 5px;
+  height: 15px;
+  background: linear-gradient(to bottom, #f8fafc, #cbd5e1);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Nón cổ bút bo vuốt mềm mại */
+.desk-stylus-cone {
+  width: 16px;
+  height: 22px;
+  background: linear-gradient(to right, #cbd5e1 0%, #f8fafc 45%, #e2e8f0 75%, #94a3b8 100%);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
+}
+
+/* Thân bút điện tử to liền khối chất liệu sứ mờ (Ceramic Matte / Titanium) */
+.desk-stylus-body {
+  width: 18px;
+  height: 195px;
+  background: linear-gradient(to right, #cbd5e1 0%, #ffffff 40%, #f1f5f9 70%, #94a3b8 100%);
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Cạnh vát phẳng từ tính để gắn sạc không dây (Magnetic flat facet) */
+.desk-stylus-flat-facet {
+  position: absolute;
+  top: 10px;
+  left: 2px;
+  width: 3.5px;
+  height: 175px;
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 2px;
+}
+
+/* Vòng đèn LED tín hiệu kết nối / pin thông minh (Smart LED indicator ring) */
+.desk-stylus-led-ring {
+  width: 18px;
+  height: 4px;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981, 0 0 14px rgba(16, 185, 129, 0.7);
+  border-radius: 1px;
+}
+
+/* Đỉnh nắp bút điện tử mạ kim loại phay xước */
+.desk-stylus-cap {
+  width: 18px;
+  height: 32px;
+  background: linear-gradient(to right, #94a3b8, #e2e8f0, #64748b);
+  border-radius: 0 0 5px 5px;
+  border-top: 1.5px solid #cbd5e1;
+  position: relative;
+}
+
+.desk-stylus-cap::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 1px;
+}
+
+
+/* ================= VỊ TRÍ 3 BÚT TO NGOÀI CUỐN SỔ (RESPONSIVE POSITIONS) ================= */
+
+/* Màn hình laptop (1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .desk-pen-pos-pencil {
+    left: -26px;
+    top: 14%;
+    transform: rotate(-13deg) scale(0.9);
+  }
+  .desk-pen-pos-pencil:hover {
+    transform: rotate(-10deg) translateY(-6px) scale(0.95);
+  }
+
+  .desk-pen-pos-fountain {
+    right: -28px;
+    top: 10%;
+    transform: rotate(12deg) scale(0.9);
+  }
+  .desk-pen-pos-fountain:hover {
+    transform: rotate(9deg) translateY(-6px) scale(0.95);
+  }
+
+  .desk-pen-pos-stylus {
+    right: -32px;
+    bottom: 10%;
+    transform: rotate(20deg) scale(0.9);
+  }
+  .desk-pen-pos-stylus:hover {
+    transform: rotate(16deg) translateY(-6px) scale(0.95);
+  }
+}
+
+/* Màn hình Desktop tiêu chuẩn (1280px - 1535px) */
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .desk-pen-pos-pencil {
+    left: -78px;
+    top: 18%;
+    transform: rotate(-15deg);
+  }
+  .desk-pen-pos-pencil:hover {
+    transform: rotate(-11deg) translateY(-8px) scale(1.05);
+  }
+
+  .desk-pen-pos-fountain {
+    right: -76px;
+    top: 12%;
+    transform: rotate(13deg);
+  }
+  .desk-pen-pos-fountain:hover {
+    transform: rotate(9deg) translateY(-8px) scale(1.05);
+  }
+
+  .desk-pen-pos-stylus {
+    right: -92px;
+    bottom: 14%;
+    transform: rotate(22deg);
+  }
+  .desk-pen-pos-stylus:hover {
+    transform: rotate(18deg) translateY(-8px) scale(1.05);
+  }
+}
+
+/* Màn hình lớn (>= 1536px 2xl) */
+@media (min-width: 1536px) {
+  .desk-pen-pos-pencil {
+    left: -105px;
+    top: 18%;
+    transform: rotate(-16deg);
+  }
+  .desk-pen-pos-pencil:hover {
+    transform: rotate(-12deg) translateY(-10px) scale(1.06);
+  }
+
+  .desk-pen-pos-fountain {
+    right: -102px;
+    top: 12%;
+    transform: rotate(14deg);
+  }
+  .desk-pen-pos-fountain:hover {
+    transform: rotate(10deg) translateY(-10px) scale(1.06);
+  }
+
+  .desk-pen-pos-stylus {
+    right: -125px;
+    bottom: 15%;
+    transform: rotate(24deg);
+  }
+  .desk-pen-pos-stylus:hover {
+    transform: rotate(19deg) translateY(-10px) scale(1.06);
+  }
+}
+
+/* ================= THEME-AWARE SKELETON SHIMMER ANIMATION ================= */
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  contain: paint;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.dark .animate-shimmer::after,
+html.dark .animate-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* ================= SPENDWISE BRANDED ANIMATED "S" LOADING ================= */
+
+/* A1. Breathing Ambient Glow (3.0s cycle) */
+@keyframes spendwise-s-breathe {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.95;
+  }
+}
+
+.animate-spendwise-s-breathe {
+  animation: spendwise-s-breathe 3.0s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* A5. Drawing Animation of "S" (3.2s cycle)
+   0% - 60%: Draw from top-right (100) to bottom-left (0)
+   60% - 86%: Hold completed S shape (0)
+   86% - 96%: Gentle fade-out
+   96% - 100%: Reset offset to 100 and opacity back to 1 for next loop
+*/
+@keyframes spendwise-s-draw-cycle {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  60% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  86% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  96% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  98% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-s-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: spendwise-s-draw-cycle 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.spendwise-s-path-static {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+/* A8. Ripple Wave expanding at r="74" triggered at 60% completion */
+@keyframes spendwise-s-ripple-cycle {
+  0%, 58% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.85);
+    opacity: 0.85;
+  }
+  75% {
+    transform: scale(1.15);
+    opacity: 0.45;
+  }
+  88% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.animate-spendwise-s-ripple {
+  animation: spendwise-s-ripple-cycle 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+/* Part B. Dual Arc Outer Ring: Continuous 360-deg Rotation (1.2s linear) */
+@keyframes spendwise-s-dual-arc-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spendwise-s-dual-arc-spin {
+  animation: spendwise-s-dual-arc-spin 1.2s linear infinite;
+}
+
+/* Part B. Dual Arc Pulsing Scale (1.2s ease-in-out) */
+@keyframes spendwise-s-dual-arc-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(0.88);
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-s-dual-arc-pulse {
+  animation: spendwise-s-dual-arc-pulse 1.2s ease-in-out infinite;
+}
+
+/* Paused state override */
+.spendwise-s-loading-paused * {
+  animation-play-state: paused !important;
+}
+
+/* Accessibility: prefers-reduced-motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spendwise-s-breathe,
+  .animate-spendwise-s-path,
+  .animate-spendwise-s-ripple,
+  .animate-spendwise-s-dual-arc-spin,
+  .animate-spendwise-s-dual-arc-pulse {
+    animation: none !important;
+  }
+
+  .animate-spendwise-s-path {
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+
+  .animate-spendwise-s-ripple {
+    display: none !important;
+  }
+
+  .spendwise-s-bead-group {
+    display: none !important;
+  }
+}
+
+/* ================= S-LOADING FULL LIFECYCLE (SUCCESS, ERROR, OFFLINE, TIMEOUT) ================= */
+
+/* Success Checkmark Drawing (0.45s) */
+@keyframes spendwise-draw-check {
+  0% {
+    stroke-dashoffset: 40;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-check {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: spendwise-draw-check 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Error Cross Stroke 1 Drawing */
+@keyframes spendwise-draw-cross-1 {
+  0% {
+    stroke-dashoffset: 35;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-cross-1 {
+  stroke-dasharray: 35;
+  stroke-dashoffset: 35;
+  animation: spendwise-draw-cross-1 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Error Cross Stroke 2 Drawing (staggered slightly by 0.1s) */
+@keyframes spendwise-draw-cross-2 {
+  0% {
+    stroke-dashoffset: 35;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-cross-2 {
+  stroke-dasharray: 35;
+  stroke-dashoffset: 35;
+  animation: spendwise-draw-cross-2 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Single Result Ripple Burst */
+@keyframes spendwise-result-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.animate-spendwise-result-ripple {
+  animation: spendwise-result-ripple 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Soft Icon Fade-in / Zoom */
+@keyframes spendwise-icon-enter {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-spendwise-icon-enter {
+  animation: spendwise-icon-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ================= SPENDWISE CINEMATIC SPLASH 2.1S ANIMATION ================= */
+
+/* 1. Core Logo Sequence (0 to 2.1s) */
+@keyframes spendwise-splash-core {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) blur(0px);
+    opacity: 1;
+    animation-timing-function: ease-out;
+  }
+  9.52% { /* 0.2s: logo lún nhẹ scale 1 -> 0.9 (cảm giác nhấn nút) */
+    transform: scale(0.9);
+    filter: brightness(1) blur(0px);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.22, 0.7, 0.2, 1);
+  }
+  57.14% { /* 1.2s: logo phóng to từ từ scale 0.9 -> ~1.4, brightness 1 -> 1.2 */
+    transform: scale(1.4);
+    filter: brightness(1.2) blur(0px);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  100% { /* 2.1s: logo to lên ~1.7, brightness 1.5, blur 0 -> 6px, opacity 0 (tan vào không khí) */
+    transform: scale(1.7);
+    filter: brightness(1.5) blur(6px);
+    opacity: 0;
+  }
+}
+
+.animate-spendwise-splash-core {
+  transform-origin: center center;
+  animation: spendwise-splash-core 2.1s forwards;
+  will-change: transform, opacity, filter;
+}
+
+/* 2. Light Sheen Sweep (0.35s to 1.25s: duration 0.9s, delay 0.35s) */
+@keyframes spendwise-splash-sheen {
+  0% {
+    transform: translateX(-160%) rotate(20deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateX(260%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+.animate-spendwise-splash-sheen {
+  animation: spendwise-splash-sheen 0.9s cubic-bezier(0.22, 0.7, 0.2, 1) 0.35s forwards;
+  will-change: transform, opacity;
+}
+
+/* 3. Cyan Glow Halo (0.15s to 1.95s: duration 1.8s, delay 0.15s) */
+@keyframes spendwise-splash-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  28% { /* ~0.65s: bùng lên đạt đỉnh ~40% */
+    opacity: 0.4;
+    transform: scale(1.4);
+  }
+  70% {
+    opacity: 0.2;
+    transform: scale(1.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+.animate-spendwise-splash-glow {
+  animation: spendwise-splash-glow 1.8s cubic-bezier(0.22, 0.7, 0.2, 1) 0.15s forwards;
+  will-change: transform, opacity;
+}
+
+/* 4. Thin Border Ring (0.15s to 1.95s: duration 1.8s, delay 0.15s) */
+@keyframes spendwise-splash-ring {
+  0% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.3);
+  }
+}
+
+.animate-spendwise-splash-ring {
+  animation: spendwise-splash-ring 1.8s cubic-bezier(0.22, 0.7, 0.2, 1) 0.15s forwards;
+  will-change: transform, opacity;
+}
+
+/* 5. Reduced Motion Simple Fade (0.4s) */
+@keyframes spendwise-splash-reduced-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-spendwise-splash-reduced {
+  animation: spendwise-splash-reduced-fade 0.4s ease-out forwards;
+}
+
+
+/* ================= ONBOARDING DIRECTIONAL STEP TRANSITIONS ================= */
+
+/* Next Step: Content slides in from right to center */
+@keyframes onboarding-slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Back Step: Content slides in from left to center */
+@keyframes onboarding-slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-onboarding-next {
+  animation: onboarding-slide-in-right 1s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+.animate-onboarding-back {
+  animation: onboarding-slide-in-left 1s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+/* ================= ONBOARDING COMPLETION ANIMATIONS ================= */
+@keyframes onboarding-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-completion-hero {
+  animation: spendwise-icon-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-completion-title {
+  opacity: 0;
+  animation: onboarding-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+.animate-completion-summary {
+  opacity: 0;
+  animation: onboarding-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+}
+
+.animate-completion-actions {
+  opacity: 0;
+  animation: onboarding-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spendwise-check,
+  .animate-spendwise-cross-1,
+  .animate-spendwise-cross-2 {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+
+  .animate-spendwise-splash-sheen,
+  .animate-spendwise-splash-glow,
+  .animate-spendwise-splash-ring {
+    display: none !important;
+  }
+
+  .animate-spendwise-splash-core {
+    animation: spendwise-splash-reduced-fade 0.4s ease-out forwards !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .animate-spendwise-result-ripple,
+  .animate-spendwise-icon-enter,
+  .animate-spendwise-splash-logo,
+  .animate-onboarding-next,
+  .animate-onboarding-back,
+  .animate-completion-hero,
+  .animate-completion-title,
+  .animate-completion-summary,
+  .animate-completion-actions {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
+
+
+

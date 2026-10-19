@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpendWise – Sổ tay đăng nhập</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00995e; --ink:#27324a; --muted:#8a96ad;
+  --paper:#fffdf6; --line:rgba(112,146,190,.24); --margin:rgba(231,96,96,.34);
+  --gold1:#ffe9a0; --gold2:#e7b23a; --gold3:#9b6a0c;
+}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{
+  font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(900px 500px at 50% 0%,#e6eff9,transparent),#edf2f9;
+  display:grid;place-items:center;min-height:100vh;padding:220px 12px 60px;overflow-x:hidden;
+}
+
+/* ================= CUỐN SỔ ================= */
+.book{
+  --w:min(340px,calc(100vw - 64px));
+  position:relative;width:var(--w);height:520px;      /* chiều cao cố định, JS đo 1 lần theo trang cao nhất */
+  perspective:1800px;perspective-origin:50% 0%;
+}
+
+/* bìa da xanh đậm, khâu chỉ vàng, bọc góc vàng */
+.board{
+  position:absolute;inset:-28px -14px -16px -14px;border-radius:20px;overflow:hidden;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.055) 1px,transparent 1.4px) 0 0/5px 5px,
+    radial-gradient(130% 70% at 25% 0%,rgba(52,140,108,.55),transparent 62%),
+    linear-gradient(165deg,#17493a,#0b2a21);
+  box-shadow:0 34px 46px -22px rgba(6,28,20,.75),0 6px 14px rgba(6,28,20,.25),
+             inset 0 2px 0 rgba(255,255,255,.16),inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.board::after{content:"";position:absolute;inset:7px;border-radius:14px;border:1.5px dashed rgba(240,200,95,.55)}
+.corner{position:absolute;width:42px;height:42px;background:linear-gradient(135deg,var(--gold1),var(--gold2) 55%,var(--gold3));
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.corner.tl{top:0;left:0;clip-path:polygon(0 0,100% 0,0 100%)}
+.corner.tr{top:0;right:0;clip-path:polygon(0 0,100% 0,100% 100%)}
+.corner.bl{bottom:0;left:0;clip-path:polygon(0 0,0 100%,100% 100%)}
+.corner.br{bottom:0;right:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+
+/* tập giấy dày bên dưới */
+.stack{position:absolute;inset:0;border-radius:6px 6px 12px 12px;background:#f1ebdb;border:1px solid #ddd5bd}
+.stack.s1{transform:translateY(7px);box-shadow:0 8px 14px -6px rgba(0,0,0,.4)}
+.stack.s2{transform:translateY(4px);background:#f6f1e3}
+.stack.s3{transform:translateY(1.5px);background:#faf6ea}
+
+/* trang giấy */
+.page{
+  position:absolute;inset:0;border-radius:6px 6px 12px 12px;overflow:hidden;
+  background:
+    linear-gradient(90deg,transparent 30px,var(--margin) 30px 31.5px,transparent 31.5px),
+    repeating-linear-gradient(to bottom,transparent 0 31px,var(--line) 31px 32px) 0 62px/100% 100% no-repeat,
+    radial-gradient(120% 100% at 50% 40%,transparent 60%,rgba(190,160,100,.14)),
+    var(--paper);
+  border:1px solid #e5decb;
+  padding:62px 22px 0 46px;
+}
+.page[inert]{pointer-events:none}
+.inner{display:flex;flex-direction:column;padding-bottom:24px}
+
+.holes{position:absolute;left:0;right:0;top:0;height:40px;pointer-events:none}
+.holes i{position:absolute;top:14px;width:11px;height:11px;border-radius:50%;transform:translateX(-50%);
+  background:radial-gradient(circle at 40% 35%,#3d3a2e,#14120b);box-shadow:0 1px 0 rgba(255,255,255,.9),inset 0 1px 2px rgba(0,0,0,.6)}
+
+/* lò xo: vàng + đen */
+.rings{position:absolute;left:0;right:0;top:0;height:0;z-index:30;pointer-events:none}
+.ring{position:absolute;top:-14px;width:10px;height:42px;transform:translateX(-50%);border-radius:5px;
+  background:linear-gradient(90deg,#0e0c08,#4d4837 40%,#0e0c08);box-shadow:0 5px 6px rgba(0,0,0,.4)}
+.ring::before{content:"";position:absolute;left:1.5px;top:2px;width:7px;height:15px;border-radius:4px;
+  background:linear-gradient(180deg,var(--gold1),var(--gold2) 60%,var(--gold3))}
+.ring::after{content:"";position:absolute;left:1px;right:1px;bottom:3px;height:7px;border-radius:3px;
+  background:linear-gradient(180deg,#3b3626,#0b0905)}
+
+/* ================= TRANG LẬT (uốn cong) ================= */
+.leaf{position:absolute;inset:0;z-index:20}
+.flip{position:absolute;left:0;top:0;width:100%;height:0;z-index:20;transform-style:preserve-3d;pointer-events:none}
+.flip.settled .face{pointer-events:auto;cursor:pointer}
+.strip{position:absolute;left:0;width:100%;transform-origin:50% 0;transform-style:preserve-3d}
+.face{position:absolute;left:0;top:0;width:100%;backface-visibility:hidden;overflow:hidden}
+.face.back{transform:rotateX(180deg);background-color:#f6f1e2;border-left:1px solid rgba(0,0,0,.07);border-right:1px solid rgba(0,0,0,.07)}
+.face .sh{position:absolute;inset:0;background:#2a1d06;opacity:0;pointer-events:none}
+.under-shade{position:absolute;inset:0;border-radius:6px 6px 12px 12px;pointer-events:none;z-index:10;opacity:0;
+  background:linear-gradient(180deg,rgba(40,30,10,.38),rgba(40,30,10,.05) 75%)}
+
+/* ================= FORM ================= */
+.head{display:flex;align-items:center;margin-bottom:14px;height:32px}
+.head h2{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#56627c}
+.head h2 svg{width:16px;height:16px;color:var(--green)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#98a3b9;margin-bottom:6px}
+.input{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;background:#fff;border:1px solid #dfe5f0;border-radius:23px;transition:border-color .2s,box-shadow .2s}
+.input:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,153,94,.14)}
+.input svg{width:17px;height:17px;flex:none;color:#97a2b8}
+.input input{all:unset;flex:1;min-width:0;font:500 14.5px 'Be Vietnam Pro';color:var(--ink)}
+.input input::placeholder{color:#b4bdce}
+.eye{all:unset;cursor:pointer;display:grid;place-items:center;color:#97a2b8}
+.eye:hover{color:var(--green)}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:25px;
+  background:linear-gradient(180deg,#00a766,#008c55);color:#fff;font:700 14.5px 'Be Vietnam Pro';
+  box-shadow:0 8px 16px -6px rgba(0,153,94,.55),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,filter .2s}
+.btn:hover{filter:brightness(1.06)}.btn:active{transform:scale(.98)}
+.btn:focus-visible,.btn-gold:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.row{display:flex;justify-content:space-between;align-items:center;margin:2px 0 14px;font-size:12.5px}
+.link{all:unset;cursor:pointer;font-weight:700;color:var(--green)}
+.link:hover{text-decoration:underline}
+.remember{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#56627c}
+.remember input{accent-color:var(--green);width:15px;height:15px}
+.alt{text-align:center;font-size:12px;color:var(--muted);margin:auto 0 8px;padding-top:16px}
+.btn-gold{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;border-radius:22px;
+  background:linear-gradient(180deg,#ffd84a,#ffb900);color:#3b2a00;font:800 12.5px 'Be Vietnam Pro';letter-spacing:.1em;text-transform:uppercase;
+  box-shadow:0 8px 16px -8px rgba(255,170,0,.8),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .15s,filter .2s}
+.btn-gold:hover{filter:brightness(1.05)}.btn-gold:active{transform:scale(.98)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;background:var(--ink);color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;transition:.3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+</svg>
+
+<main class="book" id="book">
+  <div class="board"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i></div>
+  <div class="stack s1"></div><div class="stack s2"></div><div class="stack s3"></div>
+
+  <!-- Trang đăng ký (nằm dưới) -->
+  <section class="page" id="pg-register" aria-label="Trang đăng ký" inert>
+    <div class="holes" data-holes></div>
+    <div class="inner">
+      <div class="head"><h2><svg><use href="#i-check"/></svg>Tạo trang sổ mới</h2></div>
+      <form id="f-register" autocomplete="on">
+        <div class="field"><label for="r-name">Họ và tên</label>
+          <div class="input"><svg><use href="#i-user"/></svg><input id="r-name" value="Nguyễn Văn An" autocomplete="name"></div></div>
+        <div class="field"><label for="r-email">Email</label>
+          <div class="input"><svg><use href="#i-mail"/></svg><input id="r-email" type="email" value="an.nguyen@spendwise.vn" autocomplete="email"></div></div>
+        <div class="field"><label for="r-phone">Số điện thoại</label>
+          <div class="input"><svg><use href="#i-phone"/></svg><input id="r-phone" type="tel" value="0912345678" autocomplete="tel"></div></div>
+        <div class="field"><label for="r-pass">Mật khẩu</label>
+          <div class="input"><svg><use href="#i-lock"/></svg><input id="r-pass" type="password" value="matkhau12345" autocomplete="new-password">
+            <button type="button" class="eye" data-eye="r-pass" aria-label="Hiện mật khẩu"><svg width="17" height="17"><use href="#i-eye"/></svg></button></div></div>
+        <button class="btn" type="submit">Tạo sổ chi tiêu SpendWise <svg width="16" height="16"><use href="#i-arrow"/></svg></button>
+      </form>
+      <p class="alt">Đã có tài khoản?</p>
+      <button type="button" class="btn-gold" data-go="login"><svg width="15" height="15" style="transform:rotate(90deg)"><use href="#i-arrow"/></svg> Đăng nhập ngay</button>
+    </div>
+  </section>
+  <div class="under-shade" id="shade"></div>
+
+  <!-- Trang đăng nhập (nằm trên, sẽ lật lên) -->
+  <div class="leaf" id="leaf">
+    <section class="page" id="pg-login" aria-label="Trang đăng nhập">
+      <div class="holes" data-holes></div>
+      <div class="inner">
+        <div class="head"><h2><svg><use href="#i-spark"/></svg>Mở sổ chi tiêu</h2></div>
+        <form id="f-login" autocomplete="on">
+          <div class="field"><label for="l-id">Email hoặc số điện thoại</label>
+            <div class="input"><svg><use href="#i-mail"/></svg><input id="l-id" value="demo@spendwise.vn" autocomplete="username"></div></div>
+          <div class="field"><label for="l-pass">Mật khẩu</label>
+            <div class="input"><svg><use href="#i-lock"/></svg><input id="l-pass" type="password" value="demo12345678" autocomplete="current-password">
+              <button type="button" class="eye" data-eye="l-pass" aria-label="Hiện mật khẩu"><svg width="17" height="17"><use href="#i-eye"/></svg></button></div></div>
+          <div class="row">
+            <label class="remember"><input type="checkbox" checked> Ghi nhớ phiên đăng nhập</label>
+            <button type="button" class="link">Quên mật khẩu?</button>
+          </div>
+          <button class="btn" type="submit">Đăng nhập vào SpendWise <svg width="16" height="16"><use href="#i-arrow"/></svg></button>
+        </form>
+        <p class="alt">Chưa có tài khoản?</p>
+        <button type="button" class="btn-gold" data-go="register">Đăng ký ngay <svg width="15" height="15" style="transform:rotate(-90deg)"><use href="#i-arrow"/></svg></button>
+      </div>
+    </section>
+  </div>
+
+  <div class="rings" id="rings"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const book = document.getElementById('book');
+  const leaf = document.getElementById('leaf');
+  const shade = document.getElementById('shade');
+  const pgLogin = document.getElementById('pg-login');
+  const pgReg = document.getElementById('pg-register');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* --- lò xo + lỗ đục --- */
+  const NR = 9, pos = i => ((i + .5) / NR * 100) + '%';
+  const makeHoles = host => { for (let i = 0; i < NR; i++) { const o = document.createElement('i'); o.style.left = pos(i); host.appendChild(o); } };
+  const rings = document.getElementById('rings');
+  for (let i = 0; i < NR; i++) { const r = document.createElement('div'); r.className = 'ring'; r.style.left = pos(i); rings.appendChild(r); }
+  document.querySelectorAll('[data-holes]').forEach(makeHoles);
+
+  /* --- sổ cố định: cao bằng trang cao nhất, đo 1 lần --- */
+  const TOP = 62;
+  let state = 'login', busy = false, sheet = null;
+  function fit() {
+    const il = pgLogin.querySelector('.inner'), ir = pgReg.querySelector('.inner');
+    il.style.minHeight = ir.style.minHeight = '';
+    const H = Math.max(il.offsetHeight, ir.offsetHeight) + TOP;
+    book.style.height = H + 'px';
+    il.style.minHeight = ir.style.minHeight = (H - TOP) + 'px';
+  }
+  fit();
+  document.fonts?.ready.then(() => !busy && remount());
+
+  /* --- trang lật uốn cong: N dải ngang nối tiếp nhau --- */
+  const N = 18, DUR = 1150, LEAD = .65;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  function buildSheet() {
+    const W = book.offsetWidth, hl = book.offsetHeight, H = hl / N;
+    const root = document.createElement('div'); root.className = 'flip';
+    const strips = []; let parent = root;
+    for (let i = 0; i < N; i++) {
+      const s = document.createElement('div'); s.className = 'strip';
+      s.style.top = (i === 0 ? 0 : H) + 'px'; s.style.height = H + 'px';
+
+      // mặt trước: bản sao trang đăng nhập, cắt đúng dải thứ i
+      const f = document.createElement('div'); f.className = 'face front'; f.style.height = (H + 1) + 'px';
+      const c = pgLogin.cloneNode(true);
+      c.removeAttribute('id'); c.setAttribute('inert', ''); c.setAttribute('aria-hidden', 'true');
+      c.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      const src = pgLogin.querySelectorAll('input'), dst = c.querySelectorAll('input');
+      dst.forEach((d, k) => { d.value = src[k].value; d.checked = src[k].checked; });
+      Object.assign(c.style, { position: 'absolute', inset: 'auto', left: '0', top: (-i * H) + 'px', width: W + 'px', height: hl + 'px' });
+      const shF = document.createElement('div'); shF.className = 'sh';
+      f.append(c, shF);
+
+      // mặt sau: giấy trắng kẻ dòng, dải đầu có lỗ đục sát lò xo
+      const b = document.createElement('div'); b.className = 'face back'; b.style.height = (H + 1) + 'px';
+      b.style.backgroundImage = 'linear-gradient(to bottom,transparent 31px,var(--line) 31px 32px)';
+      b.style.backgroundSize = '100% 32px';
+      b.style.backgroundPosition = `0 ${TOP - i * H}px`;
+      if (i === 0) { const h = document.createElement('div'); h.className = 'holes'; makeHoles(h); b.appendChild(h); }
+      const shB = document.createElement('div'); shB.className = 'sh'; b.appendChild(shB);
+
+      s.append(f, b); parent.appendChild(s); parent = s;
+      strips.push({ s, shF, shB });
+    }
+    root.addEventListener('click', () => go('login'));
+    return { root, strips };
+  }
+
+  function pose(e) {
+    let prev = 0;
+    sheet.strips.forEach((o, i) => {
+      const u = (i + .5) / N;
+      const ep = Math.min(1, Math.max(0, e * (1 + LEAD) - LEAD * (1 - u)));
+      const phi = ep * 180;
+      o.s.style.transform = `rotateX(${phi - prev}deg)`;
+      prev = phi;
+      const sn = Math.sin(phi * Math.PI / 180);
+      o.shF.style.opacity = (.42 * sn).toFixed(3);
+      o.shB.style.opacity = (.2 * sn).toFixed(3);
+    });
+    shade.style.opacity = Math.max(0, 1 - e * 1.15).toFixed(3);
+  }
+
+  function mount(e) {
+    sheet = buildSheet(); book.appendChild(sheet.root); pose(e);
+  }
+  function unmount() { sheet?.root.remove(); sheet = null; shade.style.opacity = 0; }
+  function remount() { // đo lại (đổi cỡ màn hình / font tải xong)
+    const flipped = state === 'register';
+    unmount(); fit();
+    if (flipped) { mount(1); sheet.root.classList.add('settled'); }
+  }
+  addEventListener('resize', () => !busy && remount());
+
+  function setState(next) {
+    state = next;
+    const isLogin = next === 'login';
+    pgLogin.toggleAttribute('inert', !isLogin);
+    pgReg.toggleAttribute('inert', isLogin);
+    leaf.style.visibility = isLogin ? 'visible' : 'hidden';
+    if (sheet) sheet.root.classList.toggle('settled', !isLogin);
+    setTimeout(() => document.getElementById(isLogin ? 'l-id' : 'r-name').focus({ preventScroll: true }), 30);
+  }
+
+  function go(target) {
+    if (busy || target === state) return;
+    const forward = target === 'register';
+    if (reduce) { if (forward) { unmount(); mount(1); } else unmount(); setState(target); return; }
+    busy = true;
+
+    if (forward) { unmount(); mount(0); }
+    sheet.root.classList.remove('settled');
+    leaf.style.visibility = 'hidden';
+    pgLogin.setAttribute('inert', ''); pgReg.setAttribute('inert', '');
+
+    const from = forward ? 0 : 1, to = forward ? 1 : 0;
+    const t0 = performance.now();
+    (function frame(now) {
+      const t = Math.min(1, (now - t0) / DUR);
+      pose(from + (to - from) * ease(t));
+      if (t < 1) return requestAnimationFrame(frame);
+      if (!forward) unmount();          // lật về: tờ giấy hạ xuống, thay bằng trang thật
+      setState(target); busy = false;   // lật lên: tờ giấy nằm lại phía trên lò xo
+    })(t0);
+  }
+
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+  document.querySelectorAll('[data-eye]').forEach(b => b.addEventListener('click', () => {
+    const i = document.getElementById(b.dataset.eye); i.type = i.type === 'password' ? 'text' : 'password';
+  }));
+
+  const toast = document.getElementById('toast');
+  const say = m => { toast.textContent = m; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); };
+  document.getElementById('f-login').addEventListener('submit', e => { e.preventDefault(); say('Đang mở sổ chi tiêu…'); });
+  document.getElementById('f-register').addEventListener('submit', e => { e.preventDefault(); say('Đang tạo sổ mới…'); });
+})();
+</script>
+</body>
+</html>

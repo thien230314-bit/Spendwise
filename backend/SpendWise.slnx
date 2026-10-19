@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SpendWise.Application/SpendWise.Application.csproj" Id="969e5f50-8be7-4d71-a86a-19b730277ed5" />
+  <Project Path="SpendWise.Domain/SpendWise.Domain.csproj" Id="a5e7e377-6b7b-45fc-9bc1-613667b7954e" />
+  <Project Path="SpendWise.Infrastructure/SpendWise.Infrastructure.csproj" Id="6a12ddc3-5c7d-466c-b224-19b1fcaf59d9" />
+  <Project Path="SpendWise/SpendWise.API.csproj" />
+  <Project Path="tests/SpendWise.Tests/SpendWise.Tests.csproj" />
+</Solution>

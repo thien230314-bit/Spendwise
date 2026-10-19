@@ -550,4 +550,117 @@ public sealed class AdminA6Tests
 
         Assert.Equal("permission_denied", ex.Code);
     }
+
+    [Fact]
+    public async Task Notifications_Title_And_Message_Sanitize_PIN_And_Secrets()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var n = new Notification
+        {
+            UserId = subject.Id,
+            Type = NotificationType.SecurityAlert,
+            Title = "Mã OTP bí mật 847291 và PIN pin=123456",
+            Message = "Token đăng nhập bearer abc123secretTokenValue",
+            DataJson = "{\"pin\":\"654321\",\"apiKey\":\"superSecretApiKey\"}",
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "Title Sanitization Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+        f.Db.AddRange(n, ticket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var paged = await service.NotificationsAsync(principal,
+            new A6NotificationQuery("Check title sanitization", CaseId: ticket.Id, UserId: subject.Id), default);
+
+        var item = Assert.Single(paged.Items);
+        Assert.DoesNotContain("847291", item.Title);
+        Assert.DoesNotContain("123456", item.Title);
+        Assert.Contains("[CODE]", item.Title);
+        Assert.Contains("[REDACTED_PIN]", item.Title);
+        Assert.DoesNotContain("abc123secretTokenValue", item.Message);
+        Assert.Contains("[REDACTED_TOKEN]", item.Message);
+        Assert.DoesNotContain("654321", item.DataJson);
+        Assert.DoesNotContain("superSecretApiKey", item.DataJson);
+    }
+
+    [Fact]
+    public async Task DeliveryHistory_Pagination_Accurate_Across_Over_200_Records()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "250 Items Pagination Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+        f.Db.SupportCases.Add(ticket);
+
+        // Add 150 Notifications (InApp)
+        for (int i = 0; i < 150; i++)
+        {
+            f.Db.Notifications.Add(new Notification
+            {
+                UserId = subject.Id,
+                Type = NotificationType.SystemAnnouncement,
+                Title = $"Notif {i}",
+                Message = $"Message {i}",
+                CreatedAt = f.Clock.UtcNow.AddMinutes(-i)
+            });
+        }
+
+        // Add 100 Emails
+        for (int i = 0; i < 100; i++)
+        {
+            f.Db.EmailOutboxMessages.Add(new EmailOutboxMessage
+            {
+                RecipientEmail = subject.Email,
+                Subject = $"Email Subject {i}",
+                DeduplicationKey = $"test-dedup-a6-{Guid.NewGuid():N}-{i}",
+                Status = EmailDeliveryStatus.Sent,
+                CreatedAt = f.Clock.UtcNow.AddMinutes(-150 - i)
+            });
+        }
+
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        // Page 1 (pageSize = 50)
+        var p1 = await service.DeliveryHistoryAsync(principal,
+            new A6DeliveryHistoryQuery("Page 1", CaseId: ticket.Id, UserId: subject.Id, Page: 1, PageSize: 50), default);
+
+        Assert.Equal(250, p1.Total);
+        Assert.Equal(50, p1.Items.Count);
+
+        // Page 5 (items 201 to 250) -> deeper than 200 items
+        var p5 = await service.DeliveryHistoryAsync(principal,
+            new A6DeliveryHistoryQuery("Page 5", CaseId: ticket.Id, UserId: subject.Id, Page: 5, PageSize: 50), default);
+
+        Assert.Equal(250, p5.Total);
+        Assert.Equal(50, p5.Items.Count);
+        // Ensure that page 1 and page 5 items are completely disjoint sets
+        var p1Ids = p1.Items.Select(x => x.Id).ToHashSet();
+        Assert.DoesNotContain(p5.Items, x => p1Ids.Contains(x.Id));
+    }
 }

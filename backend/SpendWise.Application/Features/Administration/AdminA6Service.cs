@@ -82,7 +82,7 @@ public sealed class AdminA6Service(
                 uInfo?.FullName,
                 uInfo?.SpendId,
                 n.Type.ToString(),
-                n.Title,
+                SanitizeTitle(n.Title),
                 SanitizeContent(n.Message) ?? string.Empty,
                 SanitizeContent(n.DataJson),
                 n.ReadAt != null,
@@ -124,29 +124,38 @@ public sealed class AdminA6Service(
         var scopedUserId = ticket.LinkedUserId;
 
         var unifiedDeliveries = new List<A6DeliveryHistoryItem>();
+        // Exact Total Count across requested channels
+        var total = 0;
+        var fetchLimit = query.Page * query.PageSize;
 
         // 1. In-App Notifications
         if (string.IsNullOrWhiteSpace(query.Channel) || query.Channel.Equals("InApp", StringComparison.OrdinalIgnoreCase))
         {
-            var notifQ = db.Notifications.AsNoTracking();
-            if (scopedUserId is { } targetUid)
-                notifQ = notifQ.Where(n => n.UserId == targetUid);
+            var notifQ = db.Notifications.AsNoTracking().Where(n => n.UserId == scopedUserId);
             if (query.FromUtc is { } f)
                 notifQ = notifQ.Where(n => n.CreatedAt >= f);
             if (query.ToUtc is { } t)
                 notifQ = notifQ.Where(n => n.CreatedAt < t);
 
-            var limit = Math.Max(200, query.Page * query.PageSize);
-            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).Take(limit).ToListAsync(ct);
+            if (!string.IsNullOrWhiteSpace(query.Status))
+            {
+                if (query.Status.Equals("UserRead", StringComparison.OrdinalIgnoreCase))
+                    notifQ = notifQ.Where(n => n.ReadAt != null);
+                else if (query.Status.Equals("Sent", StringComparison.OrdinalIgnoreCase))
+                    notifQ = notifQ.Where(n => n.ReadAt == null);
+                else
+                    notifQ = notifQ.Where(_ => false);
+            }
+
+            total += await notifQ.CountAsync(ct);
+
+            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).ThenBy(n => n.Id).Take(fetchLimit).ToListAsync(ct);
             var notifUserIds = notifs.Select(n => n.UserId).Distinct().ToList();
             var notifUsers = await db.Users.AsNoTracking().Where(u => notifUserIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.SpendId, ct);
 
             foreach (var n in notifs)
             {
                 var status = n.ReadAt != null ? "UserRead" : "Sent";
-                if (!string.IsNullOrWhiteSpace(query.Status) && !status.Equals(query.Status, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
                 notifUsers.TryGetValue(n.UserId, out var spendId);
                 unifiedDeliveries.Add(new A6DeliveryHistoryItem(
                     n.Id,
@@ -167,24 +176,27 @@ public sealed class AdminA6Service(
         // 2. Email Outbox Deliveries
         if (string.IsNullOrWhiteSpace(query.Channel) || query.Channel.Equals("Email", StringComparison.OrdinalIgnoreCase))
         {
-            var emailQ = db.EmailOutboxMessages.AsNoTracking();
-            if (query.FromUtc is { } f)
-                emailQ = emailQ.Where(e => e.CreatedAt >= f);
-            if (query.ToUtc is { } t)
-                emailQ = emailQ.Where(e => e.CreatedAt < t);
-
             var targetUser = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == scopedUserId, ct);
             var targetEmail = targetUser?.Email;
             if (!string.IsNullOrEmpty(targetEmail))
             {
-                emailQ = emailQ.Where(e => e.RecipientEmail == targetEmail);
-            }
+                var emailQ = db.EmailOutboxMessages.AsNoTracking().Where(e => e.RecipientEmail == targetEmail);
+                if (query.FromUtc is { } f)
+                    emailQ = emailQ.Where(e => e.CreatedAt >= f);
+                if (query.ToUtc is { } t)
+                    emailQ = emailQ.Where(e => e.CreatedAt < t);
 
-            // Only query if scoped user has an email
-            if (!string.IsNullOrEmpty(targetEmail))
-            {
-                var emailLimit = Math.Max(200, query.Page * query.PageSize);
-                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(emailLimit).ToListAsync(ct);
+                if (!string.IsNullOrWhiteSpace(query.Status))
+                {
+                    if (Enum.TryParse<EmailDeliveryStatus>(query.Status, true, out var emailStatus))
+                        emailQ = emailQ.Where(e => e.Status == emailStatus);
+                    else
+                        emailQ = emailQ.Where(_ => false);
+                }
+
+                total += await emailQ.CountAsync(ct);
+
+                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).ThenBy(e => e.Id).Take(fetchLimit).ToListAsync(ct);
                 foreach (var e in emails)
                 {
                     var status = e.Status switch
@@ -194,8 +206,6 @@ public sealed class AdminA6Service(
                         EmailDeliveryStatus.Processing => "Processing",
                         _ => "Queued"
                     };
-                    if (!string.IsNullOrWhiteSpace(query.Status) && !status.Equals(query.Status, StringComparison.OrdinalIgnoreCase))
-                        continue;
 
                     unifiedDeliveries.Add(new A6DeliveryHistoryItem(
                         e.Id,
@@ -217,16 +227,32 @@ public sealed class AdminA6Service(
         // 3. Mobile Push Deliveries
         if (string.IsNullOrWhiteSpace(query.Channel) || query.Channel.Equals("Push", StringComparison.OrdinalIgnoreCase))
         {
-            var pushQ = db.MobilePushDeliveries.AsNoTracking().Include(p => p.Notification).Include(p => p.Installation);
-            IQueryable<MobilePushDelivery> filteredPush = pushQ.Where(p => p.Notification.UserId == scopedUserId);
+            var pushQ = db.MobilePushDeliveries.AsNoTracking().Include(p => p.Notification).Include(p => p.Installation)
+                .Where(p => p.Notification.UserId == scopedUserId);
 
             if (query.FromUtc is { } f)
-                filteredPush = filteredPush.Where(p => p.CreatedAt >= f);
+                pushQ = pushQ.Where(p => p.CreatedAt >= f);
             if (query.ToUtc is { } t)
-                filteredPush = filteredPush.Where(p => p.CreatedAt < t);
+                pushQ = pushQ.Where(p => p.CreatedAt < t);
 
-            var pushLimit = Math.Max(200, query.Page * query.PageSize);
-            var pushes = await filteredPush.OrderByDescending(p => p.CreatedAt).Take(pushLimit).ToListAsync(ct);
+            if (!string.IsNullOrWhiteSpace(query.Status))
+            {
+                var status = query.Status;
+                if (status.Equals("ProviderAccepted", StringComparison.OrdinalIgnoreCase) || status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+                    pushQ = pushQ.Where(p => p.Status == MobilePushDeliveryStatus.Completed);
+                else if (status.Equals("Submitted", StringComparison.OrdinalIgnoreCase))
+                    pushQ = pushQ.Where(p => p.Status == MobilePushDeliveryStatus.Submitted);
+                else if (status.Equals("Failed", StringComparison.OrdinalIgnoreCase))
+                    pushQ = pushQ.Where(p => p.Status == MobilePushDeliveryStatus.Failed);
+                else if (status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+                    pushQ = pushQ.Where(p => p.Status == MobilePushDeliveryStatus.Pending);
+                else
+                    pushQ = pushQ.Where(_ => false);
+            }
+
+            total += await pushQ.CountAsync(ct);
+
+            var pushes = await pushQ.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id).Take(fetchLimit).ToListAsync(ct);
             foreach (var p in pushes)
             {
                 var status = p.Status switch
@@ -236,8 +262,6 @@ public sealed class AdminA6Service(
                     MobilePushDeliveryStatus.Failed => "Failed",
                     _ => "Pending"
                 };
-                if (!string.IsNullOrWhiteSpace(query.Status) && !status.Equals(query.Status, StringComparison.OrdinalIgnoreCase))
-                    continue;
 
                 unifiedDeliveries.Add(new A6DeliveryHistoryItem(
                     p.Id,
@@ -255,8 +279,7 @@ public sealed class AdminA6Service(
             }
         }
 
-        var sorted = unifiedDeliveries.OrderByDescending(d => d.CreatedAt).ToList();
-        var total = sorted.Count;
+        var sorted = unifiedDeliveries.OrderByDescending(d => d.CreatedAt).ThenByDescending(d => d.Id).ToList();
         var paged = sorted.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
 
         audit.Add(actor, "A6_DELIVERY_HISTORY_READ", "DeliveryHistory", scopedUserId.ToString(), purpose,
@@ -278,6 +301,8 @@ public sealed class AdminA6Service(
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var failures = new List<A6DeliveryFailureItem>();
+        var total = 0;
+        var fetchLimit = query.Page * query.PageSize;
 
         // 1. Failed Emails
         if (string.IsNullOrWhiteSpace(query.Channel) || query.Channel.Equals("Email", StringComparison.OrdinalIgnoreCase))
@@ -286,8 +311,9 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) emailQ = emailQ.Where(e => e.CreatedAt >= f);
             if (query.ToUtc is { } t) emailQ = emailQ.Where(e => e.CreatedAt < t);
 
-            var emailLimit = Math.Max(200, query.Page * query.PageSize);
-            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(emailLimit).ToListAsync(ct);
+            total += await emailQ.CountAsync(ct);
+
+            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).ThenBy(e => e.Id).Take(fetchLimit).ToListAsync(ct);
             foreach (var e in failedEmails)
             {
                 failures.Add(new A6DeliveryFailureItem(
@@ -313,8 +339,9 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) pushQ = pushQ.Where(p => p.CreatedAt >= f);
             if (query.ToUtc is { } t) pushQ = pushQ.Where(p => p.CreatedAt < t);
 
-            var pushLimit = Math.Max(200, query.Page * query.PageSize);
-            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).Take(pushLimit).ToListAsync(ct);
+            total += await pushQ.CountAsync(ct);
+
+            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id).Take(fetchLimit).ToListAsync(ct);
             foreach (var p in failedPushes)
             {
                 failures.Add(new A6DeliveryFailureItem(
@@ -330,8 +357,7 @@ public sealed class AdminA6Service(
             }
         }
 
-        var sorted = failures.OrderByDescending(f => f.CreatedAt).ToList();
-        var total = sorted.Count;
+        var sorted = failures.OrderByDescending(f => f.CreatedAt).ThenByDescending(f => f.Id).ToList();
         var paged = sorted.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
 
         audit.Add(actor, "A6_DELIVERY_FAILURES_READ", "DeliveryFailure", null, purpose,
@@ -477,25 +503,39 @@ public sealed class AdminA6Service(
     private static string? SanitizeContent(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return text;
-        // Redact OTPs and numeric verification codes: 4 to 8 digits
-        var sanitized = Regex.Replace(text, @"\b\d{4,8}\b", "[REDACTED_CODE]");
-        // Redact authorization tokens / bearer tokens
-        sanitized = Regex.Replace(sanitized, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
+        var sanitized = Regex.Replace(text, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(token[""']?\s*[:=]\s*[""']?)[A-Za-z0-9\-._~+/]+", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(pin[""']?\s*[:=]\s*[""']?)[0-9]{4,8}", "$1[REDACTED_PIN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(password[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_PASSWORD]");
         sanitized = Regex.Replace(sanitized, @"(?i)(secret[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
         sanitized = Regex.Replace(sanitized, @"(?i)(apiKey[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"\b\d{4,8}\b", "[REDACTED_CODE]");
+        return sanitized;
+    }
+
+    private static string SanitizeTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return title;
+        var sanitized = Regex.Replace(title, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(token[""']?\s*[:=]\s*[""']?)[A-Za-z0-9\-._~+/]+", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(pin[""']?\s*[:=]\s*[""']?)[0-9]{4,8}", "$1[REDACTED_PIN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(password[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_PASSWORD]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(secret[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(apiKey[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"\b\d{4,8}\b", "[CODE]");
         return sanitized;
     }
 
     private static string SanitizeSubject(string subject)
     {
         if (string.IsNullOrWhiteSpace(subject)) return subject;
-        var sanitized = Regex.Replace(subject, @"\b\d{4,8}\b", "[CODE]");
-        sanitized = Regex.Replace(sanitized, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
+        var sanitized = Regex.Replace(subject, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(token[""']?\s*[:=]\s*[""']?)[A-Za-z0-9\-._~+/]+", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(pin[""']?\s*[:=]\s*[""']?)[0-9]{4,8}", "$1[REDACTED_PIN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(password[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_PASSWORD]");
         sanitized = Regex.Replace(sanitized, @"(?i)(secret[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(apiKey[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"\b\d{4,8}\b", "[CODE]");
         return sanitized;
     }
 

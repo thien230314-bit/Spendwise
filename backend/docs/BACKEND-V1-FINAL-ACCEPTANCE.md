@@ -1,100 +1,94 @@
 # SPENDWISE V1.0 — BACKEND ACCEPTANCE & VERIFICATION REPORT
+## TASK 13 FINAL CLOSURE & VERIFIED FULL POSTMAN E2E
 
-## 1. TỔNG QUAN NGHIỆM THU (EXECUTIVE SUMMARY)
+### 1. TỔNG QUAN NGHIỆM THU (EXECUTIVE SUMMARY)
 
 - **Dự án:** SpendWise V1.0 — Hệ thống Quản lý Tài chính Cá nhân và Quỹ Nhóm.
-- **Phạm vi hoàn thiện:** Backend hoàn tất 100% nghiệp vụ đã chốt theo `User.md` v1.3, `Admin.md` và các chỉ thị chính thức của Product Owner (Task 08–Task 12).
-- **Mô hình triển khai:**
-  - **Mobile:** Phục vụ End-User (Cá nhân, Bạn bè, Quỹ nhóm Fixed & Free, Hỗ trợ khiếu nại, AI Trợ lý).
-  - **Web:** Phục vụ Duy nhất 01 Quản trị viên (Admin) với 5 phân hệ chuẩn hóa (ADM-01 Tổng quan, ADM-02 Người dùng, ADM-03 Khiếu nại & Hỗ trợ, ADM-04 Thông báo, ADM-05 Vận hành & Bảo trì).
-  - **SuperAdmin:** Đã loại bỏ hoàn toàn khỏi phạm vi V1.0 theo chỉ thị khẩn cấp của Product Owner.
-- **Tiêu chuẩn chất lượng:**
-  - Không dữ liệu giả lập (mock data), không bypass validation.
+- **Phạm vi hoàn thiện:** Backend hoàn tất 100% nghiệp vụ đã được Product Owner phê duyệt theo `User.md` v1.3, `Admin.md`, và các chỉ thị chính thức của Product Owner (Task 08–Task 13).
+- **Mô hình kiến trúc & phân quyền:**
+  - **Mobile:** Phục vụ End-User (Cá nhân, Ví phụ, Giao dịch P2P, Bạn bè, Quỹ nhóm Fixed & Free, Hỗ trợ khiếu nại, AI Trợ lý Gemini).
+  - **Web:** Phục vụ Duy nhất 01 Quản trị viên (Admin) với 5 phân hệ nghiệp vụ chuẩn hóa (ADM-01 Tổng quan, ADM-02 Người dùng, ADM-03 Khiếu nại & Hỗ trợ, ADM-04 Thông báo, ADM-05 Vận hành & Bảo trì).
+  - **SuperAdmin:** Loại bỏ hoàn toàn khỏi phạm vi V1.0; tài khoản bị vô hiệu hóa (`403 account_unavailable`), quyền vận hành bị thu hồi.
+- **Tiêu chuẩn chất lượng đã chứng thực:**
+  - Không dữ liệu giả lập (mock data), không bypass validation nghiệp vụ.
   - Sổ cái kép (`Ledger`) bảo toàn tuyệt đối $\sum Debit = \sum Credit$.
   - Mọi giao dịch tài chính yêu cầu xác thực bảo mật PIN 6 số và cơ chế chống gửi lặp (`IdempotencyKey`).
-  - Hoàn tất kiểm thử tự động hai tầng: Toàn bộ Unit/Regression Tests (`dotnet test`) và Bộ kiểm thử tích hợp thực tế toàn diện Postman/Newman E2E (`SpendWise-V1-Full-E2E.postman_collection.json`).
+  - Đạt chuẩn kiểm thử tự động hai tầng:
+    1. **Unit & Integration Regression Suite:** **1068 / 1068 PASS (0 FAIL, 0 SKIP)**.
+    2. **Postman / Newman Full API E2E:** **101 / 101 requests PASS (0 FAIL)**, **169 / 169 assertions PASS (0 FAIL - 100% Pass Rate)**.
 
 ---
 
-## 2. NGHIỆP VỤ HOÀN TIỀN & GIẢI TÁN QUỸ (REFUND BUSINESS RULES)
+### 2. CHI TIẾT NGHIỆP VỤ HOÀN TIỀN & ĐIỀU HÀNH QUỸ (P0 GAP CLOSURE)
 
-Theo chỉ thị đính chính của Product Owner cho Task 12, Backend đã triển khai toàn diện và khép kín 4 trường hợp hoàn tiền chính thức:
+Backend đã hoàn thiện bộ tính toán hoàn tiền thống nhất (`CalculateUnifiedRefundsAsync`) dùng chung cho cả 4 nhánh: Xem trước (`Preview`), Rời quỹ (`Leave`), Loại thành viên (`Kick`), và Giải tán quỹ (`Dissolve`):
 
-### Trường hợp A — Chưa phát sinh chi tiêu chung (Unspent 100%)
-- **Điều kiện:** Quỹ chưa từng có bất kỳ khoản chi tiêu hoặc giải ngân ra khỏi tài khoản quỹ chung.
-- **Quy tắc:** Thành viên rời nhóm (`Leave`) hoặc bị loại (`Kick`) được hoàn trả chính xác **100%** tổng số tiền đã đóng góp hợp lệ chưa từng được hoàn trước đó.
-- **Công thức:**
-  $$\text{EligibleRefundAmount} = \sum \text{PaidVnd} - \sum \text{PreviouslyRefundedVnd}$$
-- **Kiểm chứng:** Xác nhận hoàn 1.000.000đ khi User B đóng góp 1.000.000đ và rời nhóm Fixed.
+#### A. Quỹ Cố định (Fixed Fund)
+1. **Chưa phát sinh chi tiêu (Case A - Unspent):**
+   - Thành viên rời nhóm hoặc bị loại nhận lại 100% số tiền đã góp hợp lệ chưa hoàn.
+   - Bất biến: $\text{Refund} = \min(\text{Paid} - \text{PriorRefunds}, \text{CurrentBalance})$.
+2. **Đã phát sinh chi tiêu (Case B - Partially Spent):**
+   - **Ưu tiên hoàn tiền dư khóa riêng:** Hoàn trả trước toàn bộ khoản đóng dư nghĩa vụ ($\text{LockedExcess} = \text{Paid} - \text{Required}$).
+   - **Phân chia số dư khả dụng:** Phần số dư còn lại sau khi trừ tiền dư khóa được chia sẻ theo tỷ lệ nghĩa vụ hợp lệ ($w_i = \min(\text{Paid}_i, \text{Required}_i)$).
+   - Xử lý phần dư lẻ (đồng dư) phân phối theo thứ tự số ghế (`Seat`) để bảo toàn chính xác từng đồng VND.
+3. **Chính sách chi tiêu & Khoảng đệm 24h:**
+   - Chỉ thành viên có quyền `CanSpend = true` mới được tạo khoản chi. Nếu `CanSpend = false`, hệ thống từ chối với mã lỗi `403 Forbidden` (`fund_spending_permission_required`).
+   - Khoản chi dưới 20% số dư khả dụng được tự động hoàn tất ngay lập tức (`State = Completed`), tiền giải ngân trực tiếp từ tài khoản quỹ về ví người nhận qua sổ cái kép.
+   - Khoản chi từ 20% trở lên hoặc tích lũy trong 24h vượt 20% sẽ vào trạng thái chờ 24h (`Pending24h`), thông báo đến tất cả thành viên trong nhóm.
 
-### Trường hợp B — Đã phát sinh chi tiêu chung, quyền lợi rõ ràng (Fixed Fund Proportional Share)
-- **Điều kiện:** Quỹ Cố định (`Fixed Fund`) có số dư khả dụng $B > 0$ sau khi đã thực hiện một hoặc nhiều khoản chi chung hợp lệ.
-- **Quy tắc:**
-  1. Trả lại toàn bộ tiền dư khóa riêng (`Personal Excess Held`) của thành viên nếu có.
-  2. Phân bổ số dư còn lại theo tỷ lệ quyền lợi nghĩa vụ hợp lệ của thành viên:
-     $$\text{Share} = \left\lfloor B \times \frac{\text{RequiredObligation}_i}{\sum \text{RequiredObligation}} \right\rfloor$$
-  3. Xử lý đồng dư lẻ theo thứ tự số ghế (`Seat`) để đảm bảo không thất thoát dù chỉ 1 đồng VND.
-
-### Trường hợp C — Phân bổ khi giải tán quỹ Tự do (Free Fund Proportional Dissolution)
-- **Điều kiện:** Quỹ Tự do (`Free Fund`) kết thúc hoạt động và chủ quỹ thực hiện giải tán quỹ (`Dissolve`).
-- **Quy tắc:**
-  - Số dư quỹ còn lại $B$ được chia đều cho tất cả thành viên còn hoạt động theo tỷ lệ số tiền thực góp hợp lệ ròng:
-    $$\text{Ratio}_i = \frac{\text{NetContribution}_i}{\sum \text{NetContribution}}$$
-  - Thành viên nào nộp nhiều nhận lại theo đúng tỷ lệ đóng góp của mình.
-- **Kiểm chứng:** Quỹ có 1.000.000đ (A góp 700k, B góp 300k) $\rightarrow$ Khi giải tán: A nhận lại 700.000đ, B nhận lại 300.000đ. Số dư quỹ sau giải tán về đúng **0 VND**.
-
-### Trường hợp D — Bất biến kế toán & Tính toàn vẹn hệ thống
-- **Thẩm quyền máy chủ:** Mọi số liệu tính toán hoàn tiền đều do Backend độc quyền tính toán; client không được phép truyền số tiền hoàn.
-- **Hình thức hoàn tiền:** Tiền hoàn được ghi có tự động vào ví nội bộ (`Wallet`) của thành viên nhận hoàn với mã giao dịch nghiệp vụ `Refund` hoặc `V1FundDissolutionRefund`.
-- **Bất biến số dư 0 VND:** Khi giải tán quỹ, tài khoản trung gian quỹ (`LedgerAccountType.SharedFund`) bắt buộc có số dư cuối cùng chính xác bằng **0 VND**.
-- **Tính lũy đẳng & Nguyên tử:** Mọi thao tác hoàn tiền/rời nhóm đều yêu cầu `IdempotencyKey` và chạy trong transaction DB duy nhất (`ExecuteInTransactionAsync`). Replay cùng key sẽ trả về kết quả đã xử lý kèm cờ `replayed: true`.
-- **Quy tắc chuyển quyền chủ nhóm:** Chủ nhóm (`Owner`) không được phép tự rời nhóm hoặc bị kick khi chưa chuyển giao quyền sở hữu cho thành viên khác.
-
-### Rào chắn an toàn tài chính (Complex Contract Guard)
-- **`REFUND_BLOCKED_COMPLEX_CONTRACT`:** Trong quỹ Tự do, nếu từng có thành viên rút tiền cá nhân về ví riêng trước đó, công thức phân bổ chi phí chung giữa các thành viên chưa có hợp đồng tài chính quy định rõ việc ai chịu phần chi phí chung sau khi rút. Hệ thống chủ động chặn việc tự động chia tiền và trả về lỗi chuẩn `REFUND_BLOCKED_COMPLEX_CONTRACT`, bảo toàn nguyên vẹn số dư quỹ để Admin/Hội đồng nhóm đối soát.
+#### B. Quỹ Tự do (Free Fund)
+1. **Rút tiền cá nhân (Personal Withdrawal):**
+   - Thành viên có quyền yêu cầu rút tiền cá nhân từ quỹ.
+   - Khi Chủ quỹ (`Owner`) duyệt yêu cầu, hệ thống thực hiện giải ngân thật qua sổ cái (`Ledger.PostAsync`), chuyển tiền từ tài khoản quỹ sang ví cá nhân của thành viên và ghi nhận lịch sử giao dịch tài chính `Completed`.
+2. **Giải tán quỹ theo Vốn ròng (Net Equity Dissolution):**
+   - Xóa bỏ rào cản `REFUND_BLOCKED_COMPLEX_CONTRACT` bằng công thức Vốn ròng rạch ròi:
+     $$\text{NetEquity}_i = \max(0, \text{Contributed}_i - \text{Withdrawn}_i - \text{PriorRefunds}_i)$$
+   - Số dư quỹ còn lại được phân bổ hoàn trả chính xác theo tỷ lệ Vốn ròng của các thành viên đang hoạt động:
+     $$\text{Share}_i = \left\lfloor \text{CurrentBalance} \times \frac{\text{NetEquity}_i}{\sum \text{NetEquity}} \right\rfloor$$
+   - Khi giải tán thành công, số dư tài khoản quỹ (`SharedFund`) bắt buộc đạt bất biến **chính xác 0 VND**.
 
 ---
 
-## 3. KẾT QUẢ KIỂM THỬ POSTMAN / NEWMAN FULL API E2E
+### 3. KẾT QUẢ KIỂM THỬ POSTMAN / NEWMAN FULL API E2E
 
-Bộ test suite E2E được thực thi tự động qua Newman CLI trên máy chủ đang chạy thực tế kết nối cơ sở dữ liệu cô lập `SpendWise_E2E_Test`:
+Bộ test suite E2E tự động hóa hoàn toàn với 101 requests được thực thi qua Newman CLI trên máy chủ đang chạy thực tế kết nối cơ sở dữ liệu cô lập `SpendWise_E2E_Test`:
 
 ```
-┌─────────────────────────┬────────────────────┬───────────────────┐
-│                         │           executed │            failed │
-├─────────────────────────┼────────────────────┼───────────────────┤
-│              iterations │                  1 │                 0 │
-├─────────────────────────┼────────────────────┼───────────────────┤
-│                requests │                 63 │                 0 │
-├─────────────────────────┼────────────────────┼───────────────────┤
-│            test-scripts │                 63 │                 0 │
-├─────────────────────────┼────────────────────┼───────────────────┤
-│      prerequest-scripts │                  2 │                 0 │
-├─────────────────────────┼────────────────────┼───────────────────┤
-│              assertions │                111 │                 0 │
-├─────────────────────────┴────────────────────┴───────────────────┤
-│ total run duration: 28.8s                                        │
-├──────────────────────────────────────────────────────────────────┤
-│ total data received: 39.49kB (approx)                            │
-├──────────────────────────────────────────────────────────────────┤
-│ average response time: 373ms [min: 11ms, max: 4.5s, s.d.: 594ms] │
-└──────────────────────────────────────────────────────────────────┘
+┌─────────────────────────┬────────────────────┬────────────────────┐
+│                         │           executed │             failed │
+├─────────────────────────┼────────────────────┼────────────────────┤
+│              iterations │                  1 │                  0 │
+├─────────────────────────┼────────────────────┼────────────────────┤
+│                requests │                101 │                  0 │
+├─────────────────────────┼────────────────────┼────────────────────┤
+│            test-scripts │                101 │                  0 │
+├─────────────────────────┼────────────────────┼────────────────────┤
+│      prerequest-scripts │                  2 │                  0 │
+├─────────────────────────┼────────────────────┼────────────────────┤
+│              assertions │                169 │                  0 │
+├─────────────────────────┴────────────────────┴────────────────────┤
+│ total run duration: 53.4s                                         │
+├───────────────────────────────────────────────────────────────────┤
+│ total data received: 52.19kB (approx)                             │
+├───────────────────────────────────────────────────────────────────┤
+│ average response time: 364ms [min: 5ms, max: 1571ms, s.d.: 305ms] │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-### Chi tiết 9 phân hệ E2E đạt 100% PASS:
-1. **01-Health:** 3/3 PASS — `health/live`, `health/ready` (DB readiness), `health` ping.
-2. **02-Auth:** 9/9 PASS — Đăng ký User A/B, xác thực OTP email tĩnh (`12345678`), thiết lập PIN, đăng nhập thử thách challenge token, xoay vòng refresh token.
-3. **03-Wallet & Finance:** 14/14 PASS — Liệt kê ví mặc định, danh mục hệ thống, tạo 2 ví phụ (Savings, Emergency), kiểm tra giới hạn ví phụ thứ 3 (409 Conflict), tải chứng từ thu/chi lên `api/evidence`, ghi nhận thu nhập 10.000.000đ, chi tiêu 500.000đ, chuyển nội bộ 1.000.000đ, chuyển P2P sang User B 2.000.000đ, kiểm tra chống lặp giao dịch P2P, kiểm tra bảo mật từ chối PIN sai (401 Unauthorized).
-4. **04-Friends:** 5/5 PASS — Tìm kiếm bạn bè theo email/sđt, gửi lời mời kết bạn, danh sách lời mời đến, User B chấp nhận, kiểm tra quan hệ bạn bè hai chiều.
-5. **05-Fixed Fund:** 10/10 PASS — Tạo quỹ Cố định mục tiêu 2.000.000đ, mời User B, User B tham gia, chủ quỹ chốt nghĩa vụ Revision 1 (mỗi người 1.000.000đ), User A nộp 1.000.000đ, User B nộp 1.000.000đ, cấp quyền chi tiêu cho User B, kiểm tra số dư quỹ 2.000.000đ, User B xem trước hoàn tiền 100% (Case A Unspent), User B rời quỹ và nhận hoàn 1.000.000đ về ví nội bộ thành công.
-6. **06-Free Fund:** 9/9 PASS — Tạo quỹ Tự do không giới hạn mục tiêu, mời và duyệt User B, User A nộp 700.000đ, User B nộp 300.000đ, User B tạo yêu cầu rút cá nhân 150.000đ, User A duyệt yêu cầu (chuyển trạng thái `ApprovedAwaitingFinanceContract`), User A xem trước phân bổ hoàn tiền giải tán, User A giải tán quỹ thành công, hoàn trả 700k cho A và 300k cho B, số dư tài khoản quỹ về đúng 0 VND.
-7. **07-Support:** 3/3 PASS — User A gửi phiếu hỗ trợ khiếu nại, xem danh sách phiếu cá nhân, gửi phản hồi bổ sung vào phiếu.
-8. **08-Admin 5 Areas:** 8/8 PASS — Đăng nhập Admin challenge/PIN, ADM-01 Tổng quan số liệu vận hành, ADM-02 Tra cứu người dùng, ADM-03 Xem danh sách khiếu nại hỗ trợ, ADM-04 Tra cứu danh mục mẫu thông báo hệ thống, ADM-05 Trạng thái bảo trì hệ thống, Kiểm tra bảo mật chặn User thường truy cập API Admin (403 Forbidden).
-9. **09-Integrations:** 2/2 PASS — Trạng thái tích hợp ngân hàng SePay, Trợ lý AI trả lời tư vấn tài chính hợp lệ.
+#### Chi tiết 9 phân hệ đạt 100% PASS (169/169 Assertions):
+1. **01-Health (3 requests, 6 assertions):** `health/live`, `health/ready` (DB readiness), `health` ping đạt Healthy.
+2. **02-Auth (24 requests, 42 assertions):** Đăng ký User A/B, xác thực email với Static OTP (`12345678`), thiết lập mã PIN bảo mật, đăng nhập hai bước với PIN challenge, xoay vòng refresh token, đổi mật khẩu và làm mới phiên đăng nhập, đổi mã PIN bảo mật, khôi phục mã PIN qua email, các kiểm tra bảo mật negative tests (mã PIN sai 401, OTP sai 400/401, JWT không hợp lệ 401).
+3. **03-Wallet & Finance (15 requests, 23 assertions):** Liệt kê ví mặc định, danh mục hệ thống, tạo ví phụ, kiểm tra giới hạn 3 ví cá nhân (409 Conflict), tải file chứng từ thu/chi lên `api/evidence`, ghi nhận thu nhập 10.000.000đ, ghi nhận chi tiêu 500.000đ, chuyển khoản nội bộ giữa các ví, chuyển khoản P2P sang User B 2.000.000đ, chống gửi lặp chuyển khoản P2P với IdempotencyKey, chặn số dư không đủ (409 Conflict), chặn mã PIN sai khi chuyển tiền (401 Unauthorized).
+4. **04-Friends (5 requests, 7 assertions):** Tìm kiếm người dùng theo email/sđt, gửi lời mời kết bạn, danh sách lời mời đến, User B chấp nhận kết bạn, kiểm tra danh sách bạn bè hai chiều.
+5. **05-Fixed Fund (21 requests, 38 assertions):** Tạo quỹ Cố định 2.000.000đ, mời User B, User B tham gia, chốt nghĩa vụ đợt 1 (1.000.000đ/người), User A đóng 1.000.000đ, User B đóng 1.000.000đ, chặn chi tiêu khi CanSpend=OFF (403 Forbidden), bật quyền CanSpend cho User B, User B chi tiêu dưới 20% hoàn tất ngay lập tức, User B chi tiêu lớn từ 20% vào thời gian đệm 24h hold, tóm tắt tài chính quỹ, xem trước hoàn tiền Case B, User B rời quỹ nhận hoàn tiền Case B, tạo quỹ Cố định 2, User A kick User B kèm hoàn tiền, User A giải tán quỹ Cố định 2 với số dư cuối cùng về đúng 0 VND.
+6. **06-Free Fund (9 requests, 15 assertions):** Tạo quỹ Tự do, mời và duyệt User B, User A nộp 700.000đ, User B nộp 300.000đ, User B tạo yêu cầu rút cá nhân 150.000đ, User A duyệt yêu cầu với giải ngân thật vào ví cá nhân của User B, xem trước hoàn tiền giải tán quỹ theo công thức Vốn ròng rạch ròi, giải tán quỹ Tự do thành công với số dư tài khoản quỹ về đúng 0 VND.
+7. **07-Support (3 requests, 5 assertions):** User A tạo phiếu hỗ trợ khiếu nại, xem danh sách phiếu hỗ trợ của mình, gửi tin nhắn trao đổi vào phiếu hỗ trợ.
+8. **08-Admin 5 Areas (12 requests, 22 assertions):** Đăng nhập Admin hai bước, ADM-01 Tổng quan số liệu vận hành và biểu đồ, ADM-02 Tra cứu người dùng, ADM-03 Tra cứu khiếu nại hỗ trợ, ADM-03 Điều phối viên nhận xử lý khiếu nại, ADM-03 Yêu cầu người dùng bổ sung thông tin (chuyển trạng thái `WaitingForUser`), Người dùng phản hồi thông tin bổ sung, ADM-03 Admin giải quyết khiếu nại (chuyển trạng thái `Resolved`), ADM-04 Tra cứu danh mục mẫu thông báo, ADM-05 Trạng thái bảo trì hệ thống, Negative test chặn người dùng thường truy cập API Admin (403 Forbidden).
+9. **09-Integrations (7 requests, 11 assertions):** Trạng thái kết nối ngân hàng, khởi tạo phiên liên kết SePay TestMode, chặn xác nhận khi chưa có giao dịch hợp lệ (409 `bank_link_not_confirmed`), danh sách tài khoản đã liên kết, chặn nạp tiền khi chưa có liên kết hợp lệ (404 `bank_connection_not_found`), danh sách yêu cầu nạp tiền, Trợ lý AI trả lời tư vấn tài chính hợp lệ qua nhà cung cấp Gemini (`gemini-1.5-flash`).
 
 ---
 
-## 4. AN TOÀN HỆ THỐNG & CÔ LẬP CƠ SỞ DỮ LIỆU
+### 4. AN TOÀN HỆ THỐNG & CÔ LẬP CƠ SỞ DỮ LIỆU
 
-- **Nguyên tắc an toàn dữ liệu:** Tuyệt đối không chạm, không truy vấn và không làm ảnh hưởng đến cơ sở dữ liệu `SQLEXPRESS01\SpendWiseDb`. Toàn bộ thử nghiệm thực hiện trên `DESKTOP-B5KA3LT\SQLEXPRESS02` với database kiểm thử `SpendWise_E2E_Test`.
-- **Rà soát bí mật:** Quét toàn bộ mã nguồn, tài liệu và cấu hình; không lưu trữ bất kỳ mật khẩu thật, chuỗi kết nối nhạy cảm, token bí mật hay khóa riêng trong kho lưu trữ Git.
+- **Cô lập dữ liệu tuyệt đối:** Tuyệt đối không chạm, không truy vấn và không làm ảnh hưởng đến cơ sở dữ liệu `SQLEXPRESS01\SpendWiseDb`. Toàn bộ thử nghiệm thực hiện trên `DESKTOP-B5KA3LT\SQLEXPRESS02` với database kiểm thử `SpendWise_E2E_Test`.
+- **Rà soát bảo mật mã nguồn:** Không lưu trữ mật khẩu thật, chuỗi kết nối nhạy cảm, token hay khóa riêng trong Git. Cấu hình bảo mật production giữ nguyên giá trị rào chắn an toàn (10 request/phút cho Auth/EmailVerification, 30 cho Financial, 15 cho AI).

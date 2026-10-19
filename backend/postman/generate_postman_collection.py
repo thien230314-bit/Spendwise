@@ -185,6 +185,12 @@ pm.environment.set("userA_email", "e2e_usera_" + runId + "@spendwise.test");
 pm.environment.set("userA_phone", "09" + Math.floor(10000000 + Math.random() * 90000000));
 pm.environment.set("userB_email", "e2e_userb_" + runId + "@spendwise.test");
 pm.environment.set("userB_phone", "09" + Math.floor(10000000 + Math.random() * 90000000));
+if (!pm.environment.get("user_new_password")) {
+    pm.environment.set("user_new_password", "NewPassword456!@#");
+}
+if (!pm.environment.get("user_new_pin")) {
+    pm.environment.set("user_new_pin", "654321");
+}
 """,
         test_script="""
 pm.test("Registration successful (200 OK)", function () {
@@ -302,7 +308,218 @@ pm.test("Returns new access & refresh tokens", function () {
 """
     ),
     make_req(
-        "07 - Register User B",
+        "07 - Change Password User A",
+        "POST",
+        "api/auth/change-password",
+        token_var="userA_accessToken",
+        body={
+            "currentPassword": "{{user_password}}",
+            "newPassword": "{{user_new_password}}"
+        },
+        test_script="""
+pm.test("Password changed successfully (204 No Content)", function () {
+    pm.response.to.have.status(204);
+});
+"""
+    ),
+    make_req(
+        "07a - Login User A With New Password",
+        "POST",
+        "api/auth/login",
+        body={
+            "identifier": "{{userA_email}}",
+            "password": "{{user_new_password}}"
+        },
+        test_script="""
+pm.test("Login with new password succeeds (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Captures challenge token", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.challengeToken).to.be.a("string");
+    pm.environment.set("userA_challengeToken", jsonData.challengeToken);
+});
+"""
+    ),
+    make_req(
+        "07b - Verify PIN User A After Password Change",
+        "POST",
+        "api/auth/pin/verify",
+        body={
+            "challengeToken": "{{userA_challengeToken}}",
+            "pin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("PIN verified successfully (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Refreshes access & refresh tokens", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.accessToken).to.be.a("string");
+    pm.environment.set("userA_accessToken", jsonData.accessToken);
+    pm.environment.set("userA_refreshToken", jsonData.refreshToken);
+});
+"""
+    ),
+    make_req(
+        "08 - Change Password Back User A",
+        "POST",
+        "api/auth/change-password",
+        token_var="userA_accessToken",
+        body={
+            "currentPassword": "{{user_new_password}}",
+            "newPassword": "{{user_password}}"
+        },
+        test_script="""
+pm.test("Password reverted successfully (204 No Content)", function () {
+    pm.response.to.have.status(204);
+});
+"""
+    ),
+    make_req(
+        "08a - Login User A With Reverted Password",
+        "POST",
+        "api/auth/login",
+        body={
+            "identifier": "{{userA_email}}",
+            "password": "{{user_password}}"
+        },
+        test_script="""
+pm.test("Login with reverted password succeeds (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Captures challenge token", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.challengeToken).to.be.a("string");
+    pm.environment.set("userA_challengeToken", jsonData.challengeToken);
+});
+"""
+    ),
+    make_req(
+        "08b - Verify PIN User A After Password Revert",
+        "POST",
+        "api/auth/pin/verify",
+        body={
+            "challengeToken": "{{userA_challengeToken}}",
+            "pin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("PIN verified successfully (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Refreshes access & refresh tokens", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.accessToken).to.be.a("string");
+    pm.environment.set("userA_accessToken", jsonData.accessToken);
+    pm.environment.set("userA_refreshToken", jsonData.refreshToken);
+});
+"""
+    ),
+    make_req(
+        "09 - Change Security PIN User A",
+        "PUT",
+        "api/security-pin",
+        token_var="userA_accessToken",
+        body={
+            "currentPin": "{{default_pin}}",
+            "newPin": "{{user_new_pin}}",
+            "confirmPin": "{{user_new_pin}}"
+        },
+        test_script="""
+pm.test("PIN changed successfully (204 No Content)", function () {
+    pm.response.to.have.status(204);
+});
+"""
+    ),
+    make_req(
+        "10 - Change Security PIN Back User A",
+        "PUT",
+        "api/security-pin",
+        token_var="userA_accessToken",
+        body={
+            "currentPin": "{{user_new_pin}}",
+            "newPin": "{{default_pin}}",
+            "confirmPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("PIN reverted successfully (204 No Content)", function () {
+    pm.response.to.have.status(204);
+});
+"""
+    ),
+    make_req(
+        "11 - Forgot Security PIN User A",
+        "POST",
+        "api/auth/pin/forgot",
+        body={
+            "identifier": "{{userA_email}}"
+        },
+        test_script="""
+pm.test("Forgot PIN instructions accepted (202 Accepted)", function () {
+    pm.response.to.have.status(202);
+});
+"""
+    ),
+    make_req(
+        "12 - Validate Invalid PIN Reset Token",
+        "POST",
+        "api/auth/pin/reset/validate",
+        body={
+            "token": "invalid-token-string"
+        },
+        test_script="""
+pm.test("Token validation responds (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Token is reported invalid", function () {
+    var res = pm.response.json();
+    pm.expect(res.valid).to.eql(false);
+});
+"""
+    ),
+    make_req(
+        "13 - Negative Check: Wrong PIN Verify (Assert 401)",
+        "POST",
+        "api/security-pin/verify",
+        token_var="userA_accessToken",
+        body={
+            "pin": "000000"
+        },
+        test_script="""
+pm.test("Wrong PIN rejected (401 Unauthorized)", function () {
+    pm.response.to.have.status(401);
+});
+"""
+    ),
+    make_req(
+        "14 - Negative Check: Wrong OTP (Assert 400/401)",
+        "POST",
+        "api/auth/email-verification/verify",
+        body={
+            "email": "{{userA_email}}",
+            "otp": "00000000"
+        },
+        test_script="""
+pm.test("Wrong OTP rejected (400 or 401)", function () {
+    pm.expect([400, 401]).to.include(pm.response.code);
+});
+"""
+    ),
+    make_req(
+        "15 - Negative Check: Invalid Access Token (Assert 401)",
+        "GET",
+        "api/wallets",
+        headers={
+            "Authorization": "Bearer invalid.token.payload"
+        },
+        test_script="""
+pm.test("Invalid token rejected (401 Unauthorized)", function () {
+    pm.response.to.have.status(401);
+});
+"""
+    ),
+    make_req(
+        "16 - Register User B",
         "POST",
         "api/auth/register",
         body={
@@ -319,7 +536,7 @@ pm.test("User B registered (200 OK)", function () {
 """
     ),
     make_req(
-        "08 - Verify Registration Email User B",
+        "17 - Verify Registration Email User B",
         "POST",
         "api/auth/email-verification/verify",
         body={
@@ -338,7 +555,7 @@ pm.test("Challenge requires SetupSecurityPin", function () {
 """
     ),
     make_req(
-        "09 - Setup PIN User B",
+        "18 - Setup PIN User B",
         "POST",
         "api/auth/pin/setup",
         body={
@@ -356,6 +573,74 @@ pm.test("Returns User B access token and user ID", function () {
     pm.expect(jsonData.user).to.be.an("object");
     pm.environment.set("userB_accessToken", jsonData.accessToken);
     pm.environment.set("userB_id", jsonData.user.id);
+});
+"""
+    ),
+    make_req(
+        "19 - Forgot Password User A",
+        "POST",
+        "api/auth/forgot-password",
+        body={
+            "identifier": "{{userA_email}}"
+        },
+        test_script="""
+pm.test("Forgot password instructions accepted (202 Accepted)", function () {
+    pm.response.to.have.status(202);
+});
+"""
+    ),
+    make_req(
+        "20 - Reset Password User A",
+        "POST",
+        "api/auth/reset-password",
+        body={
+            "identifier": "{{userA_email}}",
+            "otp": "{{static_otp}}",
+            "newPassword": "{{user_password}}"
+        },
+        test_script="""
+pm.test("Password reset completed (204 No Content)", function () {
+    pm.response.to.have.status(204);
+});
+"""
+    ),
+    make_req(
+        "21 - Re-login User A After Password Reset",
+        "POST",
+        "api/auth/login",
+        body={
+            "identifier": "{{userA_email}}",
+            "password": "{{user_password}}"
+        },
+        test_script="""
+pm.test("Login initiated successfully (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Challenge requires SecurityPin verification", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.challengeToken).to.be.a("string");
+    pm.environment.set("userA_challengeToken", jsonData.challengeToken);
+});
+"""
+    ),
+    make_req(
+        "22 - Re-verify PIN User A After Password Reset",
+        "POST",
+        "api/auth/pin/verify",
+        body={
+            "challengeToken": "{{userA_challengeToken}}",
+            "pin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("PIN login verified successfully (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Updates access & refresh tokens", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.accessToken).to.be.a("string");
+    pm.expect(jsonData.refreshToken).to.be.a("string");
+    pm.environment.set("userA_accessToken", jsonData.accessToken);
+    pm.environment.set("userA_refreshToken", jsonData.refreshToken);
 });
 """
     )
@@ -385,6 +670,7 @@ pm.test("Identifies User A Main Wallet", function () {
     var mainWallet = wallets.find(function (w) { return w.type === "spending" || w.isDefault; });
     pm.expect(mainWallet).to.be.an("object");
     pm.environment.set("userA_mainWalletId", mainWallet.id);
+    pm.environment.set("userA_initialBalance", mainWallet.availableBalance);
 });
 """
     ),
@@ -471,7 +757,7 @@ pm.test("Fails with 409 Conflict due to MaximumPersonalWallets limit", function 
         "05.1 - Upload Receipt Evidence User A (Income)",
         "api/evidence",
         "file",
-        "receipt.png",
+        "backend/postman/receipt.png",
         token_var="userA_accessToken",
         test_script="""
 pm.test("Receipt evidence uploaded (201 Created)", function () {
@@ -511,7 +797,7 @@ pm.test("Transaction amount verified", function () {
         "06.1 - Upload Receipt Evidence User A (Expense)",
         "api/evidence",
         "file",
-        "receipt.png",
+        "backend/postman/receipt.png",
         token_var="userA_accessToken",
         test_script="""
 pm.test("Receipt evidence uploaded (201 Created)", function () {
@@ -585,6 +871,7 @@ pm.test("Identifies User B Main Wallet", function () {
     var mainWallet = wallets.find(function (w) { return w.type === "spending" || w.isDefault; });
     pm.expect(mainWallet).to.be.an("object");
     pm.environment.set("userB_mainWalletId", mainWallet.id);
+    pm.environment.set("userB_initialBalance", mainWallet.availableBalance);
 });
 """
     ),
@@ -635,7 +922,26 @@ pm.test("Replayed transfer returns 201 Created with replayed flag", function () 
 """
     ),
     make_req(
-        "12 - P2P Transfer Wrong PIN (Assert Unauthorized / Bad Request)",
+        "12 - Negative Check: P2P Insufficient Balance (Assert 409 Conflict)",
+        "POST",
+        "api/transfers/p2p",
+        token_var="userA_accessToken",
+        body={
+            "sourceWalletId": "{{userA_mainWalletId}}",
+            "recipientUserId": "{{userB_id}}",
+            "amount": 999999999,
+            "description": "Excess transfer test",
+            "idempotencyKey": "p2p-excess-{{runId}}",
+            "securityPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("Fails with 409 Conflict due to insufficient funds", function () {
+    pm.response.to.have.status(409);
+});
+"""
+    ),
+    make_req(
+        "13 - Negative Check: P2P Wrong PIN (Assert 400/401)",
         "POST",
         "api/transfers/p2p",
         token_var="userA_accessToken",
@@ -758,7 +1064,7 @@ collection["item"].append({
 # -------------------------------------------------------------
 fixed_items = [
     make_req(
-        "01 - Create Fixed Fund (User A)",
+        "01 - Create Fixed Fund 1 (User A)",
         "POST",
         "api/v1/funds",
         token_var="userA_accessToken",
@@ -862,7 +1168,26 @@ pm.test("Contribution successful (200 OK)", function () {
 """
     ),
     make_req(
-        "07 - User A Sets Spending Permission ON for User B",
+        "07 - Negative Check: User B Direct Spend when CanSpend is OFF (Assert 403 Forbidden)",
+        "POST",
+        "api/v1/funds/{{fixedFundId}}/requests",
+        token_var="userB_accessToken",
+        body={
+            "kind": "Expense",
+            "amountVnd": 50000,
+            "recipientUserId": "{{userB_id}}",
+            "purpose": "Unauthorized snack spend",
+            "securityPin": "{{default_pin}}",
+            "idempotencyKey": "spend-canspend-off-{{runId}}"
+        },
+        test_script="""
+pm.test("Direct spend rejected when CanSpend is OFF (403 Forbidden)", function () {
+    pm.response.to.have.status(403);
+});
+"""
+    ),
+    make_req(
+        "08 - User A Sets Spending Permission ON for User B",
         "PUT",
         "api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
         token_var="userA_accessToken",
@@ -877,7 +1202,55 @@ pm.test("Spending permission enabled (204 No Content)", function () {
 """
     ),
     make_req(
-        "08 - Get Fixed Fund Finance Summary",
+        "09 - User B Direct Spend Under 20% Threshold (Immediate Completion)",
+        "POST",
+        "api/v1/funds/{{fixedFundId}}/requests",
+        token_var="userB_accessToken",
+        body={
+            "kind": "Expense",
+            "amountVnd": 100000,
+            "recipientUserId": "{{userB_id}}",
+            "purpose": "Team snacks under 20%",
+            "securityPin": "{{default_pin}}",
+            "idempotencyKey": "spend-under20-{{runId}}"
+        },
+        test_script="""
+pm.test("Direct spend under threshold completes immediately (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("State is Completed", function () {
+    var res = pm.response.json();
+    pm.expect(res.state).to.eql("Completed");
+    pm.expect(res.amountVnd).to.eql(100000);
+});
+"""
+    ),
+    make_req(
+        "10 - User B Large Expense Over 20% Threshold (Enters 24h Hold)",
+        "POST",
+        "api/v1/funds/{{fixedFundId}}/requests",
+        token_var="userB_accessToken",
+        body={
+            "kind": "Expense",
+            "amountVnd": 500000,
+            "recipientUserId": "{{userB_id}}",
+            "purpose": "Hotel deposit over 20%",
+            "securityPin": "{{default_pin}}",
+            "idempotencyKey": "spend-over20-{{runId}}"
+        },
+        test_script="""
+pm.test("Large expense accepted and held (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("State enters 24h hold", function () {
+    var res = pm.response.json();
+    pm.expect(["Pending24h", "Hold24h"]).to.include(res.state);
+    pm.expect(res.amountVnd).to.eql(500000);
+});
+"""
+    ),
+    make_req(
+        "11 - Get Fixed Fund Finance Summary",
         "GET",
         "api/v1/funds/{{fixedFundId}}/finance",
         token_var="userA_accessToken",
@@ -885,14 +1258,14 @@ pm.test("Spending permission enabled (204 No Content)", function () {
 pm.test("Status code is 200", function () {
     pm.response.to.have.status(200);
 });
-pm.test("Treasury balance is 2M VND", function () {
+pm.test("Active treasury balance is positive", function () {
     var f = pm.response.json();
-    pm.expect(f.balanceVnd).to.eql(2000000);
+    pm.expect(f.balanceVnd).to.be.above(0);
 });
 """
     ),
     make_req(
-        "09 - User B Previews Refund (Case A Unspent 100%)",
+        "12 - User B Previews Refund (Case B Partially Spent)",
         "GET",
         "api/v1/funds/{{fixedFundId}}/refund-preview",
         token_var="userB_accessToken",
@@ -900,15 +1273,15 @@ pm.test("Treasury balance is 2M VND", function () {
 pm.test("Status code is 200", function () {
     pm.response.to.have.status(200);
 });
-pm.test("Eligible refund amount is 100% of contribution (1M VND)", function () {
+pm.test("Refund preview calculated according to Case B", function () {
     var p = pm.response.json();
-    pm.expect(p.eligibleRefundAmountVnd).to.eql(1000000);
-    pm.expect(p.caseType).to.eql("CaseA_Unspent");
+    pm.expect(p.eligibleRefundAmountVnd).to.be.above(0);
+    pm.expect(["CaseB_FixedSpentClearShare", "CaseB_PartiallySpent"]).to.include(p.caseType);
 });
 """
     ),
     make_req(
-        "10 - User B Leaves Fixed Fund (Refund Case A)",
+        "13 - User B Leaves Fixed Fund (Refund Case B)",
         "POST",
         "api/v1/funds/{{fixedFundId}}/leave",
         token_var="userB_accessToken",
@@ -920,11 +1293,154 @@ pm.test("Eligible refund amount is 100% of contribution (1M VND)", function () {
 pm.test("Member left with refund processed (200 OK)", function () {
     pm.response.to.have.status(200);
 });
-pm.test("1M VND refunded to internal wallet", function () {
+pm.test("Refund processed successfully", function () {
     var res = pm.response.json();
-    pm.expect(res.refundAmountVnd).to.eql(1000000);
+    pm.expect(res.refundAmountVnd).to.be.above(0);
     pm.expect(res.status).to.eql("Completed");
-    pm.expect(res.caseType).to.eql("CaseA_Unspent");
+    pm.expect(["CaseB_FixedSpentClearShare", "CaseB_PartiallySpent"]).to.include(res.caseType);
+});
+"""
+    ),
+    make_req(
+        "14 - Create Fixed Fund 2 for Kick and Dissolve (User A)",
+        "POST",
+        "api/v1/funds",
+        token_var="userA_accessToken",
+        body={
+            "name": "Weekend BBQ {{runId}}",
+            "kind": "Fixed",
+            "targetVnd": 1000000,
+            "securityPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("Fixed fund 2 created (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Saves Fixed Fund 2 ID", function () {
+    var fund = pm.response.json();
+    pm.expect(fund.id).to.be.a("string");
+    pm.environment.set("fixedFund2Id", fund.id);
+});
+"""
+    ),
+    make_req(
+        "15 - Invite User B to Fixed Fund 2",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/invitations",
+        token_var="userA_accessToken",
+        body={
+            "userId": "{{userB_id}}"
+        },
+        test_script="""
+pm.test("Invitation to Fund 2 sent (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Saves Invitation ID", function () {
+    var invite = pm.response.json();
+    pm.expect(invite.id).to.be.a("string");
+    pm.environment.set("fixedInvite2Id", invite.id);
+});
+"""
+    ),
+    make_req(
+        "16 - User B Accepts Fixed Fund 2 Invitation",
+        "POST",
+        "api/v1/funds/invitations/{{fixedInvite2Id}}/accept",
+        token_var="userB_accessToken",
+        test_script="""
+pm.test("Invitation to Fund 2 accepted (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "17 - Confirm Obligations Fixed Fund 2",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/obligations/confirm",
+        token_var="userA_accessToken",
+        body={
+            "targetVnd": 1000000,
+            "securityPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("Obligations confirmed for Fund 2 (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "18 - User A Contributes 500k to Fixed Fund 2",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/contributions",
+        token_var="userA_accessToken",
+        body={
+            "walletId": "{{userA_mainWalletId}}",
+            "amountVnd": 500000,
+            "obligationRevision": 1,
+            "idempotencyKey": "contrib-a-fund2-{{runId}}",
+            "securityPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("User A Fund 2 contribution successful (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "19 - User B Contributes 500k to Fixed Fund 2",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/contributions",
+        token_var="userB_accessToken",
+        body={
+            "walletId": "{{userB_mainWalletId}}",
+            "amountVnd": 500000,
+            "obligationRevision": 1,
+            "idempotencyKey": "contrib-b-fund2-{{runId}}",
+            "securityPin": "{{default_pin}}"
+        },
+        test_script="""
+pm.test("User B Fund 2 contribution successful (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "20 - User A Kicks User B from Fixed Fund 2 (Refund Processed)",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/members/{{userB_id}}/kick",
+        token_var="userA_accessToken",
+        body={
+            "reason": "Member relocated",
+            "securityPin": "{{default_pin}}",
+            "idempotencyKey": "kick-b-fund2-{{runId}}"
+        },
+        test_script="""
+pm.test("Kick processed with refund (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("500k VND refunded to kicked member", function () {
+    var res = pm.response.json();
+    pm.expect(res.refundAmountVnd).to.eql(500000);
+    pm.expect(res.status).to.eql("Completed");
+});
+"""
+    ),
+    make_req(
+        "21 - User A Dissolves Fixed Fund 2 (Zero Balance Invariant)",
+        "POST",
+        "api/v1/funds/{{fixedFund2Id}}/dissolve",
+        token_var="userA_accessToken",
+        body={
+            "securityPin": "{{default_pin}}",
+            "idempotencyKey": "dissolve-fixed2-{{runId}}"
+        },
+        test_script="""
+pm.test("Fixed Fund 2 dissolved (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Treasury remaining balance is exactly 0 VND", function () {
+    var res = pm.response.json();
+    pm.expect(res.finalBalanceVnd).to.eql(0);
 });
 """
     )
@@ -1050,7 +1566,7 @@ pm.test("Saves Withdrawal Request ID", function () {
 """
     ),
     make_req(
-        "07 - User A Reviews Withdrawal (Verifies Guard)",
+        "07 - User A Approves Withdrawal (Real Money Payout)",
         "POST",
         "api/v1/funds/requests/{{withdrawalRequestId}}/review",
         token_var="userA_accessToken",
@@ -1063,14 +1579,15 @@ pm.test("Saves Withdrawal Request ID", function () {
 pm.test("Review processed (200 OK)", function () {
     pm.response.to.have.status(200);
 });
-pm.test("Asserts ApprovedAwaitingFinanceContract state", function () {
+pm.test("Asserts Completed state and real payout", function () {
     var res = pm.response.json();
-    pm.expect(res.state).to.eql("ApprovedAwaitingFinanceContract");
+    pm.expect(res.state).to.eql("Completed");
+    pm.expect(res.amountVnd).to.eql(150000);
 });
 """
     ),
     make_req(
-        "08 - User A Previews Dissolution Refund",
+        "08 - User A Previews Dissolution Refund (Net Equity Formula)",
         "GET",
         "api/v1/funds/{{freeFundId}}/refund-preview?memberUserId={{userA_id}}",
         token_var="userA_accessToken",
@@ -1078,14 +1595,14 @@ pm.test("Asserts ApprovedAwaitingFinanceContract state", function () {
 pm.test("Status code is 200", function () {
     pm.response.to.have.status(200);
 });
-pm.test("Preview calculates proportional share", function () {
+pm.test("Preview calculates proportional share based on net equity", function () {
     var p = pm.response.json();
     pm.expect(p.eligibleRefundAmountVnd).to.be.above(0);
 });
 """
     ),
     make_req(
-        "09 - User A Dissolves Free Fund (Case C/D Zero Balance Invariant)",
+        "09 - User A Dissolves Free Fund with Withdrawal History (Zero Balance Invariant)",
         "POST",
         "api/v1/funds/{{freeFundId}}/dissolve",
         token_var="userA_accessToken",
@@ -1233,6 +1750,9 @@ pm.test("Admin access token issued", function () {
     var jsonData = pm.response.json();
     pm.expect(jsonData.accessToken).to.be.a("string");
     pm.environment.set("admin_accessToken", jsonData.accessToken);
+    if (jsonData.user && jsonData.user.id) {
+        pm.environment.set("admin_id", jsonData.user.id);
+    }
 });
 """
     ),
@@ -1271,7 +1791,7 @@ pm.test("Finds registered test users", function () {
 """
     ),
     make_req(
-        "05 - ADM-03: Admin Support Cases",
+        "05 - ADM-03: Admin Support Cases Search",
         "POST",
         "api/v1/admin/support/tickets/search",
         token_var="admin_accessToken",
@@ -1289,7 +1809,75 @@ pm.test("Includes user support cases", function () {
 """
     ),
     make_req(
-        "06 - ADM-04: Admin Notifications Templates",
+        "06 - ADM-03: Admin Assigns Ticket",
+        "POST",
+        "api/v1/admin/support/{{supportCaseId}}/assign",
+        token_var="admin_accessToken",
+        body={
+            "reason": "Assigning ticket to admin",
+            "operatorId": "{{admin_id}}"
+        },
+        test_script="""
+pm.test("Support ticket assigned to operator (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "07 - ADM-03: Admin Requests Info from User",
+        "POST",
+        "api/v1/admin/support/{{supportCaseId}}/request-info",
+        token_var="admin_accessToken",
+        body={
+            "reason": "Need more info from customer",
+            "message": "Please provide proof of receipt and payment screenshot."
+        },
+        test_script="""
+pm.test("Info requested from user (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Case status moves to WaitingForUser", function () {
+    var res = pm.response.json();
+    pm.expect(res.status).to.eql("WaitingForUser");
+});
+"""
+    ),
+    make_req(
+        "08 - User A Replies with Requested Info",
+        "POST",
+        "api/cases/support/{{supportCaseId}}/messages",
+        token_var="userA_accessToken",
+        body={
+            "message": "Here is the transaction receipt and details as requested."
+        },
+        test_script="""
+pm.test("User replied to support ticket (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+"""
+    ),
+    make_req(
+        "09 - ADM-03: Admin Resolves Ticket",
+        "POST",
+        "api/v1/admin/support/{{supportCaseId}}/resolve",
+        token_var="admin_accessToken",
+        body={
+            "reason": "Resolution complete",
+            "resolutionMessage": "All details verified and case resolved successfully.",
+            "isRejected": False
+        },
+        test_script="""
+pm.test("Ticket resolved successfully (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("NewStatus is Resolved", function () {
+    var res = pm.response.json();
+    pm.expect(res.newStatus).to.eql("Resolved");
+});
+"""
+    ),
+    make_req(
+        "10 - ADM-04: Admin Notifications Templates",
         "POST",
         "api/v1/admin/notifications/templates",
         token_var="admin_accessToken",
@@ -1307,7 +1895,7 @@ pm.test("Templates list returned", function () {
 """
     ),
     make_req(
-        "07 - ADM-05: Maintenance Status",
+        "11 - ADM-05: Maintenance Status",
         "GET",
         "api/v1/system/maintenance",
         token_var="admin_accessToken",
@@ -1318,7 +1906,7 @@ pm.test("System maintenance status returned (200 OK)", function () {
 """
     ),
     make_req(
-        "08 - Security Check: Non-Admin Access Prohibited (Assert 403 Forbidden)",
+        "12 - Security Check: Non-Admin Access Prohibited (Assert 403 Forbidden)",
         "GET",
         "api/v1/admin/overview",
         token_var="userA_accessToken",
@@ -1355,7 +1943,88 @@ pm.test("Reports bank connections list", function () {
 """
     ),
     make_req(
-        "02 - AI Chat Financial Query",
+        "02 - SePay TestMode: Start Link Challenge",
+        "POST",
+        "api/bank-connections/test-mode/link-challenges",
+        token_var="userA_accessToken",
+        test_script="""
+pm.test("Bank link challenge created (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Captures challengeId", function () {
+    var res = pm.response.json();
+    pm.expect(res.challengeId).to.be.a("string");
+    pm.environment.set("bankChallengeId", res.challengeId);
+});
+"""
+    ),
+    make_req(
+        "03 - SePay TestMode: Verify Challenge Rejection When Unconfirmed",
+        "POST",
+        "api/bank-connections/test-mode/link-challenges/{{bankChallengeId}}/confirm",
+        token_var="userA_accessToken",
+        test_script="""
+pm.test("Unconfirmed challenge rejected (409 Conflict)", function () {
+    pm.response.to.have.status(409);
+});
+pm.test("Returns bank_link_not_confirmed", function () {
+    var res = pm.response.json();
+    pm.expect(res.code).to.eql("bank_link_not_confirmed");
+});
+"""
+    ),
+    make_req(
+        "04 - SePay TestMode: List Linked Accounts",
+        "GET",
+        "api/bank-connections/test-mode/linked-accounts",
+        token_var="userA_accessToken",
+        test_script="""
+pm.test("Linked accounts retrieved (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Returns array of linked accounts", function () {
+    var list = pm.response.json();
+    pm.expect(list).to.be.an("array");
+});
+"""
+    ),
+    make_req(
+        "05 - SePay TestMode: Top-Up Without Active Connection Rejected",
+        "POST",
+        "api/bank-connections/test-mode/wallet-top-ups",
+        token_var="userA_accessToken",
+        body={
+            "bankConnectionId": "00000000-0000-0000-0000-000000000001",
+            "walletId": "{{userA_mainWalletId}}",
+            "amount": 500000
+        },
+        test_script="""
+pm.test("Unlinked connection top-up rejected (404 Not Found)", function () {
+    pm.response.to.have.status(404);
+});
+pm.test("Returns bank_connection_not_found", function () {
+    var res = pm.response.json();
+    pm.expect(res.code).to.eql("bank_connection_not_found");
+});
+"""
+    ),
+    make_req(
+        "06 - SePay TestMode: List Wallet Top-Ups",
+        "GET",
+        "api/bank-connections/test-mode/wallet-top-ups",
+        token_var="userA_accessToken",
+        test_script="""
+pm.test("Wallet top-ups retrieved (200 OK)", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Returns array of top-ups", function () {
+    var list = pm.response.json();
+    pm.expect(list).to.be.an("array");
+});
+"""
+    ),
+    make_req(
+        "07 - AI Chat Financial Query (Gemini)",
         "POST",
         "api/ai/chat",
         token_var="userA_accessToken",

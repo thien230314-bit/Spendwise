@@ -473,4 +473,5 @@ FodyWeavers.xsd
 /frontend/public/stitch/
 /frontend/public/stitch*.png
 /frontend/public/test_screen.png
+*.local.json
 

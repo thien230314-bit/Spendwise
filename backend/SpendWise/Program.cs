@@ -238,13 +238,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             });
     });
+    var authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+    var emailPermitLimit = builder.Configuration.GetValue("RateLimiting:EmailVerificationPermitLimit", 10);
+    var financialPermitLimit = builder.Configuration.GetValue("RateLimiting:FinancialPermitLimit", 30);
+    var aiPermitLimit = builder.Configuration.GetValue("RateLimiting:AiPermitLimit", 15);
     options.AddPolicy(
         "auth",
         context => RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = authPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -254,7 +258,7 @@ builder.Services.AddRateLimiter(options =>
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = emailPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -266,7 +270,7 @@ builder.Services.AddRateLimiter(options =>
                 ?? "local",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 30,
+                PermitLimit = financialPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -277,7 +281,7 @@ builder.Services.AddRateLimiter(options =>
                 ?? "anonymous",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 15,
+                PermitLimit = aiPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

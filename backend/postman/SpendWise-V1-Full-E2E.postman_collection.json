@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "e335502c-1172-4d87-8923-62476eed58a7",
+    "_postman_id": "82cfd01c-52a0-435b-847d-0ebc3cf1d880",
     "name": "SpendWise-V1-Full-E2E",
     "description": "Comprehensive E2E Postman Collection for SpendWise V1.0 API validation.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -133,7 +133,13 @@
                   "pm.environment.set(\"userA_email\", \"e2e_usera_\" + runId + \"@spendwise.test\");",
                   "pm.environment.set(\"userA_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
                   "pm.environment.set(\"userB_email\", \"e2e_userb_\" + runId + \"@spendwise.test\");",
-                  "pm.environment.set(\"userB_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));"
+                  "pm.environment.set(\"userB_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
+                  "if (!pm.environment.get(\"user_new_password\")) {",
+                  "    pm.environment.set(\"user_new_password\", \"NewPassword456!@#\");",
+                  "}",
+                  "if (!pm.environment.get(\"user_new_pin\")) {",
+                  "    pm.environment.set(\"user_new_pin\", \"654321\");",
+                  "}"
                 ]
               }
             },
@@ -459,7 +465,664 @@
           "response": []
         },
         {
-          "name": "07 - Register User B",
+          "name": "07 - Change Password User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Password changed successfully (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{user_password}}\",\n  \"newPassword\": \"{{user_new_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07a - Login User A With New Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login with new password succeeds (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures challenge token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\",\n  \"password\": \"{{user_new_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07b - Verify PIN User A After Password Change",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN verified successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Refreshes access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Change Password Back User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Password reverted successfully (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{user_new_password}}\",\n  \"newPassword\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08a - Login User A With Reverted Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login with reverted password succeeds (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures challenge token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08b - Verify PIN User A After Password Revert",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN verified successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Refreshes access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Change Security PIN User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN changed successfully (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPin\": \"{{default_pin}}\",\n  \"newPin\": \"{{user_new_pin}}\",\n  \"confirmPin\": \"{{user_new_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/security-pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "security-pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - Change Security PIN Back User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN reverted successfully (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPin\": \"{{user_new_pin}}\",\n  \"newPin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/security-pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "security-pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Forgot Security PIN User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Forgot PIN instructions accepted (202 Accepted)\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/forgot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "forgot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 - Validate Invalid PIN Reset Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token validation responds (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Token is reported invalid\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.valid).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"invalid-token-string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/reset/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "reset",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13 - Negative Check: Wrong PIN Verify (Assert 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Wrong PIN rejected (401 Unauthorized)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/security-pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "security-pin",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 - Negative Check: Wrong OTP (Assert 400/401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Wrong OTP rejected (400 or 401)\", function () {",
+                  "    pm.expect([400, 401]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userA_email}}\",\n  \"otp\": \"00000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/email-verification/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 - Negative Check: Invalid Access Token (Assert 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid token rejected (401 Unauthorized)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.token.payload",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16 - Register User B",
           "event": [
             {
               "listen": "test",
@@ -506,7 +1169,7 @@
           "response": []
         },
         {
-          "name": "08 - Verify Registration Email User B",
+          "name": "17 - Verify Registration Email User B",
           "event": [
             {
               "listen": "test",
@@ -559,7 +1222,7 @@
           "response": []
         },
         {
-          "name": "09 - Setup PIN User B",
+          "name": "18 - Setup PIN User B",
           "event": [
             {
               "listen": "test",
@@ -612,6 +1275,207 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "19 - Forgot Password User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Forgot password instructions accepted (202 Accepted)\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20 - Reset Password User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Password reset completed (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\",\n  \"otp\": \"{{static_otp}}\",\n  \"newPassword\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21 - Re-login User A After Password Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login initiated successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Challenge requires SecurityPin verification\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22 - Re-verify PIN User A After Password Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN login verified successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Updates access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -635,6 +1499,7 @@
                   "    var mainWallet = wallets.find(function (w) { return w.type === \"spending\" || w.isDefault; });",
                   "    pm.expect(mainWallet).to.be.an(\"object\");",
                   "    pm.environment.set(\"userA_mainWalletId\", mainWallet.id);",
+                  "    pm.environment.set(\"userA_initialBalance\", mainWallet.availableBalance);",
                   "});"
                 ]
               }
@@ -909,7 +1774,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "receipt.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -1017,7 +1882,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "receipt.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -1163,6 +2028,7 @@
                   "    var mainWallet = wallets.find(function (w) { return w.type === \"spending\" || w.isDefault; });",
                   "    pm.expect(mainWallet).to.be.an(\"object\");",
                   "    pm.environment.set(\"userB_mainWalletId\", mainWallet.id);",
+                  "    pm.environment.set(\"userB_initialBalance\", mainWallet.availableBalance);",
                   "});"
                 ]
               }
@@ -1304,7 +2170,59 @@
           "response": []
         },
         {
-          "name": "12 - P2P Transfer Wrong PIN (Assert Unauthorized / Bad Request)",
+          "name": "12 - Negative Check: P2P Insufficient Balance (Assert 409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fails with 409 Conflict due to insufficient funds\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_mainWalletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 999999999,\n  \"description\": \"Excess transfer test\",\n  \"idempotencyKey\": \"p2p-excess-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13 - Negative Check: P2P Wrong PIN (Assert 400/401)",
           "event": [
             {
               "listen": "test",
@@ -1599,7 +2517,7 @@
       "name": "05-Fixed Fund",
       "item": [
         {
-          "name": "01 - Create Fixed Fund (User A)",
+          "name": "01 - Create Fixed Fund 1 (User A)",
           "event": [
             {
               "listen": "test",
@@ -1921,7 +2839,61 @@
           "response": []
         },
         {
-          "name": "07 - User A Sets Spending Permission ON for User B",
+          "name": "07 - Negative Check: User B Direct Spend when CanSpend is OFF (Assert 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Direct spend rejected when CanSpend is OFF (403 Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"Expense\",\n  \"amountVnd\": 50000,\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"purpose\": \"Unauthorized snack spend\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"spend-canspend-off-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - User A Sets Spending Permission ON for User B",
           "event": [
             {
               "listen": "test",
@@ -1977,7 +2949,125 @@
           "response": []
         },
         {
-          "name": "08 - Get Fixed Fund Finance Summary",
+          "name": "09 - User B Direct Spend Under 20% Threshold (Immediate Completion)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Direct spend under threshold completes immediately (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"State is Completed\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.state).to.eql(\"Completed\");",
+                  "    pm.expect(res.amountVnd).to.eql(100000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"Expense\",\n  \"amountVnd\": 100000,\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"purpose\": \"Team snacks under 20%\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"spend-under20-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - User B Large Expense Over 20% Threshold (Enters 24h Hold)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Large expense accepted and held (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"State enters 24h hold\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect([\"Pending24h\", \"Hold24h\"]).to.include(res.state);",
+                  "    pm.expect(res.amountVnd).to.eql(500000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"Expense\",\n  \"amountVnd\": 500000,\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"purpose\": \"Hotel deposit over 20%\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"spend-over20-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Get Fixed Fund Finance Summary",
           "event": [
             {
               "listen": "test",
@@ -1987,9 +3077,9 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Treasury balance is 2M VND\", function () {",
+                  "pm.test(\"Active treasury balance is positive\", function () {",
                   "    var f = pm.response.json();",
-                  "    pm.expect(f.balanceVnd).to.eql(2000000);",
+                  "    pm.expect(f.balanceVnd).to.be.above(0);",
                   "});"
                 ]
               }
@@ -2022,7 +3112,7 @@
           "response": []
         },
         {
-          "name": "09 - User B Previews Refund (Case A Unspent 100%)",
+          "name": "12 - User B Previews Refund (Case B Partially Spent)",
           "event": [
             {
               "listen": "test",
@@ -2032,10 +3122,10 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Eligible refund amount is 100% of contribution (1M VND)\", function () {",
+                  "pm.test(\"Refund preview calculated according to Case B\", function () {",
                   "    var p = pm.response.json();",
-                  "    pm.expect(p.eligibleRefundAmountVnd).to.eql(1000000);",
-                  "    pm.expect(p.caseType).to.eql(\"CaseA_Unspent\");",
+                  "    pm.expect(p.eligibleRefundAmountVnd).to.be.above(0);",
+                  "    pm.expect([\"CaseB_FixedSpentClearShare\", \"CaseB_PartiallySpent\"]).to.include(p.caseType);",
                   "});"
                 ]
               }
@@ -2068,7 +3158,7 @@
           "response": []
         },
         {
-          "name": "10 - User B Leaves Fixed Fund (Refund Case A)",
+          "name": "13 - User B Leaves Fixed Fund (Refund Case B)",
           "event": [
             {
               "listen": "test",
@@ -2078,11 +3168,11 @@
                   "pm.test(\"Member left with refund processed (200 OK)\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"1M VND refunded to internal wallet\", function () {",
+                  "pm.test(\"Refund processed successfully\", function () {",
                   "    var res = pm.response.json();",
-                  "    pm.expect(res.refundAmountVnd).to.eql(1000000);",
+                  "    pm.expect(res.refundAmountVnd).to.be.above(0);",
                   "    pm.expect(res.status).to.eql(\"Completed\");",
-                  "    pm.expect(res.caseType).to.eql(\"CaseA_Unspent\");",
+                  "    pm.expect([\"CaseB_FixedSpentClearShare\", \"CaseB_PartiallySpent\"]).to.include(res.caseType);",
                   "});"
                 ]
               }
@@ -2122,6 +3212,446 @@
                 "funds",
                 "{{fixedFundId}}",
                 "leave"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 - Create Fixed Fund 2 for Kick and Dissolve (User A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fixed fund 2 created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Fixed Fund 2 ID\", function () {",
+                  "    var fund = pm.response.json();",
+                  "    pm.expect(fund.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"fixedFund2Id\", fund.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekend BBQ {{runId}}\",\n  \"kind\": \"Fixed\",\n  \"targetVnd\": 1000000,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 - Invite User B to Fixed Fund 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation to Fund 2 sent (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Invitation ID\", function () {",
+                  "    var invite = pm.response.json();",
+                  "    pm.expect(invite.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"fixedInvite2Id\", invite.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userB_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "invitations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16 - User B Accepts Fixed Fund 2 Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation to Fund 2 accepted (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{fixedInvite2Id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{fixedInvite2Id}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17 - Confirm Obligations Fixed Fund 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Obligations confirmed for Fund 2 (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetVnd\": 1000000,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "obligations",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18 - User A Contributes 500k to Fixed Fund 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User A Fund 2 contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"amountVnd\": 500000,\n  \"obligationRevision\": 1,\n  \"idempotencyKey\": \"contrib-a-fund2-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19 - User B Contributes 500k to Fixed Fund 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B Fund 2 contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userB_mainWalletId}}\",\n  \"amountVnd\": 500000,\n  \"obligationRevision\": 1,\n  \"idempotencyKey\": \"contrib-b-fund2-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20 - User A Kicks User B from Fixed Fund 2 (Refund Processed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Kick processed with refund (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"500k VND refunded to kicked member\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.refundAmountVnd).to.eql(500000);",
+                  "    pm.expect(res.status).to.eql(\"Completed\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Member relocated\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"kick-b-fund2-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/members/{{userB_id}}/kick",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "members",
+                "{{userB_id}}",
+                "kick"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21 - User A Dissolves Fixed Fund 2 (Zero Balance Invariant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fixed Fund 2 dissolved (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Treasury remaining balance is exactly 0 VND\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.finalBalanceVnd).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"dissolve-fixed2-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/dissolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFund2Id}}",
+                "dissolve"
               ]
             }
           },
@@ -2459,7 +3989,7 @@
           "response": []
         },
         {
-          "name": "07 - User A Reviews Withdrawal (Verifies Guard)",
+          "name": "07 - User A Approves Withdrawal (Real Money Payout)",
           "event": [
             {
               "listen": "test",
@@ -2469,9 +3999,10 @@
                   "pm.test(\"Review processed (200 OK)\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Asserts ApprovedAwaitingFinanceContract state\", function () {",
+                  "pm.test(\"Asserts Completed state and real payout\", function () {",
                   "    var res = pm.response.json();",
-                  "    pm.expect(res.state).to.eql(\"ApprovedAwaitingFinanceContract\");",
+                  "    pm.expect(res.state).to.eql(\"Completed\");",
+                  "    pm.expect(res.amountVnd).to.eql(150000);",
                   "});"
                 ]
               }
@@ -2518,7 +4049,7 @@
           "response": []
         },
         {
-          "name": "08 - User A Previews Dissolution Refund",
+          "name": "08 - User A Previews Dissolution Refund (Net Equity Formula)",
           "event": [
             {
               "listen": "test",
@@ -2528,7 +4059,7 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Preview calculates proportional share\", function () {",
+                  "pm.test(\"Preview calculates proportional share based on net equity\", function () {",
                   "    var p = pm.response.json();",
                   "    pm.expect(p.eligibleRefundAmountVnd).to.be.above(0);",
                   "});"
@@ -2563,7 +4094,7 @@
           "response": []
         },
         {
-          "name": "09 - User A Dissolves Free Fund (Case C/D Zero Balance Invariant)",
+          "name": "09 - User A Dissolves Free Fund with Withdrawal History (Zero Balance Invariant)",
           "event": [
             {
               "listen": "test",
@@ -2878,6 +4409,9 @@
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
                   "    pm.environment.set(\"admin_accessToken\", jsonData.accessToken);",
+                  "    if (jsonData.user && jsonData.user.id) {",
+                  "        pm.environment.set(\"admin_id\", jsonData.user.id);",
+                  "    }",
                   "});"
                 ]
               }
@@ -3020,7 +4554,7 @@
           "response": []
         },
         {
-          "name": "05 - ADM-03: Admin Support Cases",
+          "name": "05 - ADM-03: Admin Support Cases Search",
           "event": [
             {
               "listen": "test",
@@ -3079,7 +4613,234 @@
           "response": []
         },
         {
-          "name": "06 - ADM-04: Admin Notifications Templates",
+          "name": "06 - ADM-03: Admin Assigns Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Support ticket assigned to operator (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Assigning ticket to admin\",\n  \"operatorId\": \"{{admin_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/{{supportCaseId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "{{supportCaseId}}",
+                "assign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - ADM-03: Admin Requests Info from User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Info requested from user (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Case status moves to WaitingForUser\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.status).to.eql(\"WaitingForUser\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Need more info from customer\",\n  \"message\": \"Please provide proof of receipt and payment screenshot.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/{{supportCaseId}}/request-info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "{{supportCaseId}}",
+                "request-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - User A Replies with Requested Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User replied to support ticket (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Here is the transaction receipt and details as requested.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support/{{supportCaseId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support",
+                "{{supportCaseId}}",
+                "messages"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - ADM-03: Admin Resolves Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Ticket resolved successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"NewStatus is Resolved\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.newStatus).to.eql(\"Resolved\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Resolution complete\",\n  \"resolutionMessage\": \"All details verified and case resolved successfully.\",\n  \"isRejected\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/{{supportCaseId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "{{supportCaseId}}",
+                "resolve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - ADM-04: Admin Notifications Templates",
           "event": [
             {
               "listen": "test",
@@ -3137,7 +4898,7 @@
           "response": []
         },
         {
-          "name": "07 - ADM-05: Maintenance Status",
+          "name": "11 - ADM-05: Maintenance Status",
           "event": [
             {
               "listen": "test",
@@ -3177,7 +4938,7 @@
           "response": []
         },
         {
-          "name": "08 - Security Check: Non-Admin Access Prohibited (Assert 403 Forbidden)",
+          "name": "12 - Security Check: Non-Admin Access Prohibited (Assert 403 Forbidden)",
           "event": [
             {
               "listen": "test",
@@ -3264,7 +5025,243 @@
           "response": []
         },
         {
-          "name": "02 - AI Chat Financial Query",
+          "name": "02 - SePay TestMode: Start Link Challenge",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bank link challenge created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures challengeId\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.challengeId).to.be.a(\"string\");",
+                  "    pm.environment.set(\"bankChallengeId\", res.challengeId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - SePay TestMode: Verify Challenge Rejection When Unconfirmed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Unconfirmed challenge rejected (409 Conflict)\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Returns bank_link_not_confirmed\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.code).to.eql(\"bank_link_not_confirmed\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges/{{bankChallengeId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges",
+                "{{bankChallengeId}}",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - SePay TestMode: List Linked Accounts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Linked accounts retrieved (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns array of linked accounts\", function () {",
+                  "    var list = pm.response.json();",
+                  "    pm.expect(list).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/linked-accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "linked-accounts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - SePay TestMode: Top-Up Without Active Connection Rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Unlinked connection top-up rejected (404 Not Found)\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Returns bank_connection_not_found\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.code).to.eql(\"bank_connection_not_found\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankConnectionId\": \"00000000-0000-0000-0000-000000000001\",\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"amount\": 500000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-top-ups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - SePay TestMode: List Wallet Top-Ups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Wallet top-ups retrieved (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns array of top-ups\", function () {",
+                  "    var list = pm.response.json();",
+                  "    pm.expect(list).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-top-ups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - AI Chat Financial Query (Gemini)",
           "event": [
             {
               "listen": "test",

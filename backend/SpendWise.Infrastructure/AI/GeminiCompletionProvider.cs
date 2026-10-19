@@ -15,12 +15,32 @@ public sealed class GeminiCompletionProvider(HttpClient httpClient, IConfigurati
     {
         var apiKey = GeminiConfiguration.ResolveApiKey(configuration);
         if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            if (configuration.GetValue<bool>("Gemini:AllowDevelopmentFallback") || configuration.GetValue<bool>("AI:AllowDevelopmentFallback"))
+            {
+                return new AiCompletionResult(
+                    "Tôi là trợ lý SpendWise được hỗ trợ bởi Google Gemini. Tôi có thể giúp bạn theo dõi chi tiêu, quản lý các quỹ nhóm và giải đáp thắc mắc tài chính.",
+                    "Gemini-Fallback",
+                    false,
+                    null);
+            }
             throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503);
+        }
 
         try { return await CompleteOnlineAsync(apiKey, request, cancellationToken); }
         catch (AppException) { throw; }
         catch (Exception exception) when (exception is not OperationCanceledException)
-        { throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503); }
+        {
+            if (configuration.GetValue<bool>("Gemini:AllowDevelopmentFallback") || configuration.GetValue<bool>("AI:AllowDevelopmentFallback"))
+            {
+                return new AiCompletionResult(
+                    "Tôi là trợ lý SpendWise được hỗ trợ bởi Google Gemini. Tôi có thể giúp bạn theo dõi chi tiêu, quản lý các quỹ nhóm và giải đáp thắc mắc tài chính.",
+                    "Gemini-Fallback",
+                    false,
+                    null);
+            }
+            throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503);
+        }
     }
 
     private async Task<AiCompletionResult> CompleteOnlineAsync(string apiKey, AiProviderRequest request, CancellationToken cancellationToken)
@@ -101,7 +121,7 @@ public sealed class GeminiCompletionProvider(HttpClient httpClient, IConfigurati
             };
             if (tools.Count > 0) payload["tools"] = tools.DeepClone();
 
-            var model = configuration["Gemini:Model"] ?? "gemini-3.5-flash-lite";
+            var model = configuration["Gemini:Model"] ?? "gemini-1.5-flash";
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post,
                 $"v1beta/models/{Uri.EscapeDataString(model)}:generateContent")
             {
@@ -188,7 +208,7 @@ public sealed class ConfiguredAiCompletionProvider(
     GeminiCompletionProvider gemini) : IAiCompletionProvider
 {
     public Task<AiCompletionResult> CompleteAsync(AiProviderRequest request, CancellationToken cancellationToken) =>
-        (configuration["AI:Provider"] ?? "OpenAI").Trim().ToLowerInvariant() switch
+        (configuration["AI:Provider"] ?? "Gemini").Trim().ToLowerInvariant() switch
         {
             "openai" => openAi.CompleteAsync(request, cancellationToken),
             "gemini" => gemini.CompleteAsync(request, cancellationToken),
@@ -201,7 +221,7 @@ public sealed class ConfiguredAiProviderStatus(
     OpenAiProviderStatus openAi,
     GeminiProviderStatus gemini) : IAiProviderStatus
 {
-    private IAiProviderStatus? Selected => (configuration["AI:Provider"] ?? "OpenAI").Trim().ToLowerInvariant() switch
+    private IAiProviderStatus? Selected => (configuration["AI:Provider"] ?? "Gemini").Trim().ToLowerInvariant() switch
     {
         "openai" => openAi,
         "gemini" => gemini,

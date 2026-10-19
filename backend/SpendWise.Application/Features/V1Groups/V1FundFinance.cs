@@ -53,7 +53,8 @@ public sealed partial class V1FundService
         await RequireMemberAsync(userId, fundId, token);
         var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, token);
         if (treasury is null) return new V1FinanceDto(fundId, 0, fund.TargetVnd, 0,
-            fund.Kind == V1FundKind.Free, fund.Kind == V1FundKind.Free && fund.ActivityClosedAt is null, fund.ActivityClosedAt is null ? "FINANCE_BLOCKED" : "ACTIVITY_CLOSED", []);
+            fund.Kind == V1FundKind.Free, fund.Kind == V1FundKind.Free && fund.ActivityClosedAt is null,
+            fund.ActivityClosedAt is not null ? "ACTIVITY_CLOSED" : fund.DissolvedAt is not null ? "DISSOLVED" : (fund.Kind == V1FundKind.Free ? "OPEN" : "FINANCE_BLOCKED"), []);
         await FreshAccountAsync(treasury.LedgerAccountId, token);
         await RequireReconciledAccountingAsync(treasury, token);
         return await FinanceStateAsync(fund, treasury, token);
@@ -158,7 +159,9 @@ public sealed partial class V1FundService
             ? "DISSOLVED"
             : fund.ActivityClosedAt is not null
                 ? "ACTIVITY_CLOSED"
-                : "FINANCE_BLOCKED";
+                : (fund.Kind == V1FundKind.Free || (current && rows.Count > 0 && rows.All(o => o.RemainingVnd == 0)))
+                    ? "OPEN"
+                    : "FINANCE_BLOCKED";
         return new(fund.Id, treasury.Revision, treasury.TargetVnd, balance, current, current && fund.ActivityClosedAt is null && fund.DissolvedAt is null, spendingState, rows);
     }
 }

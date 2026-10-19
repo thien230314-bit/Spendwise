@@ -247,7 +247,7 @@ public sealed class V1FundRefundRegressionTests
     }
 
     [Fact]
-    public async Task CaseC_FreeFund_WithPersonalWithdrawals_ThrowsComplexContractBlocked()
+    public async Task CaseC_FreeFund_WithPersonalWithdrawals_DissolvesProportionallyByNetEquity()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
@@ -260,28 +260,166 @@ public sealed class V1FundRefundRegressionTests
         var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
         await s.AcceptAsync(member.Id, invite.Id, default);
 
-        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
-        await s.ContributeAsync(owner.Id, fund.Id,
-            new(ownerWallet.Id, 500_000, "contrib-owner-500k", TargetedCorrectnessFixture.SecurityPin), default);
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 3_000_000);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 2_000_000);
 
-        // Record a completed personal withdrawal
+        // A contributes 2,000,000 VND
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 2_000_000, "contrib-owner-2m", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // B contributes 1,000,000 VND
+        await s.ContributeAsync(member.Id, fund.Id,
+            new(memberWallet.Id, 1_000_000, "contrib-member-1m", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Owner A requested and withdrew 1,000,000 VND personal withdrawal
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var ownerAccount = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == ownerWallet.Id);
+        var ledgerService = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, f.Clock);
+
+        await ledgerService.PostAsync(treasury.LedgerAccountId, ownerAccount.Id, 1_000_000, "VND",
+            "V1FundWithdrawal", fund.Id, $"v1-fund-payout:{fund.Id:N}", "wd-post-1", "Personal withdrawal", default);
+
         f.Db.V1FundRequests.Add(new V1FundRequest
         {
             FundId = fund.Id,
             RequestedByUserId = owner.Id,
             RecipientUserId = owner.Id,
             Kind = "Withdrawal",
-            AmountVnd = 100_000,
+            AmountVnd = 1_000_000,
             Purpose = "Personal withdrawal",
             State = "Completed",
             IdempotencyKey = "wd-1"
         });
         await f.Db.SaveChangesAsync();
 
-        // Dissolving a free fund with historical personal withdrawals throws REFUND_BLOCKED_COMPLEX_CONTRACT
-        var ex = await Assert.ThrowsAsync<ConflictException>(() => s.DissolveFundAsync(owner.Id, fund.Id,
-            new(TargetedCorrectnessFixture.SecurityPin, "dissolve-blocked-1"), default));
-        Assert.Equal("REFUND_BLOCKED_COMPLEX_CONTRACT", ex.Code);
+        // Simulate general shared expense of 800,000 VND
+        var vendorAccount = new LedgerAccount { Code = "EXPENSE:TEAM", Name = "Team Outing", Type = LedgerAccountType.ExpenseClearing };
+        f.Db.LedgerAccounts.Add(vendorAccount);
+        await f.Db.SaveChangesAsync();
+
+        await ledgerService.PostAsync(treasury.LedgerAccountId, vendorAccount.Id, 800_000, "VND",
+            "V1FundExpense", fund.Id, $"v1-fund-expense:{fund.Id:N}", "team-1", "Team outing expense", default);
+
+        // Net equity:
+        // A: 2M contributed - 1M withdrawn = 1M net equity
+        // B: 1M contributed - 0 withdrawn = 1M net equity
+        // Remaining treasury balance: 3M - 1M - 800k = 1,200,000 VND.
+        // On dissolution: A gets 600,000 VND, B gets 600,000 VND.
+        var dissolveResult = await s.DissolveFundAsync(owner.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "dissolve-netequity-1"), default);
+
+        Assert.Equal(1_200_000, dissolveResult.TotalRefundedVnd);
+        Assert.Equal(0, dissolveResult.FinalBalanceVnd);
+        Assert.Equal(2, dissolveResult.Refunds.Count);
+
+        var refA = dissolveResult.Refunds.Single(r => r.UserId == owner.Id);
+        var refB = dissolveResult.Refunds.Single(r => r.UserId == member.Id);
+        Assert.Equal(600_000, refA.RefundAmountVnd);
+        Assert.Equal(600_000, refB.RefundAmountVnd);
+
+        // Final treasury balance is EXACTLY 0 VND
+        f.Db.ChangeTracker.Clear();
+        var finalTreasury = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(0, finalTreasury.Balance);
+    }
+
+    [Fact]
+    public async Task CaseB_FixedFund_WithLockedExcess_RefundsProtectedExcessFirst_ThenSharesAvailable()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("FixedExcessTrip", "Fixed", 130, TargetedCorrectnessFixture.SecurityPin), default);
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000);
+
+        var config1 = await s.ConfirmObligationsAsync(owner.Id, fund.Id, new(130, TargetedCorrectnessFixture.SecurityPin), default);
+        // Owner contributes 130 VND (obligation in revision 1 is 130 VND)
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 130, "contrib-owner-excess", TargetedCorrectnessFixture.SecurityPin, config1.Revision), default);
+
+        var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        // Owner reconfirms with target 200 VND (100 VND per member)
+        // Owner now has required = 100, paid = 130 -> 30 VND locked excess!
+        var config2 = await s.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Member contributes 100 VND (exact obligation)
+        await s.ContributeAsync(member.Id, fund.Id,
+            new(memberWallet.Id, 100, "contrib-member-exact", TargetedCorrectnessFixture.SecurityPin, config2.Revision), default);
+
+        // Treasury has 230 VND.
+        // Simulate shared expense of 130 VND
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var vendorAccount = new LedgerAccount { Code = "EXPENSE:LUNCH", Name = "Lunch", Type = LedgerAccountType.ExpenseClearing };
+        f.Db.LedgerAccounts.Add(vendorAccount);
+        await f.Db.SaveChangesAsync();
+
+        var ledgerService = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, f.Clock);
+        await ledgerService.PostAsync(treasury.LedgerAccountId, vendorAccount.Id, 130, "VND",
+            "V1FundExpense", fund.Id, $"v1-fund-expense:{fund.Id:N}", "lunch-1", "Lunch", default);
+
+        // Remaining balance: 100 VND.
+        // Protected excess for Owner: 30 VND.
+        // Available for sharing: 100 - 30 = 70 VND.
+        // Weights: Owner = 100, Member = 100 (50/50).
+        // Member share = 35 VND.
+        var previewMember = await s.PreviewRefundAsync(member.Id, fund.Id, null, default);
+        Assert.Equal(35, previewMember.EligibleRefundAmountVnd);
+
+        // Member leaves fund: gets 35 VND
+        var leaveResult = await s.LeaveFundAsync(member.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-member-excess"), default);
+        Assert.Equal(35, leaveResult.RefundAmountVnd);
+        Assert.Equal("CaseB_FixedSpentClearShare", leaveResult.CaseType);
+
+        // Owner remaining entitlement: 30 VND (excess) + 35 VND (share) = 65 VND
+        var previewOwner = await s.PreviewRefundAsync(owner.Id, fund.Id, null, default);
+        Assert.Equal(65, previewOwner.EligibleRefundAmountVnd);
+    }
+
+    [Fact]
+    public async Task Idempotency_LeaveFundAsync_RetriedWithSameKey_ReturnsReplayedResult()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("FixedReplay", "Fixed", 200, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 500);
+        var config = await s.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, TargetedCorrectnessFixture.SecurityPin), default);
+
+        await s.ContributeAsync(member.Id, fund.Id,
+            new(memberWallet.Id, 100, "contrib-m1", TargetedCorrectnessFixture.SecurityPin, config.Revision), default);
+
+        // First leave call
+        var first = await s.LeaveFundAsync(member.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-replay-key-1"), default);
+        Assert.Equal(100, first.RefundAmountVnd);
+        Assert.Equal("Completed", first.Status);
+
+        // Second leave call with same idempotency key
+        var second = await s.LeaveFundAsync(member.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-replay-key-1"), default);
+        Assert.Equal(100, second.RefundAmountVnd);
+        Assert.Equal("Completed", second.Status);
+        Assert.Equal("Replayed", second.CaseType);
+        Assert.Equal(first.LedgerTransactionId, second.LedgerTransactionId);
+
+        // Verify wallet was NOT refunded twice (balance is 500, not 600!)
+        f.Db.ChangeTracker.Clear();
+        var mw = await f.Db.Wallets.SingleAsync(w => w.Id == memberWallet.Id);
+        Assert.Equal(500, mw.AvailableBalance);
     }
 
     [Fact]

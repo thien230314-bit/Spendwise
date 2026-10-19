@@ -1,41 +1,33 @@
-# SpendWise V1.0 baseline — TASK 12 FINAL ACCEPTANCE
+# SpendWise V1.0 baseline — TASK 13 FINAL ACCEPTANCE
 
-Public source snapshot through Task 12 backend completion and full Newman API E2E acceptance, 2026-10-19. Publication is not production approval.
+Public source snapshot through Task 13 backend gap closure and verified full Newman API E2E acceptance, 2026-10-20. Publication is not production approval.
 
-- Emergency Submission Scope (2026-10-19): SuperAdmin completely removed from V1.0 scope per Product Owner emergency directive. Admin backend simplified to 5 core menus (ADM-01 Tổng quan, ADM-02 Quản lý người dùng, ADM-03 Khiếu nại & yêu cầu, ADM-04 Thông báo, ADM-05 Bảo trì).
-- SuperAdmin login blocked (403 account_unavailable); operations permissions revoked for SuperAdmin; single active Admin cardinality strictly enforced across platform.
-- Full non-SQL regression test suite: **1064/1064 PASS (0 FAIL, 0 SKIP)** across full test suite.
-- Postman / Newman Full API E2E: **63/63 requests PASS (0 FAIL)**, **111/111 assertions PASS (0 FAIL)** across all 9 modules:
-  - 01-Health: 2/2 requests PASS
-  - 02-Auth & Session: 10/10 requests PASS
-  - 03-Wallet & Finance: 9/9 requests PASS
-  - 04-Friends & Social: 6/6 requests PASS
-  - 05-Fixed Fund (Group): 12/12 requests PASS
-  - 06-Free Fund (Group): 10/10 requests PASS
-  - 07-Support Tickets & Disputes: 5/5 requests PASS
-  - 08-Admin 5 Areas: 6/6 requests PASS
-  - 09-Integrations & Webhook: 3/3 requests PASS
-- Approved Refund Business Rules (Task 12 Correction): Implemented production code in `V1FundRefunds.cs` for Cases A, B, C, D:
-  - Case A (Unspent): 100% refund of unspent contributions on Leave/Kick.
-  - Case B (Fixed Fund spent): Proportional share of remaining balance + full refund of locked personal excess.
-  - Case C (Free Fund dissolve): Proportional share of treasury balance to active members.
-  - Case D (Accounting & Governance): Authoritative calculation, wallet refund transaction type `Refund`, treasury zeroed on dissolve, atomic & idempotent, owner transfer enforcement.
-  - Complex Contract Guard: Free fund with prior personal withdrawals guarded with `REFUND_BLOCKED_COMPLEX_CONTRACT`.
-- Admin A1.1–A1.4: DONE, functional Backend LOCKED.
-- Admin A2.1, A2.2, A2.4, A2.5: DONE; A2.3: PARTIAL / POLICY_BLOCKED (emergency balance/money locks disabled).
-- Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED.
-- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED with unified read model and batch optimization.
-- Admin A5.1–A5.7: 7/7 DONE, functional Backend LOCKED (simplified for single Admin direct resolution without SuperAdmin escalation).
-- Admin A6.1–A6.4: 4/4 DONE, functional Backend LOCKED with credential masking (ADM-FIX-01), feed sanitization (ADM-FIX-02), exact pagination > 200 (ADM-FIX-03), and synchronized Admin maintenance authority (ADM-FIX-04).
-- User Mobile: Full `User.md` v1.3 scope preserved intact, verified across Auth, Wallets, P2P Transfers (`POST /api/transfers/p2p`), Friends, Fixed/Free Groups, Disputes, Email, Gemini AI fallback, and SePay TestMode.
-- Documentation: Created `backend/docs/BACKEND-V1-FINAL-ACCEPTANCE.md` and updated `backend/docs/BACKEND-PRODUCT-DECISIONS-REQUIRED.md`.
+- **Scope & Cardinality (Product Owner Directives):**
+  - Exactly 2 active roles: User (Mobile) and single Admin (Web).
+  - SuperAdmin completely excluded from V1.0 scope; login blocked (`403 account_unavailable`), operational permissions revoked.
+  - 5 Admin Web menus fully functional: ADM-01 Tổng quan, ADM-02 Người dùng, ADM-03 Khiếu nại & yêu cầu, ADM-04 Thông báo, ADM-05 Bảo trì.
+- **Full Non-SQL Regression Test Suite:**
+  - **1068 / 1068 PASS (0 FAIL, 0 SKIP)** across unit and integration tests.
+- **Postman / Newman Full API E2E Suite:**
+  - **101 / 101 requests PASS (0 FAIL)**, **169 / 169 assertions PASS (0 FAIL - 100% Pass Rate)** across all 9 modules against isolated test database `SpendWise_E2E_Test`:
+    - **01-Health (3/3):** Health Live, Health Ready, Health Ping.
+    - **02-Auth & Security (24/24):** Register, Email OTP, PIN Setup, Login challenge & verify, Token rotation, Change password with session refresh, Change password back, Change security PIN, Change security PIN back, Forgot/Validate PIN, Negative check wrong PIN (401), Negative check wrong OTP (400/401), Negative check invalid JWT (401), Register & verify User B, PIN setup User B, Forgot & Reset Password User A with static OTP, Re-login & PIN verify User A.
+    - **03-Wallet & Finance (15/15):** List wallets, Categories, Sub-wallet creation & verification, Maximum wallet limit (409) enforcement, Receipt evidence upload, Income transaction, Expense transaction, Internal wallet-to-wallet transfer, P2P transfer to User B, P2P idempotency replay, Negative check insufficient balance (409), Negative check wrong PIN (401).
+    - **04-Friends & Social (5/5):** Search contact, Send friend request, Incoming requests, Accept request, Friends list.
+    - **05-Fixed Fund (21/21):** Create Fixed Fund, Invite User B, List invitations, User B accepts, Member list, Confirm 2M target obligations, User A 1M contribution, User B 1M contribution, Negative check direct spend when CanSpend=OFF (403), Enable CanSpend for User B, Direct spend < 20% immediate completion, Large expense >= 20% enters 24h hold, Finance summary, Preview refund Case B proportional share + protected excess, User B leaves with Case B refund, Create Fixed Fund 2, Invite B, Accept B, User B 500k contribution, User A kicks User B with refund, User A dissolves Fixed Fund 2 with exact 0 VND balance invariant.
+    - **06-Free Fund (9/9):** Create Free Fund, Invite User B, User B accepts, User A 700k contribution, User B 300k contribution, User B withdrawal request, User A reviews & approves withdrawal with real ledger payout, Preview dissolution refund based on Net Equity formula $(C_i - W_i - R_i)$, User A dissolves Free Fund with exact 0 VND balance invariant.
+    - **07-Support Tickets (3/3):** User A submits ticket, User A lists cases, User A replies to case.
+    - **08-Admin 5 Areas (12/12):** Admin login challenge & PIN completion, ADM-01 Overview summary & metrics, ADM-02 Users search, ADM-03 Support tickets search, ADM-03 Assign ticket to operator, ADM-03 Request info from user -> WaitingForUser, User replies with info, ADM-03 Resolve ticket -> Resolved, ADM-04 Notification templates, ADM-05 Maintenance status, Security check non-admin access (403 Forbidden).
+    - **09-Integrations & Providers (7/7):** Bank connections status, SePay TestMode link challenge, SePay TestMode verify challenge rejection when unconfirmed (409 `bank_link_not_confirmed`), SePay TestMode linked accounts list, SePay TestMode unlinked connection top-up rejection (404 `bank_connection_not_found`), SePay TestMode wallet top-ups list, AI Assistant Chat with Gemini provider (`gemini-1.5-flash`).
+- **P0 Approved Business Logic Gap Closures:**
+  - **Unified Refund Calculator (`V1FundRefunds.cs`):** Eliminated `REFUND_BLOCKED_COMPLEX_CONTRACT`. Added Net Equity formula for Free fund dissolution with personal withdrawals. Protected personal excess prioritized in Fixed funds. Exact 0 VND treasury balance invariant verified on dissolution. Full idempotency replay support.
+  - **Fixed Fund CanSpend & 24h Hold Policy (`V1FundRequests.cs`):** Members require explicit `CanSpend` permission. Direct spends < 20% threshold complete immediately; large spends >= 20% enter 24h cool-off hold.
+  - **Free Fund Withdrawal Payout (`V1FundRequests.cs`):** Owner approval executes double-entry ledger transfer from treasury account to member's personal wallet account with financial transaction history.
+  - **AI Integration (`GeminiCompletionProvider.cs`):** Upgraded model to `gemini-1.5-flash` with resilient development fallback.
+  - **Rate Limiting Policies (`Program.cs`):** Configurable per environment via `RateLimiting` options, ensuring strict security defaults in production (10, 10, 30, 15) while enabling high throughput during testing.
 
 ## Configuration / publication boundary
 
-Current Task 12 evidence (2026-10-19): **1064 PASS / 0 FAIL / 0 SKIP** across full non-SQL test suite; **63/63 requests (111/111 assertions) PASS** in live Newman E2E pipeline. Release build: **0 errors / 16 existing dependency warnings**. SQL02: Isolated `SpendWise_E2E_Test` database used for live Newman execution; `SpendWiseDb` on SQL01 strictly untouched. Real relational SQLite and HTTP pipeline tests are the recorded alternative, not SQL Server production proof. Unfiltered full suite and live external providers were NOT RUN. No migration/model change, SQL01 connection/mutation, Frontend/Mobile edit was performed.
+Current Task 13 evidence (2026-10-20): **1068 PASS / 0 FAIL / 0 SKIP** across full non-SQL test suite; **101/101 requests (169/169 assertions) PASS** in live Newman E2E pipeline. Release build: **0 errors / 16 existing dependency warnings**. SQL02: Isolated `SpendWise_E2E_Test` database used for live Newman execution; `SpendWiseDb` on SQL01 strictly untouched. Real relational SQLite and HTTP pipeline tests are the recorded alternative, not SQL Server production proof. Unfiltered full suite and live external providers were NOT RUN. No migration/model change, SQL01 connection/mutation, Frontend/Mobile edit was performed.
 
 Local Development/AdminE2E settings, `.env` files, User Secrets, checkpoints, database/backup/ZIP/log/test output, generated web output and sensitive historical operational runbooks are intentionally not tracked. Existing local files remain intact. Supply authorized configuration privately; never copy actual SQL/SMTP/API/JWT secrets into source.
-
-The root `.gitignore` preserves the remote VisualStudio rules and adds .NET/React/Expo/privacy exclusions. The nested mobile repository's metadata/history is not imported: mobile source files are published as ordinary files, not a submodule. Its local `.git` is retained untouched.
-
-Operational recovery's email target is process-local `SPENDWISE_RECOVERY_EMAIL`, with a non-deliverable synthetic default for tests. This public configuration adaptation does not execute a recovery or change credentials.

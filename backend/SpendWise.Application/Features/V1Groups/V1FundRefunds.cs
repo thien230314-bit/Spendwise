@@ -54,10 +54,11 @@ public sealed partial class V1FundService
         var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, ct)
             ?? throw new NotFoundException("fund_treasury_not_found", "Fund treasury not initialized.");
 
-        var (amount, caseType) = await CalculateMemberRefundAmountAsync(fund, treasury, targetUserId, ct);
+        var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [targetUserId], ct);
+        var targetRefund = calc.MemberRefunds.GetValueOrDefault(targetUserId, (0, "ZeroBalance"));
         var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
 
-        return new V1RefundPreviewDto(fundId, targetUserId, account.Balance, amount, caseType, "Eligible");
+        return new V1RefundPreviewDto(fundId, targetUserId, account.Balance, targetRefund.Amount, targetRefund.CaseType, "Eligible");
     }
 
     public async Task<V1RefundResultDto> LeaveFundAsync(
@@ -77,9 +78,35 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null)
                 throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
 
+            // Idempotency check: if replayed with the same key, return previous result
+            var existingTx = await db.LedgerTransactions.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+            if (existingTx is not null)
+            {
+                var ft = await db.FinancialTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                return new V1RefundResultDto(
+                    fund.Id,
+                    actorUserId,
+                    (long)(ft?.Amount ?? 0),
+                    ft?.WalletId,
+                    existingTx.Id,
+                    "Completed",
+                    "Replayed",
+                    existingTx.CreatedAt);
+            }
+
             var membership = await db.V1FundMemberships.SingleOrDefaultAsync(
-                m => m.FundId == fundId && m.UserId == actorUserId && m.LeftAt == null, token)
-                ?? throw new ConflictException("already_left", "Member is not active in this fund.");
+                m => m.FundId == fundId && m.UserId == actorUserId && m.LeftAt == null, token);
+            if (membership is null)
+            {
+                var pastLeft = await db.V1FundActivities.AsNoTracking()
+                    .AnyAsync(a => a.FundId == fundId && a.SubjectUserId == actorUserId && a.Event == "MemberLeft", token);
+                if (pastLeft)
+                    return new V1RefundResultDto(fund.Id, actorUserId, 0, null, null, "Completed", "Replayed", clock.UtcNow);
+
+                throw new ConflictException("already_left", "Member is not active in this fund.");
+            }
 
             var activeMembers = await ActiveMembersAsync(fundId, token);
             if (fund.OwnerUserId == actorUserId)
@@ -97,7 +124,8 @@ public sealed partial class V1FundService
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
 
-            var (refundAmount, caseType) = await CalculateMemberRefundAmountAsync(fund, treasury, actorUserId, token);
+            var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [actorUserId], token);
+            var (refundAmount, caseType) = calc.MemberRefunds.GetValueOrDefault(actorUserId, (0, "ZeroBalance"));
 
             Guid? ledgerTxId = null;
             Guid? destinationWalletId = null;
@@ -142,7 +170,6 @@ public sealed partial class V1FundService
                 });
             }
 
-            // Membership is closed ONLY AFTER the refund is posted successfully
             membership.LeftAt = clock.UtcNow;
 
             await ActivityAsync(fund.Id, actorUserId, "MemberLeft", token,
@@ -188,15 +215,41 @@ public sealed partial class V1FundService
             if (targetUserId == actorUserId)
                 throw new AppException("cannot_kick_owner", "Chủ nhóm không thể kick chính mình.");
 
+            // Idempotency check: if replayed with same key, return previous result
+            var existingTx = await db.LedgerTransactions.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+            if (existingTx is not null)
+            {
+                var ft = await db.FinancialTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                return new V1RefundResultDto(
+                    fund.Id,
+                    targetUserId,
+                    (long)(ft?.Amount ?? 0),
+                    ft?.WalletId,
+                    existingTx.Id,
+                    "Completed",
+                    "Replayed",
+                    existingTx.CreatedAt);
+            }
+
             var membership = await db.V1FundMemberships.SingleOrDefaultAsync(
-                m => m.FundId == fundId && m.UserId == targetUserId && m.LeftAt == null, token)
-                ?? throw new NotFoundException("member_not_found", "Target member not found in fund.");
+                m => m.FundId == fundId && m.UserId == targetUserId && m.LeftAt == null, token);
+            if (membership is null)
+            {
+                var pastKicked = await db.V1FundActivities.AsNoTracking()
+                    .AnyAsync(a => a.FundId == fundId && a.SubjectUserId == targetUserId && a.Event == "MemberKicked", token);
+                if (pastKicked)
+                    return new V1RefundResultDto(fund.Id, targetUserId, 0, null, null, "Completed", "Replayed", clock.UtcNow);
+
+                throw new NotFoundException("member_not_found", "Target member not found in fund.");
+            }
 
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
 
-            // Owner CANNOT modify or override refund amount: calculated authoritatively
-            var (refundAmount, caseType) = await CalculateMemberRefundAmountAsync(fund, treasury, targetUserId, token);
+            var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [targetUserId], token);
+            var (refundAmount, caseType) = calc.MemberRefunds.GetValueOrDefault(targetUserId, (0, "ZeroBalance"));
 
             Guid? ledgerTxId = null;
             Guid? destinationWalletId = null;
@@ -241,7 +294,6 @@ public sealed partial class V1FundService
                 });
             }
 
-            // Membership is closed ONLY AFTER the refund is posted successfully
             membership.LeftAt = clock.UtcNow;
 
             await ActivityAsync(fund.Id, actorUserId, "MemberKicked", token,
@@ -294,51 +346,12 @@ public sealed partial class V1FundService
 
             if (currentBalance > 0 && activeMembers.Count > 0)
             {
-                var contributions = await db.V1FundContributions.AsNoTracking()
-                    .Where(c => c.FundId == fundId).ToListAsync(token);
-
-                if (fund.Kind == V1FundKind.Free)
-                {
-                    var hasWithdrawals = await db.V1FundRequests.AsNoTracking()
-                        .AnyAsync(r => r.FundId == fundId && r.Kind == "Withdrawal" && r.State == "Completed", token);
-                    if (hasWithdrawals)
-                        throw new ConflictException("REFUND_BLOCKED_COMPLEX_CONTRACT",
-                            "Refund blocked by unresolved complex contract: multiple previous personal withdrawals require formal net benefit formula.");
-                }
-
-                // Compute shares based on member contribution weights
-                var weights = activeMembers.ToDictionary(
-                    m => m.UserId,
-                    m => contributions.Where(c => c.UserId == m.UserId).Sum(c => c.AmountVnd));
-                var sumWeights = weights.Values.Sum();
-
-                var payouts = new Dictionary<Guid, long>();
-                if (sumWeights == 0)
-                {
-                    var equalShare = (long)Math.Floor(currentBalance / activeMembers.Count);
-                    foreach (var m in activeMembers) payouts[m.UserId] = equalShare;
-                }
-                else
-                {
-                    foreach (var m in activeMembers)
-                    {
-                        payouts[m.UserId] = (long)Math.Floor(currentBalance * weights[m.UserId] / sumWeights);
-                    }
-                }
-
-                // Allocate remainder (đồng dư) starting from lowest seat
-                var allocatedSum = payouts.Values.Sum();
-                var remainder = (long)currentBalance - allocatedSum;
-                for (var i = 0; i < remainder && i < activeMembers.Count; i++)
-                {
-                    payouts[activeMembers[i].UserId] += 1;
-                }
-
+                var calc = await CalculateUnifiedRefundsAsync(fund, treasury, null, token);
                 var caseType = fund.Kind == V1FundKind.Fixed ? "CaseB_DissolveFixed" : "CaseC_DissolveFree";
 
                 foreach (var m in activeMembers)
                 {
-                    var amount = payouts[m.UserId];
+                    var amount = calc.MemberRefunds.GetValueOrDefault(m.UserId, (0, caseType)).Amount;
                     Guid? ledgerTxId = null;
                     Guid? walletId = null;
 
@@ -381,7 +394,6 @@ public sealed partial class V1FundService
                         totalRefunded += amount;
                     }
 
-                    // Update membership record
                     var mem = await db.V1FundMemberships.SingleAsync(x => x.Id == m.Id, token);
                     mem.LeftAt = clock.UtcNow;
 
@@ -404,7 +416,6 @@ public sealed partial class V1FundService
             }
             else
             {
-                // Zero balance: just mark active members as left
                 foreach (var m in activeMembers)
                 {
                     var mem = await db.V1FundMemberships.SingleAsync(x => x.Id == m.Id, token);
@@ -430,78 +441,259 @@ public sealed partial class V1FundService
         }, ct);
     }
 
-    private async Task<(long Amount, string CaseType)> CalculateMemberRefundAmountAsync(
+    private sealed record UnifiedCalculationResult(
+        Dictionary<Guid, (long Amount, string CaseType)> MemberRefunds,
+        long TotalAllocatedVnd,
+        decimal TreasuryBalanceVnd);
+
+    /// <summary>
+    /// Unified refund calculator ensuring identical calculation across Preview, Leave, Kick, and Dissolve.
+    /// If singleMemberUserIds is provided, calculates specifically for those members leaving individually.
+    /// If singleMemberUserIds is null, calculates full dissolution distributing 100% of current balance across all active members.
+    /// </summary>
+    private async Task<UnifiedCalculationResult> CalculateUnifiedRefundsAsync(
         V1Fund fund,
         V1FundTreasury treasury,
-        Guid memberUserId,
+        IReadOnlyList<Guid>? singleMemberUserIds,
         CancellationToken ct)
     {
         var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
         var currentBalance = account.Balance;
+        var results = new Dictionary<Guid, (long Amount, string CaseType)>();
         if (currentBalance <= 0)
-            return (0, "ZeroBalance");
+        {
+            if (singleMemberUserIds is not null)
+                foreach (var id in singleMemberUserIds) results[id] = (0, "ZeroBalance");
+            return new UnifiedCalculationResult(results, 0, currentBalance);
+        }
 
-        var contributions = await db.V1FundContributions.AsNoTracking()
-            .Where(c => c.FundId == fund.Id).ToListAsync(ct);
-        var totalContributed = contributions.Sum(c => c.AmountVnd);
-        var userContributed = contributions.Where(c => c.UserId == memberUserId).Sum(c => c.AmountVnd);
-        if (userContributed <= 0)
-            return (0, "NoContribution");
+        var contributions = await db.V1FundContributions.AsNoTracking().Where(c => c.FundId == fund.Id).ToListAsync(ct);
+        var activeMembers = await ActiveMembersAsync(fund.Id, ct);
+        var activeUserIds = activeMembers.Select(m => m.UserId).ToHashSet();
 
         var previousRefunds = await db.FinancialTransactions.AsNoTracking()
             .Where(ft => ft.RelatedBusinessId == fund.Id && ft.Type == FinancialTransactionType.Refund && ft.Status == FinancialTransactionStatus.Completed)
             .ToListAsync(ct);
-        var totalPriorRefunds = previousRefunds.Sum(r => (long)r.Amount);
-        var userPriorRefunds = previousRefunds.Where(r => r.OwnerUserId == memberUserId).Sum(r => (long)r.Amount);
 
+        var totalContributed = contributions.Sum(c => c.AmountVnd);
+        var totalPriorRefunds = previousRefunds.Sum(r => (long)r.Amount);
         var totalSpent = totalContributed - totalPriorRefunds - (long)currentBalance;
         if (totalSpent < 0) totalSpent = 0;
 
-        // Case A: Chưa phát sinh chi
-        if (totalSpent == 0)
-        {
-            var unrefunded = userContributed - userPriorRefunds;
-            var refund = Math.Max(0, Math.Min(unrefunded, (long)currentBalance));
-            return (refund, "CaseA_Unspent");
-        }
+        bool isDissolution = singleMemberUserIds is null;
 
-        // Case B: Fixed fund đã chi, quyền lợi rõ ràng
         if (fund.Kind == V1FundKind.Fixed)
         {
-            var activeMembers = await ActiveMembersAsync(fund.Id, ct);
-            var activeUserIds = activeMembers.Select(m => m.UserId).ToHashSet();
-            var activeContributions = contributions.Where(c => activeUserIds.Contains(c.UserId)).ToList();
-            var sumActiveWeights = activeContributions.Sum(c => c.AmountVnd);
-            if (sumActiveWeights <= 0) return (0, "ZeroWeight");
+            var obligations = await db.V1FundObligations.AsNoTracking()
+                .Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision)
+                .OrderBy(o => o.Seat).ToListAsync(ct);
 
-            var memberWeight = activeContributions.Where(c => c.UserId == memberUserId).Sum(c => c.AmountVnd);
-            var memberShare = (long)Math.Floor((decimal)currentBalance * memberWeight / sumActiveWeights);
-            var refund = Math.Max(0, Math.Min(memberShare, (long)currentBalance));
-            return (refund, "CaseB_FixedSpentClearShare");
+            // Compute paid and required per active member
+            var memberStats = new Dictionary<Guid, (long Paid, long Required, long LockedExcess, long PriorRefunds, long ProtectedExcess)>();
+            long totalProtectedExcess = 0;
+
+            foreach (var m in activeMembers)
+            {
+                var paid = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
+                var required = obligations.SingleOrDefault(o => o.MembershipId == m.Id)?.RequiredVnd ?? 0;
+                var lockedExcess = Math.Max(0, paid - required);
+                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId).Sum(r => (long)r.Amount);
+                var protectedExcess = Math.Max(0, lockedExcess - priorRef);
+                memberStats[m.UserId] = (paid, required, lockedExcess, priorRef, protectedExcess);
+                totalProtectedExcess += protectedExcess;
+            }
+
+            var availableForSharing = Math.Max(0, (long)currentBalance - totalProtectedExcess);
+
+            // Case A: Chưa phát sinh chi
+            if (totalSpent == 0)
+            {
+                if (isDissolution)
+                {
+                    // Full refund of all unspent contributions
+                    long allocated = 0;
+                    foreach (var m in activeMembers)
+                    {
+                        var stats = memberStats[m.UserId];
+                        var unspent = Math.Max(0, stats.Paid - stats.PriorRefunds);
+                        var amount = Math.Min(unspent, (long)currentBalance - allocated);
+                        results[m.UserId] = (amount, "CaseA_Unspent");
+                        allocated += amount;
+                    }
+                    return new UnifiedCalculationResult(results, allocated, currentBalance);
+                }
+                else
+                {
+                    foreach (var targetUserId in singleMemberUserIds!)
+                    {
+                        if (!memberStats.TryGetValue(targetUserId, out var stats))
+                        {
+                            results[targetUserId] = (0, "NoContribution");
+                            continue;
+                        }
+                        var unspent = Math.Max(0, stats.Paid - stats.PriorRefunds);
+                        var refund = Math.Max(0, Math.Min(unspent, (long)currentBalance));
+                        results[targetUserId] = (refund, "CaseA_Unspent");
+                    }
+                    return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);
+                }
+            }
+
+            // Case B: Fixed fund đã chi
+            // Calculate weights on available balance: obligation portion w_i = min(paid, required)
+            var weights = activeMembers.ToDictionary(
+                m => m.UserId,
+                m => memberStats.TryGetValue(m.UserId, out var st) ? Math.Min(st.Paid, st.Required) : 0L);
+            var sumWeights = weights.Values.Sum();
+
+            if (isDissolution)
+            {
+                // In dissolution: First allocate protected excess to each member
+                var payouts = new Dictionary<Guid, long>();
+                long excessTotal = 0;
+                foreach (var m in activeMembers)
+                {
+                    var excess = memberStats[m.UserId].ProtectedExcess;
+                    payouts[m.UserId] = excess;
+                    excessTotal += excess;
+                }
+
+                var remainingBalance = (long)currentBalance - excessTotal;
+                if (remainingBalance > 0 && sumWeights > 0)
+                {
+                    foreach (var m in activeMembers)
+                    {
+                        var share = (long)Math.Floor((decimal)remainingBalance * weights[m.UserId] / sumWeights);
+                        payouts[m.UserId] += share;
+                    }
+                }
+                else if (remainingBalance > 0 && sumWeights == 0)
+                {
+                    var equal = remainingBalance / activeMembers.Count;
+                    foreach (var m in activeMembers) payouts[m.UserId] += equal;
+                }
+
+                // Allocate remainder (đồng dư) starting from lowest seat
+                var allocatedSum = payouts.Values.Sum();
+                var remainder = (long)currentBalance - allocatedSum;
+                for (var i = 0; i < remainder && i < activeMembers.Count; i++)
+                {
+                    payouts[activeMembers[i].UserId] += 1;
+                }
+
+                foreach (var m in activeMembers)
+                {
+                    results[m.UserId] = (payouts[m.UserId], "CaseB_DissolveFixed");
+                }
+                return new UnifiedCalculationResult(results, (long)currentBalance, currentBalance);
+            }
+            else
+            {
+                // Individual leave/kick
+                foreach (var targetUserId in singleMemberUserIds!)
+                {
+                    if (!memberStats.TryGetValue(targetUserId, out var stats))
+                    {
+                        results[targetUserId] = (0, "NoContribution");
+                        continue;
+                    }
+
+                    // 1. Return protected excess first
+                    var excessPart = Math.Min((long)currentBalance, stats.ProtectedExcess);
+                    // 2. Share of available balance
+                    long sharePart = 0;
+                    if (availableForSharing > 0 && sumWeights > 0)
+                    {
+                        sharePart = (long)Math.Floor((decimal)availableForSharing * weights[targetUserId] / sumWeights);
+                    }
+
+                    var totalRefund = Math.Max(0, Math.Min((long)currentBalance, excessPart + sharePart));
+                    results[targetUserId] = (totalRefund, "CaseB_FixedSpentClearShare");
+                }
+                return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);
+            }
         }
-
-        // Case C: Free fund, chưa có rút cá nhân
-        if (fund.Kind == V1FundKind.Free)
+        else // Free Fund
         {
-            var hasWithdrawals = await db.V1FundRequests.AsNoTracking()
-                .AnyAsync(r => r.FundId == fund.Id && r.Kind == "Withdrawal" && r.State == "Completed", ct);
-            if (hasWithdrawals)
-                throw new ConflictException("REFUND_BLOCKED_COMPLEX_CONTRACT",
-                    "Refund blocked by unresolved complex contract: multiple personal withdrawals require formal net benefit formula.");
+            // Gather completed personal withdrawals
+            var withdrawals = await db.V1FundRequests.AsNoTracking()
+                .Where(r => r.FundId == fund.Id && r.Kind == "Withdrawal" && r.State == "Completed")
+                .ToListAsync(ct);
 
-            var activeMembers = await ActiveMembersAsync(fund.Id, ct);
-            var activeUserIds = activeMembers.Select(m => m.UserId).ToHashSet();
-            var activeContributions = contributions.Where(c => activeUserIds.Contains(c.UserId)).ToList();
-            var sumActiveWeights = activeContributions.Sum(c => c.AmountVnd);
-            if (sumActiveWeights <= 0) return (0, "ZeroWeight");
+            // Compute net equity per member: NetEquity_i = max(0, Contributed - Withdrawn - Refunded)
+            var memberNetEquity = new Dictionary<Guid, long>();
+            foreach (var m in activeMembers)
+            {
+                var contrib = contributions.Where(c => c.UserId == m.UserId).Sum(c => c.AmountVnd);
+                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId).Sum(w => w.AmountVnd);
+                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId).Sum(r => (long)r.Amount);
+                var net = Math.Max(0, contrib - wd - priorRef);
+                memberNetEquity[m.UserId] = net;
+            }
 
-            var memberWeight = activeContributions.Where(c => c.UserId == memberUserId).Sum(c => c.AmountVnd);
-            var memberShare = (long)Math.Floor((decimal)currentBalance * memberWeight / sumActiveWeights);
-            var refund = Math.Max(0, Math.Min(memberShare, (long)currentBalance));
-            return (refund, "CaseC_FreeSharedExpenseClearShare");
+            var sumNetEquity = memberNetEquity.Values.Sum();
+
+            if (isDissolution)
+            {
+                var payouts = new Dictionary<Guid, long>();
+                if (sumNetEquity > 0)
+                {
+                    foreach (var m in activeMembers)
+                    {
+                        var share = (long)Math.Floor((decimal)currentBalance * memberNetEquity[m.UserId] / sumNetEquity);
+                        payouts[m.UserId] = share;
+                    }
+                }
+                else
+                {
+                    var equal = (long)currentBalance / activeMembers.Count;
+                    foreach (var m in activeMembers) payouts[m.UserId] = equal;
+                }
+
+                // Distribute remainder (đồng dư)
+                var allocatedSum = payouts.Values.Sum();
+                var remainder = (long)currentBalance - allocatedSum;
+                for (var i = 0; i < remainder && i < activeMembers.Count; i++)
+                {
+                    payouts[activeMembers[i].UserId] += 1;
+                }
+
+                foreach (var m in activeMembers)
+                {
+                    results[m.UserId] = (payouts[m.UserId], "CaseC_DissolveFree");
+                }
+                return new UnifiedCalculationResult(results, (long)currentBalance, currentBalance);
+            }
+            else
+            {
+                foreach (var targetUserId in singleMemberUserIds!)
+                {
+                    if (!memberNetEquity.TryGetValue(targetUserId, out var net))
+                    {
+                        results[targetUserId] = (0, "NoContribution");
+                        continue;
+                    }
+
+                    if (totalSpent == 0)
+                    {
+                        var refund = Math.Max(0, Math.Min(net, (long)currentBalance));
+                        results[targetUserId] = (refund, "CaseA_Unspent");
+                    }
+                    else
+                    {
+                        long share = 0;
+                        if (sumNetEquity > 0)
+                            share = (long)Math.Floor((decimal)currentBalance * net / sumNetEquity);
+                        else
+                            share = (long)Math.Floor((decimal)currentBalance / activeMembers.Count);
+
+                        var refund = Math.Max(0, Math.Min((long)currentBalance, share));
+                        results[targetUserId] = (refund, "CaseC_FreeSharedExpenseClearShare");
+                    }
+                }
+                return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);
+            }
         }
-
-        return (0, "UnrecognizedFundKind");
     }
 
     private async Task<Wallet> ResolveDestinationWalletAsync(Guid userId, Guid? preferredWalletId, CancellationToken ct)

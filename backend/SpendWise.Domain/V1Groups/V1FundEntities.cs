@@ -21,7 +21,7 @@ public sealed class V1Fund : BaseEntity
     public Guid OwnerUserId { get; private set; }
     public long OwnershipRevision { get; private set; }
     public long? TargetVnd { get; private set; }
-    public DateTime? DissolvedAt { get; private set; }
+    public DateTime? DissolvedAt { get; set; }
     public DateTime? ActivityClosedAt { get; private set; }
     public DateTime? OwnerRespondedAt { get; private set; }
     public Guid? OwnerResponseCaseId { get; private set; }

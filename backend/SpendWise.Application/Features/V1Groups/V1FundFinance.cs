@@ -55,7 +55,7 @@ public sealed partial class V1FundService
         if (treasury is null) return new V1FinanceDto(fundId, 0, fund.TargetVnd, 0,
             fund.Kind == V1FundKind.Free, fund.Kind == V1FundKind.Free && fund.ActivityClosedAt is null, fund.ActivityClosedAt is null ? "FINANCE_BLOCKED" : "ACTIVITY_CLOSED", []);
         await FreshAccountAsync(treasury.LedgerAccountId, token);
-        await RequireUnspentAccountingAsync(treasury, token);
+        await RequireReconciledAccountingAsync(treasury, token);
         return await FinanceStateAsync(fund, treasury, token);
     }, ct);
 
@@ -111,6 +111,39 @@ public sealed partial class V1FundService
             throw new ConflictException("FINANCE_BLOCKED", "Fund requires reconciliation before this operation.");
     }
 
+    private async Task RequireReconciledAccountingAsync(V1FundTreasury treasury, CancellationToken ct)
+    {
+        var payments = await db.V1FundContributions.AsNoTracking().Where(c => c.FundId == treasury.FundId).ToListAsync(ct);
+        var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
+        var entries = await db.LedgerEntries.AsNoTracking().Where(e => e.LedgerAccountId == account.Id)
+            .Select(e => new { e.LedgerTransactionId, e.Direction, e.Amount, e.Currency }).ToListAsync(ct);
+        var net = entries.Sum(e => e.Direction == LedgerEntryDirection.Debit ? e.Amount : -e.Amount);
+
+        if (account.Currency != "VND" || net != account.Balance)
+            throw new ConflictException("FINANCE_BLOCKED", "Fund ledger requires reconciliation before this operation.");
+
+        var postings = await db.LedgerTransactions.AsNoTracking().Include(t => t.Entries)
+            .Where(t => db.V1FundContributions.Any(c => c.FundId == treasury.FundId && c.LedgerTransactionId == t.Id)).ToListAsync(ct);
+        var byId = postings.ToDictionary(t => t.Id);
+        var contributionValid = payments.All(c => byId.TryGetValue(c.LedgerTransactionId, out var t) && t.BusinessId == c.Id
+            && t.BusinessType == "V1FundContribution" && t.Status == LedgerTransactionStatus.Completed
+            && t.Entries.Count == 2 && t.Entries.All(e => e.Currency == "VND" && e.Amount == c.AmountVnd)
+            && t.Entries.Count(e => e.Direction == LedgerEntryDirection.Debit && e.LedgerAccountId == account.Id) == 1
+            && t.Entries.Count(e => e.Direction == LedgerEntryDirection.Credit) == 1);
+        if (!contributionValid)
+            throw new ConflictException("FINANCE_BLOCKED", "Fund contributions have invalid ledger postings.");
+
+        var creditEntries = entries.Where(e => e.Direction == LedgerEntryDirection.Credit).ToList();
+        if (creditEntries.Count > 0)
+        {
+            var creditPostings = await db.LedgerTransactions.AsNoTracking()
+                .Where(t => creditEntries.Select(e => e.LedgerTransactionId).Contains(t.Id))
+                .ToListAsync(ct);
+            if (creditPostings.Count != creditEntries.Count || creditPostings.Any(t => t.Status != LedgerTransactionStatus.Completed))
+                throw new ConflictException("FINANCE_BLOCKED", "Fund outflows have incomplete ledger transactions.");
+        }
+    }
+
     private async Task<V1FinanceDto> FinanceStateAsync(V1Fund fund, V1FundTreasury treasury, CancellationToken ct)
     {
         var members = await ActiveMembersAsync(fund.Id, ct);
@@ -121,6 +154,11 @@ public sealed partial class V1FundService
         var rows = obligations.Select(o => new V1ObligationDto(o.UserId, o.Seat, o.RequiredVnd, paid.GetValueOrDefault(o.MembershipId),
             Math.Max(0, o.RequiredVnd - paid.GetValueOrDefault(o.MembershipId)), Math.Max(0, paid.GetValueOrDefault(o.MembershipId) - o.RequiredVnd))).ToList();
         var balance = await db.LedgerAccounts.AsNoTracking().Where(a => a.Id == treasury.LedgerAccountId).Select(a => a.Balance).SingleAsync(ct);
-        return new(fund.Id, treasury.Revision, treasury.TargetVnd, balance, current, current && fund.ActivityClosedAt is null, fund.ActivityClosedAt is null ? "FINANCE_BLOCKED" : "ACTIVITY_CLOSED", rows);
+        var spendingState = fund.DissolvedAt is not null
+            ? "DISSOLVED"
+            : fund.ActivityClosedAt is not null
+                ? "ACTIVITY_CLOSED"
+                : "FINANCE_BLOCKED";
+        return new(fund.Id, treasury.Revision, treasury.TargetVnd, balance, current, current && fund.ActivityClosedAt is null && fund.DissolvedAt is null, spendingState, rows);
     }
 }

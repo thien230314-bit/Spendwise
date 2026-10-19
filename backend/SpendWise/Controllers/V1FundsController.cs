@@ -163,4 +163,23 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
 
     [HttpGet("ownership-offers")]
     public Task<IReadOnlyList<V1OwnershipOfferDto>> OwnershipOffers(CancellationToken ct) => funds.OwnershipOffersAsync(Actor, ct);
+
+    [HttpGet("{id:guid}/refund-preview")]
+    public Task<V1RefundPreviewDto> RefundPreview(Guid id, [FromQuery] Guid? memberUserId = null, CancellationToken ct = default) =>
+        funds.PreviewRefundAsync(Actor, id, memberUserId, ct);
+
+    [HttpPost("{id:guid}/leave")]
+    [EnableRateLimiting("financial")]
+    public Task<V1RefundResultDto> Leave(Guid id, V1LeaveFundRequest request, CancellationToken ct) =>
+        funds.LeaveFundAsync(Actor, id, request, ct);
+
+    [HttpPost("{id:guid}/members/{userId:guid}/kick")]
+    [EnableRateLimiting("financial")]
+    public Task<V1RefundResultDto> Kick(Guid id, Guid userId, V1KickMemberRequest request, CancellationToken ct) =>
+        funds.KickMemberAsync(Actor, id, userId, request, ct);
+
+    [HttpPost("{id:guid}/dissolve")]
+    [EnableRateLimiting("financial")]
+    public Task<V1DissolveResultDto> Dissolve(Guid id, V1DissolveFundRequest request, CancellationToken ct) =>
+        funds.DissolveFundAsync(Actor, id, request, ct);
 }

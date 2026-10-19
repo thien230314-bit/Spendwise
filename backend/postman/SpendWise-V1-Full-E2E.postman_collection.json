@@ -1,0 +1,3326 @@
+{
+  "info": {
+    "_postman_id": "e335502c-1172-4d87-8923-62476eed58a7",
+    "name": "SpendWise-V1-Full-E2E",
+    "description": "Comprehensive E2E Postman Collection for SpendWise V1.0 API validation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01-Health",
+      "item": [
+        {
+          "name": "Health Live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Service is Healthy\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"Healthy\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/health/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Ready",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Database readiness is Healthy\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"Healthy\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Ping",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Overall health is Healthy\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"Healthy\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02-Auth",
+      "item": [
+        {
+          "name": "01 - Register User A",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"runId\")) {",
+                  "    pm.environment.set(\"runId\", Date.now().toString());",
+                  "}",
+                  "var runId = pm.environment.get(\"runId\");",
+                  "pm.environment.set(\"userA_email\", \"e2e_usera_\" + runId + \"@spendwise.test\");",
+                  "pm.environment.set(\"userA_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
+                  "pm.environment.set(\"userB_email\", \"e2e_userb_\" + runId + \"@spendwise.test\");",
+                  "pm.environment.set(\"userB_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Registration successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns email verification pending\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"User Alpha\",\n  \"email\": \"{{userA_email}}\",\n  \"phone\": \"{{userA_phone}}\",\n  \"password\": \"{{user_password}}\",\n  \"confirmPassword\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Verify Registration Email User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Email verified successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Challenge requires SetupSecurityPin\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.status).to.eql(\"PIN_SETUP_REQUIRED\");",
+                  "    pm.environment.set(\"userA_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userA_email}}\",\n  \"otp\": \"{{static_otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/email-verification/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Setup PIN User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN setup successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.user).to.be.an(\"object\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "    pm.environment.set(\"userA_id\", jsonData.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "setup"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Login User A (Challenge)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login initiated successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Challenge requires SecurityPin verification\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.status).to.eql(\"PIN_REQUIRED\");",
+                  "    pm.environment.set(\"userA_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userA_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Verify PIN for Login User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PIN login verified successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Updates access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - Refresh Token User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token rotated successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns new access & refresh tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userA_refreshToken\", jsonData.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{userA_refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Register User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B registered (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"User Beta\",\n  \"email\": \"{{userB_email}}\",\n  \"phone\": \"{{userB_phone}}\",\n  \"password\": \"{{user_password}}\",\n  \"confirmPassword\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Verify Registration Email User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B email verified (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Challenge requires SetupSecurityPin\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userB_challengeToken\", jsonData.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userB_email}}\",\n  \"otp\": \"{{static_otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/email-verification/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Setup PIN User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B PIN setup successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns User B access token and user ID\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.user).to.be.an(\"object\");",
+                  "    pm.environment.set(\"userB_accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"userB_id\", jsonData.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userB_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "setup"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03-Wallet & Finance",
+      "item": [
+        {
+          "name": "01 - List Wallets User A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Identifies User A Main Wallet\", function () {",
+                  "    var wallets = pm.response.json();",
+                  "    pm.expect(wallets).to.be.an(\"array\");",
+                  "    var mainWallet = wallets.find(function (w) { return w.type === \"spending\" || w.isDefault; });",
+                  "    pm.expect(mainWallet).to.be.an(\"object\");",
+                  "    pm.environment.set(\"userA_mainWalletId\", mainWallet.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - List Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures Income and Expense category IDs\", function () {",
+                  "    var cats = pm.response.json();",
+                  "    pm.expect(cats).to.be.an(\"array\");",
+                  "    var incomeCat = cats.find(function (c) { return c.kind === \"Income\"; });",
+                  "    var expenseCat = cats.find(function (c) { return c.kind === \"Expense\"; });",
+                  "    pm.expect(incomeCat).to.be.an(\"object\");",
+                  "    pm.expect(expenseCat).to.be.an(\"object\");",
+                  "    pm.environment.set(\"incomeCategoryId\", incomeCat.id);",
+                  "    pm.environment.set(\"expenseCategoryId\", expenseCat.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Create Sub-wallet 1 (Savings)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sub-wallet 1 created (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Saves Sub-wallet 1 ID\", function () {",
+                  "    var w = pm.response.json();",
+                  "    pm.expect(w.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_subWallet1Id\", w.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Savings Alpha\",\n  \"type\": \"savings\",\n  \"isDefault\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Create Sub-wallet 2 (Emergency)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sub-wallet 2 created (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Saves Sub-wallet 2 ID\", function () {",
+                  "    var w = pm.response.json();",
+                  "    pm.expect(w.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_subWallet2Id\", w.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Alpha\",\n  \"type\": \"emergency\",\n  \"isDefault\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Attempt 3rd Sub-wallet (Assert 409 limit exceeded)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fails with 409 Conflict due to MaximumPersonalWallets limit\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Overflow Alpha\",\n  \"type\": \"savings\",\n  \"isDefault\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05.1 - Upload Receipt Evidence User A (Income)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Receipt evidence uploaded (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Saves userA_evidenceId1\", function () {",
+                  "    var ev = pm.response.json();",
+                  "    pm.expect(ev.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_evidenceId1\", ev.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "receipt.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - Record Income to User A Main Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Income recorded (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Transaction amount verified\", function () {",
+                  "    var tx = pm.response.json();",
+                  "    pm.expect(tx.amount).to.eql(10000000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{incomeCategoryId}}\",\n  \"amount\": 10000000,\n  \"description\": \"Salary deposit 10M VND\",\n  \"evidenceIds\": [\n    \"{{userA_evidenceId1}}\"\n  ],\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/income",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "income"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.1 - Upload Receipt Evidence User A (Expense)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Receipt evidence uploaded (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Saves userA_evidenceId2\", function () {",
+                  "    var ev = pm.response.json();",
+                  "    pm.expect(ev.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"userA_evidenceId2\", ev.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "receipt.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Record Expense from User A Main Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expense recorded (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Transaction amount verified\", function () {",
+                  "    var tx = pm.response.json();",
+                  "    pm.expect(tx.amount).to.eql(500000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"amount\": 500000,\n  \"description\": \"Supermarket groceries\",\n  \"evidenceIds\": [\n    \"{{userA_evidenceId2}}\"\n  ],\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/expense",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "expense"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Internal Transfer (Main to Sub-wallet)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Internal transfer completed (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Transfer status is Completed\", function () {",
+                  "    var t = pm.response.json();",
+                  "    pm.expect(t.status).to.eql(\"Completed\");",
+                  "    pm.expect(t.amount).to.eql(1000000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_mainWalletId}}\",\n  \"destinationWalletId\": \"{{userA_subWallet1Id}}\",\n  \"amount\": 1000000,\n  \"description\": \"Transfer to Savings\",\n  \"idempotencyKey\": \"internal-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/internal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "internal"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - List Wallets User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Identifies User B Main Wallet\", function () {",
+                  "    var wallets = pm.response.json();",
+                  "    var mainWallet = wallets.find(function (w) { return w.type === \"spending\" || w.isDefault; });",
+                  "    pm.expect(mainWallet).to.be.an(\"object\");",
+                  "    pm.environment.set(\"userB_mainWalletId\", mainWallet.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - P2P Transfer (User A to User B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"P2P transfer completed (201 Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Recipient and amount verified\", function () {",
+                  "    var t = pm.response.json();",
+                  "    pm.expect(t.status).to.eql(\"Completed\");",
+                  "    pm.expect(t.amount).to.eql(2000000);",
+                  "    pm.expect(t.recipientUserId).to.eql(pm.environment.get(\"userB_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_mainWalletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 2000000,\n  \"description\": \"Fund contribution and split advance\",\n  \"idempotencyKey\": \"p2p-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - P2P Transfer Replay Protection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Replayed transfer returns 201 Created with replayed flag\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var t = pm.response.json();",
+                  "    pm.expect(t.replayed).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_mainWalletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 2000000,\n  \"description\": \"Fund contribution and split advance\",\n  \"idempotencyKey\": \"p2p-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 - P2P Transfer Wrong PIN (Assert Unauthorized / Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fails with 401 Unauthorized or 400 Bad Request due to invalid security PIN\", function () {",
+                  "    pm.expect([400, 401]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_mainWalletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"description\": \"Wrong PIN transfer\",\n  \"idempotencyKey\": \"p2p-badpin-{{runId}}\",\n  \"securityPin\": \"999999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04-Friends",
+      "item": [
+        {
+          "name": "01 - Search User B by Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Finds User B profile\", function () {",
+                  "    var contact = pm.response.json();",
+                  "    pm.expect(contact.userId).to.eql(pm.environment.get(\"userB_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/search?contact={{userB_email}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "search?contact={{userB_email}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Send Friend Request (A to B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Friend request sent (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures friendRequestId\", function () {",
+                  "    var req = pm.response.json();",
+                  "    pm.expect(req.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"friendRequestId\", req.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": \"{{userB_email}}\",\n  \"message\": \"Let's connect on SpendWise!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - User B Incoming Friend Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Incoming request from User A is present\", function () {",
+                  "    var reqs = pm.response.json();",
+                  "    var found = reqs.find(function (r) { return r.id === pm.environment.get(\"friendRequestId\"); });",
+                  "    pm.expect(found).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests/incoming",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "requests",
+                "incoming"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - User B Accepts Friend Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Friend request accepted (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Friendship established\", function () {",
+                  "    var friend = pm.response.json();",
+                  "    pm.expect(friend.userId).to.eql(pm.environment.get(\"userA_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests/{{friendRequestId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "requests",
+                "{{friendRequestId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - User A Lists Friends",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"User B is listed in friends list\", function () {",
+                  "    var friends = pm.response.json();",
+                  "    var found = friends.find(function (f) { return f.userId === pm.environment.get(\"userB_id\"); });",
+                  "    pm.expect(found).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/friends",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05-Fixed Fund",
+      "item": [
+        {
+          "name": "01 - Create Fixed Fund (User A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fixed fund created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Fixed Fund ID\", function () {",
+                  "    var fund = pm.response.json();",
+                  "    pm.expect(fund.id).to.be.a(\"string\");",
+                  "    pm.expect(fund.kind).to.eql(\"Fixed\");",
+                  "    pm.environment.set(\"fixedFundId\", fund.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Trip Da Lat {{runId}}\",\n  \"kind\": \"Fixed\",\n  \"targetVnd\": 2000000,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Invite User B to Fixed Fund",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation sent (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Fixed Invitation ID\", function () {",
+                  "    var invite = pm.response.json();",
+                  "    pm.expect(invite.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"fixedInviteId\", invite.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userB_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "invitations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - User B Accepts Fixed Fund Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation accepted (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{fixedInviteId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{fixedInviteId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Confirm Obligations (User A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Obligations confirmed (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetVnd\": 2000000,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "obligations",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - User A Contributes 1M VND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"amountVnd\": 1000000,\n  \"obligationRevision\": 1,\n  \"idempotencyKey\": \"contrib-a-fixed-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - User B Contributes 1M VND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userB_mainWalletId}}\",\n  \"amountVnd\": 1000000,\n  \"obligationRevision\": 1,\n  \"idempotencyKey\": \"contrib-b-fixed-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - User A Sets Spending Permission ON for User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Spending permission enabled (204 No Content)\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "members",
+                "{{userB_id}}",
+                "spending-permission"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Get Fixed Fund Finance Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Treasury balance is 2M VND\", function () {",
+                  "    var f = pm.response.json();",
+                  "    pm.expect(f.balanceVnd).to.eql(2000000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/finance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "finance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - User B Previews Refund (Case A Unspent 100%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Eligible refund amount is 100% of contribution (1M VND)\", function () {",
+                  "    var p = pm.response.json();",
+                  "    pm.expect(p.eligibleRefundAmountVnd).to.eql(1000000);",
+                  "    pm.expect(p.caseType).to.eql(\"CaseA_Unspent\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/refund-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "refund-preview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - User B Leaves Fixed Fund (Refund Case A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Member left with refund processed (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"1M VND refunded to internal wallet\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.refundAmountVnd).to.eql(1000000);",
+                  "    pm.expect(res.status).to.eql(\"Completed\");",
+                  "    pm.expect(res.caseType).to.eql(\"CaseA_Unspent\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"leave-b-fixed-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "leave"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06-Free Fund",
+      "item": [
+        {
+          "name": "01 - Create Free Fund (User A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Free fund created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Free Fund ID\", function () {",
+                  "    var fund = pm.response.json();",
+                  "    pm.expect(fund.id).to.be.a(\"string\");",
+                  "    pm.expect(fund.kind).to.eql(\"Free\");",
+                  "    pm.environment.set(\"freeFundId\", fund.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Team Lunch {{runId}}\",\n  \"kind\": \"Free\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Invite User B to Free Fund",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation sent (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Free Invitation ID\", function () {",
+                  "    var invite = pm.response.json();",
+                  "    pm.expect(invite.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"freeInviteId\", invite.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userB_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "invitations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - User B Accepts Free Fund Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invitation accepted (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{freeInviteId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{freeInviteId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - User A Contributes 700k VND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"amountVnd\": 700000,\n  \"idempotencyKey\": \"contrib-a-free-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - User B Contributes 300k VND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Contribution successful (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userB_mainWalletId}}\",\n  \"amountVnd\": 300000,\n  \"idempotencyKey\": \"contrib-b-free-{{runId}}\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "contributions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - User B Creates Withdrawal Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Withdrawal request created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves Withdrawal Request ID\", function () {",
+                  "    var req = pm.response.json();",
+                  "    pm.expect(req.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"withdrawalRequestId\", req.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"Withdrawal\",\n  \"amountVnd\": 150000,\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"purpose\": \"Snacks reimbursement\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"withdraw-b-free-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - User A Reviews Withdrawal (Verifies Guard)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Review processed (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Asserts ApprovedAwaitingFinanceContract state\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.state).to.eql(\"ApprovedAwaitingFinanceContract\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"reason\": \"Approved snacks for team\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{withdrawalRequestId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{withdrawalRequestId}}",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - User A Previews Dissolution Refund",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Preview calculates proportional share\", function () {",
+                  "    var p = pm.response.json();",
+                  "    pm.expect(p.eligibleRefundAmountVnd).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/refund-preview?memberUserId={{userA_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "refund-preview?memberUserId={{userA_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - User A Dissolves Free Fund (Case C/D Zero Balance Invariant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Fund dissolved successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Treasury remaining balance is exactly 0 VND\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.finalBalanceVnd).to.eql(0);",
+                  "    pm.expect(res.refunds).to.be.an(\"array\");",
+                  "    pm.expect(res.refunds.length).to.be.at.least(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"dissolve-free-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/dissolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "dissolve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07-Support",
+      "item": [
+        {
+          "name": "01 - User A Submits Support Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Support ticket created (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Saves supportCaseId\", function () {",
+                  "    var c = pm.response.json();",
+                  "    pm.expect(c.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"supportCaseId\", c.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"E2E Support Case {{runId}}\",\n  \"description\": \"Ledger reconciliation and fund inquiry\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - User A Lists Support Cases",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Ticket is listed in User A cases\", function () {",
+                  "    var cases = pm.response.json();",
+                  "    var found = cases.find(function (c) { return c.id === pm.environment.get(\"supportCaseId\"); });",
+                  "    pm.expect(found).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - User A Replies to Support Case",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Message added to support case (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Providing additional context for support case investigation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support/{{supportCaseId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support",
+                "{{supportCaseId}}",
+                "messages"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08-Admin 5 Areas",
+      "item": [
+        {
+          "name": "01 - Admin Login Challenge",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin login challenge returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Captures admin challenge and status\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.challengeToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"admin_challengeToken\", jsonData.challengeToken);",
+                  "    pm.environment.set(\"admin_challengeStatus\", jsonData.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Admin Complete Login (PIN Setup or Verify)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var status = pm.environment.get(\"admin_challengeStatus\");",
+                  "if (status === \"PIN_REQUIRED\") {",
+                  "    pm.request.url.path = [\"api\", \"auth\", \"pin\", \"verify\"];",
+                  "    pm.request.body.raw = JSON.stringify({",
+                  "        challengeToken: pm.environment.get(\"admin_challengeToken\"),",
+                  "        pin: pm.environment.get(\"default_pin\")",
+                  "    });",
+                  "} else {",
+                  "    pm.request.url.path = [\"api\", \"auth\", \"pin\", \"setup\"];",
+                  "    pm.request.body.raw = JSON.stringify({",
+                  "        challengeToken: pm.environment.get(\"admin_challengeToken\"),",
+                  "        pin: pm.environment.get(\"default_pin\"),",
+                  "        confirmPin: pm.environment.get(\"default_pin\")",
+                  "    });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin authenticated successfully (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Admin access token issued\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "    pm.environment.set(\"admin_accessToken\", jsonData.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{admin_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "setup"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - ADM-01: Admin Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin overview retrieved (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Metrics returned in summary\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "overview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - ADM-02: Admin Users Search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin users search returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Finds registered test users\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.items).to.be.an(\"array\");",
+                  "    pm.expect(res.items.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Audit search users for V1 acceptance\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - ADM-03: Admin Support Cases",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin support cases returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Includes user support cases\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.items).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Audit support tickets for V1 acceptance\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/tickets/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "tickets",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - ADM-04: Admin Notifications Templates",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin notification templates returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Templates list returned\", function () {",
+                  "    var templates = pm.response.json();",
+                  "    pm.expect(templates).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Audit notification templates for V1 acceptance\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/notifications/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notifications",
+                "templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - ADM-05: Maintenance Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"System maintenance status returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/system/maintenance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "maintenance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Security Check: Non-Admin Access Prohibited (Assert 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Non-admin user receives 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "overview"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09-Integrations",
+      "item": [
+        {
+          "name": "01 - Bank Connections Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bank connections status returned (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Reports bank connections list\", function () {",
+                  "    var connections = pm.response.json();",
+                  "    pm.expect(connections).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - AI Chat Financial Query",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"AI chat responds (200 OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns non-empty response\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.message).to.be.a(\"string\");",
+                  "    pm.expect(res.message.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"L\\u00e0m th\\u1ebf n\\u00e0o \\u0111\\u1ec3 qu\\u1ea3n l\\u00fd chi ti\\u00eau hi\\u1ec7u qu\\u1ea3?\",\n  \"mode\": \"FinancialQuery\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "chat"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

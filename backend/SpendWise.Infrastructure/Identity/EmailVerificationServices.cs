@@ -36,11 +36,22 @@ public sealed class EmailVerificationPolicy(
 }
 
 // Tạo OTP tám chữ số bằng CSPRNG và bảo vệ hash bằng HMAC secret của deployment.
-public sealed class EmailVerificationOtpService(IConfiguration configuration) : IEmailVerificationOtpService
+public sealed class EmailVerificationOtpService(
+    IConfiguration configuration,
+    IHostEnvironment? environment = null) : IEmailVerificationOtpService
 {
     private readonly byte[] pepper = ReadPepper(configuration);
 
-    public string CreateOtp() => RandomNumberGenerator.GetInt32(100_000_000).ToString("D8");
+    public string CreateOtp()
+    {
+        if ((environment is null || environment.IsDevelopment() || environment.IsEnvironment("Testing"))
+            && configuration["EmailVerification:StaticOtp"] is { Length: 8 } staticOtp)
+        {
+            return staticOtp;
+        }
+
+        return RandomNumberGenerator.GetInt32(100_000_000).ToString("D8");
+    }
 
     public string HashOtp(Guid userId, string purpose, string otp) =>
         Hmac($"OTP|{purpose}|{userId:N}|{otp}");

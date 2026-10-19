@@ -23,8 +23,12 @@ public sealed class OpenAiCompletionProvider(IConfiguration configuration, IHost
 
         try { return await CompleteOnlineAsync(apiKey, request, cancellationToken); }
         catch (AppException) { throw; }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        { throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503); }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            if (environment.IsDevelopment() && configuration.GetValue<bool>("OpenAI:AllowDevelopmentFallback"))
+                return new AiCompletionResult(DevelopmentFallback(request.Locale), "DevelopmentFallback", true);
+            throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503);
+        }
     }
 
     private async Task<AiCompletionResult> CompleteOnlineAsync(string apiKey, AiProviderRequest request, CancellationToken cancellationToken)

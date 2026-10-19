@@ -42,6 +42,7 @@ public static class V1Authorization
         services.AddScoped<AdminA2Service>();
         services.AddScoped<AdminA3Service>();
         services.AddScoped<AdminA4Service>();
+        services.AddScoped<AdminA5Service>();
         services.AddScoped<SpendWise.Application.Features.Operations.V1MaintenanceService>();
         var broadcasts = services.AddOptions<SpendWise.Application.Features.Operations.V1BroadcastPolicy>();
         if (configuration is not null) broadcasts.Bind(configuration.GetSection("V1:Broadcast"));

@@ -65,6 +65,7 @@ public sealed class AdminA4Service(
                     LedgerStatus = t.LedgerTransaction != null ? t.LedgerTransaction.Status.ToString() : null,
                     LedgerReference = t.LedgerTransaction != null ? t.LedgerTransaction.Reference : null,
                     RelatedBusinessId = t.RelatedBusinessId,
+                    RelatedBusinessSource = t.RelatedBusinessId != null ? "LinkedBusinessEntity" : null,
                     Counterparty = MaskSensitive(t.CounterpartyName),
                     Description = MaskSensitive(t.Description)
                 })
@@ -394,42 +395,104 @@ public sealed class AdminA4Service(
 
             var debitTotal = rawEntries.Where(e => e.Direction == LedgerEntryDirection.Debit).Sum(e => e.Amount);
             var creditTotal = rawEntries.Where(e => e.Direction == LedgerEntryDirection.Credit).Sum(e => e.Amount);
-            bool isBalanced = debitTotal == creditTotal && debitTotal > 0 && rawEntries.All(e => e.Amount >= 0);
 
-            string balanceStatus = isBalanced
-                ? "BALANCED"
-                : debitTotal == 0 && creditTotal == 0 ? "EMPTY_OR_ZERO" : "UNBALANCED_MISMATCH";
+            // A4-R1: Multi-currency balance check
+            var currencyGroups = rawEntries.GroupBy(e => e.Currency).ToList();
+            bool hasEntries = rawEntries.Count > 0;
+            bool allAmountsPositive = rawEntries.All(e => e.Amount > 0);
+            bool accountsMatchCurrency = rawEntries.All(e => e.LedgerAccount == null || string.Equals(e.LedgerAccount.Currency, e.Currency, StringComparison.OrdinalIgnoreCase));
+            bool eachCurrencyBalanced = currencyGroups.Count > 0 && currencyGroups.All(g =>
+            {
+                var d = g.Where(e => e.Direction == LedgerEntryDirection.Debit).Sum(e => e.Amount);
+                var c = g.Where(e => e.Direction == LedgerEntryDirection.Credit).Sum(e => e.Amount);
+                return d == c && d > 0;
+            });
 
-            // Kiểm tra liên kết nghiệp vụ gốc
+            bool isBalanced = hasEntries && allAmountsPositive && accountsMatchCurrency && eachCurrencyBalanced;
+
+            string balanceStatus;
+            if (!hasEntries || (debitTotal == 0 && creditTotal == 0))
+            {
+                balanceStatus = "EMPTY_OR_ZERO";
+            }
+            else if (currencyGroups.Count > 1 && !eachCurrencyBalanced)
+            {
+                balanceStatus = "MULTICURRENCY_MISMATCH";
+            }
+            else if (!accountsMatchCurrency)
+            {
+                balanceStatus = "ACCOUNT_CURRENCY_MISMATCH";
+            }
+            else if (isBalanced)
+            {
+                balanceStatus = "BALANCED";
+            }
+            else
+            {
+                balanceStatus = "UNBALANCED_MISMATCH";
+            }
+
+            // A4-R2: Verify actual business binding
             string bindingStatus = "UNVERIFIED";
             if (ledger.BusinessType == "GroupContribution")
             {
-                var exists = await db.GroupContributions.AnyAsync(c => c.Id == ledger.BusinessId, token);
-                bindingStatus = exists ? "BOUND_ORIGINAL_GROUP_CONTRIBUTION" : "MISSING_ORIGINAL_BUSINESS";
+                var contrib = await db.GroupContributions.AsNoTracking().SingleOrDefaultAsync(c => c.Id == ledger.BusinessId, token);
+                if (contrib == null)
+                    bindingStatus = "MISSING_ORIGINAL_BUSINESS";
+                else if (contrib.LedgerTransactionId != ledger.Id || contrib.Amount != debitTotal || contrib.UserId != subjectId)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_ORIGINAL_GROUP_CONTRIBUTION";
             }
             else if (ledger.BusinessType == "V1FundContribution")
             {
-                var exists = await db.V1FundContributions.AnyAsync(c => c.Id == ledger.BusinessId, token);
-                bindingStatus = exists ? "BOUND_ORIGINAL_V1_CONTRIBUTION" : "MISSING_ORIGINAL_BUSINESS";
+                var contrib = await db.V1FundContributions.AsNoTracking().SingleOrDefaultAsync(c => c.Id == ledger.BusinessId, token);
+                if (contrib == null)
+                    bindingStatus = "MISSING_ORIGINAL_BUSINESS";
+                else if (contrib.LedgerTransactionId != ledger.Id || contrib.AmountVnd != debitTotal || contrib.UserId != subjectId)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_ORIGINAL_V1_CONTRIBUTION";
             }
             else if (ledger.BusinessType == "GroupFundExpense")
             {
-                var exists = await db.GroupExpenses.AnyAsync(e => e.Id == ledger.BusinessId, token);
-                bindingStatus = exists ? "BOUND_ORIGINAL_GROUP_EXPENSE" : "MISSING_ORIGINAL_BUSINESS";
+                var exp = await db.GroupExpenses.AsNoTracking().SingleOrDefaultAsync(e => e.Id == ledger.BusinessId, token);
+                if (exp == null)
+                    bindingStatus = "MISSING_ORIGINAL_BUSINESS";
+                else if (exp.Amount != creditTotal || exp.Status != GroupExpenseStatus.Recorded)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_ORIGINAL_GROUP_EXPENSE";
             }
             else if (ledger.BusinessType == "GroupRefund")
             {
-                var exists = await db.GroupRefunds.AnyAsync(r => r.Id == ledger.BusinessId, token);
-                bindingStatus = exists ? "BOUND_ORIGINAL_GROUP_REFUND" : "MISSING_ORIGINAL_BUSINESS";
+                var refnd = await db.GroupRefunds.AsNoTracking().SingleOrDefaultAsync(r => r.Id == ledger.BusinessId, token);
+                if (refnd == null)
+                    bindingStatus = "MISSING_ORIGINAL_BUSINESS";
+                else if (refnd.RefundAmount != debitTotal)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_ORIGINAL_GROUP_REFUND";
             }
             else if (ledger.BusinessType == "WalletTopUp")
             {
-                var exists = await db.WalletTopUps.AnyAsync(u => u.Id == ledger.BusinessId, token);
-                bindingStatus = exists ? "BOUND_ORIGINAL_TOPUP" : "MISSING_ORIGINAL_BUSINESS";
+                var topup = await db.WalletTopUps.AsNoTracking().SingleOrDefaultAsync(u => u.Id == ledger.BusinessId, token);
+                if (topup == null)
+                    bindingStatus = "MISSING_ORIGINAL_BUSINESS";
+                else if (topup.Amount != debitTotal || topup.UserId != subjectId)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_ORIGINAL_TOPUP";
             }
-            else if (ledger.BusinessType == "PersonalExpense" || ledger.BusinessType == "PersonalIncome" || ledger.BusinessType == "InternalTransfer")
+            else if (ledger.BusinessType is "PersonalExpense" or "PersonalIncome" or "InternalTransfer")
             {
-                bindingStatus = "BOUND_PERSONAL_FINANCE";
+                var ft = await db.FinancialTransactions.AsNoTracking().FirstOrDefaultAsync(t => t.LedgerTransactionId == ledger.Id && t.OwnerUserId == subjectId, token);
+                if (ft == null)
+                    bindingStatus = "UNVERIFIED";
+                else if (ft.Amount != debitTotal && ft.Amount != creditTotal)
+                    bindingStatus = "BUSINESS_BINDING_MISMATCH";
+                else
+                    bindingStatus = "BOUND_PERSONAL_FINANCE";
             }
 
             var entries = rawEntries.Select(e => new A4LedgerEntryDetail(

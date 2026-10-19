@@ -30,6 +30,7 @@ public sealed record A4TransactionItem
     public string? LedgerStatus { get; init; }
     public string? LedgerReference { get; init; }
     public Guid? RelatedBusinessId { get; init; }
+    public string? RelatedBusinessSource { get; init; }
     public string? Counterparty { get; init; }
     public string? Description { get; init; }
 }

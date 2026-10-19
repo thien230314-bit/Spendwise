@@ -9,6 +9,7 @@ using SpendWise.Application.Identity;
 using SpendWise.Domain.Admin;
 using SpendWise.Domain.Banking;
 using SpendWise.Domain.Finance;
+using SpendWise.Domain.Groups;
 using SpendWise.Domain.Identity;
 using SpendWise.Infrastructure.Persistence;
 using Xunit;
@@ -387,6 +388,130 @@ public sealed class AdminA4Tests
         Assert.Equal(150000, result.TotalCredit);
         Assert.Equal("BOUND_PERSONAL_FINANCE", result.BusinessBindingStatus);
         Assert.Equal(2, result.Entries.Count);
+    }
+
+    [Fact]
+    public async Task A4_R1_MultiCurrency_Mismatch_Detected()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Subject");
+        var session = await f.AddSessionAsync(actor.Id);
+
+        var ticket = new SupportCase { AssignedAdminId = actor.Id, LinkedUserId = subject.Id, Status = CaseStatus.Open };
+        var accVnd = new LedgerAccount { Code = "ACC:VND", Name = "VND Account", Type = LedgerAccountType.Wallet, Currency = "VND" };
+        var accUsd = new LedgerAccount { Code = "ACC:USD", Name = "USD Account", Type = LedgerAccountType.ExpenseClearing, Currency = "USD" };
+        var ledger = new LedgerTransaction { Reference = "LED-REF-MULTICURR", BusinessType = "PersonalExpense", Status = LedgerTransactionStatus.Completed };
+
+        var tx = new FinancialTransaction
+        {
+            OwnerUserId = subject.Id,
+            Type = FinancialTransactionType.Expense,
+            Status = FinancialTransactionStatus.Completed,
+            Amount = 100,
+            LedgerTransactionId = ledger.Id,
+            OccurredAt = f.Clock.UtcNow
+        };
+
+        f.Db.AddRange(ticket, accVnd, accUsd, ledger, tx);
+        // Debit 100 USD, Credit 100 VND (Total numeric amounts match, but currencies differ!)
+        f.Db.LedgerEntries.AddRange(
+            new LedgerEntry { LedgerTransactionId = ledger.Id, LedgerAccountId = accUsd.Id, Direction = LedgerEntryDirection.Debit, Amount = 100, Currency = "USD" },
+            new LedgerEntry { LedgerTransactionId = ledger.Id, LedgerAccountId = accVnd.Id, Direction = LedgerEntryDirection.Credit, Amount = 100, Currency = "VND" }
+        );
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin");
+
+        var result = await service.LedgerDetailAsync(principal, ticket.Id, ledger.Id, "Inspect multi currency", default);
+        Assert.False(result.IsBalanced);
+        Assert.Equal("MULTICURRENCY_MISMATCH", result.BalanceStatus);
+    }
+
+    [Fact]
+    public async Task A4_R2_BusinessBinding_Mismatch_Detected()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Subject");
+        var other = await f.AddUserAsync("Other");
+        var session = await f.AddSessionAsync(actor.Id);
+
+        var ticket = new SupportCase { AssignedAdminId = actor.Id, LinkedUserId = subject.Id, Status = CaseStatus.Open };
+        var acc1 = new LedgerAccount { Code = "ACC:1", Name = "Account 1", Type = LedgerAccountType.Wallet };
+        var acc2 = new LedgerAccount { Code = "ACC:2", Name = "Account 2", Type = LedgerAccountType.ExpenseClearing };
+
+        var group = new Group { Name = "Test Group" };
+        var otherWallet = new Wallet { OwnerUserId = other.Id, Name = "Other Wallet", AvailableBalance = 1000000 };
+
+        // GroupContribution exists, but for OTHER user and different amount
+        var contrib = new GroupContribution
+        {
+            GroupId = group.Id,
+            UserId = other.Id, // Other user
+            WalletId = otherWallet.Id,
+            Amount = 500000,
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        var ledger = new LedgerTransaction
+        {
+            Reference = "LED-REF-BIND-MISMATCH",
+            BusinessType = "GroupContribution",
+            BusinessId = contrib.Id,
+            Status = LedgerTransactionStatus.Completed
+        };
+        contrib.LedgerTransactionId = ledger.Id;
+
+        // Subject has a wallet associated with ledger entries to pass scope
+        var wallet = new Wallet { OwnerUserId = subject.Id, Name = "Main", LedgerAccount = acc1, AvailableBalance = 500000 };
+
+        f.Db.AddRange(ticket, group, otherWallet, acc1, acc2, contrib, ledger, wallet);
+        f.Db.LedgerEntries.AddRange(
+            new LedgerEntry { LedgerTransactionId = ledger.Id, LedgerAccountId = acc1.Id, Direction = LedgerEntryDirection.Debit, Amount = 200000 },
+            new LedgerEntry { LedgerTransactionId = ledger.Id, LedgerAccountId = acc2.Id, Direction = LedgerEntryDirection.Credit, Amount = 200000 }
+        );
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin");
+
+        var result = await service.LedgerDetailAsync(principal, ticket.Id, ledger.Id, "Inspect binding", default);
+        Assert.Equal("BUSINESS_BINDING_MISMATCH", result.BusinessBindingStatus);
+    }
+
+    [Fact]
+    public async Task A4_R3_TransactionListing_Includes_RelatedBusinessSource()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Subject");
+        var session = await f.AddSessionAsync(actor.Id);
+
+        var ticket = new SupportCase { AssignedAdminId = actor.Id, LinkedUserId = subject.Id, Status = CaseStatus.Open };
+        var busId = Guid.NewGuid();
+        var ledger = new LedgerTransaction { Reference = "LED-R3", BusinessType = "PersonalIncome", Status = LedgerTransactionStatus.Completed };
+        var tx = new FinancialTransaction
+        {
+            OwnerUserId = subject.Id,
+            Type = FinancialTransactionType.BankTopUp,
+            Status = FinancialTransactionStatus.Completed,
+            Amount = 500000,
+            RelatedBusinessId = busId,
+            LedgerTransaction = ledger,
+            OccurredAt = f.Clock.UtcNow
+        };
+
+        f.Db.AddRange(ticket, ledger, tx);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin");
+
+        var page = await service.TransactionsAsync(principal, ticket.Id, new("Read transactions"), default);
+        Assert.Single(page.Items);
+        Assert.Equal("LinkedBusinessEntity", page.Items[0].RelatedBusinessSource);
     }
 
     [Fact]

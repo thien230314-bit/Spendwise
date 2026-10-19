@@ -24,12 +24,17 @@ All routes are POST below `/api/v1/admin/support/{caseId}/transactions`. Supply 
 | A4.2 Tra cứu mã giao dịch | DONE | Tra cứu qua FinancialTransactionId, LedgerTransactionId, RelatedBusinessId, LedgerReference, TopUpReference, BankTransaction. Chống IDOR và cross-user access; che PII/thông tin nhạy cảm. |
 | A4.3 Ví người dùng | DONE | Đọc ví SpendWise thực tế (Main + tối đa 2 ví phụ); trạng thái, số dư khả dụng; đọc liên kết ngân hàng và che số tài khoản; tuyệt đối không cho phép sửa số dư hay đổi trạng thái ví từ Admin A4. |
 | A4.4 Giao dịch chờ/lỗi | DONE | Phân biệt Pending, Processing, Failed, Cancelled; tích hợp lịch sử BankIntegrationEvent duplicate/retry và TransactionCorrections; không tự tiện gán Pending là Failed; không cấp quyền retry tiền khi chưa có contract. |
-| A4.5 Chi tiết sổ cái | DONE | Đọc LedgerTransaction, LedgerEntries, kiểm tra tính cân bằng (Debit == Credit), liên kết nghiệp vụ gốc (GroupContribution, V1FundContribution, GroupExpense, GroupRefund, WalletTopUp, PersonalFinance); chỉ đọc, không sửa sổ. |
+| A4.5 Chi tiết sổ cái | DONE | Đọc LedgerTransaction, LedgerEntries, kiểm tra tính cân bằng đa tiền tệ độc lập theo từng currency, amount dương, khớp đơn vị tiền LedgerAccount, liên kết nghiệp vụ gốc với đối chiếu amount/user/status thực sự; chỉ đọc, không sửa sổ. |
 | A4.6 Truy vết giao dịch | DONE | Truy vết request -> auth/security -> processing -> provider/webhook -> ledger outcome; ghi nhận NOT_RECORDED khi thiếu telemetry; bảo mật tuyệt đối, không lộ PIN, OTP, password hash, secret token. |
+
+## Targeted Correctness Fixes (A4-R1, A4-R2, A4-R3)
+- `A4-R1`: Kiểm tra cân bằng đa tiền tệ độc lập theo nhóm Currency, cấm cộng gộp giữa các đơn vị tiền khác nhau (phát hiện `MULTICURRENCY_MISMATCH`), kiểm tra amount dương và đơn vị tiền khớp với LedgerAccount.
+- `A4-R2`: Xác minh nghiệp vụ gốc dựa trên việc đối chiếu thực sự số tiền, trạng thái nghiệp vụ, quyền sở hữu User, gắn cờ `BUSINESS_BINDING_MISMATCH` khi không khớp thay vì chỉ kiểm tra ID tồn tại.
+- `A4-R3`: Bổ sung thông tin nguồn nghiệp vụ `RelatedBusinessSource` trong danh sách giao dịch `TransactionsAsync`.
 
 ## Verification and Safety Gates
 
 - Release build: `backend/SpendWise.slnx` builds with 0 errors.
-- Focused A4 tests: `AdminA4Tests` — 10 PASS / 0 FAIL / 0 SKIP.
-- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests` — 22 PASS / 0 FAIL / 0 SKIP.
+- Focused A4 tests: `AdminA4Tests` — 13 PASS / 0 FAIL / 0 SKIP (kèm các test case kiểm tra A4-R1, A4-R2, A4-R3).
+- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests` — PASS.
 - SQL02: NOT RUN (resource gate / memory constraints preserved per project guidelines).

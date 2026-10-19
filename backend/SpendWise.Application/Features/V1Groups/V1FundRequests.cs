@@ -411,6 +411,7 @@ public sealed partial class V1FundService
         {
             "Completed" => "Executed",
             "Pending24h" => "Hold24h",
+            "Suspended" => "Suspended",
             "Rejected" => "Rejected",
             "Cancelled" => "Cancelled",
             _ => "AwaitingReview"

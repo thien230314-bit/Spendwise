@@ -359,6 +359,7 @@ public sealed class Task14FundSafetyTests
         // Member reports the pending hold -> status becomes Suspended, opens SupportCase
         var reported = await service.ReportFundRequestAsync(member.Id, req.Id, "Suspicious contractor invoice", default);
         Assert.Equal("Suspended", reported.State);
+        Assert.Equal("Suspended", reported.ExecutionAvailability);
 
         // Verify SupportCase created for the reported hold
         var ticket = await f.Db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Category == "V1FundDispute");
@@ -403,6 +404,49 @@ public sealed class Task14FundSafetyTests
         // Cannot report completed expense
         await Assert.ThrowsAsync<ConflictException>(() =>
             service.ReportFundRequestAsync(member.Id, completedReq.Id, "Trying to report finished expense", default));
+    }
+
+    [Fact]
+    public async Task Non_member_cannot_report_and_multiple_reports_are_idempotent()
+    {
+        var clock = new Clock();
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var member = await f.AddUserAsync("Member");
+        var outsider = await f.AddUserAsync("Outsider");
+        var (service, owner, fund) = await FundAsync(f, "Fixed", member.Id);
+        var recipient = await f.AddUserAsync("Recipient");
+        await f.AddWalletAsync(recipient.Id, "Recipient", true);
+
+        // Owner creates large expense (50 VND >= 20% of 200) -> Pending24h
+        var req = await service.CreateFundRequestAsync(owner, fund,
+            new("Expense", 50, recipient.Id, "Big purchase", "big-buy-idem", Pin), default);
+        Assert.Equal("Pending24h", req.State);
+
+        // Outsider cannot report (anti-enumeration throws NotFoundException)
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.ReportFundRequestAsync(outsider.Id, req.Id, "Outsider report attempt", default));
+
+        // First member report succeeds
+        var rep1 = await service.ReportFundRequestAsync(member.Id, req.Id, "Reason 1", default);
+        Assert.Equal("Suspended", rep1.State);
+        Assert.Equal("Suspended", rep1.ExecutionAvailability);
+
+        // Repeated report is idempotent and returns current suspended state
+        var rep2 = await service.ReportFundRequestAsync(member.Id, req.Id, "Reason 1", default);
+        Assert.Equal("Suspended", rep2.State);
+        Assert.Equal("Suspended", rep2.ExecutionAvailability);
+
+        // Outsider cannot cancel
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.CancelFundRequestAsync(outsider.Id, req.Id, Pin, default));
+
+        // Cancelling once succeeds
+        var cancelled1 = await service.CancelFundRequestAsync(owner, req.Id, Pin, default);
+        Assert.Equal("Cancelled", cancelled1.State);
+
+        // Cancelling already cancelled request is idempotent
+        var cancelled2 = await service.CancelFundRequestAsync(owner, req.Id, Pin, default);
+        Assert.Equal("Cancelled", cancelled2.State);
     }
 
     private static async Task<(V1FundService Service, Guid Owner, Guid Fund)> FundAsync(TargetedCorrectnessFixture f, string kind, Guid? member = null)

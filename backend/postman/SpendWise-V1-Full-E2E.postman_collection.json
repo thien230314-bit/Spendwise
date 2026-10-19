@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "078d5409-2a27-4819-9c89-f63f1751c055",
+    "_postman_id": "b28bfb58-e3e0-4a61-b414-b88ac5291495",
     "name": "SpendWise-V1-Full-E2E",
     "description": "Comprehensive E2E Postman Collection for SpendWise V1.0 API validation.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -3121,14 +3121,67 @@
           "response": []
         },
         {
-          "name": "10b - Refund Cannot Consume Held Funds",
+          "name": "10b - Member Reports Large Expense Hold (Transitions to Suspended)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Refund blocked while held\", () => pm.response.to.have.status(409)); pm.test(\"Hold protected\", () => pm.expect(pm.response.json().code).to.eql(\"refund_pending_hold\"));"
+                  "pm.test(\"Report accepted (200 OK)\", () => pm.response.to.have.status(200)); pm.test(\"State transitions to Suspended\", () => { var res = pm.response.json(); pm.expect(res.state).to.eql(\"Suspended\"); pm.expect(res.executionAvailability).to.eql(\"Suspended\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Contractor invoice amount discrepancy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{heldExpenseId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{heldExpenseId}}",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10c - Refund Cannot Consume Held Funds While Suspended",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Refund blocked while suspended hold active\", () => pm.response.to.have.status(409)); pm.test(\"Hold protected\", () => pm.expect(pm.response.json().code).to.eql(\"refund_pending_hold\"));"
                 ]
               }
             }
@@ -3160,7 +3213,7 @@
           "response": []
         },
         {
-          "name": "10c - Requester Cancels Held Expense",
+          "name": "10d - Requester Cancels Suspended Expense Releasing Hold",
           "event": [
             {
               "listen": "test",

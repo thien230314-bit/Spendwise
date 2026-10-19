@@ -28,12 +28,12 @@ Do not publish private environments, raw reports, API logs, pickup messages or t
 | Auth / PIN / password / sessions |26|41|
 | Wallet / finance / P2P / evidence |15|26|
 | Friends |5|10|
-| Fixed funds |24|38|
+| Fixed funds |25|40|
 | Free funds |9|15|
 | Support |3|5|
 | Admin five areas |12|20|
 | Integrations unavailable paths |7|14|
-| Total |104|175|
+| Total |105|177|
 
 Task14 adds Owner early-review rejection, refund rejection while a hold exists, and explicit hold cancellation before refund. Existing Development SePay TestMode assertions remain behind explicit `test_mode_enabled=true`; do not enable them without separately authorized provider configuration. That optional branch is NOT RUN in Task14. Gemini/SePay live and real mailbox delivery are LIVE NOT VERIFIED / DEFERRED.
 

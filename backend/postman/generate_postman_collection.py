@@ -1257,12 +1257,18 @@ pm.test("State enters 24h hold", function () {
         test_script='pm.test("Early review blocked", () => pm.response.to.have.status(409)); pm.test("Server hold enforced", () => pm.expect(pm.response.json().code).to.eql("fund_request_hold_active"));'
     ),
     make_req(
-        "10b - Refund Cannot Consume Held Funds", "GET",
-        "api/v1/funds/{{fixedFundId}}/refund-preview", token_var="userB_accessToken",
-        test_script='pm.test("Refund blocked while held", () => pm.response.to.have.status(409)); pm.test("Hold protected", () => pm.expect(pm.response.json().code).to.eql("refund_pending_hold"));'
+        "10b - Member Reports Large Expense Hold (Transitions to Suspended)", "POST",
+        "api/v1/funds/requests/{{heldExpenseId}}/report", token_var="userA_accessToken",
+        body={"reason": "Contractor invoice amount discrepancy"},
+        test_script='pm.test("Report accepted (200 OK)", () => pm.response.to.have.status(200)); pm.test("State transitions to Suspended", () => { var res = pm.response.json(); pm.expect(res.state).to.eql("Suspended"); pm.expect(res.executionAvailability).to.eql("Suspended"); });'
     ),
     make_req(
-        "10c - Requester Cancels Held Expense", "POST",
+        "10c - Refund Cannot Consume Held Funds While Suspended", "GET",
+        "api/v1/funds/{{fixedFundId}}/refund-preview", token_var="userB_accessToken",
+        test_script='pm.test("Refund blocked while suspended hold active", () => pm.response.to.have.status(409)); pm.test("Hold protected", () => pm.expect(pm.response.json().code).to.eql("refund_pending_hold"));'
+    ),
+    make_req(
+        "10d - Requester Cancels Suspended Expense Releasing Hold", "POST",
         "api/v1/funds/requests/{{heldExpenseId}}/cancel", token_var="userB_accessToken",
         body={"securityPin": "{{default_pin}}"},
         test_script='pm.test("Cancel accepted", () => pm.response.to.have.status(200)); pm.test("Hold cancelled", () => pm.expect(pm.response.json().state).to.eql("Cancelled"));'

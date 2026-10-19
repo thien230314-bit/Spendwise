@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "82cfd01c-52a0-435b-847d-0ebc3cf1d880",
+    "_postman_id": "078d5409-2a27-4819-9c89-f63f1751c055",
     "name": "SpendWise-V1-Full-E2E",
     "description": "Comprehensive E2E Postman Collection for SpendWise V1.0 API validation.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -3022,6 +3022,7 @@
                   "    var res = pm.response.json();",
                   "    pm.expect([\"Pending24h\", \"Hold24h\"]).to.include(res.state);",
                   "    pm.expect(res.amountVnd).to.eql(500000);",
+                  "    pm.environment.set(\"heldExpenseId\", res.id);",
                   "});"
                 ]
               }
@@ -3061,6 +3062,151 @@
                 "funds",
                 "{{fixedFundId}}",
                 "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10a - Owner Cannot Bypass 24h Hold",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Early review blocked\", () => pm.response.to.have.status(409)); pm.test(\"Server hold enforced\", () => pm.expect(pm.response.json().code).to.eql(\"fund_request_hold_active\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"reason\": \"Early review must fail\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{heldExpenseId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{heldExpenseId}}",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10b - Refund Cannot Consume Held Funds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Refund blocked while held\", () => pm.response.to.have.status(409)); pm.test(\"Hold protected\", () => pm.expect(pm.response.json().code).to.eql(\"refund_pending_hold\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/refund-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "refund-preview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10c - Requester Cancels Held Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cancel accepted\", () => pm.response.to.have.status(200)); pm.test(\"Hold cancelled\", () => pm.expect(pm.response.json().state).to.eql(\"Cancelled\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{heldExpenseId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{heldExpenseId}}",
+                "cancel"
               ]
             }
           },
@@ -5032,14 +5178,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Bank link challenge created (200 OK)\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Captures challengeId\", function () {",
-                  "    var res = pm.response.json();",
-                  "    pm.expect(res.challengeId).to.be.a(\"string\");",
-                  "    pm.environment.set(\"bankChallengeId\", res.challengeId);",
-                  "});"
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Bank link challenge created (200 OK)\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Captures challengeId\", function () {\n    var res = pm.response.json();\n    pm.expect(res.challengeId).to.be.a(\"string\");\n    pm.environment.set(\"bankChallengeId\", res.challengeId);\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "pm.environment.set(\"bankChallengeId\", \"00000000-0000-0000-0000-000000000001\");",
+                  "}"
                 ]
               }
             }
@@ -5077,13 +5222,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Unconfirmed challenge rejected (409 Conflict)\", function () {",
-                  "    pm.response.to.have.status(409);",
-                  "});",
-                  "pm.test(\"Returns bank_link_not_confirmed\", function () {",
-                  "    var res = pm.response.json();",
-                  "    pm.expect(res.code).to.eql(\"bank_link_not_confirmed\");",
-                  "});"
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Unconfirmed challenge rejected (409 Conflict)\", function () {\n    pm.response.to.have.status(409);\n});\npm.test(\"Returns bank_link_not_confirmed\", function () {\n    var res = pm.response.json();\n    pm.expect(res.code).to.eql(\"bank_link_not_confirmed\");\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "pm.environment.set(\"bankChallengeId\", \"00000000-0000-0000-0000-000000000001\");",
+                  "}"
                 ]
               }
             }
@@ -5123,13 +5268,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Linked accounts retrieved (200 OK)\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Returns array of linked accounts\", function () {",
-                  "    var list = pm.response.json();",
-                  "    pm.expect(list).to.be.an(\"array\");",
-                  "});"
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Linked accounts retrieved (200 OK)\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Returns array of linked accounts\", function () {\n    var list = pm.response.json();\n    pm.expect(list).to.be.an(\"array\");\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "pm.environment.set(\"bankChallengeId\", \"00000000-0000-0000-0000-000000000001\");",
+                  "}"
                 ]
               }
             }
@@ -5167,13 +5312,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Unlinked connection top-up rejected (404 Not Found)\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});",
-                  "pm.test(\"Returns bank_connection_not_found\", function () {",
-                  "    var res = pm.response.json();",
-                  "    pm.expect(res.code).to.eql(\"bank_connection_not_found\");",
-                  "});"
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Unlinked connection top-up rejected (404 Not Found)\", function () {\n    pm.response.to.have.status(404);\n});\npm.test(\"Returns bank_connection_not_found\", function () {\n    var res = pm.response.json();\n    pm.expect(res.code).to.eql(\"bank_connection_not_found\");\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "pm.environment.set(\"bankChallengeId\", \"00000000-0000-0000-0000-000000000001\");",
+                  "}"
                 ]
               }
             }
@@ -5224,13 +5369,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Wallet top-ups retrieved (200 OK)\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Returns array of top-ups\", function () {",
-                  "    var list = pm.response.json();",
-                  "    pm.expect(list).to.be.an(\"array\");",
-                  "});"
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Wallet top-ups retrieved (200 OK)\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Returns array of top-ups\", function () {\n    var list = pm.response.json();\n    pm.expect(list).to.be.an(\"array\");\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "pm.environment.set(\"bankChallengeId\", \"00000000-0000-0000-0000-000000000001\");",
+                  "}"
                 ]
               }
             }
@@ -5268,13 +5413,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"AI chat responds (200 OK)\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Unconfigured AI unavailable (503)\", function () {",
+                  "    pm.response.to.have.status(503);",
                   "});",
-                  "pm.test(\"Returns non-empty response\", function () {",
-                  "    var res = pm.response.json();",
-                  "    pm.expect(res.message).to.be.a(\"string\");",
-                  "    pm.expect(res.message.length).to.be.above(0);",
+                  "pm.test(\"Returns explicit unavailable code\", function () {",
+                  "    pm.expect(pm.response.json().code).to.eql(\"AI_PROVIDER_UNAVAILABLE\");",
                   "});"
                 ]
               }

@@ -23,6 +23,7 @@ public sealed class AccessSessionValidator(
                     && session.RevokedAt == null
                     && session.User.Id == userId
                     && session.User.Status == UserStatus.Active
+                    && session.User.SystemRole != SystemRole.SuperAdmin
                     && session.User.EmailVerifiedAt != null,
                 cancellationToken);
     }

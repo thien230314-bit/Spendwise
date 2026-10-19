@@ -41,7 +41,7 @@ public sealed class AdminA5Controller(AdminA5Service service) : ControllerBase
     public Task<A5FundDossierResult> FundDossier(Guid caseId, OperatorDirectoryRequest request, CancellationToken ct) =>
         service.FundDossierAsync(User, caseId, request.Reason, ct);
 
-    // A5.5 - Đề xuất chuyển Super Admin (Escalate)
+    // Legacy route retained to return a controlled V1.0 denial.
     [HttpPost("{caseId:guid}/escalate")]
     public Task<A5EscalationStatusResult> Escalate(Guid caseId, A5EscalateRequest request, CancellationToken ct) =>
         service.EscalateAsync(User, caseId, request, ct);

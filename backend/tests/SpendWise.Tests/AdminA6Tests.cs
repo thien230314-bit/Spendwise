@@ -102,6 +102,7 @@ public sealed class AdminA6Tests
         var maintenanceResp = await client.PostAsJsonAsync("/api/v1/admin/notifications/maintenance-overview",
             new { reason = "Maintenance check" });
 
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
         if (role == SystemRole.Admin)
         {
             Assert.Equal(HttpStatusCode.OK, searchResp.StatusCode);
@@ -112,11 +113,11 @@ public sealed class AdminA6Tests
         }
         else
         {
-            Assert.Equal(HttpStatusCode.Forbidden, searchResp.StatusCode);
-            Assert.Equal(HttpStatusCode.Forbidden, deliveryResp.StatusCode);
-            Assert.Equal(HttpStatusCode.Forbidden, failuresResp.StatusCode);
-            Assert.Equal(HttpStatusCode.Forbidden, templatesResp.StatusCode);
-            Assert.Equal(HttpStatusCode.Forbidden, maintenanceResp.StatusCode);
+            Assert.Equal(denied, searchResp.StatusCode);
+            Assert.Equal(denied, deliveryResp.StatusCode);
+            Assert.Equal(denied, failuresResp.StatusCode);
+            Assert.Equal(denied, templatesResp.StatusCode);
+            Assert.Equal(denied, maintenanceResp.StatusCode);
         }
     }
 

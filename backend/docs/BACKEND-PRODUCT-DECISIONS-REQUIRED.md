@@ -1,70 +1,25 @@
-# SPENDWISE V1.0 — PRODUCT DECISIONS REQUIRED (FINANCIAL & GOVERNANCE BLOCKERS)
+# SpendWise V1.0 — unresolved decisions and provenance (Task 14)
 
-Tài liệu này tổng hợp toàn bộ các điểm nghẽn nghiệp vụ thuộc **Mục 12 — `User.md` v1.3** chưa được Product Owner phê duyệt quyết định cuối cùng.
-Theo nguyên tắc an toàn tài chính (`AGENTS.md` và `User.md`), Backend **không tự ý lấp chỗ trống, không tự chọn công thức tính tiền giả lập**, và bảo lưu trạng thái `FINANCE_BLOCKED` / `POLICY_BLOCKED` cho các thao tác giải ngân/hoàn tiền phức tạp cho đến khi Product Owner có quyết định chính thức bằng văn bản.
+Updated2026-10-20. Product Owner Task14 supersedes obsolete Admin scope: User plus one active system Admin; five Admin areas; no SuperAdmin escalation. Backend remains PARTIAL. BLOCKER markers never authorize implementing a guessed policy.
 
----
+## Evidence hierarchy
 
-## 1. TRẠNG THÁI TRIỂN KHAI HOÀN TIỀN & BLOCKER CÒN LẠI (CẬP NHẬT TASK 12)
+The current Task14 instruction is direct authority for financial safety fixes, email isolation, removing legacy OpenAI, documentation rebase, and verification/publication. `User.md` retains its full product requirements. Commits2485956 (Task11),8cadc88 (Task12),eec880f (Task13) contain historical implementations and reports. No independent blanket approval of all material labelled v1.3 was found in the repository recovery; historical agent claims must not be relabelled Product Owner decisions.
 
-### 1.1. Các nhánh nghiệp vụ đã được Product Owner phê duyệt & ĐÃ TRIỂN KHAI HOÀN TẤT (Task 12)
-Theo chỉ thị chính thức của Product Owner trong Task 12 Correction, các quy tắc hoàn tiền sau đã được hiện thực hóa đầy đủ trong production code (`V1FundRefunds.cs`):
-- **Trường hợp A — Chưa phát sinh chi tiêu (Unspent):** Thành viên rời hoặc bị kick được hoàn 100% số tiền đã góp hợp lệ chưa hoàn, bao gồm cả quyền lợi chuyển tiếp, không hoàn trùng.
-- **Trường hợp B — Nhóm Cố định (Fixed) đã phát sinh chi tiêu:** Tính toán minh bạch dựa trên số dư còn lại sau chi tiêu. Tiền dư khóa cá nhân (`LockedExcessVnd`) được hoàn nguyên trạng trước, phần số dư khả dụng được phân bổ theo tỷ lệ nghĩa vụ hợp lệ của từng thành viên.
-- **Trường hợp C — Giải tán nhóm Tự do (Free) chưa có rút cá nhân:** Toàn bộ số dư quỹ được phân bổ hoàn trả tỷ lệ theo tỷ trọng đóng góp của các thành viên đang hoạt động.
-- **Trường hợp D — Chuẩn mực hạch toán:** Toàn bộ tính toán được thực thi tập trung tại Backend; hoàn tiền về ví cá nhân hợp lệ qua giao dịch loại `Refund`; giải tán nhóm đưa số dư tài khoản quỹ về đúng 0 VND; giao dịch nguyên tử (atomic) và chống trùng lặp (idempotent); chủ nhóm phải chuyển quyền trước khi rời nhóm.
+## Existing formulas retained
 
-### 1.2. Nhánh duy nhất còn bảo lưu bảo vệ (`REFUND_BLOCKED_COMPLEX_CONTRACT`)
-- **Tình huống Nhóm Free đã có rút cá nhân trước đó và yêu cầu giải tán:**
-  - Khi một hoặc nhiều thành viên đã rút cá nhân một phần quỹ về ví riêng (`Personal Withdrawal`), sau đó nhóm chi tiêu chung rồi yêu cầu giải tán.
-  - Hiện tại hệ thống tự động chặn và trả lỗi nghiệp vụ có mã `REFUND_BLOCKED_COMPLEX_CONTRACT` kèm thông điệp hướng dẫn rõ ràng, bảo đảm tuyệt đối không gây sai lệch số dư sổ cái kép (`Sum Debit = Sum Credit`).
-  - Hướng xử lý: Admin hỗ trợ quyết toán thủ công qua Case Hỗ trợ (ADM-03).
+Fixed refunds prioritize protected personal excess, then the existing obligation-weighted remaining balance; unspent refunds do not exceed valid unrefunded contributions. Free dissolution uses existing net-equity weights `max(0, contributions - completed personal withdrawals - prior refunds)`. Dissolution must leave exactly zero treasury balance. These are the Task12/13 implementation baseline; Task14 does not replace their formulas or approve arbitrary multi-activity sequences.
 
----
+Previous statements that Free withdrawal dissolution always returns `REFUND_BLOCKED_COMPLEX_CONTRACT` or that all internal payouts remain `ApprovedAwaitingFinanceContract` are obsolete. Current source executes internal wallet ledger payouts. External bank payouts remain DEFERRED and must never be described as completed internal payouts.
 
-## 2. BLOCKER P0-02: Cơ chế chuyển tiền trực tiếp ra ngoài nhóm / Giải ngân thực tế (`Payout Execution`)
+## BLOCKED / PARTIAL
 
-### 2.1. Quy tắc còn thiếu
-- Quyền chi `CanSpend = ON` của nhóm Fixed cho phép thành viên thực hiện khoản chi trực tiếp mà không cần chủ nhóm duyệt từng khoản.
-- Tuy nhiên, điểm đến của dòng tiền giải ngân (`Payout Destination`):
-  - Tiền từ Quỹ nhóm chuyển về đâu? (Ví SpendWise của người chi / Ví SpendWise của người bán / Tài khoản ngân hàng bên ngoài qua VietQR/SePay?)
-  - Hiện tại hệ thống chỉ hỗ trợ chuyển tiền nội bộ giữa các tài khoản User SpendWise. Chưa có cổng chi hộ ngân hàng đối tác (`Outward Bank Transfer API`).
+1. **Hold reporting/resolution:** User.md describes reporting/suspending individual expenses. The complete authoritative Admin resolution contract and automatic execution policy are not established. Task14 enforces the server24h minimum and manual Owner review; it does not invent automatic approval. Pending/Suspended money cannot be consumed by another expense or refund. Refund preview/leave/kick/dissolve fail closed until holds are cancelled/settled.
+2. **Complex financial policy:** Reconfiguration after spending, multiple activity carryovers, changing memberships across old entitlements and net-equity zero-weight situations require explicit approved examples and reconciliation. Preserve existing safeguards; do not mark all these scenarios accepted from isolated happy-path tests.
+3. **Governance:** Election round durations, tie/no-acceptance handling, eligible-elector changes and money operations during elections require approved parameter evidence. Configurable code is not approval of48h/24h/24h defaults. Existing inactive-owner/two-round principles remain; do not auto-approve overdue money requests.
+4. **Maintenance:** Production safety adapter/configuration and operational evidence are required where the implementation deliberately fails closed. No production exercise was run.
+5. **A2.3 account policy:** Remains PARTIAL / POLICY_BLOCKED; session/restriction code does not approve broader account powers.
 
-### 2.2. Tình huống số học minh họa
-- Thành viên B có `CanSpend = ON` mua vé xe 400.000đ từ quỹ 1.000.000đ:
-  - Nếu chuyển về Ví cá nhân của B (để B đi trả tiền mặt bên ngoài): Đây thực chất là hành vi "Rút quỹ về ví cá nhân".
-  - Nếu chuyển trực tiếp cho nhà xe: Nhà xe không có tài khoản SpendWise!
+## DEFERRED / LIVE NOT VERIFIED
 
-### 2.3. Tác động tới Ledger
-- Nếu hạch toán chi tiêu: Nợ tài khoản Quỹ, Có tài khoản Trung gian Chi tiêu (`Clearing Account`).
-- Nhưng nếu tiền chưa thực sự rời khỏi hệ thống ngân hàng hoặc ví, tiền bị treo ở `Clearing Account`.
-
-### 2.4. Quyết định cần Product Owner xác nhận
-- Xác nhận V1.0 chỉ cho phép chi tiêu trực tiếp sang tài khoản User SpendWise khác (như P2P) hoặc chuyển hoàn về ví cá nhân của thành viên chi tiêu kèm chứng từ hóa đơn, KHÔNG hỗ trợ chuyển tiền ra số tài khoản ngân hàng ngoài.
-
----
-
-## 3. BLOCKER P0-03: Tham số định lượng và quy trình Bầu lại chủ nhóm (`Governance Election`)
-
-### 3.1. Quy tắc còn thiếu
-- Thời gian mở từng vòng bầu cử: Đề cử (Vòng 1), Bầu phụ khi hòa phiếu, Xác nhận (Vòng 2).
-- Xử lý khi không có ứng viên nào chấp nhận nhận quyền chủ nhóm.
-- Xử lý các giao dịch nộp/rút tiền đang chờ duyệt trong thời gian diễn ra bầu cử.
-
-### 3.2. Đề xuất tham số mặc định từ V1.2
-- Vòng 1 (Đề cử/Bầu ứng viên): **48 giờ**.
-- Vòng bầu phụ (nếu hòa phiếu cao nhất): **24 giờ**.
-- Vòng 2 (Xác nhận trên 50% cử tri hợp lệ): **24 giờ**.
-- Trong thời gian bầu cử: Đóng băng tạm thời quyền thay đổi mục tiêu quỹ và quyền bật/tắt `CanSpend`. Các khoản nộp tiền vẫn tiếp tục ghi nhận.
-- Nếu bầu cử thất bại: Thành viên có quyền tự do rời nhóm theo quy trình hoàn tiền, không cần chủ nhóm duyệt.
-
-### 3.3. Quyết định cần Product Owner xác nhận
-- Phê duyệt bộ tham số 48h / 24h / 24h và cơ chế đóng băng quản trị trong lúc bầu cử.
-
----
-
-## 4. TỔNG KẾT TRẠNG THÁI HIỆN TẠI TRONG BACKEND
-
-1. **Nhóm Fixed:** Tạo nhóm, chia nghĩa vụ đồng dư ghế cố định, nộp tiền từ ví cá nhân, xem tiến độ, lịch sử hoạt động, bật/tắt `CanSpend` bằng PIN: **HOẠT ĐỘNG THẬT 100% (READY)**.
-2. **Chi tiêu trực tiếp giải ngân ra ngoài:** Giữ **`FINANCE_BLOCKED`** / `ApprovedAwaitingFinanceContract` cho đến khi Product Owner chốt các quyết định trên.
-3. **Nhóm Free:** Tạo nhóm, mời thành viên, nộp tiền, xem lịch sử, tạo yêu cầu rút, chủ nhóm duyệt: **HOẠT ĐỘNG THẬT 100% (READY)**.
+Gemini model availability and real provider responses; SePay external lifecycle/settlement; real SMTP mailbox delivery and push receipts. Core must operate without those credentials. Testing uses pickup email and disabled provider paths; SMTP accepted is not delivered. Existing dependency vulnerability advisories and SQL Server concurrency verification are follow-up engineering work, not hidden acceptance.

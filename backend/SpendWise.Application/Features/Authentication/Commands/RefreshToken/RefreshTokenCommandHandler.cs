@@ -45,7 +45,8 @@ public sealed class RefreshTokenCommandHandler(
                     .AnyAsync(
                         refreshToken => refreshToken.TokenHash == tokenHash
                             && (refreshToken.User.Status != UserStatus.Active
-                                || refreshToken.User.EmailVerifiedAt == null),
+                                || refreshToken.User.EmailVerifiedAt == null
+                                || refreshToken.User.SystemRole == SystemRole.SuperAdmin),
                         token);
                 if (unavailableAccount)
                 {
@@ -66,7 +67,7 @@ public sealed class RefreshTokenCommandHandler(
                 .Include(refreshToken => refreshToken.User)
                 .Include(refreshToken => refreshToken.UserSession)
                 .SingleAsync(refreshToken => refreshToken.TokenHash == tokenHash, token);
-            if (oldToken.User.Status != UserStatus.Active)
+            if (oldToken.User.Status != UserStatus.Active || oldToken.User.SystemRole == SystemRole.SuperAdmin)
             {
                 // Throw làm transaction rollback thao tác consume vừa thực hiện.
                 throw new AppException(

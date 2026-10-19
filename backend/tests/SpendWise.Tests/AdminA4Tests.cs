@@ -93,55 +93,58 @@ public sealed class AdminA4Tests
 
         var root = $"/api/v1/admin/support/{caseId}/transactions";
 
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
+        var notFoundOrDenied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : (role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden);
+
         // A4.1
         using (var res = await client.PostAsJsonAsync(root + "/search", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A4.2
         using (var res = await client.PostAsJsonAsync(root + $"/lookup?code={txId}", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A4.3
         using (var res = await client.PostAsJsonAsync(root + "/wallets", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A4.4
         using (var res = await client.PostAsJsonAsync(root + "/pending-failed", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A4.5
         using (var res = await client.PostAsJsonAsync(root + $"/ledger/{ledgerId}", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A4.6
         using (var res = await client.PostAsJsonAsync(root + $"/{txId}/trace", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // Cross-case foreign transaction denial (A4.2, A4.5, A4.6)
         var foreignGuid = Guid.NewGuid();
         using (var res = await client.PostAsJsonAsync(root + $"/lookup?code={foreignGuid}", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(notFoundOrDenied, res.StatusCode);
         }
         using (var res = await client.PostAsJsonAsync(root + $"/ledger/{foreignGuid}", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(notFoundOrDenied, res.StatusCode);
         }
         using (var res = await client.PostAsJsonAsync(root + $"/{foreignGuid}/trace", new { reason = "Audit test" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(notFoundOrDenied, res.StatusCode);
         }
     }
 

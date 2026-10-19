@@ -16,6 +16,7 @@ public sealed class AdminA2HttpTests
     [InlineData(SystemRole.Admin)] [InlineData(SystemRole.SuperAdmin)] [InlineData(SystemRole.SystemAdmin)] [InlineData(SystemRole.User)]
     public async Task Directory_and_legacy_mutations_cannot_bypass_V1_user_management(SystemRole role)
     {
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
         using var factory = new SpendWiseApiFactory(); using var client = factory.CreateHttpsClient();
         var caseId = Guid.NewGuid(); var targetId = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
@@ -33,11 +34,11 @@ public sealed class AdminA2HttpTests
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", scope.ServiceProvider.GetRequiredService<ITokenService>().CreateAccessToken(user, session.Id).Token);
         }
         using var search = await client.PostAsJsonAsync("/api/v1/admin/users/search", new { reason = "Find account" });
-        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, search.StatusCode);
+        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, search.StatusCode);
         foreach (var view in new[] { "profile", "sessions", "groups", "friends", "history", "restrictions" })
         {
             using var response = await client.PostAsJsonAsync($"/api/v1/admin/support/{caseId}/users/{targetId}/{view}", new { reason = "Verify scoped API" });
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, response.StatusCode);
             var body = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("passwordHash", body, StringComparison.OrdinalIgnoreCase); Assert.DoesNotContain("tokenHash", body, StringComparison.OrdinalIgnoreCase);
         }
         var id = Guid.NewGuid();
@@ -47,7 +48,7 @@ public sealed class AdminA2HttpTests
                      ("POST", $"/api/admin/account-recovery/{id}/approve"), ("POST", $"/api/admin/account-recovery/{id}/reject") })
         {
             using var request = new HttpRequestMessage(new HttpMethod(method), path) { Content = JsonContent.Create(new { reason = "Synthetic scope check", status = "Locked", adminPin = "123456" }) };
-            using var response = await client.SendAsync(request); Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            using var response = await client.SendAsync(request); Assert.Equal(denied, response.StatusCode);
         }
     }
 }

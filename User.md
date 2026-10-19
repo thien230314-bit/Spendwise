@@ -1,5 +1,38 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
+> TASK 14 CURRENT STATUS (2026-10-20): Backend V1.0 remains PARTIAL. The implementation map below supersedes older READY/100% claims. Existing product requirements are retained in full; a v1.3 heading is not proof of blanket Product Owner approval. No new financial formula is approved by this document.
+
+## Task 14 — implementation and API map
+
+Architecture: ASP.NET Core API (`backend/SpendWise/SpendWise.API.csproj`, net10.0), Application handlers/services, Domain entities, EF Core SQL Server Infrastructure. Tests use isolated SQLite/InMemory unless explicitly classified SQL Server. Controllers and their DTOs are canonical; `/openapi/v1.json` is available in Development/Testing. Financial writes use server-side PIN validation, transactions, double-entry ledger, idempotency, and concurrency controls.
+
+| Module | Canonical API family / permission | Implementation status |
+|---|---|---|
+| Registration / email OTP | `/api/auth/register`, `/api/auth/email-verification/verify`, `/resend`; anonymous challenge | IMPLEMENTED; current verification in Task14 report |
+| Password / PIN / sessions | `/api/auth/login`, `/pin/setup`, `/pin/verify`, `/refresh`, `/logout`, `/sessions`, `/change-password`, `/forgot-password`, `/reset-password`, `/pin/forgot`, `/pin/reset/validate`, `/pin/reset`; token or bearer as controller requires | IMPLEMENTED; credentials remain hashed; Production does not use static OTP |
+| Profile / preferences | `/api/users/me`; authenticated self | IMPLEMENTED |
+| Wallet / transactions / P2P | `/api/wallets`, `/api/transactions`, `/api/transfers/internal`, `/api/transfers/p2p`; authenticated owner, financial PIN and intent key | IMPLEMENTED; ledger-backed writes; no external bank payout implied |
+| Budgets / savings / recurring / rules | `/api/budgets`, `/api/goals`, `/api/recurring-transactions`, `/api/transaction-rules`; authenticated self | IMPLEMENTED; API regression distinct from live-provider verification |
+| Friends | `/api/friends`; authenticated parties | IMPLEMENTED; invitation acceptance and ownership enforced |
+| Fixed / Free membership | `/api/v1/funds`, `/{id}/members`, `/{id}/invitations`, `/invitations/{id}/accept`; User membership | IMPLEMENTED; Fixed max30, Free max6, User max10 active funds |
+| Fixed obligations / contributions | `/{id}/obligations/confirm`, `/{id}/contributions`, `/{id}/finance`; Owner confirms, member contributes with PIN | IMPLEMENTED; integer VND, stable seats; stale configuration blocks spending |
+| Fixed spending | `/{id}/requests`, `/requests/{id}/review`, `/requests/{id}/cancel`; member CanSpend or Owner, PIN | PARTIAL: immediate small internal payouts; cumulative threshold20% and Pending24h; manual Owner review cannot execute early; no automatic approval policy added |
+| Free expense / withdrawal | same request routes; own Withdrawal only; member expense awaits Owner | IMPLEMENTED internal payout; recipient must have active VND wallet and valid ledger account; no Completed without posting |
+| Refund / leave / kick / dissolve | `/{id}/refund-preview`, `/{id}/leave`, `/{id}/members/{userId}/kick`, `/{id}/dissolve`; member self / Owner + PIN | PARTIAL: common existing calculator retained; exact-zero dissolution, scoped replay; pending/suspended expense blocks preview and execution until settled/cancelled |
+| Fund activities / ownership | `/{id}/activities`, `/{id}/ownership-offers`, `/ownership-offers/{id}/accept` | IMPLEMENTED; financial and activity history separate; current Owner differs from system Admin |
+| Elections / new activity | `/{id}/elections`, `/elections/{id}/...`, `/{id}/activity-proposals` | PARTIAL / POLICY_BLOCKED: parameter approval and complex carryover decisions remain; no inferred approval from historical agent claims |
+| Notifications | `/api/notifications`, `/search`, `/{id}/read`, `/read-all`, `/preferences`; authenticated self | IMPLEMENTED; email SMTP acceptance is not mailbox delivery; push LIVE NOT VERIFIED |
+| Support / disputes | `/api/cases/support`, `/support/{id}`, `/support/{id}/messages`, `/disputes`, `/disputes/{id}`; authenticated case owner | IMPLEMENTED; Admin access separately assigned and audited |
+| AI | `/api/ai/*`, `/api/admin/ai/*`; authenticated role/tools | PARTIAL / DEFERRED live Gemini; no legacy OpenAI provider/SDK/fallback. Missing Gemini key or explicitly configured model gives controlled503; model availability LIVE NOT VERIFIED |
+| Banking | `/api/bank-connections/*`; authenticated self, provider-gated | PARTIAL / DEFERRED live SePay; Testing denies Development TestMode routes; no simulated successful bank settlement |
+
+Task14 safety changes do not resolve the product decisions in section12 automatically. In particular, reported/suspended expense resolution, complex multi-activity financial entitlements, and election timing remain BLOCKED where evidence of approval is missing. Current build/test counts and NOT RUN checks are recorded in `backend/docs/TASK14-VERIFICATION.md`; old counts below are historical.
+
+Email environments: Development defaults to local pickup and may explicitly use SMTP for real recipients. Testing always captures to local pickup even if SMTP settings are inherited. Production requires SMTP configuration; `.test` recipients are rejected before a network connection. Pickup files contain sensitive recovery content and must stay outside tracked source. Outbox retries are bounded to five attempts; failure logs contain message identifiers, not OTP/token content. LIVE DELIVERY NOT VERIFIED.
+
+---
+
+
 **Tệp:** `User.md`  
 **Phiên bản:** 1.2 — 18/10/2026 (giữ nguyên toàn bộ v1.1; chỉ bổ sung vá các lỗ hổng sau rà soát: chi tiêu của chủ nhóm, thời hạn phản hồi của chủ nhóm, lệch 1đ khi dịch thứ tự, biểu quyết im lặng, điều kiện vận hành tiền thật)  
 **Trạng thái:** **USER MOBILE PRODUCT SCOPE CHỐT; CÁC CONTRACT TIỀN CÒN OPEN BLOCKER** — chỉ phần có nhãn **ĐÃ CHỐT** được xem là quyết định sản phẩm; không triển khai các khoản tiền còn thiếu công thức/điều kiện.  

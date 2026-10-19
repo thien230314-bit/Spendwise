@@ -92,14 +92,12 @@ public static class DependencyInjection
         services.AddScoped<MobilePushReceiptReconciler>();
         services.AddHostedService<MobilePushBackgroundService>();
         services.AddSingleton<IProfanityFilter, ProfanityFilter>();
-        services.AddScoped<OpenAiCompletionProvider>();
         services.AddHttpClient<GeminiCompletionProvider>(client =>
         {
             client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
             client.Timeout = TimeSpan.FromSeconds(30);
         });
         services.AddScoped<IAiCompletionProvider, ConfiguredAiCompletionProvider>();
-        services.AddSingleton<OpenAiProviderStatus>();
         services.AddSingleton<GeminiProviderStatus>();
         services.AddSingleton<IAiProviderStatus, ConfiguredAiProviderStatus>();
         services.AddScoped<IAiAttachmentReader, AiAttachmentReader>();

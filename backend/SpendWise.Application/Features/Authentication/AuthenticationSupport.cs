@@ -24,6 +24,8 @@ public sealed class AuthenticationSupport(
         string? rawDeviceTrustToken = null,
         Guid? sessionId = null)
     {
+        if (user.SystemRole == SystemRole.SuperAdmin)
+            throw new AppException("account_unavailable", "This account is unavailable in V1.0.", 403);
         if (user.EmailVerifiedAt is null)
         {
             throw new AppException(

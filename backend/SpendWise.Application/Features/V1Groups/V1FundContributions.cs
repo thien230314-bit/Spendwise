@@ -45,7 +45,9 @@ public sealed partial class V1FundService
             var election = await db.V1Elections.AsNoTracking().SingleOrDefaultAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
             if (election is not null && !ElectionPolicy(election).AllowContributions)
                 throw new ConflictException("election_contributions_paused", "Contributions are paused by the election policy.");
-            var treasury = await TreasuryAsync(fund, token); await RequireUnspentAccountingAsync(treasury, token);
+            var treasury = await TreasuryAsync(fund, token);
+            if (fund.Kind == V1FundKind.Fixed) await RequireUnspentAccountingAsync(treasury, token);
+            else await RequireReconciledAccountingAsync(treasury, token);
             var membership = await db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fundId && m.UserId == userId && m.LeftAt == null, token);
             if (fund.Kind == V1FundKind.Fixed)
             {

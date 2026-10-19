@@ -33,12 +33,15 @@ namespace SpendWise.Tests;
 public sealed class AiHardeningTests
 {
     [Theory]
-    [InlineData("Production")]
-    [InlineData("Staging")]
-    public async Task Non_development_environment_without_key_returns_provider_unavailable(string environmentName)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Missing_key_is_unavailable_regardless_of_fallback_flag(bool allowFallback)
     {
         // Arrange: không cấu hình key và tuyệt đối không thực hiện network call.
-        var provider = new OpenAiCompletionProvider(new ConfigurationBuilder().Build(), new TestEnvironment(environmentName));
+        var provider = new GeminiCompletionProvider(new HttpClient(), new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> {
+                ["Gemini:ApiKey"] = "", ["AI:AllowDevelopmentFallback"] = allowFallback.ToString()
+            }).Build());
 
         // Act/Assert: Production và Staging không bao giờ giả phản hồi AI.
         var error = await Assert.ThrowsAsync<AppException>(() => provider.CompleteAsync(EmptyProviderRequest(), default));
@@ -47,36 +50,31 @@ public sealed class AiHardeningTests
     }
 
     [Fact]
-    public async Task Development_fallback_requires_explicit_flag_and_is_visibly_marked()
+    public async Task Development_fallback_flags_cannot_fabricate_success()
     {
-        // Arrange: cùng môi trường Development nhưng so sánh flag tắt/bật.
-        var disabled = new OpenAiCompletionProvider(new ConfigurationBuilder().Build(), new TestEnvironment("Development"));
-        await Assert.ThrowsAsync<AppException>(() => disabled.CompleteAsync(EmptyProviderRequest(), default));
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["OpenAI:AllowDevelopmentFallback"] = "true"
+            ["Gemini:ApiKey"] = "",
+            ["Gemini:AllowDevelopmentFallback"] = "true",
+            ["AI:AllowDevelopmentFallback"] = "true"
         }).Build();
-
-        // Act: fallback chỉ chạy khi được cho phép rõ ràng.
-        var result = await new OpenAiCompletionProvider(configuration, new TestEnvironment("Development"))
-            .CompleteAsync(EmptyProviderRequest(), default);
-
-        // Assert: client luôn nhận biết đây không phải phản hồi online thật.
-        Assert.True(result.IsFallback);
-        Assert.Equal("DevelopmentFallback", result.Provider);
+        var provider = new GeminiCompletionProvider(new HttpClient(), configuration);
+        var error = await Assert.ThrowsAsync<AppException>(() => provider.CompleteAsync(EmptyProviderRequest(), default));
+        Assert.Equal(503, error.StatusCode);
     }
 
     [Fact]
     public void Configured_real_provider_path_is_reported_without_external_call()
     {
-        // Arrange: key giả chỉ dùng để kiểm tra nhánh cấu hình, không gọi OpenAI.
+        // Arrange: key giả chỉ dùng để kiểm tra nhánh cấu hình, không gọi Gemini.
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["OpenAI:ApiKey"] = "test-placeholder-not-a-real-secret"
+            ["Gemini:ApiKey"] = "test-placeholder-not-a-real-secret",
+            ["Gemini:Model"] = "test-model"
         }).Build();
 
         // Act/Assert: health status nhận đúng đường provider thật và không gắn nhãn fallback.
-        var status = new OpenAiProviderStatus(configuration, new TestEnvironment("Production"));
+        var status = new GeminiProviderStatus(configuration);
         Assert.True(status.IsOnlineConfigured);
         Assert.Equal("Configured", status.Status);
     }
@@ -84,7 +82,7 @@ public sealed class AiHardeningTests
     [Fact]
     public void Registered_ai_action_tools_use_closed_schemas_without_secret_fields()
     {
-        // Arrange: lấy registry thật để kiểm tra đúng contract mà OpenAI nhận được.
+        // Arrange: lấy registry thật để kiểm tra đúng contract mà Gemini nhận được.
         using var factory = new SpendWiseApiFactory();
         using var scope = factory.Services.CreateScope();
         var registry = scope.ServiceProvider.GetRequiredService<IAiToolRegistry>();

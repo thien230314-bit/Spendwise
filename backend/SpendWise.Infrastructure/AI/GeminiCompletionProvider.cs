@@ -14,31 +14,15 @@ public sealed class GeminiCompletionProvider(HttpClient httpClient, IConfigurati
     public async Task<AiCompletionResult> CompleteAsync(AiProviderRequest request, CancellationToken cancellationToken)
     {
         var apiKey = GeminiConfiguration.ResolveApiKey(configuration);
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(configuration["Gemini:Model"]))
         {
-            if (configuration.GetValue<bool>("Gemini:AllowDevelopmentFallback") || configuration.GetValue<bool>("AI:AllowDevelopmentFallback"))
-            {
-                return new AiCompletionResult(
-                    "Tôi là trợ lý SpendWise được hỗ trợ bởi Google Gemini. Tôi có thể giúp bạn theo dõi chi tiêu, quản lý các quỹ nhóm và giải đáp thắc mắc tài chính.",
-                    "Gemini-Fallback",
-                    false,
-                    null);
-            }
             throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503);
         }
 
         try { return await CompleteOnlineAsync(apiKey, request, cancellationToken); }
         catch (AppException) { throw; }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
-            if (configuration.GetValue<bool>("Gemini:AllowDevelopmentFallback") || configuration.GetValue<bool>("AI:AllowDevelopmentFallback"))
-            {
-                return new AiCompletionResult(
-                    "Tôi là trợ lý SpendWise được hỗ trợ bởi Google Gemini. Tôi có thể giúp bạn theo dõi chi tiêu, quản lý các quỹ nhóm và giải đáp thắc mắc tài chính.",
-                    "Gemini-Fallback",
-                    false,
-                    null);
-            }
             throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503);
         }
     }
@@ -121,7 +105,7 @@ public sealed class GeminiCompletionProvider(HttpClient httpClient, IConfigurati
             };
             if (tools.Count > 0) payload["tools"] = tools.DeepClone();
 
-            var model = configuration["Gemini:Model"] ?? "gemini-1.5-flash";
+            var model = configuration["Gemini:Model"]!;
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post,
                 $"v1beta/models/{Uri.EscapeDataString(model)}:generateContent")
             {
@@ -198,19 +182,18 @@ public sealed class GeminiCompletionProvider(HttpClient httpClient, IConfigurati
 
 public sealed class GeminiProviderStatus(IConfiguration configuration) : IAiProviderStatus
 {
-    public bool IsOnlineConfigured => !string.IsNullOrWhiteSpace(GeminiConfiguration.ResolveApiKey(configuration));
+    public bool IsOnlineConfigured => !string.IsNullOrWhiteSpace(GeminiConfiguration.ResolveApiKey(configuration))
+        && !string.IsNullOrWhiteSpace(configuration["Gemini:Model"]);
     public string Status => IsOnlineConfigured ? "Configured" : "Unavailable";
 }
 
 public sealed class ConfiguredAiCompletionProvider(
     IConfiguration configuration,
-    OpenAiCompletionProvider openAi,
     GeminiCompletionProvider gemini) : IAiCompletionProvider
 {
     public Task<AiCompletionResult> CompleteAsync(AiProviderRequest request, CancellationToken cancellationToken) =>
         (configuration["AI:Provider"] ?? "Gemini").Trim().ToLowerInvariant() switch
         {
-            "openai" => openAi.CompleteAsync(request, cancellationToken),
             "gemini" => gemini.CompleteAsync(request, cancellationToken),
             _ => throw new AppException("AI_PROVIDER_UNAVAILABLE", "AI provider is unavailable.", 503)
         };
@@ -218,12 +201,10 @@ public sealed class ConfiguredAiCompletionProvider(
 
 public sealed class ConfiguredAiProviderStatus(
     IConfiguration configuration,
-    OpenAiProviderStatus openAi,
     GeminiProviderStatus gemini) : IAiProviderStatus
 {
     private IAiProviderStatus? Selected => (configuration["AI:Provider"] ?? "Gemini").Trim().ToLowerInvariant() switch
     {
-        "openai" => openAi,
         "gemini" => gemini,
         _ => null
     };

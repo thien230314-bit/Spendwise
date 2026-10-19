@@ -103,29 +103,30 @@ public sealed class AdminA5Tests
         }
 
         var root = "/api/v1/admin/support";
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
 
         // A5.1 Tickets Search
         using (var res = await client.PostAsJsonAsync(root + "/tickets/search", new { reason = "Review new tickets" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A5.2 Assigned cases
         using (var res = await client.PostAsJsonAsync(root + "/assigned", new { reason = "Check my assigned queue" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A5.4 Dossier
         using (var res = await client.PostAsJsonAsync(root + $"/{caseId}/dossier", new { reason = "Review case dossier" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
 
         // A5.7 Templates list
         using (var res = await client.PostAsJsonAsync(root + "/templates", new { reason = "Read template catalog" }))
         {
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, res.StatusCode);
         }
     }
 
@@ -251,7 +252,7 @@ public sealed class AdminA5Tests
     }
 
     [Fact]
-    public async Task A5_5_Escalate_Requires_Assigned_Admin_And_Sets_Escalated_Properties()
+    public async Task A5_5_Escalation_is_disabled_even_for_assigned_Admin()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var admin = await f.AddUserAsync("AssignedAdmin", role: SystemRole.Admin);
@@ -272,15 +273,14 @@ public sealed class AdminA5Tests
         await Assert.ThrowsAsync<ForbiddenException>(() =>
             service.EscalateAsync(principalOther, ticket.Id, new("Try escalate", "Complex case"), default));
 
-        // Assigned admin escalates successfully
-        var res = await service.EscalateAsync(principalAssigned, ticket.Id, new("Request guidance", "Need SuperAdmin guidance on complex fund"), default);
-        Assert.Equal(ticket.Id, res.CaseId);
-        Assert.Equal(admin.Id, res.EscalatedById);
-        Assert.Equal("Need SuperAdmin guidance on complex fund", res.EscalationReason);
-
-        // Cannot escalate twice
-        await Assert.ThrowsAsync<ConflictException>(() =>
-            service.EscalateAsync(principalAssigned, ticket.Id, new("Escalate again", "Repeated"), default));
+        var error = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.EscalateAsync(principalAssigned, ticket.Id, new("Request guidance", "Complex fund investigation"), default));
+        Assert.Equal("escalation_disabled", error.Code);
+        var stored = await f.Db.SupportCases.AsNoTracking().SingleAsync(c => c.Id == ticket.Id);
+        Assert.Null(stored.EscalatedAt);
+        Assert.Null(stored.EscalatedById);
+        Assert.Empty(await f.Db.CaseHistories.Where(h => h.CaseId == ticket.Id).ToListAsync());
+        Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
     }
 
     [Fact]

@@ -12,7 +12,7 @@ public sealed class V1PermissionTests
     [InlineData(SystemRole.User, false, false)]
     [InlineData(SystemRole.SystemAdmin, false, false)]
     [InlineData(SystemRole.Admin, true, false)]
-    [InlineData(SystemRole.SuperAdmin, false, true)]
+    [InlineData(SystemRole.SuperAdmin, false, false)]
     [InlineData((SystemRole)99, false, false)]
     public void Capabilities_do_not_promote_legacy_roles_or_bootstrap_an_owner(
         SystemRole role, bool operations, bool manageAdmins)

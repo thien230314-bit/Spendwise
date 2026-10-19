@@ -20,14 +20,14 @@ public sealed class V1AdminLifecycleTests
         await f.AddUserAsync("Legacy", role: SystemRole.SystemAdmin); await f.AddUserAsync("Ordinary");
         var session = await f.AddSessionAsync(supervisor.Id); var s = Service(f);
         var principal = V1PermissionTests.Principal(supervisor.Id, session.Id, "SuperAdmin");
-        Assert.Equal(admin.Id, Assert.Single(await s.ListAsync(principal, "Review assigned operators", 1, 20, default)).Id);
+        await Assert.ThrowsAsync<ForbiddenException>(() => s.ListAsync(principal, "Review assigned operators", 1, 20, default));
         session.RevokedAt = f.Clock.UtcNow; await f.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<ForbiddenException>(() => s.ListAsync(principal, "Review assigned operators", 1, 20, default));
-        Assert.Single(await f.Db.AuditLogs.Where(a => a.Action == "V1_ADMIN_DIRECTORY_READ").ToListAsync());
+        Assert.Empty(await f.Db.AuditLogs.Where(a => a.Action == "V1_ADMIN_DIRECTORY_READ").ToListAsync());
     }
 
     [Fact]
-    public async Task Grant_and_revoke_are_audited_revoke_sessions_and_preserve_credentials()
+    public async Task Legacy_grant_and_revoke_are_denied_and_preserve_roles_sessions_credentials()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var supervisor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin);
@@ -40,18 +40,18 @@ public sealed class V1AdminLifecycleTests
         var service = Service(f);
         var principal = V1PermissionTests.Principal(supervisor.Id, actorSession.Id, "SuperAdmin");
 
-        await service.SetAsync(principal, target.Id, true, TargetedCorrectnessFixture.SecurityPin, "Approved operator", default);
-        Assert.Equal(SystemRole.Admin, await f.Db.Users.Where(u => u.Id == target.Id).Select(u => u.SystemRole).SingleAsync());
-        Assert.False(await f.Db.UserSessions.AnyAsync(s => s.UserId == target.Id && s.RevokedAt == null));
-        Assert.False(await f.Db.RefreshTokens.AnyAsync(s => s.UserId == target.Id && s.RevokedAt == null));
+        await Assert.ThrowsAsync<ForbiddenException>(() => service.SetAsync(principal, target.Id, true, TargetedCorrectnessFixture.SecurityPin, "Approved operator", default));
+        Assert.Equal(SystemRole.User, await f.Db.Users.Where(u => u.Id == target.Id).Select(u => u.SystemRole).SingleAsync());
+        Assert.True(await f.Db.UserSessions.AnyAsync(s => s.UserId == target.Id && s.RevokedAt == null));
+        Assert.True(await f.Db.RefreshTokens.AnyAsync(s => s.UserId == target.Id && s.RevokedAt == null));
         Assert.True(await f.Db.UserSessions.AnyAsync(s => s.Id == actorSession.Id && s.RevokedAt == null));
 
-        await service.SetAsync(principal, target.Id, false, TargetedCorrectnessFixture.SecurityPin, "Operator revoked", default);
+        await Assert.ThrowsAsync<ForbiddenException>(() => service.SetAsync(principal, target.Id, false, TargetedCorrectnessFixture.SecurityPin, "Operator revoked", default));
         var stored = await f.Db.Users.AsNoTracking().SingleAsync(u => u.Id == target.Id);
         Assert.Equal(SystemRole.User, stored.SystemRole);
         Assert.Equal(password, stored.PasswordHash);
         Assert.Equal(pin, stored.SecurityPinHash);
-        Assert.Equal(2, await f.Db.AuditLogs.CountAsync(a => a.Action == "V1_ADMIN_ROLE_CHANGED"));
+        Assert.Equal(0, await f.Db.AuditLogs.CountAsync(a => a.Action == "V1_ADMIN_ROLE_CHANGED"));
         Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
     }
 
@@ -59,7 +59,8 @@ public sealed class V1AdminLifecycleTests
     [InlineData(SystemRole.User)]
     [InlineData(SystemRole.Admin)]
     [InlineData(SystemRole.SystemAdmin)]
-    public async Task Non_supervisor_cannot_grant_Admin_even_with_valid_PIN(SystemRole role)
+    [InlineData(SystemRole.SuperAdmin)]
+    public async Task No_V1_role_can_grant_Admin_even_with_valid_PIN(SystemRole role)
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var actor = await f.AddUserAsync("Actor", role: role);
@@ -102,7 +103,7 @@ public sealed class V1AdminLifecycleTests
     }
 
     [Fact]
-    public async Task Audit_failure_rolls_back_role_and_session_revocation_together()
+    public async Task Legacy_role_admission_is_denied_before_audit_or_session_mutation()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin);
@@ -111,7 +112,7 @@ public sealed class V1AdminLifecycleTests
         var targetSession = await f.AddSessionAsync(target.Id);
         await f.AddRefreshTokenAsync(target.Id, "synthetic-refresh", userSessionId: targetSession.Id);
         await f.Db.Database.ExecuteSqlRawAsync("CREATE TRIGGER FailRoleAudit BEFORE INSERT ON AuditLogs BEGIN SELECT RAISE(ABORT, 'synthetic audit failure'); END;");
-        await Assert.ThrowsAsync<DbUpdateException>(() => Service(f).SetAsync(
+        await Assert.ThrowsAsync<ForbiddenException>(() => Service(f).SetAsync(
             V1PermissionTests.Principal(actor.Id, actorSession.Id, "SuperAdmin"), target.Id, true,
             TargetedCorrectnessFixture.SecurityPin, "Audited grant required", default));
         f.Db.ClearTrackedEntities();
@@ -131,10 +132,10 @@ public sealed class V1AdminLifecycleTests
         var service = Service(f);
         var principal = V1PermissionTests.Principal(supervisor.Id, supervisorSession.Id, "SuperAdmin");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() => service.SetAsync(
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() => service.SetAsync(
             principal, candidate.Id, true, TargetedCorrectnessFixture.SecurityPin, "Grant second admin", default));
 
-        Assert.Equal("admin_limit_exceeded", ex.Code);
+        Assert.Equal("permission_denied", ex.Code);
         Assert.Equal(SystemRole.User, await f.Db.Users.Where(u => u.Id == candidate.Id).Select(u => u.SystemRole).SingleAsync());
         Assert.Equal(SystemRole.Admin, await f.Db.Users.Where(u => u.Id == existingAdmin.Id).Select(u => u.SystemRole).SingleAsync());
     }

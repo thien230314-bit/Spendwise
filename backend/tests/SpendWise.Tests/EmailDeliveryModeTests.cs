@@ -15,7 +15,7 @@ namespace SpendWise.Tests;
 public sealed class EmailDeliveryModeTests
 {
     private static readonly EmailMessage Message = new(
-        "recipient@example.test",
+        "recipient@example.com",
         "SpendWise test",
         "<p>secret-message-body</p>",
         "secret-message-body");
@@ -38,7 +38,7 @@ public sealed class EmailDeliveryModeTests
             await sender.SendAsync(Message, default);
 
             var pickup = Assert.Single(Directory.GetFiles(directory, "email-*.txt"));
-            Assert.Contains("recipient@example.test", await File.ReadAllTextAsync(pickup));
+            Assert.Contains("recipient@example.com", await File.ReadAllTextAsync(pickup));
         }
         finally
         {
@@ -58,7 +58,7 @@ public sealed class EmailDeliveryModeTests
 
         Assert.Contains("secret-message-body", received);
         Assert.DoesNotContain("secret-message-body", logger.Text, StringComparison.Ordinal);
-        Assert.Contains("Transactional email delivered", logger.Text, StringComparison.Ordinal);
+        Assert.Contains("accepted by", logger.Text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -86,7 +86,39 @@ public sealed class EmailDeliveryModeTests
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sender.SendAsync(Message, default));
 
-        Assert.Equal("Email:DeliveryMode=Pickup is allowed only in Development.", error.Message);
+        Assert.Equal("Email:DeliveryMode=Pickup is allowed only in Development or Testing.", error.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Pickup")]
+    [InlineData("Smtp")]
+    public async Task Testing_always_captures_email_even_with_inherited_smtp(string? mode)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"spendwise-email-{Guid.NewGuid():N}");
+        try
+        {
+            var values = SmtpValues(1);
+            values["Email:DeliveryMode"] = mode;
+            values["PasswordReset:PickupDirectory"] = directory;
+            await CreateSender(values, "Testing").SendAsync(Message with { RecipientEmail = "e2e@spendwise.test" }, default);
+            Assert.Single(Directory.GetFiles(directory, "email-*.txt"));
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+    }
+
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task Reserved_test_recipient_is_rejected_before_smtp(string environment)
+    {
+        var sender = CreateSender(SmtpValues(1), environment);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sender.SendAsync(Message with { RecipientEmail = "e2e@spendwise.TEST" }, default));
+        Assert.Equal("Reserved test recipients cannot be sent through SMTP.", error.Message);
     }
 
     [Fact]

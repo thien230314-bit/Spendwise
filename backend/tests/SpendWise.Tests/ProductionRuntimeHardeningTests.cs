@@ -64,16 +64,17 @@ public sealed class ProductionRuntimeHardeningTests
     [Fact]
     public void AiProviderStatus_RecognizesTheSameApplicationKeyUsedByProvider()
     {
-        // Arrange: cấu hình khóa theo đường dẫn chuẩn OpenAI:ApiKey.
+        // Arrange: cấu hình khóa theo đường dẫn chuẩn Gemini:ApiKey.
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["OpenAI:ApiKey"] = "test-provider-key"
+                ["Gemini:ApiKey"] = "test-provider-key",
+                ["Gemini:Model"] = "test-model"
             })
             .Build();
 
-        // Act: health status đọc qua cùng helper với OpenAI provider.
-        var status = new OpenAiProviderStatus(configuration);
+        // Act: health status đọc qua cùng helper với Gemini provider.
+        var status = new GeminiProviderStatus(configuration);
 
         // Assert: admin health không báo fallback khi provider thực tế đã có khóa.
         Assert.True(status.IsOnlineConfigured);

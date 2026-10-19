@@ -15,9 +15,10 @@ public sealed class V1GovernanceHttpTests
     [Theory]
     [InlineData(SystemRole.User, HttpStatusCode.NoContent)]
     [InlineData(SystemRole.Admin, HttpStatusCode.Forbidden)]
-    [InlineData(SystemRole.SuperAdmin, HttpStatusCode.Forbidden)]
+    [InlineData(SystemRole.SuperAdmin, HttpStatusCode.Unauthorized)]
     public async Task Foreground_activity_HTTP_uses_authenticated_actor_and_rejects_privileged_roles(SystemRole role, HttpStatusCode expected)
     {
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
         using var factory = new SpendWiseApiFactory(); using var client = factory.CreateHttpsClient(); Guid userId;
         using (var scope = factory.Services.CreateScope())
         {
@@ -31,10 +32,10 @@ public sealed class V1GovernanceHttpTests
         if (role == SystemRole.User) { var row = Assert.Single(rows); Assert.Equal(userId, row.UserId); Assert.True(row.LastActionAt < DateTime.UtcNow.AddMinutes(1)); }
         else Assert.Empty(rows);
         using var vote = await client.PostAsJsonAsync($"/api/v1/funds/activity-proposals/{Guid.NewGuid()}/vote", new { });
-        Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden, vote.StatusCode);
+        Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : denied, vote.StatusCode);
         using var staff = await client.PostAsJsonAsync($"/api/v1/admin/support/{Guid.NewGuid()}/actions", new { Action = "reply", Message = "Synthetic investigation reply", ExpectedStatus = "New" });
-        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden, staff.StatusCode);
+        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : denied, staff.StatusCode);
         using var review = await client.PostAsJsonAsync($"/api/v1/funds/requests/{Guid.NewGuid()}/review", new { Reason = "Synthetic review" });
-        Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden, review.StatusCode);
+        Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : denied, review.StatusCode);
     }
 }

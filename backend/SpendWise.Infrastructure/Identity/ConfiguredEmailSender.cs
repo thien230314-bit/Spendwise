@@ -7,7 +7,7 @@ using SpendWise.Application.Identity;
 
 namespace SpendWise.Infrastructure.Identity;
 
-// Development mặc định ghi pickup file; deployment ngoài Development luôn dùng SMTP.
+// Testing always captures locally; Production requires configured SMTP.
 public sealed class ConfiguredEmailSender(
     IConfiguration configuration,
     IHostEnvironment environment,
@@ -68,6 +68,8 @@ public sealed class ConfiguredEmailSender(
 
     private async Task SendSmtpAsync(EmailMessage message, CancellationToken cancellationToken)
     {
+        if (new MailAddress(message.RecipientEmail).Host.EndsWith(".test", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Reserved test recipients cannot be sent through SMTP.");
         // SMTP là provider-neutral; secret chỉ đọc từ deployment configuration.
         var settings = ReadSmtpSettings();
 
@@ -92,7 +94,7 @@ public sealed class ConfiguredEmailSender(
         }
 
         await client.SendMailAsync(mail, cancellationToken);
-        logger.LogInformation("Transactional email delivered through the configured SMTP provider.");
+        logger.LogInformation("Transactional email accepted by the configured SMTP provider; mailbox delivery is unverified.");
     }
 
     private async Task WriteDevelopmentPickupAsync(EmailMessage message, CancellationToken cancellationToken)
@@ -116,6 +118,8 @@ public sealed class ConfiguredEmailSender(
 
     private EmailDeliveryMode ReadDeliveryMode()
     {
+        // Test configuration may inherit SMTP credentials; never let it reach the network.
+        if (environment.IsEnvironment("Testing")) return EmailDeliveryMode.Pickup;
         var configured = configuration["Email:DeliveryMode"]?.Trim();
         if (string.IsNullOrWhiteSpace(configured))
             return environment.IsDevelopment() ? EmailDeliveryMode.Pickup : EmailDeliveryMode.Smtp;
@@ -125,10 +129,10 @@ public sealed class ConfiguredEmailSender(
 
         if (configured.Equals("Pickup", StringComparison.OrdinalIgnoreCase))
         {
-            if (!environment.IsDevelopment())
+            if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
             {
                 throw new InvalidOperationException(
-                    "Email:DeliveryMode=Pickup is allowed only in Development.");
+                    "Email:DeliveryMode=Pickup is allowed only in Development or Testing.");
             }
             return EmailDeliveryMode.Pickup;
         }

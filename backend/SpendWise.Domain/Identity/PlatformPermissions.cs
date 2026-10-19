@@ -12,7 +12,6 @@ public static class PlatformPermissions
     {
         PlatformPermission.OperationsRead or PlatformPermission.SensitiveRead
             or PlatformPermission.ManageMaintenance => role == SystemRole.Admin,
-        PlatformPermission.ManageOrdinaryAdmins => role == SystemRole.SuperAdmin,
         _ => false
     };
 }

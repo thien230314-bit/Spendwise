@@ -14,7 +14,7 @@ public sealed class AdminA1HttpTests
 {
     [Theory]
     [InlineData(SystemRole.Admin, HttpStatusCode.OK)]
-    [InlineData(SystemRole.SuperAdmin, HttpStatusCode.Forbidden)]
+    [InlineData(SystemRole.SuperAdmin, HttpStatusCode.Unauthorized)]
     [InlineData(SystemRole.User, HttpStatusCode.Forbidden)]
     [InlineData(SystemRole.SystemAdmin, HttpStatusCode.Forbidden)]
     public async Task All_A1_and_legacy_aggregate_routes_enforce_live_V1_roles(SystemRole role, HttpStatusCode expected)

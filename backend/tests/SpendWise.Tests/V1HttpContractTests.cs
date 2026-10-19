@@ -37,7 +37,7 @@ public sealed class V1HttpContractTests
             caseId = ticket.Id; targetId = target.Id; sessionId = session.Id;
         }
         using var response = await client.PostAsJsonAsync($"/api/v1/admin/support/{caseId}/user-profile", new { UserId = targetId, Reason = "Investigate assigned case" });
-        Assert.Equal(allowed ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : allowed ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
         if (!allowed) return;
         using var cross = await client.PostAsJsonAsync($"/api/v1/admin/support/{caseId}/user-profile", new { UserId = Guid.NewGuid(), Reason = "Wrong subject denied" });
         Assert.Equal(HttpStatusCode.Forbidden, cross.StatusCode);

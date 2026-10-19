@@ -14,6 +14,34 @@ namespace SpendWise.Tests;
 public sealed class GeminiProviderTests
 {
     [Fact]
+    public async Task Provider_timeout_is_unavailable_without_fake_success()
+    {
+        var provider = CreateProvider(new StubHttpMessageHandler(_ => throw new TaskCanceledException()), GeminiConfiguration());
+        var error = await Assert.ThrowsAsync<AppException>(() => provider.CompleteAsync(EmptyRequest(), default));
+        Assert.Equal(503, error.StatusCode);
+        Assert.Equal("AI_PROVIDER_UNAVAILABLE", error.Code);
+    }
+
+    [Fact]
+    public async Task Caller_cancellation_still_propagates()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var provider = CreateProvider(new StubHttpMessageHandler(_ => throw new TaskCanceledException()), GeminiConfiguration());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => provider.CompleteAsync(EmptyRequest(), cancellation.Token));
+    }
+
+    [Fact]
+    public async Task Missing_model_is_unavailable_without_choosing_a_default()
+    {
+        var configuration = GeminiConfiguration(new Dictionary<string, string?> { ["Gemini:Model"] = "" });
+        var provider = CreateProvider(new StubHttpMessageHandler(_ => throw new InvalidOperationException("Network must not be called")), configuration);
+        var error = await Assert.ThrowsAsync<AppException>(() => provider.CompleteAsync(EmptyRequest(), default));
+        Assert.Equal("AI_PROVIDER_UNAVAILABLE", error.Code);
+        Assert.False(new GeminiProviderStatus(configuration).IsOnlineConfigured);
+    }
+
+    [Fact]
     public async Task Successful_response_maps_to_existing_completion_contract()
     {
         HttpRequestMessage? captured = null;
@@ -90,22 +118,14 @@ public sealed class GeminiProviderTests
     }
 
     [Fact]
-    public async Task OpenAi_selection_keeps_existing_provider_behavior()
+    public async Task Removed_provider_selection_returns_unavailable_without_network()
     {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["AI:Provider"] = "OpenAI",
-            ["OpenAI:AllowDevelopmentFallback"] = "true"
-        }).Build();
-        var selector = new ConfiguredAiCompletionProvider(
-            configuration,
-            new OpenAiCompletionProvider(configuration, new TestHostEnvironment()),
-            CreateProvider(new StubHttpMessageHandler(_ => JsonResponse("{}")), configuration));
-
-        var result = await selector.CompleteAsync(EmptyRequest(), default);
-
-        Assert.Equal("DevelopmentFallback", result.Provider);
-        Assert.True(result.IsFallback);
+        var configuration = GeminiConfiguration(new Dictionary<string, string?> { ["AI:Provider"] = "OpenAI" });
+        var selector = new ConfiguredAiCompletionProvider(configuration,
+            CreateProvider(new StubHttpMessageHandler(_ => throw new InvalidOperationException("Network must not be called")), configuration));
+        var error = await Assert.ThrowsAsync<AppException>(() => selector.CompleteAsync(EmptyRequest(), default));
+        Assert.Equal("AI_PROVIDER_UNAVAILABLE", error.Code);
+        Assert.False(new ConfiguredAiProviderStatus(configuration, new GeminiProviderStatus(configuration)).IsOnlineConfigured);
     }
 
     [Fact]
@@ -116,7 +136,6 @@ public sealed class GeminiProviderTests
             JsonResponse("""{"candidates":[{"content":{"parts":[{"text":"Selected Gemini"}]}}]}""")), configuration);
         var selector = new ConfiguredAiCompletionProvider(
             configuration,
-            new OpenAiCompletionProvider(configuration, new TestHostEnvironment()),
             gemini);
 
         var result = await selector.CompleteAsync(EmptyRequest(), default);

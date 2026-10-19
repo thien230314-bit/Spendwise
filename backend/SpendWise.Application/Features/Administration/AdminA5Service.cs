@@ -428,57 +428,9 @@ public sealed class AdminA5Service(
         }, ct);
     }
 
-    // A5.5 - Đề xuất chuyển Super Admin (Escalate)
-    public Task<A5EscalationStatusResult> EscalateAsync(ClaimsPrincipal principal, Guid caseId, A5EscalateRequest request, CancellationToken ct)
-    {
-        var purpose = InputBoundary.RequiredText(request.Reason, 1000, "Reason");
-        AdminAuditWriter.RequireReason(purpose);
-        var details = InputBoundary.RequiredText(request.EscalationDetails, 2000, "EscalationDetails");
-
-        var supervisor = principal.IsInRole("SuperAdmin");
-        if (supervisor)
-            throw new ForbiddenException("escalation_denied", "SuperAdmin does not self-escalate; this action is for ordinary Admins.");
-
-        return workflow.WithCaseAsync(principal, caseId, purpose, false, async (ticket, actor, token) =>
-        {
-            if (ticket.AssignedAdminId != actor)
-                throw new ForbiddenException("case_access_denied", "Assigned Admin required to escalate case.");
-
-            if (ticket.EscalatedAt != null)
-                throw new ConflictException("case_already_escalated", "Case is already escalated to SuperAdmin.");
-
-            ticket.EscalatedAt = clock.UtcNow;
-            ticket.EscalatedById = actor;
-            ticket.EscalationReason = details;
-            ticket.UpdatedAt = clock.UtcNow;
-
-            var actorName = await db.Users.AsNoTracking().Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
-            db.CaseHistories.Add(new CaseHistory
-            {
-                CaseId = caseId,
-                CaseKind = CaseKind.Support,
-                ActorId = actor,
-                ActorDisplayNameSnapshot = actorName,
-                ActorRole = "Admin",
-                Action = "V1_escalate",
-                Message = "Case escalated to SuperAdmin: " + details
-            });
-
-            audit.Add(actor, "A5_CASE_ESCALATED", "SupportCase", caseId.ToString(), purpose, new { EscalatedBy = actor });
-            await db.SaveChangesAsync(token);
-
-            return new A5EscalationStatusResult(
-                ticket.Id,
-                ticket.TicketNumber,
-                DateTime.SpecifyKind(ticket.EscalatedAt.Value, DateTimeKind.Utc),
-                ticket.EscalatedById.Value,
-                ticket.EscalationReason,
-                ticket.EscalationReviewerId,
-                ticket.EscalationReviewedAt != null ? DateTime.SpecifyKind(ticket.EscalationReviewedAt.Value, DateTimeKind.Utc) : null,
-                ticket.EscalationGuidance
-            );
-        }, ct);
-    }
+    // Keep the legacy route as an explicit denial without mutating historical cases.
+    public Task<A5EscalationStatusResult> EscalateAsync(ClaimsPrincipal principal, Guid caseId, A5EscalateRequest request, CancellationToken ct) =>
+        throw new ForbiddenException("escalation_disabled", "SuperAdmin escalation is unavailable in V1.0.");
 
     // A5.6 - Đã giải quyết (Resolve or Reject)
     public Task<A5ResolveResult> ResolveAsync(ClaimsPrincipal principal, Guid caseId, A5ResolveRequest request, CancellationToken ct)

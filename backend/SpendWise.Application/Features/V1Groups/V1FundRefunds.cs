@@ -54,6 +54,7 @@ public sealed partial class V1FundService
         var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, ct)
             ?? throw new NotFoundException("fund_treasury_not_found", "Fund treasury not initialized.");
 
+        await RequireReconciledAccountingAsync(treasury, ct);
         var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [targetUserId], ct);
         var targetRefund = calc.MemberRefunds.GetValueOrDefault(targetUserId, (0, "ZeroBalance"));
         var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
@@ -80,7 +81,8 @@ public sealed partial class V1FundService
 
             // Idempotency check: if replayed with the same key, return previous result
             var existingTx = await db.LedgerTransactions.AsNoTracking()
-                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId
+                    && t.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{actorUserId:N}", token);
             if (existingTx is not null)
             {
                 var ft = await db.FinancialTransactions.AsNoTracking()
@@ -217,7 +219,8 @@ public sealed partial class V1FundService
 
             // Idempotency check: if replayed with same key, return previous result
             var existingTx = await db.LedgerTransactions.AsNoTracking()
-                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId
+                    && t.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{targetUserId:N}", token);
             if (existingTx is not null)
             {
                 var ft = await db.FinancialTransactions.AsNoTracking()
@@ -457,6 +460,9 @@ public sealed partial class V1FundService
         IReadOnlyList<Guid>? singleMemberUserIds,
         CancellationToken ct)
     {
+        if (await db.V1FundRequests.AsNoTracking().AnyAsync(r => r.FundId == fund.Id
+            && (r.State == "Pending24h" || r.State == "Suspended"), ct))
+            throw new ConflictException("refund_pending_hold", "Cancel or settle held expenses before calculating refunds.");
         var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
         var currentBalance = account.Balance;
         var results = new Dictionary<Guid, (long Amount, string CaseType)>();

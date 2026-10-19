@@ -1,3 +1,5 @@
+> Historical Task11 handoff. For current Task14 contracts/status, read User.md, Admin.md and TASK14-VERIFICATION.md. Earlier READY/POLICY_BLOCKED labels below describe Task11, not current acceptance.
+
 # SPENDWISE V1.0 — USER BACKEND SUBMISSION HANDOFF & CONTRACT (TASK 11 FINAL)
 
 **Date:** 2026-10-19  

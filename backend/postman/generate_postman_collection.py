@@ -1246,8 +1246,26 @@ pm.test("State enters 24h hold", function () {
     var res = pm.response.json();
     pm.expect(["Pending24h", "Hold24h"]).to.include(res.state);
     pm.expect(res.amountVnd).to.eql(500000);
+    pm.environment.set("heldExpenseId", res.id);
 });
 """
+    ),
+    make_req(
+        "10a - Owner Cannot Bypass 24h Hold", "POST",
+        "api/v1/funds/requests/{{heldExpenseId}}/review", token_var="userA_accessToken",
+        body={"approved": True, "reason": "Early review must fail", "securityPin": "{{default_pin}}"},
+        test_script='pm.test("Early review blocked", () => pm.response.to.have.status(409)); pm.test("Server hold enforced", () => pm.expect(pm.response.json().code).to.eql("fund_request_hold_active"));'
+    ),
+    make_req(
+        "10b - Refund Cannot Consume Held Funds", "GET",
+        "api/v1/funds/{{fixedFundId}}/refund-preview", token_var="userB_accessToken",
+        test_script='pm.test("Refund blocked while held", () => pm.response.to.have.status(409)); pm.test("Hold protected", () => pm.expect(pm.response.json().code).to.eql("refund_pending_hold"));'
+    ),
+    make_req(
+        "10c - Requester Cancels Held Expense", "POST",
+        "api/v1/funds/requests/{{heldExpenseId}}/cancel", token_var="userB_accessToken",
+        body={"securityPin": "{{default_pin}}"},
+        test_script='pm.test("Cancel accepted", () => pm.response.to.have.status(200)); pm.test("Hold cancelled", () => pm.expect(pm.response.json().state).to.eql("Cancelled"));'
     ),
     make_req(
         "11 - Get Fixed Fund Finance Summary",
@@ -2033,17 +2051,28 @@ pm.test("Returns array of top-ups", function () {
             "mode": "FinancialQuery"
         },
         test_script="""
-pm.test("AI chat responds (200 OK)", function () {
-    pm.response.to.have.status(200);
+pm.test("Unconfigured AI unavailable (503)", function () {
+    pm.response.to.have.status(503);
 });
-pm.test("Returns non-empty response", function () {
-    var res = pm.response.json();
-    pm.expect(res.message).to.be.a("string");
-    pm.expect(res.message.length).to.be.above(0);
+pm.test("Returns explicit unavailable code", function () {
+    pm.expect(pm.response.json().code).to.eql("AI_PROVIDER_UNAVAILABLE");
 });
 """
     )
 ]
+
+for item in integration_items[1:6]:
+    for event in item.get("event", []):
+        if event["listen"] == "test":
+            original = "\n".join(event["script"]["exec"])
+            event["script"]["exec"] = [
+                'if (pm.environment.get("test_mode_enabled") === "true") {', original,
+                '} else {',
+                'pm.test("TestMode disabled outside Development", () => pm.response.to.have.status(404));',
+                'pm.test("Explicit disabled code", () => pm.expect(pm.response.json().code).to.eql("sepay_test_mode_unavailable"));',
+                'pm.environment.set("bankChallengeId", "00000000-0000-0000-0000-000000000001");',
+                '}'
+            ]
 
 collection["item"].append({
     "name": "09-Integrations",

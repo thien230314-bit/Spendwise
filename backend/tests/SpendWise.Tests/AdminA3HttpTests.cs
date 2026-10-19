@@ -17,6 +17,7 @@ public sealed class AdminA3HttpTests
     [InlineData(SystemRole.Admin)] [InlineData(SystemRole.SuperAdmin)] [InlineData(SystemRole.User)] [InlineData(SystemRole.SystemAdmin)]
     public async Task Real_HTTP_routes_enforce_canonical_roles_and_scope(SystemRole role)
     {
+        var denied = role == SystemRole.SuperAdmin ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
         using var factory = new SpendWiseApiFactory(); using var client = factory.CreateHttpsClient();
         var caseId = Guid.NewGuid(); var fundId = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
@@ -35,14 +36,14 @@ public sealed class AdminA3HttpTests
         foreach (var path in new[] { "search", $"{fundId}/detail", $"{fundId}/members", $"{fundId}/activity", $"{fundId}/finance/Requests", $"{fundId}/treasury", $"{fundId}/governance/Elections", $"{fundId}/cases", $"{fundId}/invitations", $"{fundId}/dissolution" })
         {
             using var response = await client.PostAsJsonAsync(root + "/" + path, new { reason = "Verify scoped group API" });
-            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : denied, response.StatusCode);
             var text = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("passwordHash", text, StringComparison.OrdinalIgnoreCase); Assert.DoesNotContain("policyJson", text, StringComparison.OrdinalIgnoreCase);
         }
-        using var foreign = await client.PostAsJsonAsync(root + $"/{Guid.NewGuid()}/detail", new { reason = "Verify foreign group denial" }); Assert.Equal(HttpStatusCode.Forbidden, foreign.StatusCode);
-        using var posting = await client.PostAsJsonAsync(root + $"/{fundId}/postings/{Guid.NewGuid()}", new { reason = "Verify foreign posting denial" }); Assert.Equal(HttpStatusCode.Forbidden, posting.StatusCode);
-        using var report = await client.PostAsJsonAsync(root + $"/{fundId}/reports/Support/{Guid.NewGuid()}/history", new { reason = "Verify foreign report denial" }); Assert.Equal(HttpStatusCode.Forbidden, report.StatusCode);
-        using var expense = await client.PostAsJsonAsync(root + $"/{fundId}/expenses/{Guid.NewGuid()}/postings", new { reason = "Verify foreign expense denial" }); Assert.Equal(HttpStatusCode.Forbidden, expense.StatusCode);
-        using var legacy = await client.GetAsync("/api/groups"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : HttpStatusCode.Forbidden, legacy.StatusCode);
-        using var userV1 = await client.GetAsync("/api/v1/funds"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : HttpStatusCode.Forbidden, userV1.StatusCode);
+        using var foreign = await client.PostAsJsonAsync(root + $"/{Guid.NewGuid()}/detail", new { reason = "Verify foreign group denial" }); Assert.Equal(denied, foreign.StatusCode);
+        using var posting = await client.PostAsJsonAsync(root + $"/{fundId}/postings/{Guid.NewGuid()}", new { reason = "Verify foreign posting denial" }); Assert.Equal(denied, posting.StatusCode);
+        using var report = await client.PostAsJsonAsync(root + $"/{fundId}/reports/Support/{Guid.NewGuid()}/history", new { reason = "Verify foreign report denial" }); Assert.Equal(denied, report.StatusCode);
+        using var expense = await client.PostAsJsonAsync(root + $"/{fundId}/expenses/{Guid.NewGuid()}/postings", new { reason = "Verify foreign expense denial" }); Assert.Equal(denied, expense.StatusCode);
+        using var legacy = await client.GetAsync("/api/groups"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : denied, legacy.StatusCode);
+        using var userV1 = await client.GetAsync("/api/v1/funds"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : denied, userV1.StatusCode);
     }
 }

@@ -44,7 +44,7 @@ public sealed partial class V1FundService
             var isOwner = actor == fund.OwnerUserId;
             var canSpend = isOwner || await db.V1FundMemberships.AnyAsync(m => m.FundId == fundId && m.UserId == actor && m.LeftAt == null && m.CanSpend, token);
 
-            if (request.Kind == "Expense" && !canSpend)
+            if (request.Kind == "Expense" && fund.Kind == V1FundKind.Fixed && !canSpend)
                 throw new ForbiddenException("fund_spending_permission_required", "Spending permission is required.");
 
             await RequireNoActiveElectionAsync(fundId, token);
@@ -53,34 +53,18 @@ public sealed partial class V1FundService
             await RequireReconciledAccountingAsync(treasury, token);
             var treasuryAccount = await FreshAccountAsync(treasury.LedgerAccountId, token);
 
-            if (request.Kind == "Expense")
+            if (request.Kind == "Expense" && (fund.Kind == V1FundKind.Fixed || isOwner))
             {
+                var destWallet = await PayoutWalletAsync(request.RecipientUserId, token);
                 // Verify Fixed obligations fulfilled if Fixed fund
                 if (fund.Kind == V1FundKind.Fixed)
                 {
-                    var obligations = await db.V1FundObligations.AsNoTracking()
-                        .Where(o => o.FundId == fundId && o.Revision == treasury.Revision)
-                        .ToListAsync(token);
-                    var paid = (await db.V1FundContributions.AsNoTracking()
-                        .Where(c => c.FundId == fundId)
-                        .ToListAsync(token))
-                        .GroupBy(c => c.MembershipId)
-                        .ToDictionary(g => g.Key, g => g.Sum(c => c.AmountVnd));
-
-                    if (obligations.Count == 0 || obligations.Any(o => paid.GetValueOrDefault(o.MembershipId) < o.RequiredVnd))
-                        throw new ConflictException("obligations_not_completed", "Fixed fund spending requires all obligations to be satisfied.");
-
-                    var lockedExcess = obligations.Sum(o => Math.Max(0, paid.GetValueOrDefault(o.MembershipId) - o.RequiredVnd));
-                    var activeHolds = await db.V1FundRequests.AsNoTracking()
-                        .Where(r => r.FundId == fundId && r.State == "Pending24h")
-                        .SumAsync(r => r.AmountVnd, token);
-
-                    var availableBalance = Math.Max(0, treasuryAccount.Balance - lockedExcess - activeHolds);
+                    var availableBalance = await FixedSpendableAsync(fund, treasury, treasuryAccount, null, token);
                     if (request.AmountVnd > availableBalance)
                         throw new ConflictException("insufficient_fund_balance", "Amount exceeds available balance after locked excess and holds.");
 
                     // Large expense policy: threshold 20%
-                    var threshold = (long)Math.Floor(availableBalance * 0.20m);
+                    var threshold = (long)Math.Floor(await FixedWindowOpeningBalanceAsync(fundId, treasury, treasuryAccount, token) * 0.20m);
                     var past24hStart = clock.UtcNow.AddHours(-24);
                     var recentSpent24h = await db.V1FundRequests.AsNoTracking()
                         .Where(r => r.FundId == fundId && r.Kind == "Expense" && (r.State == "Completed" || r.State == "Pending24h") && r.CreatedAt >= past24hStart)
@@ -99,6 +83,7 @@ public sealed partial class V1FundService
                             Purpose = purpose,
                             IdempotencyKey = key,
                             OwnershipRevision = fund.OwnershipRevision,
+                            CreatedAt = clock.UtcNow,
                             State = "Pending24h"
                         };
                         db.V1FundRequests.Add(pendingItem);
@@ -116,41 +101,35 @@ public sealed partial class V1FundService
                 }
 
                 // Direct spend execution (< 20% or Free fund authorized spend)
-                var destWallet = await db.Wallets.FirstOrDefaultAsync(
-                    w => w.OwnerUserId == request.RecipientUserId && w.Status == WalletStatus.Active, token);
+                var destAccount = await db.LedgerAccounts.SingleOrDefaultAsync(a => a.WalletId == destWallet.Id
+                    && a.Type == LedgerAccountType.Wallet && a.Currency == "VND", token)
+                    ?? throw new ConflictException("wallet_unavailable", "Recipient wallet ledger account is unavailable.");
+                await FreshAccountAsync(destAccount.Id, token);
+                var posting = await ledger.PostAsync(
+                    treasury.LedgerAccountId,
+                    destAccount.Id,
+                    request.AmountVnd,
+                    "VND",
+                    "V1FundExpense",
+                    fundId,
+                    $"v1-fund-expense:{fundId:N}:{actor:N}",
+                    key,
+                    purpose,
+                    token);
 
-                Guid? ledgerTxId = null;
-                if (destWallet is not null)
+                db.FinancialTransactions.Add(new FinancialTransaction
                 {
-                    var destAccount = await db.LedgerAccounts.SingleAsync(a => a.WalletId == destWallet.Id, token);
-                    await FreshAccountAsync(destAccount.Id, token);
-                    var posting = await ledger.PostAsync(
-                        treasury.LedgerAccountId,
-                        destAccount.Id,
-                        request.AmountVnd,
-                        "VND",
-                        "V1FundExpense",
-                        fundId,
-                        "v1-fund-expense:" + fundId.ToString("N"),
-                        key,
-                        purpose,
-                        token);
-                    ledgerTxId = posting.LedgerTransactionId;
-
-                    db.FinancialTransactions.Add(new FinancialTransaction
-                    {
-                        OwnerUserId = request.RecipientUserId,
-                        WalletId = destWallet.Id,
-                        LedgerTransactionId = posting.LedgerTransactionId,
-                        RelatedBusinessId = fundId,
-                        Type = FinancialTransactionType.Expense,
-                        Status = FinancialTransactionStatus.Completed,
-                        Amount = request.AmountVnd,
-                        Currency = "VND",
-                        Description = purpose,
-                        OccurredAt = clock.UtcNow
-                    });
-                }
+                    OwnerUserId = request.RecipientUserId,
+                    WalletId = destWallet.Id,
+                    LedgerTransactionId = posting.LedgerTransactionId,
+                    RelatedBusinessId = fundId,
+                    Type = FinancialTransactionType.Expense,
+                    Status = FinancialTransactionStatus.Completed,
+                    Amount = request.AmountVnd,
+                    Currency = "VND",
+                    Description = purpose,
+                    OccurredAt = clock.UtcNow
+                });
 
                 var item = new V1FundRequest
                 {
@@ -162,6 +141,7 @@ public sealed partial class V1FundService
                     Purpose = purpose,
                     IdempotencyKey = key,
                     OwnershipRevision = fund.OwnershipRevision,
+                    CreatedAt = clock.UtcNow,
                     State = "Completed",
                     ReviewedByUserId = actor,
                     ReviewedAt = clock.UtcNow
@@ -173,7 +153,7 @@ public sealed partial class V1FundService
                 await db.SaveChangesAsync(token);
                 return MapRequest(item);
             }
-            else // Withdrawal
+            else // Free fund requests require owner review
             {
                 var item = new V1FundRequest
                 {
@@ -185,6 +165,7 @@ public sealed partial class V1FundService
                     Purpose = purpose,
                     IdempotencyKey = key,
                     OwnershipRevision = fund.OwnershipRevision,
+                    CreatedAt = clock.UtcNow,
                     State = "AwaitingOwnerReview"
                 };
                 db.V1FundRequests.Add(item);
@@ -221,19 +202,34 @@ public sealed partial class V1FundService
                 return MapRequest(item);
             }
 
+            if (fund.ActivityClosedAt is not null)
+                throw new ConflictException("activity_closed", "Activity is closed.");
+            if (item.State == "Pending24h" && clock.UtcNow < item.CreatedAt.AddHours(24))
+                throw new ConflictException("fund_request_hold_active", "The server-side 24-hour hold has not elapsed.");
+            await RequireMemberAsync(item.RequestedByUserId, fund.Id, token);
+            await RequireActorAsync(item.RecipientUserId, token);
+            await RequireNoActiveElectionAsync(fund.Id, token);
+            if (item.Kind == "Expense" && fund.Kind == V1FundKind.Fixed && item.RequestedByUserId != fund.OwnerUserId
+                && !await db.V1FundMemberships.AnyAsync(m => m.FundId == fund.Id && m.UserId == item.RequestedByUserId
+                    && m.LeftAt == null && m.CanSpend, token))
+                throw new ForbiddenException("fund_spending_permission_required", "Spending permission is required.");
+
             // Approved: execute funds transfer
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
             var treasuryAccount = await FreshAccountAsync(treasury.LedgerAccountId, token);
 
-            if (treasuryAccount.Balance < item.AmountVnd)
+            var available = fund.Kind == V1FundKind.Fixed
+                ? await FixedSpendableAsync(fund, treasury, treasuryAccount, item.Id, token)
+                : treasuryAccount.Balance;
+            if (available < item.AmountVnd)
                 throw new ConflictException("insufficient_fund_balance", "Fund balance is insufficient to execute request.");
 
-            var destWallet = await db.Wallets.FirstOrDefaultAsync(
-                w => w.OwnerUserId == item.RecipientUserId && w.Status == WalletStatus.Active, token)
-                ?? throw new ConflictException("wallet_unavailable", "Recipient has no active wallet to receive funds.");
+            var destWallet = await PayoutWalletAsync(item.RecipientUserId, token);
 
-            var destAccount = await db.LedgerAccounts.SingleAsync(a => a.WalletId == destWallet.Id, token);
+            var destAccount = await db.LedgerAccounts.SingleOrDefaultAsync(a => a.WalletId == destWallet.Id
+                    && a.Type == LedgerAccountType.Wallet && a.Currency == "VND", token)
+                    ?? throw new ConflictException("wallet_unavailable", "Recipient wallet ledger account is unavailable.");
             await FreshAccountAsync(destAccount.Id, token);
             var posting = await ledger.PostAsync(
                 treasury.LedgerAccountId,
@@ -274,7 +270,7 @@ public sealed partial class V1FundService
                 referenceId: id);
 
             return MapRequest(item);
-        }, ct);
+        }, ct, approved);
     }
 
     public Task<V1FundRequestDto> CancelFundRequestAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
@@ -302,13 +298,15 @@ public sealed partial class V1FundService
     }
 
     private async Task<V1FundRequestDto> ChangeFundRequestAsync(Guid actor, Guid id, string pin,
-        Func<V1Fund, V1FundRequest, CancellationToken, Task<V1FundRequestDto>> change, CancellationToken ct)
+        Func<V1Fund, V1FundRequest, CancellationToken, Task<V1FundRequestDto>> change, CancellationToken ct, bool payout = false)
     {
         await RequireActorAsync(actor, ct);
         await security.VerifyAsync(actor, pin, ct);
         return await db.ExecuteInTransactionAsync(async token =>
         {
-            await LockUsersAsync([actor], token);
+            var identities = payout ? await db.V1FundRequests.AsNoTracking().Where(x => x.Id == id)
+                .Select(x => new { x.RequestedByUserId, x.RecipientUserId }).SingleOrDefaultAsync(token) : null;
+            await LockUsersAsync(identities is null ? [actor] : [actor, identities.RequestedByUserId, identities.RecipientUserId], token);
             var fundId = await db.V1FundRequests.AsNoTracking().Where(x => x.Id == id).Select(x => (Guid?)x.FundId).SingleOrDefaultAsync(token)
                 ?? throw new NotFoundException("fund_request_not_found", "Request not found.");
             var fund = await LockFundAsync(fundId, token);
@@ -319,6 +317,45 @@ public sealed partial class V1FundService
             await db.SaveChangesAsync(token);
             return result;
         }, ct);
+    }
+
+    private async Task<Wallet> PayoutWalletAsync(Guid recipient, CancellationToken ct)
+    {
+        await RequireActorAsync(recipient, ct);
+        return await db.Wallets.Where(w => w.OwnerUserId == recipient && w.Status == WalletStatus.Active && w.Currency == "VND")
+            .OrderByDescending(w => w.IsDefault).ThenBy(w => w.Id).FirstOrDefaultAsync(ct)
+            ?? throw new ConflictException("wallet_unavailable", "Recipient has no active VND wallet to receive funds.");
+    }
+
+    private async Task<decimal> FixedSpendableAsync(V1Fund fund, V1FundTreasury treasury,
+        LedgerAccount account, Guid? executingRequest, CancellationToken ct)
+    {
+        var state = await FinanceStateAsync(fund, treasury, ct);
+        if (state.SpendingState != "OPEN")
+            throw new ConflictException("obligations_not_completed", "Fixed fund spending requires current, satisfied obligations.");
+        var holds = await db.V1FundRequests.AsNoTracking().Where(r => r.FundId == fund.Id
+            && (r.State == "Pending24h" || r.State == "Suspended") && r.Id != executingRequest)
+            .SumAsync(r => r.AmountVnd, ct);
+        return Math.Max(0, account.Balance - state.Obligations.Sum(o => o.LockedExcessVnd) - holds);
+    }
+
+    private async Task<decimal> FixedWindowOpeningBalanceAsync(Guid fundId, V1FundTreasury treasury,
+        LedgerAccount account, CancellationToken ct)
+    {
+        var start = clock.UtcNow.AddHours(-24);
+        var firstExpense = await db.V1FundRequests.AsNoTracking().Where(r => r.FundId == fundId && r.Kind == "Expense"
+            && (r.State == "Completed" || r.State == "Pending24h") && r.CreatedAt >= start)
+            .OrderBy(r => r.CreatedAt).Select(r => (DateTime?)r.CreatedAt).FirstOrDefaultAsync(ct) ?? clock.UtcNow;
+        var entries = await db.LedgerEntries.AsNoTracking().Where(e => e.LedgerAccountId == account.Id
+            && db.LedgerTransactions.Any(t => t.Id == e.LedgerTransactionId && t.CompletedAt >= start
+                && !(t.BusinessType == "V1FundContribution" && t.CompletedAt <= firstExpense)))
+            .Select(e => new { e.Direction, e.Amount }).ToListAsync(ct);
+        var opening = account.Balance - entries.Sum(e => e.Direction == LedgerEntryDirection.Debit ? e.Amount : -e.Amount);
+        // Initial funding before the first expense establishes the opening balance of a new spending window.
+        var state = await FinanceStateAsync(await FundAsync(fundId, ct), treasury, ct);
+        var priorHolds = await db.V1FundRequests.AsNoTracking().Where(r => r.FundId == fundId
+            && (r.State == "Pending24h" || r.State == "Suspended") && r.CreatedAt < start).SumAsync(r => r.AmountVnd, ct);
+        return Math.Max(0, opening - state.Obligations.Sum(o => o.LockedExcessVnd) - priorHolds);
     }
 
     private static V1FundRequestDto MapRequest(V1FundRequest x)

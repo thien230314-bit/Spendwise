@@ -5,8 +5,9 @@ Public source snapshot through Admin A3 final closure, 2026-10-19. Publication i
 - Admin A1.1–A1.4: DONE, functional Backend LOCKED per local checkpoint `V1-MODULE-LOCK-ADMIN-A1-20261019-113811`.
 - Admin A2.1, A2.2, A2.4, A2.5: DONE per local checkpoint `V1-MODULE-LOCK-ADMIN-A2-20261019-120919`.
 - A2.3: PARTIAL / POLICY_BLOCKED. Emergency restriction duration, verification/evidence, restoration/expiry, notification/escalation and in-flight/refund treatment need owner-approved policy. No arbitrary money controls are enabled.
-- Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED for scoped read-only investigation (see `backend/docs/ADMIN-A3-CONTRACT.md`). Missing historical provenance and not-implemented hold/refund execution are represented explicitly, not fabricated as completed money movements.
-- Backend V1.0 overall remains PARTIAL. A4/subsequent modules have not been started by this closure. Functional A3 lock is not production SQL/concurrency or User Finance execution approval.
+- Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED for scoped read-only investigation (see `backend/docs/ADMIN-A3-CONTRACT.md`).
+- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED for scoped read-only transaction and wallet investigation (see `backend/docs/ADMIN-A4-CONTRACT.md`).
+- Backend V1.0 overall remains PARTIAL. A5/A6 have not been started by this closure. Functional A4 lock is not production SQL/concurrency or User Finance execution approval.
 - Historical A2 evidence: 146 related regression tests PASS (15 A2, 14 A1, 117 related); 4 SQL02 tests PASS; Release build 0 errors / 4 existing Pkcs advisory warnings. Full unfiltered suite and live UI E2E were NOT RUN for that closure. These are historical results, not a claim that every current consumer passes.
 - A1 additive migration is source-only and was not applied to the application database. Do not start Development against a real database simply to review source: startup may perform migrations/seeding. AdminE2E has explicit startup guards, but must also be separately configured and authorized.
 - Canonical Admin/SuperAdmin are not automatically inferred from legacy SystemAdmin. Legacy A2 HTTP management routes are deliberately denied; use scoped V1 APIs with current session, assigned case and purpose. No real account is promoted or reset here.

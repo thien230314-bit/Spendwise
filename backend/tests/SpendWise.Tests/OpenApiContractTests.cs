@@ -127,6 +127,15 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
         // SePay Test Mode admin read is part of the current backend contract.
         var v1Routes = new Dictionary<string, string[]>
         {
+            ["/api/v1/admin/support/{caseId}/funds/search"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/detail"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/members"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/activity"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/finance/{source}"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/treasury"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/postings/{postingId}"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/governance/{source}"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/funds/{fundId}/cases"] = ["post"],
             ["/api/v1/admin/users/search"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/profile"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/sessions"] = ["post"],

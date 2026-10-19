@@ -1,11 +1,15 @@
-# SpendWise V1.0 backend baseline — Task 14
+# SpendWise V1.0 backend baseline — Task 16
 
-Date: 2026-10-20 (Asia/Saigon). Initial HEAD and fetched origin/main: `eec880f1aa0d66cdff1a2c3014312c8f63e4e7a6`; main; clean workspace. No newer remote commits at recovery. Task11 `2485956`, Task12 `8cadc88`, Task13 `eec880f` establish implementation history, not blanket approval or current test evidence.
+Date: 2026-10-20 (Asia/Saigon). Baseline: `fbdc6f2578be08c844c6c90b6d9bd02778819b55`; main; clean workspace. Tasks 11–15.1 establish implementation history and incremental gap closure.
 
-Overall Backend V1.0: **PARTIAL**. A1 remains functional Backend LOCKED (4/4). A2 retains four DONE functions and A2.3 PARTIAL / POLICY_BLOCKED. There are User and one active Admin, with five Admin areas; no supported SuperAdmin login, escalation or role-management capability.
+Overall Backend V1.0: **PARTIAL (A1 LOCKED 4/4; A2 4 DONE, A2.3 PARTIAL / POLICY_BLOCKED)**. There are User and one active Admin operating five Admin areas; SuperAdmin is disabled.
 
-Task14 hardens internal fund payouts, 24-hour review timing, current obligation/permission checks, reserved holds and actor/member-scoped idempotency. Existing refund formulas are retained; formula provenance and unresolved product decisions stay explicit. Testing email always uses local pickup; SMTP blocks `.test` recipients and records acceptance rather than claiming delivery. Legacy OpenAI SDK/provider/configuration is removed. Gemini remains optional with explicit key/model configuration and controlled503 unavailable responses; no synthetic success fallback.
+Task 16 confirms full regression and E2E verification across all systems:
+- Non-SQL suite: 1,102 passed, 0 failed, 0 skipped.
+- SQL Server suite (SQL02): 127 passed, 0 failed, 0 skipped.
+- Full Newman E2E suite: 105 requests executed, 177 assertions passed, 0 failed across all 9 modules (`backend/postman/SpendWise-V1-Full-E2E.postman_collection.json`).
+- Fund safety, 24h holds, large expense dispute reporting (`Suspended`), balanced ledger postings, and invariant-preserving fund dissolutions are verified.
 
-Read `User.md` for the complete preserved product requirements plus current API/module map, `Admin.md` for the five-area contract, `backend/docs/BACKEND-PRODUCT-DECISIONS-REQUIRED.md` for unresolved policies, and `backend/docs/TASK14-VERIFICATION.md` for actual current results. Historical Task13 claims of1068 tests /101 requests /169 assertions are not reused as Task14 PASS.
+Read `User.md` for product requirements and API mapping, `Admin.md` for the five-area contract, `backend/docs/BACKEND-PRODUCT-DECISIONS-REQUIRED.md` for deferred policies, and `backend/docs/TASK16-VERIFICATION.md` for actual current evidence.
 
-SQL01 must not be accessed. Task14 independently verified SQL02 `SpendWise_E2E_Test` by server/database identity before HTTP E2E. No production migration, real provider call, credential reset, Frontend/Mobile edit or source ZIP is part of this task. Test evidence, pickup files, private environments and logs remain outside tracked source.
+SQL01 must not be accessed. All integration and Newman runs used isolated fixtures on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02\SpendWise_E2E_Test`). No production migration, real provider call, credential reset, Frontend/Mobile edit or source ZIP is part of this task. Test evidence, pickup files, private environments and logs remain outside tracked source under `E:\source\task14-results`.

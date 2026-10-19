@@ -123,7 +123,7 @@ public sealed class V1FundSqlServerTests : SqlTestFixtureScope
     [Fact]
     public async Task Maintenance_close_serializes_with_operator_session_revocation()
     {
-        var owned = await OwnAsync(Owned.CreateAsync()); var user = SyntheticUser(); user.SystemRole = SystemRole.SuperAdmin;
+        var owned = await OwnAsync(Owned.CreateAsync()); var user = SyntheticUser(); user.SystemRole = SystemRole.Admin;
         user.SecurityPinHash = new SecurityPinService().Hash(IdentityTestData.DefaultPin);
         var session = new UserSession { UserId = user.Id, LastSeenAt = DateTime.UtcNow };
         var plan = new SpendWise.Domain.Admin.V1MaintenancePlan { CreatedByUserId = user.Id, StartsAt = DateTime.UtcNow.AddHours(-1), ExpectedEndsAt = DateTime.UtcNow.AddMinutes(-1), Reason = "Synthetic" };
@@ -132,7 +132,7 @@ public sealed class V1FundSqlServerTests : SqlTestFixtureScope
         await using var firstDb = owned.Context(); await using var secondDb = owned.Context();
         var service = new V1MaintenanceService(firstDb, clock, new(firstDb), new AdminSecurityGuard(firstDb, new SecurityPinService(), new AccountCredentialLockout(firstDb, clock)), new(firstDb), safety);
         await secondDb.Database.OpenConnectionAsync(); var contenderSession = ((SqlConnection)secondDb.Database.GetDbConnection()).ServerProcessId;
-        var first = service.CloseAsync(V1PermissionTests.Principal(user.Id, session.Id, "SuperAdmin"), plan.Id, new(IdentityTestData.DefaultPin, "Synthetic manual close"), default);
+        var first = service.CloseAsync(V1PermissionTests.Principal(user.Id, session.Id, "Admin"), plan.Id, new(IdentityTestData.DefaultPin, "Synthetic manual close"), default);
         Task<int>? revoke = null;
         try
         {

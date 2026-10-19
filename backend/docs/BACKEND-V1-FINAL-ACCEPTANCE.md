@@ -1,8 +1,8 @@
-# SpendWise V1.0 — current backend acceptance (Task 14)
+# SpendWise V1.0 — current backend acceptance (Task 16)
 
-2026-10-20. **PARTIAL; not production acceptance and not 100% complete.** This replaces the Task13 blanket completion claim. Source recovery found actual financial and role gaps despite historical passing counts.
+2026-10-20. **PARTIAL; not production acceptance and not 100% complete.** A1 functional Backend LOCKED (4/4); A2 four DONE with A2.3 PARTIAL / POLICY_BLOCKED.
 
-The current evidence record is `TASK14-VERIFICATION.md`; it distinguishes PASS, FAIL, NOT RUN, BLOCKED, DEFERRED and LIVE NOT VERIFIED. Do not substitute historical tests or SMTP acceptance for current evidence.
+The current evidence record is `TASK16-VERIFICATION.md`; it records actual results across 1,102 non-SQL tests (PASS), 127 SQL Server integration tests on SQL02 (PASS), and 105 requests / 177 assertions on Newman E2E (PASS). Do not substitute historical tests or SMTP acceptance for current evidence.
 
 ## Current implementation boundary
 

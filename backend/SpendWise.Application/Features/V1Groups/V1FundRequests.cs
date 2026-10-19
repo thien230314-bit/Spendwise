@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common;
 using SpendWise.Application.Common.Exceptions;
+using SpendWise.Domain.Admin;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.V1Groups;
 
 namespace SpendWise.Application.Features.V1Groups;
 
 public sealed record V1FundRequestInput(string Kind, long AmountVnd, Guid RecipientUserId, string Purpose, string IdempotencyKey, string SecurityPin);
+public sealed record V1FundReportRequest(string Reason);
 public sealed record V1FundRequestDto(Guid Id, Guid FundId, Guid RequestedByUserId, Guid RecipientUserId, string Kind,
     long AmountVnd, string Purpose, string State, Guid? ReviewedByUserId, DateTime? ReviewedAt, string ExecutionAvailability);
 
@@ -273,13 +275,57 @@ public sealed partial class V1FundService
         }, ct, approved);
     }
 
+    public Task<V1FundRequestDto> ReportFundRequestAsync(Guid actor, Guid id, string reason, CancellationToken ct) =>
+        ChangeFundRequestAsync(actor, id, null, async (fund, item, token) =>
+        {
+            var reportReason = InputBoundary.RequiredText(reason, 1000, "Report reason");
+            if (item.State == "Suspended") return MapRequest(item);
+            if (item.State != "Pending24h")
+                throw new ConflictException("fund_request_not_reportable", "Only pending 24-hour holds can be reported.");
+
+            item.State = "Suspended";
+            item.ReviewReason = reportReason;
+
+            // Open SupportCase for the dispute
+            var ticket = new SupportCase
+            {
+                LinkedUserId = actor,
+                Category = "V1FundDispute",
+                Subject = $"Expense reported in fund {fund.Code}: {item.AmountVnd:N0} đ",
+                Description = $"Reported by user {actor} for fund {fund.Id}, request {item.Id}. Amount: {item.AmountVnd:N0} VND. Reason: {reportReason}",
+                Priority = "High",
+                Status = CaseStatus.New
+            };
+            ticket.TicketNumber = "V1-" + ticket.Id.ToString("N");
+            db.SupportCases.Add(ticket);
+
+            var reporterName = await db.Users.Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
+            db.CaseHistories.Add(new CaseHistory
+            {
+                CaseKind = CaseKind.Support,
+                CaseId = ticket.Id,
+                ActorId = actor,
+                ActorDisplayNameSnapshot = reporterName,
+                ActorRole = "User",
+                Action = "Created",
+                Message = $"Expense hold reported and suspended: {reportReason}",
+                NewStatus = ticket.Status.ToString()
+            });
+
+            await ActivityAsync(fund.Id, actor, "FundExpenseSuspended", token, item.RequestedByUserId,
+                detail: $"Khoản chi {item.AmountVnd:N0} đ bị báo cáo và tạm dừng: {reportReason}",
+                referenceId: id);
+
+            return MapRequest(item);
+        }, ct);
+
     public Task<V1FundRequestDto> CancelFundRequestAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
         ChangeFundRequestAsync(actor, id, pin, async (fund, item, token) =>
         {
             if (actor != item.RequestedByUserId && actor != fund.OwnerUserId)
                 throw new ForbiddenException("fund_request_owner_required", "Only the requester or fund owner can cancel.");
             if (item.State == "Cancelled") return MapRequest(item);
-            if (item.State is not ("AwaitingOwnerReview" or "Pending24h"))
+            if (item.State is not ("AwaitingOwnerReview" or "Pending24h" or "Suspended"))
                 throw new ConflictException("fund_request_unavailable", "Request cannot be cancelled in its current state.");
             item.State = "Cancelled";
             item.CancelledAt = clock.UtcNow;
@@ -297,11 +343,12 @@ public sealed partial class V1FundService
         return rows.Select(MapRequest).ToList();
     }
 
-    private async Task<V1FundRequestDto> ChangeFundRequestAsync(Guid actor, Guid id, string pin,
+    private async Task<V1FundRequestDto> ChangeFundRequestAsync(Guid actor, Guid id, string? pin,
         Func<V1Fund, V1FundRequest, CancellationToken, Task<V1FundRequestDto>> change, CancellationToken ct, bool payout = false)
     {
         await RequireActorAsync(actor, ct);
-        await security.VerifyAsync(actor, pin, ct);
+        if (pin is not null)
+            await security.VerifyAsync(actor, pin, ct);
         return await db.ExecuteInTransactionAsync(async token =>
         {
             var identities = payout ? await db.V1FundRequests.AsNoTracking().Where(x => x.Id == id)

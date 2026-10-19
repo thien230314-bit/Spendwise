@@ -29,6 +29,8 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [HttpPost("requests/{id:guid}/review"), EnableRateLimiting("financial")]
     public Task<V1FundRequestDto> ReviewRequest(Guid id, V1RequestReview request, CancellationToken ct) => funds.ReviewFundRequestAsync(Actor, id,
         request.Approved ?? throw new AppException("explicit_decision_required", "An explicit decision is required."), request.Reason, request.SecurityPin, ct);
+    [HttpPost("requests/{id:guid}/report"), EnableRateLimiting("financial")]
+    public Task<V1FundRequestDto> ReportRequest(Guid id, V1FundReportRequest request, CancellationToken ct) => funds.ReportFundRequestAsync(Actor, id, request.Reason, ct);
     [HttpPost("requests/{id:guid}/cancel"), EnableRateLimiting("financial")]
     public Task<V1FundRequestDto> CancelRequest(Guid id, V1PinRequest request, CancellationToken ct) => funds.CancelFundRequestAsync(Actor, id, request.SecurityPin, ct);
 

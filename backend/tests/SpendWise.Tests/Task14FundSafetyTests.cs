@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.V1Groups;
+using SpendWise.Domain.Admin;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.V1Groups;
 using Xunit;
@@ -338,6 +339,70 @@ public sealed class Task14FundSafetyTests
         Assert.Equal(request.Id, (await service.ReviewFundRequestAsync(owner, request.Id, true, "Approval replay", Pin, default)).Id);
         Assert.Equal(request.Id, (await service.CreateFundRequestAsync(member.Id, fund, input, default)).Id);
         Assert.Equal(after, await SnapshotAsync(f));
+    }
+
+    [Fact]
+    public async Task Large_expense_can_be_reported_by_member_suspending_hold_and_opening_support_case()
+    {
+        var clock = new Clock();
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var member = await f.AddUserAsync("Member");
+        var (service, owner, fund) = await FundAsync(f, "Fixed", member.Id);
+        var recipient = await f.AddUserAsync("Recipient");
+        var wallet = await f.AddWalletAsync(recipient.Id, "Recipient", true);
+
+        // Owner initiates large expense (40 VND >= 20% of 200 VND) -> enters Pending24h
+        var req = await service.CreateFundRequestAsync(owner, fund,
+            new("Expense", 40, recipient.Id, "Large buy", "large-buy-1", Pin), default);
+        Assert.Equal("Pending24h", req.State);
+
+        // Member reports the pending hold -> status becomes Suspended, opens SupportCase
+        var reported = await service.ReportFundRequestAsync(member.Id, req.Id, "Suspicious contractor invoice", default);
+        Assert.Equal("Suspended", reported.State);
+
+        // Verify SupportCase created for the reported hold
+        var ticket = await f.Db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Category == "V1FundDispute");
+        Assert.NotNull(ticket);
+        Assert.Equal(member.Id, ticket.LinkedUserId);
+        Assert.Contains("40", ticket.Subject);
+        Assert.Equal(CaseStatus.New, ticket.Status);
+
+        // Suspended request cannot be approved by Owner even after 24h
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ReviewFundRequestAsync(owner, req.Id, true, "Try approve suspended", Pin, default));
+
+        // Suspended request reserves funds; refund preview / leave fails closed with hold active
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.PreviewRefundAsync(member.Id, fund, member.Id, default));
+
+        // Owner or requester can cancel the suspended request, releasing the hold
+        var cancelled = await service.CancelFundRequestAsync(owner, req.Id, Pin, default);
+        Assert.Equal("Cancelled", cancelled.State);
+
+        // After cancellation, refund preview succeeds and balance is preserved
+        var preview = await service.PreviewRefundAsync(member.Id, fund, member.Id, default);
+        Assert.Equal(100, preview.EligibleRefundAmountVnd);
+    }
+
+    [Fact]
+    public async Task Cannot_report_completed_or_already_cancelled_request()
+    {
+        var clock = new Clock();
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var member = await f.AddUserAsync("Member");
+        var (service, owner, fund) = await FundAsync(f, "Fixed", member.Id);
+        var recipient = await f.AddUserAsync("Recipient");
+        await f.AddWalletAsync(recipient.Id, "Recipient", true);
+
+        // Small expense executes immediately (< 20% threshold: 10 VND < 40 VND) -> Completed
+        var completedReq = await service.CreateFundRequestAsync(owner, fund,
+            new("Expense", 10, recipient.Id, "Small lunch", "small-lunch-1", Pin), default);
+        Assert.Equal("Completed", completedReq.State);
+
+        // Cannot report completed expense
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ReportFundRequestAsync(member.Id, completedReq.Id, "Trying to report finished expense", default));
     }
 
     private static async Task<(V1FundService Service, Guid Owner, Guid Fund)> FundAsync(TargetedCorrectnessFixture f, string kind, Guid? member = null)

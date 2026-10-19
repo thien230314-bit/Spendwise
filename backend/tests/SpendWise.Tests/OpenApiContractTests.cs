@@ -165,6 +165,7 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             ["/api/v1/funds/activity-proposals/{id}/vote"] = ["post"],
             ["/api/v1/funds/{id}/requests"] = ["get", "post"],
             ["/api/v1/funds/requests/{id}/review"] = ["post"],
+            ["/api/v1/funds/requests/{id}/report"] = ["post"],
             ["/api/v1/funds/requests/{id}/cancel"] = ["post"],
             ["/api/v1/system/maintenance/emergency"] = ["post"],
             ["/api/v1/system/maintenance/{id}"] = ["put"],

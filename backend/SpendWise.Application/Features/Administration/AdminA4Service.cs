@@ -26,52 +26,161 @@ public sealed class AdminA4Service(
         {
             Validate(query);
             var subjectId = ticket.LinkedUserId;
-            var rows = db.FinancialTransactions.AsNoTracking().Where(t => t.OwnerUserId == subjectId);
 
-            if (!string.IsNullOrWhiteSpace(query.Type))
+            // 1. Authoritative FinancialTransactions
+            var ftQuery = db.FinancialTransactions.AsNoTracking()
+                .Include(t => t.Wallet)
+                .Include(t => t.LedgerTransaction)
+                .Where(t => t.OwnerUserId == subjectId);
+
+            if (query.FromUtc is { } from) ftQuery = ftQuery.Where(t => t.OccurredAt >= from);
+            if (query.ToUtc is { } to) ftQuery = ftQuery.Where(t => t.OccurredAt < to);
+
+            var ftItems = await ftQuery.Select(t => new A4TransactionItem
             {
-                if (!Enum.TryParse<FinancialTransactionType>(query.Type, out var typeVal) || !Enum.IsDefined(typeVal))
-                    throw new AppException("invalid_transaction_type", "Invalid transaction type filter.");
-                rows = rows.Where(t => t.Type == typeVal);
-            }
+                Id = t.Id,
+                BusinessType = t.Type.ToString(),
+                Status = t.Status.ToString(),
+                Amount = t.Amount,
+                Currency = t.Currency,
+                OccurredAt = DateTime.SpecifyKind(t.OccurredAt, DateTimeKind.Utc),
+                WalletId = t.WalletId,
+                WalletName = t.Wallet != null ? t.Wallet.Name : null,
+                LedgerTransactionId = t.LedgerTransactionId,
+                LedgerStatus = t.LedgerTransaction != null ? t.LedgerTransaction.Status.ToString() : null,
+                LedgerReference = t.LedgerTransaction != null ? t.LedgerTransaction.Reference : null,
+                RelatedBusinessId = t.RelatedBusinessId,
+                RelatedBusinessSource = t.RelatedBusinessId != null ? "LinkedBusinessEntity" : null,
+                Counterparty = MaskSensitive(t.CounterpartyName),
+                Description = MaskSensitive(t.Description)
+            }).ToListAsync(token);
 
-            if (!string.IsNullOrWhiteSpace(query.Status))
-            {
-                if (!Enum.TryParse<FinancialTransactionStatus>(query.Status, out var statusVal) || !Enum.IsDefined(statusVal))
-                    throw new AppException("invalid_transaction_status", "Invalid transaction status filter.");
-                rows = rows.Where(t => t.Status == statusVal);
-            }
+            var existingBusinessIds = ftItems
+                .Where(t => t.RelatedBusinessId != null)
+                .Select(t => t.RelatedBusinessId!.Value)
+                .ToHashSet();
 
-            if (query.FromUtc is { } from) rows = rows.Where(t => t.OccurredAt >= from);
-            if (query.ToUtc is { } to) rows = rows.Where(t => t.OccurredAt < to);
+            var existingLedgerIds = ftItems
+                .Where(t => t.LedgerTransactionId != null)
+                .Select(t => t.LedgerTransactionId!.Value)
+                .ToHashSet();
 
-            var total = await rows.CountAsync(token);
-            var items = await rows
-                .OrderByDescending(t => t.OccurredAt)
-                .ThenBy(t => t.Id)
-                .Skip((query.Page - 1) * query.PageSize)
-                .Take(query.PageSize)
-                .Select(t => new A4TransactionItem
-                {
-                    Id = t.Id,
-                    BusinessType = t.Type.ToString(),
-                    Status = t.Status.ToString(),
-                    Amount = t.Amount,
-                    Currency = t.Currency,
-                    OccurredAt = DateTime.SpecifyKind(t.OccurredAt, DateTimeKind.Utc),
-                    WalletId = t.WalletId,
-                    WalletName = t.Wallet != null ? t.Wallet.Name : null,
-                    LedgerTransactionId = t.LedgerTransactionId,
-                    LedgerStatus = t.LedgerTransaction != null ? t.LedgerTransaction.Status.ToString() : null,
-                    LedgerReference = t.LedgerTransaction != null ? t.LedgerTransaction.Reference : null,
-                    RelatedBusinessId = t.RelatedBusinessId,
-                    RelatedBusinessSource = t.RelatedBusinessId != null ? "LinkedBusinessEntity" : null,
-                    Counterparty = MaskSensitive(t.CounterpartyName),
-                    Description = MaskSensitive(t.Description)
-                })
+            var unifiedList = new List<A4TransactionItem>(ftItems);
+
+            // 2. Legacy Group Contributions belonging to subject not in FinancialTransaction
+            var groupContribs = await db.GroupContributions.AsNoTracking()
+                .Where(c => c.UserId == subjectId && !existingBusinessIds.Contains(c.Id) && !existingLedgerIds.Contains(c.LedgerTransactionId))
                 .ToListAsync(token);
 
-            return new A2Page<A4TransactionItem>(clock.UtcNow, query.Page, query.PageSize, total, items);
+            foreach (var gc in groupContribs)
+            {
+                if (query.FromUtc is { } f && gc.CreatedAt < f) continue;
+                if (query.ToUtc is { } t && gc.CreatedAt >= t) continue;
+
+                var ledger = await db.LedgerTransactions.AsNoTracking().FirstOrDefaultAsync(l => l.Id == gc.LedgerTransactionId, token);
+                var wallet = await db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.Id == gc.WalletId, token);
+
+                unifiedList.Add(new A4TransactionItem
+                {
+                    Id = gc.Id,
+                    BusinessType = "GroupContribution",
+                    Status = ledger?.Status == LedgerTransactionStatus.Completed ? "Completed" : "Recorded",
+                    Amount = gc.Amount,
+                    Currency = "VND",
+                    OccurredAt = DateTime.SpecifyKind(gc.CreatedAt, DateTimeKind.Utc),
+                    WalletId = gc.WalletId,
+                    WalletName = wallet?.Name,
+                    LedgerTransactionId = gc.LedgerTransactionId,
+                    LedgerStatus = ledger?.Status.ToString(),
+                    LedgerReference = ledger?.Reference,
+                    RelatedBusinessId = gc.Id,
+                    RelatedBusinessSource = "GroupContribution",
+                    Counterparty = null,
+                    Description = MaskSensitive(gc.Purpose)
+                });
+            }
+
+            // 3. V1 Fund Contributions belonging to subject not in FinancialTransaction
+            var v1Contribs = await db.V1FundContributions.AsNoTracking()
+                .Where(c => c.UserId == subjectId && !existingBusinessIds.Contains(c.Id) && !existingLedgerIds.Contains(c.LedgerTransactionId))
+                .ToListAsync(token);
+
+            foreach (var vc in v1Contribs)
+            {
+                if (query.FromUtc is { } f && vc.CreatedAt < f) continue;
+                if (query.ToUtc is { } t && vc.CreatedAt >= t) continue;
+
+                var ledger = await db.LedgerTransactions.AsNoTracking().FirstOrDefaultAsync(l => l.Id == vc.LedgerTransactionId, token);
+                var wallet = await db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.Id == vc.WalletId, token);
+
+                unifiedList.Add(new A4TransactionItem
+                {
+                    Id = vc.Id,
+                    BusinessType = "V1FundContribution",
+                    Status = ledger?.Status == LedgerTransactionStatus.Completed ? "Completed" : "Recorded",
+                    Amount = vc.AmountVnd,
+                    Currency = "VND",
+                    OccurredAt = DateTime.SpecifyKind(vc.CreatedAt, DateTimeKind.Utc),
+                    WalletId = vc.WalletId,
+                    WalletName = wallet?.Name,
+                    LedgerTransactionId = vc.LedgerTransactionId,
+                    LedgerStatus = ledger?.Status.ToString(),
+                    LedgerReference = ledger?.Reference,
+                    RelatedBusinessId = vc.Id,
+                    RelatedBusinessSource = "V1FundContribution",
+                    Counterparty = null,
+                    Description = MaskSensitive(vc.Purpose)
+                });
+            }
+
+            // 4. Group Refunds belonging to subject not in FinancialTransaction
+            var groupRefunds = await db.GroupRefunds.AsNoTracking()
+                .Where(r => r.UserId == subjectId && !existingBusinessIds.Contains(r.Id))
+                .ToListAsync(token);
+
+            foreach (var gr in groupRefunds)
+            {
+                if (query.FromUtc is { } f && gr.CreatedAt < f) continue;
+                if (query.ToUtc is { } t && gr.CreatedAt >= t) continue;
+
+                unifiedList.Add(new A4TransactionItem
+                {
+                    Id = gr.Id,
+                    BusinessType = "GroupRefund",
+                    Status = gr.Status == GroupRefundStatus.Completed ? "Completed" : gr.Status.ToString(),
+                    Amount = gr.RefundAmount,
+                    Currency = "VND",
+                    OccurredAt = DateTime.SpecifyKind(gr.CreatedAt, DateTimeKind.Utc),
+                    WalletId = null,
+                    WalletName = null,
+                    LedgerTransactionId = null,
+                    LedgerStatus = null,
+                    LedgerReference = null,
+                    RelatedBusinessId = gr.Id,
+                    RelatedBusinessSource = "GroupRefund",
+                    Counterparty = null,
+                    Description = "Group liquidation refund"
+                });
+            }
+
+            // Filter by Type if provided
+            IEnumerable<A4TransactionItem> filtered = unifiedList;
+            if (!string.IsNullOrWhiteSpace(query.Type))
+            {
+                filtered = filtered.Where(x => string.Equals(x.BusinessType, query.Type, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter by Status if provided
+            if (!string.IsNullOrWhiteSpace(query.Status))
+            {
+                filtered = filtered.Where(x => string.Equals(x.Status, query.Status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var ordered = filtered.OrderByDescending(t => t.OccurredAt).ThenBy(t => t.Id).ToList();
+            var total = ordered.Count;
+            var pagedItems = ordered.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
+
+            return new A2Page<A4TransactionItem>(clock.UtcNow, query.Page, query.PageSize, total, pagedItems);
         }, ct);
 
     // A4.2 - Tra cứu mã giao dịch

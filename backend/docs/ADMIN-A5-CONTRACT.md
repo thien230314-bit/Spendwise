@@ -32,10 +32,14 @@ All routes are under `/api/v1/admin/support`. Supply standard bearer access toke
 | A5.6 Đã giải quyết | DONE | Đóng ca với trạng thái Resolved hoặc Rejected; yêu cầu thông điệp giải quyết rõ ràng (>= 5 ký tự); gửi email và notification cho User; ngăn ngừa chuyển trạng thái khi đã đóng; không kích hoạt chuyển tiền trái phép. |
 | A5.7 Mẫu phản hồi | DONE | Danh mục mẫu phản hồi chuẩn từ hệ thống; điền biến tự động; kiểm soát an toàn nghiêm ngặt ngăn chặn inject token/mật khẩu; cho phép tùy chọn chuyển sang trạng thái chờ phản hồi. |
 
+## Targeted Correctness Fixes (FIX-2, FIX-3)
+- `FIX-2 (A5.2)`: Ngăn chặn triệt để Admin thường chiếm đoạt hoặc tự phân công lại ticket đã thuộc về Admin khác (`AssignedAdminId != null && AssignedAdminId != actor`). Việc tái phân công ticket bắt buộc cần thẩm quyền SuperAdmin.
+- `FIX-3 (A5.4)`: Giới hạn hồ sơ tranh chấp `FundDossier` chỉ trả về các tranh chấp có cấu trúc ràng buộc với giao dịch của vụ việc (`LinkedTransactionId == ticket.LinkedTransactionId`), ngăn rò rỉ các tranh chấp ngoài phạm vi vụ việc.
+
 ## Verification and Safety Gates
 
 - Release build: `backend/SpendWise.slnx` builds with 0 errors.
-- Focused A5 tests: `AdminA5Tests` — 10 PASS / 0 FAIL / 0 SKIP.
-- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests` — 106 PASS / 0 FAIL / 0 SKIP.
+- Focused A5 tests: `AdminA5Tests` — 12 PASS / 0 FAIL / 0 SKIP (bao gồm kiểm thử xác minh FIX-2 và FIX-3).
+- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests`, `AdminA6Tests` — 116 PASS / 0 FAIL / 0 SKIP.
 - User.md v1.3 compliance: `CanSpend = ON` direct spending rule preserved without disruption.
 - SQL02: NOT RUN (resource gate / memory constraints preserved per project guidelines).

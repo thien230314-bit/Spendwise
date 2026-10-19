@@ -342,4 +342,73 @@ public sealed class AdminA5Tests
         Assert.Equal("WaitingForUser", applied.UpdatedCaseStatus);
         Assert.True(applied.SentAsNotification);
     }
+
+    [Fact]
+    public async Task A5_2_FIX2_OrdinaryAdmin_Cannot_Steal_Ticket_Assigned_To_Another_Admin()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var adminA = await f.AddUserAsync("AdminAlpha", role: SystemRole.Admin);
+        var adminB = await f.AddUserAsync("AdminBeta", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var sessionB = await f.AddSessionAsync(adminB.Id);
+
+        // Case assigned to AdminAlpha
+        var ticket = new SupportCase { TicketNumber = "TK-STOLEN", LinkedUserId = subject.Id, AssignedAdminId = adminA.Id, Status = CaseStatus.Investigating };
+        f.Db.Add(ticket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principalB = V1PermissionTests.Principal(adminB.Id, sessionB.Id, "Admin");
+
+        // AdminBeta tries to claim ticket assigned to AdminAlpha -> ForbiddenException
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.AssignTicketAsync(principalB, ticket.Id, new("Attempt to claim assigned ticket", adminB.Id), default));
+        Assert.Equal("assignment_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task A5_4_FIX3_FundDossier_Only_Includes_Disputes_Linked_To_Case_Transaction()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("Investigator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var caseTxId = Guid.NewGuid();
+        var otherTxId = Guid.NewGuid();
+
+        var ticket = new SupportCase { TicketNumber = "TK-DOSSIER", LinkedUserId = subject.Id, AssignedAdminId = admin.Id, LinkedTransactionId = caseTxId, Status = CaseStatus.Investigating };
+
+        var linkedDispute = new SpendWise.Domain.Admin.Dispute
+        {
+            Id = Guid.NewGuid(),
+            UserId = subject.Id,
+            LinkedTransactionId = caseTxId,
+            Reason = "Linked dispute regarding case transaction",
+            Status = CaseStatus.Open,
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        var unrelatedDispute = new SpendWise.Domain.Admin.Dispute
+        {
+            Id = Guid.NewGuid(),
+            UserId = subject.Id,
+            LinkedTransactionId = otherTxId,
+            Reason = "Unrelated dispute for a completely different transaction",
+            Status = CaseStatus.Resolved,
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        f.Db.AddRange(ticket, linkedDispute, unrelatedDispute);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var dossier = await service.FundDossierAsync(principal, ticket.Id, "Investigate dossier", default);
+
+        Assert.NotEmpty(dossier.LinkedDisputes);
+        Assert.Contains(dossier.LinkedDisputes, d => d.DisputeId == linkedDispute.Id);
+        Assert.DoesNotContain(dossier.LinkedDisputes, d => d.DisputeId == unrelatedDispute.Id);
+    }
 }

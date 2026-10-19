@@ -148,6 +148,10 @@ public sealed class AdminA5Service(
             if (ticket.Status is CaseStatus.Closed or CaseStatus.Rejected or CaseStatus.Resolved)
                 throw new ConflictException("case_closed", "Closed cases cannot be assigned.");
 
+            // FIX-2: Prevent ordinary admin from stealing another admin's ticket
+            if (!supervisor && ticket.AssignedAdminId != null && ticket.AssignedAdminId != actor)
+                throw new ForbiddenException("assignment_denied", "Case is already assigned to another Admin. Reassignment requires SuperAdmin.");
+
             // Verify target operator is active Admin
             var operatorUser = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == targetOperatorId, token);
             if (operatorUser == null || operatorUser.SystemRole != SystemRole.Admin || operatorUser.Status != UserStatus.Active)
@@ -312,20 +316,23 @@ public sealed class AdminA5Service(
                     DateTime.SpecifyKind(a.CreatedAt, DateTimeKind.Utc)
                 )).ToList();
 
-            // Read linked disputes for subject
-            var disputes = await db.Disputes.AsNoTracking()
-                .Where(d => d.UserId == ticket.LinkedUserId)
-                .OrderByDescending(d => d.CreatedAt)
-                .Take(10)
-                .Select(d => new A5DossierDisputeItem(
-                    d.Id,
-                    d.LinkedTransactionId,
-                    d.Status.ToString(),
-                    d.Reason,
-                    d.TransactionAmountSnapshot,
-                    DateTime.SpecifyKind(d.CreatedAt, DateTimeKind.Utc)
-                ))
-                .ToListAsync(token);
+            // Read linked disputes: FIX-3 - Only include disputes structurally linked to the case's linked transaction
+            var disputes = new List<A5DossierDisputeItem>();
+            if (ticket.LinkedTransactionId is { } caseTxId)
+            {
+                disputes = await db.Disputes.AsNoTracking()
+                    .Where(d => d.UserId == ticket.LinkedUserId && d.LinkedTransactionId == caseTxId)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .Select(d => new A5DossierDisputeItem(
+                        d.Id,
+                        d.LinkedTransactionId,
+                        d.Status.ToString(),
+                        d.Reason,
+                        d.TransactionAmountSnapshot,
+                        DateTime.SpecifyKind(d.CreatedAt, DateTimeKind.Utc)
+                    ))
+                    .ToListAsync(token);
+            }
 
             // Check linked fund/group if category or linked transaction relates to fund
             A5LinkedFundOverview? linkedFund = null;

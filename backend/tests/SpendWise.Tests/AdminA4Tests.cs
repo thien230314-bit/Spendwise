@@ -555,4 +555,46 @@ public sealed class AdminA4Tests
         Assert.Contains(trace.Timeline, step => step.Stage == "BusinessProcessing");
         Assert.Contains(trace.Timeline, step => step.Stage == "LedgerOutcome");
     }
+
+    [Fact]
+    public async Task TransactionsAsync_Includes_Legacy_GroupContribution_Without_FinancialTransaction()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Subject");
+        var session = await f.AddSessionAsync(actor.Id);
+
+        var ticket = new SupportCase { AssignedAdminId = actor.Id, LinkedUserId = subject.Id, Status = CaseStatus.Open };
+        var ledger = new LedgerTransaction { Reference = "LEGACY-LED-001", BusinessType = "GroupContribution", Status = LedgerTransactionStatus.Completed, CompletedAt = f.Clock.UtcNow };
+        var wallet = new Wallet { Id = Guid.NewGuid(), OwnerUserId = subject.Id, Name = "Main Wallet", Type = WalletType.Main, AvailableBalance = 500000 };
+        var group = new Group { Id = Guid.NewGuid(), Name = "Test Group" };
+
+        var legacyContrib = new GroupContribution
+        {
+            Id = Guid.NewGuid(),
+            GroupId = group.Id,
+            UserId = subject.Id,
+            WalletId = wallet.Id,
+            Amount = 150000,
+            LedgerTransactionId = ledger.Id,
+            Purpose = "Tiền đóng góp quỹ dã ngoại",
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        f.Db.AddRange(ticket, ledger, wallet, group, legacyContrib);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin");
+
+        var paged = await service.TransactionsAsync(principal, ticket.Id, new A4Query("Audit legacy transaction"), default);
+
+        Assert.NotEmpty(paged.Items);
+        var item = Assert.Single(paged.Items, i => i.Id == legacyContrib.Id);
+        Assert.Equal("GroupContribution", item.BusinessType);
+        Assert.Equal("Completed", item.Status);
+        Assert.Equal(150000, item.Amount);
+        Assert.Equal("VND", item.Currency);
+        Assert.Equal("GroupContribution", item.RelatedBusinessSource);
+    }
 }

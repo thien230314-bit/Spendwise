@@ -12,11 +12,10 @@ namespace SpendWise.Tests;
 
 public sealed class V1CaseProfileTests
 {
-    [Theory]
-    [InlineData(SystemRole.Admin)]
-    [InlineData(SystemRole.SuperAdmin)]
-    public async Task Assigned_read_is_masked_and_audited_but_another_subject_is_denied(SystemRole role)
+    [Fact]
+    public async Task Assigned_read_is_masked_and_audited_but_another_subject_is_denied()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var actor = await f.AddUserAsync("Assigned operator", role: role);
         var target = await f.AddUserAsync("Case subject");

@@ -134,7 +134,8 @@ public sealed class AdminA6Service(
             if (query.ToUtc is { } t)
                 notifQ = notifQ.Where(n => n.CreatedAt < t);
 
-            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).ToListAsync(ct);
+            var limit = Math.Max(200, query.Page * query.PageSize);
+            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).Take(limit).ToListAsync(ct);
             var notifUserIds = notifs.Select(n => n.UserId).Distinct().ToList();
             var notifUsers = await db.Users.AsNoTracking().Where(u => notifUserIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.SpendId, ct);
 
@@ -184,7 +185,8 @@ public sealed class AdminA6Service(
             // Only query if not scoped or scoped user had an email
             if (scopedUserId == null || !string.IsNullOrEmpty(targetEmail))
             {
-                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).ToListAsync(ct);
+                var emailLimit = Math.Max(200, query.Page * query.PageSize);
+                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(emailLimit).ToListAsync(ct);
                 foreach (var e in emails)
                 {
                     var status = e.Status switch
@@ -227,7 +229,8 @@ public sealed class AdminA6Service(
             if (query.ToUtc is { } t)
                 filteredPush = filteredPush.Where(p => p.CreatedAt < t);
 
-            var pushes = await filteredPush.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
+            var pushLimit = Math.Max(200, query.Page * query.PageSize);
+            var pushes = await filteredPush.OrderByDescending(p => p.CreatedAt).Take(pushLimit).ToListAsync(ct);
             foreach (var p in pushes)
             {
                 var status = p.Status switch
@@ -287,7 +290,8 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) emailQ = emailQ.Where(e => e.CreatedAt >= f);
             if (query.ToUtc is { } t) emailQ = emailQ.Where(e => e.CreatedAt < t);
 
-            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).ToListAsync(ct);
+            var emailLimit = Math.Max(200, query.Page * query.PageSize);
+            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(emailLimit).ToListAsync(ct);
             foreach (var e in failedEmails)
             {
                 failures.Add(new A6DeliveryFailureItem(
@@ -313,7 +317,8 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) pushQ = pushQ.Where(p => p.CreatedAt >= f);
             if (query.ToUtc is { } t) pushQ = pushQ.Where(p => p.CreatedAt < t);
 
-            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
+            var pushLimit = Math.Max(200, query.Page * query.PageSize);
+            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).Take(pushLimit).ToListAsync(ct);
             foreach (var p in failedPushes)
             {
                 failures.Add(new A6DeliveryFailureItem(

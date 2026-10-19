@@ -16,8 +16,8 @@ public sealed class V1BroadcastTests
     public async Task Maintenance_state_change_queues_current_revision_without_manual_broadcast_policy_or_backlog_send()
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); await f.AddUserAsync("User"); var session = await f.AddSessionAsync(actor.Id);
-        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"); var maintenance = V1MaintenanceTests.Service(f);
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); await f.AddUserAsync("User"); var session = await f.AddSessionAsync(actor.Id);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin"); var maintenance = V1MaintenanceTests.Service(f);
         var planned = await maintenance.ScheduleAsync(principal, new(clock.UtcNow.AddHours(1), clock.UtcNow.AddHours(2), "Groups", TargetedCorrectnessFixture.SecurityPin, "Internal incident details never broadcast"), default);
         await maintenance.ExtendAsync(principal, planned.Id, new(clock.UtcNow.AddHours(3), planned.Revision, TargetedCorrectnessFixture.SecurityPin, "Revised estimate"), default);
         var service = Service(f, false); await service.ProcessDueAsync(default); await service.ProcessDueAsync(default);
@@ -32,8 +32,8 @@ public sealed class V1BroadcastTests
     public async Task Operational_broadcast_is_draft_then_scheduled_targets_roles_once_and_reports_real_in_app_state()
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); await f.AddUserAsync("User A"); await f.AddUserAsync("User B");
-        var session = await f.AddSessionAsync(actor.Id); var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"); var service = Service(f);
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); await f.AddUserAsync("User A"); await f.AddUserAsync("User B");
+        var session = await f.AddSessionAsync(actor.Id); var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin"); var service = Service(f);
         var draft = await service.DraftAsync(principal, new("Operational", "User", "Service notice", "Synthetic operational information", "draft-1", TargetedCorrectnessFixture.SecurityPin, "Publish operational notice"), default);
         await service.ProcessDueAsync(default); Assert.Empty(await f.Db.Notifications.ToListAsync());
         await service.PublishAsync(principal, draft.Id, new(clock.UtcNow, draft.Revision, TargetedCorrectnessFixture.SecurityPin, "Publish reviewed notice"), default);

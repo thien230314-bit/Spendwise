@@ -39,15 +39,7 @@ public sealed class AdminA5Service(
             throw new ForbiddenException("operations_read_denied", "An active operator session is required.");
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var supervisor = principal.IsInRole("SuperAdmin");
-
-        var rows = db.SupportCases.AsNoTracking();
-
-        // Scope filter: Ordinary admin sees assigned cases or unassigned new cases; SuperAdmin sees all
-        if (!supervisor)
-        {
-            rows = rows.Where(c => c.AssignedAdminId == actor || c.AssignedAdminId == null);
-        }
+        var rows = db.SupportCases.AsNoTracking().Where(c => c.AssignedAdminId == actor || c.AssignedAdminId == null);
 
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
@@ -203,10 +195,8 @@ public sealed class AdminA5Service(
             throw new ForbiddenException("permission_denied", "Operator required.");
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var supervisor = principal.IsInRole("SuperAdmin");
-
         var rows = await db.SupportCases.AsNoTracking()
-            .Where(c => (supervisor || c.AssignedAdminId == actor)
+            .Where(c => (c.AssignedAdminId == actor || c.AssignedAdminId == null)
                 && c.Status != CaseStatus.Closed && c.Status != CaseStatus.Rejected && c.Status != CaseStatus.Resolved)
             .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
             .ThenBy(c => c.Id)
@@ -504,10 +494,7 @@ public sealed class AdminA5Service(
 
         return workflow.WithCaseAsync(principal, caseId, purpose, false, async (ticket, actor, token) =>
         {
-            if (ticket.EscalatedAt != null && ticket.EscalationReviewedAt == null)
-                throw new ConflictException("case_review_pending", "Escalation review by SuperAdmin is pending.");
-
-            if (ticket.AssignedAdminId != actor && !principal.IsInRole("SuperAdmin"))
+            if (ticket.AssignedAdminId != null && ticket.AssignedAdminId != actor)
                 throw new ForbiddenException("case_access_denied", "Assigned Admin must execute the case decision.");
 
             CaseWorkflowMappings.EnsureSupportTransition(ticket.Status, nextStatus);

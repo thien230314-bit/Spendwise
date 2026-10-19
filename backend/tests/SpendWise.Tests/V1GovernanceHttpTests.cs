@@ -33,7 +33,7 @@ public sealed class V1GovernanceHttpTests
         using var vote = await client.PostAsJsonAsync($"/api/v1/funds/activity-proposals/{Guid.NewGuid()}/vote", new { });
         Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden, vote.StatusCode);
         using var staff = await client.PostAsJsonAsync($"/api/v1/admin/support/{Guid.NewGuid()}/actions", new { Action = "reply", Message = "Synthetic investigation reply", ExpectedStatus = "New" });
-        Assert.Equal(role == SystemRole.User ? HttpStatusCode.Forbidden : HttpStatusCode.NotFound, staff.StatusCode);
+        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden, staff.StatusCode);
         using var review = await client.PostAsJsonAsync($"/api/v1/funds/requests/{Guid.NewGuid()}/review", new { Reason = "Synthetic review" });
         Assert.Equal(role == SystemRole.User ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden, review.StatusCode);
     }

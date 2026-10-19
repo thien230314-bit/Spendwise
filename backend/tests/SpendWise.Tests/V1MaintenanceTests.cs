@@ -53,8 +53,8 @@ public sealed class V1MaintenanceTests
     public async Task Scheduled_global_gate_starts_on_time_never_auto_reopens_and_unconfigured_safety_denies_close()
     {
         var clock = new Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); var session = await f.AddSessionAsync(actor.Id);
-        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin");
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); var session = await f.AddSessionAsync(actor.Id);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin");
         var s = Service(f);
         var plan = await s.ScheduleAsync(principal, new(clock.UtcNow.AddMinutes(1), clock.UtcNow.AddMinutes(2), "Global", TargetedCorrectnessFixture.SecurityPin, "Synthetic maintenance"), default);
         Assert.False(await V1MaintenanceGate.IsActiveAsync(f.Db, clock.UtcNow, default));
@@ -67,10 +67,10 @@ public sealed class V1MaintenanceTests
     }
 
     [Theory]
-    [InlineData(SystemRole.Admin)]
+    [InlineData(SystemRole.SuperAdmin)]
     [InlineData(SystemRole.User)]
     [InlineData(SystemRole.SystemAdmin)]
-    public async Task Non_super_admin_cannot_schedule(SystemRole role)
+    public async Task Non_admin_cannot_schedule(SystemRole role)
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Actor", role: role);
         var session = await f.AddSessionAsync(actor.Id);

@@ -12,7 +12,7 @@ public sealed class V1PermissionTests
     [InlineData(SystemRole.User, false, false)]
     [InlineData(SystemRole.SystemAdmin, false, false)]
     [InlineData(SystemRole.Admin, true, false)]
-    [InlineData(SystemRole.SuperAdmin, true, true)]
+    [InlineData(SystemRole.SuperAdmin, false, true)]
     [InlineData((SystemRole)99, false, false)]
     public void Capabilities_do_not_promote_legacy_roles_or_bootstrap_an_owner(
         SystemRole role, bool operations, bool manageAdmins)
@@ -45,11 +45,10 @@ public sealed class V1PermissionTests
         Assert.False(await service.HasAsync(principal, PlatformPermission.OperationsRead, default));
     }
 
-    [Theory]
-    [InlineData(SystemRole.Admin)]
-    [InlineData(SystemRole.SuperAdmin)]
-    public async Task Even_SuperAdmin_needs_assigned_case_for_the_specific_user(SystemRole role)
+    [Fact]
+    public async Task Even_SuperAdmin_needs_assigned_case_for_the_specific_user()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var actor = await f.AddUserAsync("Case operator", role: role);
         var target = await f.AddUserAsync("Case subject");

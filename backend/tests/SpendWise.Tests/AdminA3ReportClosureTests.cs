@@ -30,10 +30,10 @@ public sealed class AdminA3ReportClosureTests
         Assert.Equal(1, await f.Db.SupportCases.CountAsync());
     }
 
-    [Theory]
-    [InlineData(SystemRole.Admin)] [InlineData(SystemRole.SuperAdmin)]
-    public async Task Multiple_reports_require_assigned_task_exact_subject_fund_and_transaction(SystemRole role)
+    [Fact]
+    public async Task Multiple_reports_require_assigned_task_exact_subject_fund_and_transaction()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Operator", role: role); var user = await f.AddUserAsync("Subject"); var peer = await f.AddUserAsync("Peer", role: SystemRole.Admin); var other = await f.AddUserAsync("Other");
         var group = new Group { Name = "Fund" }; var account = new LedgerAccount { Code = "FixtureFund", Type = LedgerAccountType.SharedFund }; var posting = new LedgerTransaction { Reference = "Fixture", BusinessType = "Historical", Status = LedgerTransactionStatus.Pending };
         var tx = new FinancialTransaction { OwnerUserId = user.Id, LedgerTransactionId = posting.Id, Amount = 100 };

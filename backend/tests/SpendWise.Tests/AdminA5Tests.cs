@@ -107,25 +107,25 @@ public sealed class AdminA5Tests
         // A5.1 Tickets Search
         using (var res = await client.PostAsJsonAsync(root + "/tickets/search", new { reason = "Review new tickets" }))
         {
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
         }
 
         // A5.2 Assigned cases
         using (var res = await client.PostAsJsonAsync(root + "/assigned", new { reason = "Check my assigned queue" }))
         {
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
         }
 
         // A5.4 Dossier
         using (var res = await client.PostAsJsonAsync(root + $"/{caseId}/dossier", new { reason = "Review case dossier" }))
         {
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
         }
 
         // A5.7 Templates list
         using (var res = await client.PostAsJsonAsync(root + "/templates", new { reason = "Read template catalog" }))
         {
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, res.StatusCode);
         }
     }
 

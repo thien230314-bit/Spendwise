@@ -15,7 +15,7 @@ public sealed class V1CaseTransactionTests
 {
     [Theory]
     [InlineData(SystemRole.Admin, true)]
-    [InlineData(SystemRole.SuperAdmin, true)]
+    [InlineData(SystemRole.SuperAdmin, false)]
     [InlineData(SystemRole.SystemAdmin, false)]
     [InlineData(SystemRole.User, false)]
     public async Task Exact_assigned_transaction_read_is_scoped_audited_and_never_repairs_ledger(SystemRole role, bool allowed)
@@ -64,12 +64,12 @@ public sealed class V1CaseTransactionTests
     public async Task Case_link_to_another_users_transaction_does_not_grant_access()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
-        var actor = await f.AddUserAsync("Operator", role: SystemRole.SuperAdmin); var subject = await f.AddUserAsync("Subject");
+        var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin); var subject = await f.AddUserAsync("Subject");
         var other = await f.AddUserAsync("Other"); var session = await f.AddSessionAsync(actor.Id);
         var (ticket, _) = await SeedAsync(f, actor.Id, other.Id);
         ticket.LinkedUserId = subject.Id; await f.Db.SaveChangesAsync();
         var error = await Assert.ThrowsAsync<NotFoundException>(() => new ScopedCaseTransactionReader(f.Db, new(f.Db)).GetAsync(
-            V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"), ticket.Id, subject.Id, "Investigate assigned payment", default));
+            V1PermissionTests.Principal(actor.Id, session.Id, "Admin"), ticket.Id, subject.Id, "Investigate assigned payment", default));
         Assert.Equal("case_transaction_not_found", error.Code);
     }
 

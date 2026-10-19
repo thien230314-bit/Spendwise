@@ -12,7 +12,7 @@ public sealed class V1CaseFundTests
 {
     [Theory]
     [InlineData(SystemRole.Admin, true)]
-    [InlineData(SystemRole.SuperAdmin, true)]
+    [InlineData(SystemRole.SuperAdmin, false)]
     [InlineData(SystemRole.SystemAdmin, false)]
     [InlineData(SystemRole.User, false)]
     public async Task Assigned_case_reads_only_subject_memberships_and_audits_access(SystemRole role, bool allowed)

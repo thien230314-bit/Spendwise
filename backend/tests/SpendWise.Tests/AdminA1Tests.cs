@@ -53,11 +53,10 @@ public sealed class AdminA1Tests
         Assert.Single(page.Items, e => e.Source == "ProtectionAudit"); Assert.DoesNotContain("private-note", JsonSerializer.Serialize(page));
         Assert.Equal(1, (await service.ActivityAsync(principal, new(Source: "ProtectionAudit"), default)).Total);
     }
-    [Theory]
-    [InlineData(SystemRole.Admin)]
-    [InlineData(SystemRole.SuperAdmin)]
-    public async Task Summary_zero_data_and_Vietnam_half_open_day_do_not_invent_revenue(SystemRole role)
+    [Fact]
+    public async Task Summary_zero_data_and_Vietnam_half_open_day_do_not_invent_revenue()
     {
+        var role = SystemRole.Admin;
         var clock = new V1GovernanceFinishTests.Clock { UtcNow = new(2026, 10, 19, 18, 0, 0, DateTimeKind.Utc) };
         await using var f = await TargetedCorrectnessFixture.CreateAsync(clock); var actor = await f.AddUserAsync("Operator", role: role);
         var principal = V1PermissionTests.Principal(actor.Id, (await f.AddSessionAsync(actor.Id)).Id, role.ToString());
@@ -102,11 +101,10 @@ public sealed class AdminA1Tests
         Assert.DoesNotContain(typeof(A1Summary).GetProperties(), p => p.Name.Contains("Revenue", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Theory]
-    [InlineData(SystemRole.Admin)]
-    [InlineData(SystemRole.SuperAdmin)]
-    public async Task Tasks_filter_authoritative_deadline_and_never_return_another_operators_case(SystemRole role)
+    [Fact]
+    public async Task Tasks_filter_authoritative_deadline_and_never_return_another_operators_case()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Operator", role: role); var other = await f.AddUserAsync("Other", role: SystemRole.Admin); var user = await f.AddUserAsync("Subject");
         var own = new SupportCase { AssignedAdminId = role == SystemRole.Admin ? actor.Id : other.Id, EscalationReviewerId = role == SystemRole.SuperAdmin ? actor.Id : null,
             EscalatedAt = role == SystemRole.SuperAdmin ? f.Clock.UtcNow : null, LinkedUserId = user.Id, TicketNumber = "OWN", DueAt = f.Clock.UtcNow.AddMinutes(-1) };

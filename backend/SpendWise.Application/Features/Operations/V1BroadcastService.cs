@@ -92,9 +92,9 @@ public sealed partial class V1BroadcastService(ISpendWiseDbContext db, IClock cl
     }
     private async Task<Guid> OperatorAsync(ClaimsPrincipal principal, string? pin, CancellationToken ct)
     {
-        if (!await permissions.HasAsync(principal, PlatformPermission.ManageMaintenance, ct)) throw new ForbiddenException("permission_denied", "SuperAdmin permission required.");
+        if (!await permissions.HasAsync(principal, PlatformPermission.ManageMaintenance, ct)) throw new ForbiddenException("permission_denied", "Administrator maintenance permission required.");
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        if (pin is not null) await security.VerifyAsync(actor, pin, ct, SystemRole.SuperAdmin); return actor;
+        if (pin is not null) await security.VerifyAsync(actor, pin, ct, SystemRole.Admin); return actor;
     }
     private async Task AdmitAsync(ClaimsPrincipal principal, Guid actor, CancellationToken ct)
     {

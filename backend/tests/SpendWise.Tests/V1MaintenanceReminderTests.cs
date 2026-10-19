@@ -13,8 +13,8 @@ public sealed class V1MaintenanceReminderTests
     public async Task Reminders_require_policy_deduplicate_and_do_not_replay_missed_milestones()
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); var session = await f.AddSessionAsync(actor.Id);
-        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"); var maintenance = V1MaintenanceTests.Service(f);
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); var session = await f.AddSessionAsync(actor.Id);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin"); var maintenance = V1MaintenanceTests.Service(f);
         var plan = await maintenance.ScheduleAsync(principal, new(clock.UtcNow.AddHours(2), clock.UtcNow.AddHours(3), "Global", TargetedCorrectnessFixture.SecurityPin, "Synthetic maintenance"), default);
         var unconfigured = new V1MaintenanceReminders(f.Db, f.Clock, maintenance, Options.Create(new V1ReminderPolicy()));
         await Assert.ThrowsAsync<ConflictException>(() => unconfigured.ConfigureAsync(principal, plan.Id, new([60], plan.Revision, TargetedCorrectnessFixture.SecurityPin, "Configure reminders"), default));

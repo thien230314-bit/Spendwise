@@ -14,8 +14,8 @@ public sealed class V1ScopedMaintenanceTests
     public async Task Scheduled_edit_is_revision_checked_and_active_emergency_review_is_immutable()
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); var session = await f.AddSessionAsync(actor.Id);
-        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"); var service = V1MaintenanceTests.Service(f);
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); var session = await f.AddSessionAsync(actor.Id);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin"); var service = V1MaintenanceTests.Service(f);
         var plan = await service.ScheduleAsync(principal, new(clock.UtcNow.AddHours(1), clock.UtcNow.AddHours(2), "AI", TargetedCorrectnessFixture.SecurityPin, "Synthetic plan"), default);
         await service.RescheduleAsync(principal, plan.Id, new(clock.UtcNow.AddHours(2), clock.UtcNow.AddHours(3), "AI", plan.Revision, TargetedCorrectnessFixture.SecurityPin, "Changed schedule"), default);
         await Assert.ThrowsAsync<ConflictException>(() => service.RescheduleAsync(principal, plan.Id, new(clock.UtcNow.AddHours(3), clock.UtcNow.AddHours(4), "AI", plan.Revision, TargetedCorrectnessFixture.SecurityPin, "Stale client"), default));
@@ -30,8 +30,8 @@ public sealed class V1ScopedMaintenanceTests
     public async Task Emergency_requires_impact_confirmation_and_supports_idempotent_activation_and_revision_checked_extension()
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var actor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin); var session = await f.AddSessionAsync(actor.Id);
-        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "SuperAdmin"); var service = V1MaintenanceTests.Service(f);
+        var actor = await f.AddUserAsync("Administrator", role: SystemRole.Admin); var session = await f.AddSessionAsync(actor.Id);
+        var principal = V1PermissionTests.Principal(actor.Id, session.Id, "Admin"); var service = V1MaintenanceTests.Service(f);
         await Assert.ThrowsAsync<AppException>(() => service.EmergencyAsync(principal, new(clock.UtcNow.AddHours(1), "Groups", TargetedCorrectnessFixture.SecurityPin, "Incident evidence", "", "incident-1"), default));
         var request = new EmergencyMaintenanceRequest(clock.UtcNow.AddHours(1), "Groups", TargetedCorrectnessFixture.SecurityPin, "Incident evidence", "CONFIRM_MAINTENANCE_IMPACT", "incident-1");
         var plan = await service.EmergencyAsync(principal, request, default);

@@ -1,11 +1,17 @@
-# SPENDWISE — SUPER ADMIN (WEB) — PRODUCT SPECIFICATION
+# SPENDWISE — SUPER ADMIN (WEB) — PRODUCT SPECIFICATION (DEPRECATED / EXCLUDED IN V1.0)
+
+> **THÔNG BÁO KHẨN — PHẠM VI NỘP BÀI V1.0 (19/10/2026):**  
+> **QUYẾT ĐỊNH CỦA PRODUCT OWNER:** BỎ HOÀN TOÀN SUPERADMIN KHỎI PHẠM VI V1.0.  
+> Hệ thống bản nộp chỉ gồm:  
+> - **User** — sử dụng Mobile (`User.md` v1.3).  
+> - **Admin** — sử dụng Web, **DUY NHẤT 1 TÀI KHOẢN** trên toàn hệ thống.  
+> Không còn Web SuperAdmin, không còn quy trình Admin chuyển cấp SuperAdmin, loại bỏ toàn bộ S1–S7 khỏi phạm vi phát hành V1.0. Toàn bộ tài liệu dưới đây chỉ lưu trữ với mục đích lịch sử tham khảo.
 
 > **Sản phẩm:** SpendWise V1.0 (bản phát hành ứng dụng đầu tiên)  
-> **Tệp:** `SuperAdmin.md` · **Ngày chốt phạm vi:** 18/10/2026  
-> **Trạng thái:** **PRODUCT SCOPE ĐÃ ĐƯỢC CHỦ DỰ ÁN DUYỆT** — 7 menu chính, 42 chức năng con và các quy tắc S7. **Không chứng minh hiện đã có Backend/UI/API và không tự cấp quyền sửa code.**  
-> **Đối tượng:** Super Admin quản trị nền tảng SpendWise trên Web, phân biệt Admin hệ thống (`Admin.md`) và chủ nhóm User Mobile (`User.md`).  
-> **Căn cứ nghiệp vụ:** Các quyết định chốt trong cuộc trao đổi về hai role và S7; `User.md` mới nhất (tệp nội dung biên tập v1.2 ngày 18/10/2026 là nguồn nghiệp vụ User cho **sản phẩm V1.0**); tài liệu bàn giao 18/10 chỉ là inventory lịch sử.  
-> **Ranh giới:** User chỉ có Mobile. Web công khai chỉ marketing; không làm User Web app; không thêm role Business Admin/B2B hoặc Money Request vào phạm vi V1.0.
+> **Tệp:** `SuperAdmin.md` · **Ngày chốt phạm vi:** 18/10/2026 (Cập nhật loại bỏ: 19/10/2026)  
+> **Trạng thái:** **DEPRECATED / EXCLUDED FROM V1.0 SCOPE**  
+> **Đối tượng:** [LƯU TRỮ LỊCH SỬ] Không triển khai trong V1.0.  
+> **Ranh giới:** V1.0 chỉ gồm User Mobile và Web Admin (duy nhất 1 Admin).
 
 ## 0. Nhãn quyết định và nguyên tắc sử dụng
 

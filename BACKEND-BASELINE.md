@@ -2,18 +2,16 @@
 
 Public source snapshot through Admin A3 final closure, 2026-10-19. Publication is not production approval.
 
-- Admin A1.1–A1.4: DONE, functional Backend LOCKED per local checkpoint `V1-MODULE-LOCK-ADMIN-A1-20261019-113811`.
-- Admin A2.1, A2.2, A2.4, A2.5: DONE per local checkpoint `V1-MODULE-LOCK-ADMIN-A2-20261019-120919`.
-- A2.3: PARTIAL / POLICY_BLOCKED. Emergency restriction duration, verification/evidence, restoration/expiry, notification/escalation and in-flight/refund treatment need owner-approved policy. No arbitrary money controls are enabled.
-- Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED for scoped read-only investigation (see `backend/docs/ADMIN-A3-CONTRACT.md`).
-- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED with verified legacy transaction unified read-model repair and N+1 query batching optimization (see `backend/docs/ADMIN-A4-CONTRACT.md`).
-- Admin A5.1–A5.7: 7/7 DONE, functional Backend LOCKED with ticket assignment theft prevention, scoped dispute dossier, completed ledger balance verification, and email template support (see `backend/docs/ADMIN-A5-CONTRACT.md`).
-- Admin A6.1–A6.4: 4/4 DONE, functional Backend LOCKED with P0 security sanitization (4-8 digit codes, secrets, JWT tokens), dynamic unconstrained pagination, and delivery provenance (see `backend/docs/ADMIN-A6-CONTRACT.md`).
-- Global Admin Cardinality: Strictly enforced system-wide singleton policy — at most 1 active Admin and at most 1 active SuperAdmin across the platform.
-- Backend V1.0 overall remains PARTIAL. Functional A6 lock completes Admin modules A1–A6, but is not production SQL/concurrency or User Finance execution approval. SuperAdmin modules and User Finance execution remain independent scopes.
-- Historical A2 evidence: 146 related regression tests PASS (15 A2, 14 A1, 117 related); 4 SQL02 tests PASS; Release build 0 errors / 4 existing Pkcs advisory warnings. Full unfiltered suite and live UI E2E were NOT RUN for that closure. These are historical results, not a claim that every current consumer passes.
-- A1 additive migration is source-only and was not applied to the application database. Do not start Development against a real database simply to review source: startup may perform migrations/seeding. AdminE2E has explicit startup guards, but must also be separately configured and authorized.
-- Canonical Admin/SuperAdmin are not automatically inferred from legacy SystemAdmin. Legacy A2 HTTP management routes are deliberately denied; use scoped V1 APIs with current session, assigned case and purpose. No real account is promoted or reset here.
+- Emergency Submission Scope (2026-10-19): SuperAdmin completely removed from V1.0 scope per Product Owner emergency directive. Admin backend simplified to 5 core menus (ADM-01 Tổng quan, ADM-02 Quản lý người dùng, ADM-03 Khiếu nại & yêu cầu, ADM-04 Thông báo, ADM-05 Bảo trì).
+- SuperAdmin login blocked (403 account_unavailable); operations permissions revoked for SuperAdmin; single active Admin cardinality strictly enforced across platform.
+- Full non-SQL regression test suite: 1040/1040 PASS (0 FAIL, 0 SKIP).
+- Admin A1.1–A1.4: DONE, functional Backend LOCKED.
+- Admin A2.1, A2.2, A2.4, A2.5: DONE; A2.3: PARTIAL / POLICY_BLOCKED (emergency balance/money locks disabled).
+- Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED.
+- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED with unified read model and batch optimization.
+- Admin A5.1–A5.7: 7/7 DONE, functional Backend LOCKED (simplified for single Admin direct resolution without SuperAdmin escalation).
+- Admin A6.1–A6.4: 4/4 DONE, functional Backend LOCKED with credential masking and dynamic pagination.
+- User Mobile: Full `User.md` v1.3 scope preserved intact.
 
 ## Configuration / publication boundary
 

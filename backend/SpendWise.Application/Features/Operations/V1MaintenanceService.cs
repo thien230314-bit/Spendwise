@@ -181,11 +181,11 @@ public sealed class V1MaintenanceService(ISpendWiseDbContext db, IClock clock, P
     private async Task<Guid> OperatorAsync(ClaimsPrincipal principal, string pin, CancellationToken ct)
     {
         await RequirePermissionAsync(principal, ct); var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        await security.VerifyAsync(actor, pin, ct, SystemRole.SuperAdmin); return actor;
+        await security.VerifyAsync(actor, pin, ct, SystemRole.Admin); return actor;
     }
     private async Task RequirePermissionAsync(ClaimsPrincipal principal, CancellationToken ct)
     {
-        if (!await permissions.HasAsync(principal, PlatformPermission.ManageMaintenance, ct)) throw new ForbiddenException("permission_denied", "SuperAdmin permission required.");
+        if (!await permissions.HasAsync(principal, PlatformPermission.ManageMaintenance, ct)) throw new ForbiddenException("permission_denied", "Administrator maintenance permission required.");
     }
     private async Task AdmitAsync(CancellationToken ct)
     {

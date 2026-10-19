@@ -35,7 +35,7 @@ public sealed class AdminA3HttpTests
         foreach (var path in new[] { "search", $"{fundId}/detail", $"{fundId}/members", $"{fundId}/activity", $"{fundId}/finance/Requests", $"{fundId}/treasury", $"{fundId}/governance/Elections", $"{fundId}/cases", $"{fundId}/invitations", $"{fundId}/dissolution" })
         {
             using var response = await client.PostAsJsonAsync(root + "/" + path, new { reason = "Verify scoped group API" });
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
             var text = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("passwordHash", text, StringComparison.OrdinalIgnoreCase); Assert.DoesNotContain("policyJson", text, StringComparison.OrdinalIgnoreCase);
         }
         using var foreign = await client.PostAsJsonAsync(root + $"/{Guid.NewGuid()}/detail", new { reason = "Verify foreign group denial" }); Assert.Equal(HttpStatusCode.Forbidden, foreign.StatusCode);

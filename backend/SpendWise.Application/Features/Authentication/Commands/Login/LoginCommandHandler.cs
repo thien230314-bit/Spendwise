@@ -63,6 +63,14 @@ public sealed class LoginCommandHandler(
                 403);
         }
 
+        if (user.SystemRole == SystemRole.SuperAdmin)
+        {
+            throw new AppException(
+                "account_unavailable",
+                "SuperAdmin access is disabled in V1.0.",
+                403);
+        }
+
         // Password đúng nhưng email chưa xác minh vẫn không được nhận challenge PIN/session.
         if (user.EmailVerifiedAt is null)
         {

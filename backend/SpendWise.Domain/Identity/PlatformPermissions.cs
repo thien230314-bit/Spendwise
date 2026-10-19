@@ -10,11 +10,9 @@ public static class PlatformPermissions
 {
     public static bool Allows(SystemRole role, PlatformPermission permission) => permission switch
     {
-        PlatformPermission.OperationsRead or PlatformPermission.SensitiveRead =>
-            role is SystemRole.Admin or SystemRole.SuperAdmin,
-        PlatformPermission.ManageOrdinaryAdmins or PlatformPermission.ManageMaintenance
-            or PlatformPermission.ManageConfiguration => role == SystemRole.SuperAdmin,
-        // Owner verification has no approved bootstrap contract. No platform role substitutes for it.
+        PlatformPermission.OperationsRead or PlatformPermission.SensitiveRead
+            or PlatformPermission.ManageMaintenance => role == SystemRole.Admin,
+        PlatformPermission.ManageOrdinaryAdmins => role == SystemRole.SuperAdmin,
         _ => false
     };
 }

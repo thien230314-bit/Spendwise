@@ -210,7 +210,27 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             ["/api/v1/funds/{id}/members/{userId}/spending-permission"] = ["put"],
             ["/api/v1/funds/{id}/ownership-offers"] = ["post"],
             ["/api/v1/funds/ownership-offers"] = ["get"],
-            ["/api/v1/funds/ownership-offers/{id}/accept"] = ["post"]
+            ["/api/v1/funds/ownership-offers/{id}/accept"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/search"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/lookup"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/wallets"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/pending-failed"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/ledger/{ledgerTransactionId}"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/transactions/{transactionId}/trace"] = ["post"],
+            ["/api/v1/admin/support/tickets/search"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/assign"] = ["post"],
+            ["/api/v1/admin/support/assigned"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/request-info"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/dossier"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/escalate"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/resolve"] = ["post"],
+            ["/api/v1/admin/support/templates"] = ["post"],
+            ["/api/v1/admin/support/{caseId}/reply-template"] = ["post"],
+            ["/api/v1/admin/notifications/search"] = ["post"],
+            ["/api/v1/admin/notifications/delivery-history"] = ["post"],
+            ["/api/v1/admin/notifications/failures"] = ["post"],
+            ["/api/v1/admin/notifications/templates"] = ["post"],
+            ["/api/v1/admin/notifications/maintenance-overview"] = ["post"]
         };
         foreach (var route in v1Routes)
         {

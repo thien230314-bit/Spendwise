@@ -18,7 +18,7 @@ public sealed class V1HttpContractTests
     [InlineData(SystemRole.User, false)]
     [InlineData(SystemRole.SystemAdmin, false)]
     [InlineData(SystemRole.Admin, true)]
-    [InlineData(SystemRole.SuperAdmin, true)]
+    [InlineData(SystemRole.SuperAdmin, false)]
     public async Task Actual_JWT_pipeline_enforces_v1_policy_case_scope_and_user_boundary(SystemRole role, bool allowed)
     {
         using var factory = new SpendWiseApiFactory();

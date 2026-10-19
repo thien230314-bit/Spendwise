@@ -1,11 +1,20 @@
-# SPENDWISE — ADMIN HỆ THỐNG (WEB) — PRODUCT SPECIFICATION
+# SPENDWISE — ADMIN HỆ THỐNG (WEB) — PRODUCT SPECIFICATION (SIMPLIFIED V1.0)
+
+> **THÔNG BÁO KHẨN — PHẠM VI NỘP BÀI V1.0 (19/10/2026):**  
+> **QUYẾT ĐỊNH CỦA PRODUCT OWNER:** BỎ HOÀN TOÀN SUPERADMIN. Web Admin được tinh gọn thành **5 menu chính**:  
+> 1. **ADM-01 Tổng quan:** Số liệu thực User, giao dịch/ví, ticket chờ và đã giải quyết.  
+> 2. **ADM-02 Quản lý người dùng:** Tìm kiếm, xem hồ sơ, xem ví cơ bản (read-only, A2.3 giữ BLOCKED).  
+> 3. **ADM-03 Khiếu nại & yêu cầu:** Tiếp nhận, phản hồi, yêu cầu bổ sung thông tin, giải quyết/từ chối ticket trực tiếp (không multi-admin, không chuyển cấp SuperAdmin).  
+> 4. **ADM-04 Thông báo:** Xem lịch sử gửi theo case/user, cảnh báo lỗi gửi, mẫu hỗ trợ (đã làm sạch OTP/token/secret).  
+> 5. **ADM-05 Bảo trì:** Xem trạng thái bảo trì và thông báo công bố; Admin thao tác chỉ khi có PIN bảo mật.  
+> **ĐIỀU KIỆN TIÊN QUYẾT:** Toàn bộ hệ thống duy trì **DUY NHẤT 1 TÀI KHOẢN ADMIN**.  
+> User Mobile giữ nguyên phạm vi `User.md` v1.3.
 
 > **Sản phẩm:** SpendWise V1.0 (bản phát hành ứng dụng đầu tiên)  
-> **Tệp:** `Admin.md` · **Ngày chốt phạm vi:** 18/10/2026  
-> **Trạng thái:** **PRODUCT SCOPE ĐÃ ĐƯỢC CHỦ DỰ ÁN DUYỆT** — 6 menu chính và 34 chức năng con, mô hình quyền B. **KHÔNG PHẢI xác nhận Backend/UI đã hoàn thiện hoặc được phép sửa code.**  
-> **Đối tượng:** Admin hệ thống trên Web; không phải chủ nhóm, không phải Super Admin.  
-> **Tài liệu liên quan:** `User.md` mới nhất (nội dung biên tập v1.2 ngày 18/10/2026; là nguồn nghiệp vụ User cho bản phát hành sản phẩm V1.0), `SuperAdmin.md`; `SpendWise_BanGiao_ChatMoi_Admin_User_20261018(1).docx` chỉ là tư liệu lịch sử/bàn giao, không ưu tiên hơn quyết định mới.  
-> **Định hướng triển khai:** Web dành cho Admin/Super Admin; Mobile chỉ dành cho User; website công khai chỉ marketing. Không tạo Web User app hoặc tính năng Money Request.
+> **Tệp:** `Admin.md` · **Ngày chốt phạm vi:** 18/10/2026 (Cập nhật rút gọn: 19/10/2026)  
+> **Trạng thái:** **PRODUCT SCOPE ĐÃ ĐƯỢC CHỦ DỰ ÁN DUYỆT (TINH GỌN 5 MENU)**  
+> **Đối tượng:** Admin hệ thống trên Web (duy nhất 1 tài khoản).  
+> **Tài liệu liên quan:** `User.md` v1.3; `SuperAdmin.md` đã bị loại bỏ khỏi V1.0.
 
 ## 0. Cách đọc đặc tả và nguồn sự thật
 

@@ -111,10 +111,10 @@ public sealed class AdminA3Tests
     internal static AdminA3Service Service(TargetedCorrectnessFixture f) => new(f.Db,
         new(f.Db, new(f.Db), new(f.Db), new SpendWise.Infrastructure.Notifications.NotificationService(f.Db), f.Clock), new(f.Db), f.Clock);
 
-    [Theory]
-    [InlineData(SystemRole.Admin)] [InlineData(SystemRole.SuperAdmin)]
-    public async Task Exact_SPW_lookup_and_filtered_lists_require_assigned_subject_membership(SystemRole role)
+    [Fact]
+    public async Task Exact_SPW_lookup_and_filtered_lists_require_assigned_subject_membership()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Operator", role: role); var user = await f.AddUserAsync("Subject"); var other = await f.AddUserAsync("Other");
         var ticket = new SupportCase { LinkedUserId = user.Id, AssignedAdminId = role == SystemRole.Admin ? actor.Id : null,
             EscalatedAt = role == SystemRole.SuperAdmin ? f.Clock.UtcNow : null, EscalationReviewerId = role == SystemRole.SuperAdmin ? actor.Id : null };

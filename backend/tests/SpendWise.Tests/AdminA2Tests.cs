@@ -130,10 +130,10 @@ public sealed class AdminA2Tests
         new(f.Db), new(f.Db, new SecurityPinService(), new AccountCredentialLockout(f.Db, f.Clock)),
         new(f.Db, null!, f.Clock), f.Clock);
 
-    [Theory]
-    [InlineData(SystemRole.Admin)] [InlineData(SystemRole.SuperAdmin)]
-    public async Task Directory_is_masked_exact_search_filtered_stable_and_excludes_operator_accounts(SystemRole role)
+    [Fact]
+    public async Task Directory_is_masked_exact_search_filtered_stable_and_excludes_operator_accounts()
     {
+        var role = SystemRole.Admin;
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var actor = await f.AddUserAsync("Operator", role: role); var a = await f.AddUserAsync("A"); var b = await f.AddUserAsync("B", UserStatus.Locked);
         var p = V1PermissionTests.Principal(actor.Id, (await f.AddSessionAsync(actor.Id)).Id, role.ToString()); var service = Service(f);

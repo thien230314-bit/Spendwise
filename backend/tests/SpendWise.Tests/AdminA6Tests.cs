@@ -78,7 +78,7 @@ public sealed class AdminA6Tests
         var maintenanceResp = await client.PostAsJsonAsync("/api/v1/admin/notifications/maintenance-overview",
             new { reason = "Maintenance check" });
 
-        if (role is SystemRole.Admin or SystemRole.SuperAdmin)
+        if (role == SystemRole.Admin)
         {
             Assert.Equal(HttpStatusCode.OK, searchResp.StatusCode);
             Assert.Equal(HttpStatusCode.OK, deliveryResp.StatusCode);

@@ -33,11 +33,11 @@ public sealed class AdminA2HttpTests
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", scope.ServiceProvider.GetRequiredService<ITokenService>().CreateAccessToken(user, session.Id).Token);
         }
         using var search = await client.PostAsJsonAsync("/api/v1/admin/users/search", new { reason = "Find account" });
-        Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, search.StatusCode);
+        Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, search.StatusCode);
         foreach (var view in new[] { "profile", "sessions", "groups", "friends", "history", "restrictions" })
         {
             using var response = await client.PostAsJsonAsync($"/api/v1/admin/support/{caseId}/users/{targetId}/{view}", new { reason = "Verify scoped API" });
-            Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.Equal(role == SystemRole.Admin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
             var body = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("passwordHash", body, StringComparison.OrdinalIgnoreCase); Assert.DoesNotContain("tokenHash", body, StringComparison.OrdinalIgnoreCase);
         }
         var id = Guid.NewGuid();

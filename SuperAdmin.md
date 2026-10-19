@@ -31,8 +31,9 @@
 
 ### 1.2. Bổ nhiệm và thu hồi Super Admin — [CHỐT]
 
+- **Chính sách phân quyền V1.0 (Quyết định của Product Owner):** Hệ thống SpendWise duy trì đúng hai tài khoản quản trị độc lập: **tối đa một Admin hệ thống** và **tối đa một SuperAdmin**. Không được tồn tại hai Admin hoặc hai SuperAdmin cùng lúc.
 - **Chỉ chủ sở hữu SpendWise** được bổ nhiệm hoặc thu hồi Super Admin qua **quy trình bảo mật riêng**. Không mặc định có role thứ ba trong Admin Web.
-- Một Super Admin **không** tự tạo, tự nâng cấp hay thu hồi một Super Admin khác; chỉ trực tiếp quản trị Admin thông thường.
+- Một Super Admin **không** tự tạo, tự nâng cấp hay thu hồi một Super Admin khác; chỉ trực tiếp quản trị Admin thông thường (tối đa 1 Admin duy nhất).
 - **[BLOCKER — SECURITY_DESIGN_PENDING]** Cách nhận diện và bảo vệ chủ sở hữu, khôi phục khi mất quyền truy cập, xác thực bổ sung, chống lock-out tài khoản Super Admin cuối cùng, xử lý cấp quyền khẩn chưa được thiết kế chi tiết. Không tự thêm nút bổ nhiệm Super Admin trên Web.
 - **[SOURCE_AUDIT_REQUIRED]** Kiểm tra `SystemAdmin`/permissions/migrations trong source thật trước khi quyết định map/đổi tên/thêm role. Không tự sửa dữ liệu/role production.
 

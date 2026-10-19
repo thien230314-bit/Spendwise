@@ -32,7 +32,7 @@
 - Không chuyển tiền thay User, điều chỉnh số dư, sửa/xóa ledger hoặc đánh dấu giao dịch tiền thành công thủ công.
 - Không tạo khoản nạp/hoàn/chi quỹ giả, tự định công thức hoàn, thay đổi quyền lợi góp, chuyển tiền quỹ ra ngân hàng hoặc dùng số dư khóa của người khác.
 - Không tự **khóa tiền đi của toàn bộ quỹ**, tự đổi chủ, tự kick thành viên, tự sửa tổng dự kiến `T` hoặc phiếu bầu; chủ nhóm là quyền **nội bộ nhóm**.
-- Không tự cấp/sửa quyền Admin, bổ nhiệm Super Admin hoặc thay cấu hình chính sách hệ thống.
+- Không tự cấp/sửa quyền Admin, bổ nhiệm Super Admin hoặc thay cấu hình chính sách hệ thống (hệ thống có tối đa duy nhất 1 Admin và 1 SuperAdmin).
 - Không tự lên lịch/kích hoạt/kết thúc bảo trì; không tự phát thông báo toàn hệ thống hoặc chương trình ưu đãi.
 - Không xem mật khẩu, OTP, PIN gốc, secret SePay hoặc thông tin cá nhân không liên quan đến công việc.
 - Không truy cập dữ liệu chỉ nhờ đoán đúng mã `SPW...`.

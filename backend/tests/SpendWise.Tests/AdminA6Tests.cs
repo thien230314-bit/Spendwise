@@ -306,4 +306,41 @@ public sealed class AdminA6Tests
         Assert.Single(overview.ScheduledPlans, p => p.PlanId == scheduledPlan.Id);
         Assert.Single(overview.ActiveAnnouncements, a => a.Id == announcement.Id);
     }
+
+    [Fact]
+    public async Task A6_Redaction_Sanitizes_8_Digit_OTPs_And_Secrets()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var n = new Notification
+        {
+            UserId = subject.Id,
+            Type = NotificationType.SecurityAlert,
+            Title = "OTP 8 chữ số 98765432",
+            Message = "Mã xác thực của bạn là 12345678 và mật khẩu là password='SuperSecretPassword123'",
+            DataJson = "{\"secret\":\"topSecretValue\",\"apiKey\":\"myApiKey999\",\"otp\":\"87654321\"}",
+            CreatedAt = f.Clock.UtcNow
+        };
+
+        f.Db.Add(n);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var paged = await service.NotificationsAsync(principal,
+            new A6NotificationQuery("Check 8-digit redaction", UserId: subject.Id), default);
+
+        var item = Assert.Single(paged.Items);
+        Assert.DoesNotContain("12345678", item.Message);
+        Assert.DoesNotContain("SuperSecretPassword123", item.Message);
+        Assert.Contains("[REDACTED_CODE]", item.Message);
+        Assert.Contains("[REDACTED_PASSWORD]", item.Message);
+        Assert.DoesNotContain("topSecretValue", item.DataJson);
+        Assert.DoesNotContain("myApiKey999", item.DataJson);
+        Assert.DoesNotContain("87654321", item.DataJson);
+    }
 }

@@ -72,13 +72,35 @@ public sealed class AdminA4Service(
                 .Where(c => c.UserId == subjectId && !existingBusinessIds.Contains(c.Id) && !existingLedgerIds.Contains(c.LedgerTransactionId))
                 .ToListAsync(token);
 
+            // 3. V1 Fund Contributions belonging to subject not in FinancialTransaction
+            var v1Contribs = await db.V1FundContributions.AsNoTracking()
+                .Where(c => c.UserId == subjectId && !existingBusinessIds.Contains(c.Id) && !existingLedgerIds.Contains(c.LedgerTransactionId))
+                .ToListAsync(token);
+
+            // Batch-fetch ledger transactions and wallets for all legacy contributions to eliminate N+1 queries
+            var neededLedgerIds = groupContribs.Select(c => c.LedgerTransactionId)
+                .Concat(v1Contribs.Select(c => c.LedgerTransactionId))
+                .Distinct()
+                .ToList();
+            var neededWalletIds = groupContribs.Select(c => c.WalletId)
+                .Concat(v1Contribs.Select(c => c.WalletId))
+                .Distinct()
+                .ToList();
+
+            var ledgerMap = await db.LedgerTransactions.AsNoTracking()
+                .Where(l => neededLedgerIds.Contains(l.Id))
+                .ToDictionaryAsync(l => l.Id, token);
+            var walletMap = await db.Wallets.AsNoTracking()
+                .Where(w => neededWalletIds.Contains(w.Id))
+                .ToDictionaryAsync(w => w.Id, token);
+
             foreach (var gc in groupContribs)
             {
                 if (query.FromUtc is { } f && gc.CreatedAt < f) continue;
                 if (query.ToUtc is { } t && gc.CreatedAt >= t) continue;
 
-                var ledger = await db.LedgerTransactions.AsNoTracking().FirstOrDefaultAsync(l => l.Id == gc.LedgerTransactionId, token);
-                var wallet = await db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.Id == gc.WalletId, token);
+                ledgerMap.TryGetValue(gc.LedgerTransactionId, out var ledger);
+                walletMap.TryGetValue(gc.WalletId, out var wallet);
 
                 unifiedList.Add(new A4TransactionItem
                 {
@@ -100,18 +122,13 @@ public sealed class AdminA4Service(
                 });
             }
 
-            // 3. V1 Fund Contributions belonging to subject not in FinancialTransaction
-            var v1Contribs = await db.V1FundContributions.AsNoTracking()
-                .Where(c => c.UserId == subjectId && !existingBusinessIds.Contains(c.Id) && !existingLedgerIds.Contains(c.LedgerTransactionId))
-                .ToListAsync(token);
-
             foreach (var vc in v1Contribs)
             {
                 if (query.FromUtc is { } f && vc.CreatedAt < f) continue;
                 if (query.ToUtc is { } t && vc.CreatedAt >= t) continue;
 
-                var ledger = await db.LedgerTransactions.AsNoTracking().FirstOrDefaultAsync(l => l.Id == vc.LedgerTransactionId, token);
-                var wallet = await db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.Id == vc.WalletId, token);
+                ledgerMap.TryGetValue(vc.LedgerTransactionId, out var ledger);
+                walletMap.TryGetValue(vc.WalletId, out var wallet);
 
                 unifiedList.Add(new A4TransactionItem
                 {
@@ -598,7 +615,7 @@ public sealed class AdminA4Service(
                 var ft = await db.FinancialTransactions.AsNoTracking().FirstOrDefaultAsync(t => t.LedgerTransactionId == ledger.Id && t.OwnerUserId == subjectId, token);
                 if (ft == null)
                     bindingStatus = "UNVERIFIED";
-                else if (ft.Amount != debitTotal && ft.Amount != creditTotal)
+                else if (ft.Amount != debitTotal && ft.Amount != creditTotal || ft.Status != FinancialTransactionStatus.Completed)
                     bindingStatus = "BUSINESS_BINDING_MISMATCH";
                 else
                     bindingStatus = "BOUND_PERSONAL_FINANCE";

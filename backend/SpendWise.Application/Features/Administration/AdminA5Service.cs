@@ -336,6 +336,7 @@ public sealed class AdminA5Service(
 
             // Check linked fund/group if category or linked transaction relates to fund
             A5LinkedFundOverview? linkedFund = null;
+            var balanceVerified = false;
 
             // 1. Try finding via linked transaction or user group membership
             if (ticket.LinkedTransactionId is { } txId)
@@ -360,9 +361,10 @@ public sealed class AdminA5Service(
                                 var acc = await db.LedgerAccounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == treasury.LedgerAccountId, token);
                                 if (acc != null)
                                 {
-                                    var debits = await db.LedgerEntries.Where(e => e.LedgerAccountId == acc.Id && e.Direction == LedgerEntryDirection.Debit).SumAsync(e => e.Amount, token);
-                                    var credits = await db.LedgerEntries.Where(e => e.LedgerAccountId == acc.Id && e.Direction == LedgerEntryDirection.Credit).SumAsync(e => e.Amount, token);
+                                    var debits = await db.LedgerEntries.Where(e => e.LedgerAccountId == acc.Id && e.Direction == LedgerEntryDirection.Debit && e.LedgerTransaction.Status == LedgerTransactionStatus.Completed).SumAsync(e => e.Amount, token);
+                                    var credits = await db.LedgerEntries.Where(e => e.LedgerAccountId == acc.Id && e.Direction == LedgerEntryDirection.Credit && e.LedgerTransaction.Status == LedgerTransactionStatus.Completed).SumAsync(e => e.Amount, token);
                                     fundBalance = debits - credits;
+                                    balanceVerified = true;
                                 }
                             }
 
@@ -431,6 +433,7 @@ public sealed class AdminA5Service(
                 timeline,
                 attachments,
                 "READ_ONLY_DOSSIER; Historical records and snapshots are immutable; monetary changes and direct debit/credit are prohibited."
+                + (linkedFund != null && linkedFund.IsV1Fund && !balanceVerified ? " [NOTICE: Fund treasury ledger account was unverified or missing; balance may be unconfirmed]" : "")
             );
         }, ct);
     }

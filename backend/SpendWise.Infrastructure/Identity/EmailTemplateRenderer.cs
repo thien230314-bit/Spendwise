@@ -25,6 +25,10 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             return SupportDecision(values, resolved: true);
         if (string.Equals(templateName, "support-rejected", StringComparison.Ordinal))
             return SupportDecision(values, resolved: false);
+        if (string.Equals(templateName, "support-info-request", StringComparison.Ordinal))
+            return SupportInfoRequest(values);
+        if (string.Equals(templateName, "support-fund-investigation", StringComparison.Ordinal))
+            return SupportFundInvestigation(values);
         if (string.Equals(templateName, "welcome-back", StringComparison.Ordinal))
             return WelcomeBack(values);
         if (string.Equals(templateName, "new-device-login", StringComparison.Ordinal))
@@ -196,6 +200,68 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
                 $"Trạng thái mới của yêu cầu {ticketNumber}: {status}",
                 "TRUNG TÂM HỖ TRỢ",
                 heading,
+                content),
+            text);
+    }
+
+    private static RenderedEmail SupportInfoRequest(IReadOnlyDictionary<string, string?> values)
+    {
+        var ticketNumber = Value(values, "TicketNumber", string.Empty);
+        var subject = Value(values, "Subject", string.Empty);
+        var requiredDocs = Value(values, "RequiredDocuments", "Sao kê hoặc chứng từ giao dịch");
+        var note = Value(values, "Note", string.Empty);
+        var actionUrlRaw = Value(values, "ActionUrl", "https://spendwise.local/support");
+        var actionUrl = ValidActionUrl(actionUrlRaw);
+        var content = Intro("Đội ngũ hỗ trợ SpendWise cần thêm thông tin/chứng từ để tiếp tục xử lý yêu cầu của bạn.") +
+                      StatusBadge("Cần bổ sung chứng từ", "#c2410c", "#ffedd5") +
+                      DetailCard(
+                          DetailRow("Mã yêu cầu", ticketNumber) +
+                          DetailRow("Chủ đề", subject) +
+                          DetailRow("Chứng từ yêu cầu", requiredDocs, multiline: true) +
+                          (string.IsNullOrWhiteSpace(note) ? "" : DetailRow("Ghi chú", note, multiline: true))) +
+                      InformationNote("Hướng dẫn", "Vui lòng đăng nhập ứng dụng SpendWise và tải lên chứng từ được yêu cầu trong chi tiết yêu cầu hỗ trợ.") +
+                      ActionButton(actionUrl, "Xem và bổ sung chứng từ");
+        var text = $"[SpendWise] Yêu cầu bổ sung chứng từ cho yêu cầu {ticketNumber}\n\n" +
+                   $"Mã yêu cầu: {ticketNumber}\nChủ đề: {subject}\nChứng từ cần bổ sung: {requiredDocs}\n" +
+                   (string.IsNullOrWhiteSpace(note) ? "" : $"Ghi chú: {note}\n") +
+                   $"\nXem chi tiết và tải lên chứng từ: {actionUrl}\n\n{AutomatedFooter}";
+        return new RenderedEmail(
+            Layout(
+                "SpendWise — Yêu cầu bổ sung chứng từ",
+                $"Yêu cầu {ticketNumber} cần bổ sung chứng từ",
+                "TRUNG TÂM HỖ TRỢ",
+                "Yêu cầu bổ sung chứng từ",
+                content),
+            text);
+    }
+
+    private static RenderedEmail SupportFundInvestigation(IReadOnlyDictionary<string, string?> values)
+    {
+        var ticketNumber = Value(values, "TicketNumber", string.Empty);
+        var fundName = Value(values, "FundName", string.Empty);
+        var currentPhase = Value(values, "CurrentPhase", "Rà soát đối chiếu sổ cái");
+        var note = Value(values, "Note", string.Empty);
+        var actionUrlRaw = Value(values, "ActionUrl", "https://spendwise.local/support");
+        var actionUrl = ValidActionUrl(actionUrlRaw);
+        var content = Intro("Hồ sơ quỹ liên quan đến yêu cầu hỗ trợ của bạn đang được đội ngũ quản trị tiến hành điều tra, đối soát.") +
+                      StatusBadge("Đang rà soát đối chiếu", "#0369a1", "#e0f2fe") +
+                      DetailCard(
+                          DetailRow("Mã yêu cầu", ticketNumber) +
+                          DetailRow("Tên quỹ", fundName) +
+                          DetailRow("Giai đoạn hiện tại", currentPhase) +
+                          (string.IsNullOrWhiteSpace(note) ? "" : DetailRow("Ghi chú", note, multiline: true))) +
+                      InformationNote("Thông báo an toàn", "Mọi giao dịch và số dư liên quan đang được đối chiếu dựa trên sổ cái bất biến. Kết quả điều tra sẽ được cập nhật khi hoàn tất.") +
+                      ActionButton(actionUrl, "Xem chi tiết yêu cầu");
+        var text = $"[SpendWise] Tiến độ điều tra quỹ — Yêu cầu {ticketNumber}\n\n" +
+                   $"Mã yêu cầu: {ticketNumber}\nTên quỹ: {fundName}\nGiai đoạn: {currentPhase}\n" +
+                   (string.IsNullOrWhiteSpace(note) ? "" : $"Ghi chú: {note}\n") +
+                   $"\nXem chi tiết: {actionUrl}\n\n{AutomatedFooter}";
+        return new RenderedEmail(
+            Layout(
+                "SpendWise — Tiến độ điều tra quỹ",
+                $"Cập nhật điều tra quỹ cho yêu cầu {ticketNumber}",
+                "TRUNG TÂM HỖ TRỢ",
+                "Tiến độ điều tra quỹ",
                 content),
             text);
     }

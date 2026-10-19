@@ -6,9 +6,10 @@ Public source snapshot through Admin A3 final closure, 2026-10-19. Publication i
 - Admin A2.1, A2.2, A2.4, A2.5: DONE per local checkpoint `V1-MODULE-LOCK-ADMIN-A2-20261019-120919`.
 - A2.3: PARTIAL / POLICY_BLOCKED. Emergency restriction duration, verification/evidence, restoration/expiry, notification/escalation and in-flight/refund treatment need owner-approved policy. No arbitrary money controls are enabled.
 - Admin A3.1–A3.8: 8/8 DONE, functional Backend LOCKED for scoped read-only investigation (see `backend/docs/ADMIN-A3-CONTRACT.md`).
-- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED with verified legacy transaction unified read-model repair (see `backend/docs/ADMIN-A4-CONTRACT.md`).
-- Admin A5.1–A5.7: 7/7 DONE, functional Backend LOCKED with ticket assignment theft prevention and scoped dispute dossier repair (see `backend/docs/ADMIN-A5-CONTRACT.md`).
-- Admin A6.1–A6.4: 4/4 DONE, functional Backend LOCKED for business notifications, delivery history across InApp/Email/Push, failed deliveries feed, and read-only template & maintenance overview (see `backend/docs/ADMIN-A6-CONTRACT.md`).
+- Admin A4.1–A4.6: 6/6 DONE, functional Backend LOCKED with verified legacy transaction unified read-model repair and N+1 query batching optimization (see `backend/docs/ADMIN-A4-CONTRACT.md`).
+- Admin A5.1–A5.7: 7/7 DONE, functional Backend LOCKED with ticket assignment theft prevention, scoped dispute dossier, completed ledger balance verification, and email template support (see `backend/docs/ADMIN-A5-CONTRACT.md`).
+- Admin A6.1–A6.4: 4/4 DONE, functional Backend LOCKED with P0 security sanitization (4-8 digit codes, secrets, JWT tokens), dynamic unconstrained pagination, and delivery provenance (see `backend/docs/ADMIN-A6-CONTRACT.md`).
+- Global Admin Cardinality: Strictly enforced system-wide singleton policy — at most 1 active Admin and at most 1 active SuperAdmin across the platform.
 - Backend V1.0 overall remains PARTIAL. Functional A6 lock completes Admin modules A1–A6, but is not production SQL/concurrency or User Finance execution approval. SuperAdmin modules and User Finance execution remain independent scopes.
 - Historical A2 evidence: 146 related regression tests PASS (15 A2, 14 A1, 117 related); 4 SQL02 tests PASS; Release build 0 errors / 4 existing Pkcs advisory warnings. Full unfiltered suite and live UI E2E were NOT RUN for that closure. These are historical results, not a claim that every current consumer passes.
 - A1 additive migration is source-only and was not applied to the application database. Do not start Development against a real database simply to review source: startup may perform migrations/seeding. AdminE2E has explicit startup guards, but must also be separately configured and authorized.

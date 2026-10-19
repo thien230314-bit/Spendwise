@@ -60,6 +60,12 @@ public sealed class OrdinaryAdminLifecycle(
             if (enabled && (target.Status != UserStatus.Active || target.EmailVerifiedAt is null
                 || target.MustChangePassword || string.IsNullOrEmpty(target.SecurityPinHash)))
                 throw new ConflictException("operator_not_ready", "An active verified account with PIN is required.");
+            if (enabled)
+            {
+                var existingAdminCount = await db.Users.CountAsync(u => u.SystemRole == SystemRole.Admin && u.Id != targetId, token);
+                if (existingAdminCount >= 1)
+                    throw new ConflictException("admin_limit_exceeded", "SpendWise allows at most one active Admin across the entire system.");
+            }
             var desired = enabled ? SystemRole.Admin : SystemRole.User;
             if (target.SystemRole == desired) return true;
             var changed = await db.Users.Where(u => u.Id == targetId && u.SystemRole == target.SystemRole)

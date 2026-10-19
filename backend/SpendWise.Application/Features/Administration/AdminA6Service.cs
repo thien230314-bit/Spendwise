@@ -134,7 +134,7 @@ public sealed class AdminA6Service(
             if (query.ToUtc is { } t)
                 notifQ = notifQ.Where(n => n.CreatedAt < t);
 
-            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).Take(200).ToListAsync(ct);
+            var notifs = await notifQ.OrderByDescending(n => n.CreatedAt).ToListAsync(ct);
             var notifUserIds = notifs.Select(n => n.UserId).Distinct().ToList();
             var notifUsers = await db.Users.AsNoTracking().Where(u => notifUserIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.SpendId, ct);
 
@@ -184,7 +184,7 @@ public sealed class AdminA6Service(
             // Only query if not scoped or scoped user had an email
             if (scopedUserId == null || !string.IsNullOrEmpty(targetEmail))
             {
-                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(200).ToListAsync(ct);
+                var emails = await emailQ.OrderByDescending(e => e.CreatedAt).ToListAsync(ct);
                 foreach (var e in emails)
                 {
                     var status = e.Status switch
@@ -227,7 +227,7 @@ public sealed class AdminA6Service(
             if (query.ToUtc is { } t)
                 filteredPush = filteredPush.Where(p => p.CreatedAt < t);
 
-            var pushes = await filteredPush.OrderByDescending(p => p.CreatedAt).Take(200).ToListAsync(ct);
+            var pushes = await filteredPush.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
             foreach (var p in pushes)
             {
                 var status = p.Status switch
@@ -287,7 +287,7 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) emailQ = emailQ.Where(e => e.CreatedAt >= f);
             if (query.ToUtc is { } t) emailQ = emailQ.Where(e => e.CreatedAt < t);
 
-            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(200).ToListAsync(ct);
+            var failedEmails = await emailQ.OrderByDescending(e => e.CreatedAt).ToListAsync(ct);
             foreach (var e in failedEmails)
             {
                 failures.Add(new A6DeliveryFailureItem(
@@ -313,7 +313,7 @@ public sealed class AdminA6Service(
             if (query.FromUtc is { } f) pushQ = pushQ.Where(p => p.CreatedAt >= f);
             if (query.ToUtc is { } t) pushQ = pushQ.Where(p => p.CreatedAt < t);
 
-            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).Take(200).ToListAsync(ct);
+            var failedPushes = await pushQ.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
             foreach (var p in failedPushes)
             {
                 failures.Add(new A6DeliveryFailureItem(
@@ -476,19 +476,26 @@ public sealed class AdminA6Service(
     private static string? SanitizeContent(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return text;
-        // Redact OTPs: 6-digit or 4-digit codes
-        var sanitized = Regex.Replace(text, @"\b\d{4,6}\b", "[REDACTED_CODE]");
+        // Redact OTPs and numeric verification codes: 4 to 8 digits
+        var sanitized = Regex.Replace(text, @"\b\d{4,8}\b", "[REDACTED_CODE]");
         // Redact authorization tokens / bearer tokens
         sanitized = Regex.Replace(sanitized, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(token[""']?\s*[:=]\s*[""']?)[A-Za-z0-9\-._~+/]+", "$1[REDACTED_TOKEN]");
         sanitized = Regex.Replace(sanitized, @"(?i)(password[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_PASSWORD]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(secret[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(apiKey[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
         return sanitized;
     }
 
     private static string SanitizeSubject(string subject)
     {
         if (string.IsNullOrWhiteSpace(subject)) return subject;
-        return Regex.Replace(subject, @"\b\d{4,6}\b", "[CODE]");
+        var sanitized = Regex.Replace(subject, @"\b\d{4,8}\b", "[CODE]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(bearer\s+)[A-Za-z0-9\-._~+/]+=*", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(token[""']?\s*[:=]\s*[""']?)[A-Za-z0-9\-._~+/]+", "$1[REDACTED_TOKEN]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(password[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_PASSWORD]");
+        sanitized = Regex.Replace(sanitized, @"(?i)(secret[""']?\s*[:=]\s*[""']?)[^""'\s,}]+", "$1[REDACTED_SECRET]");
+        return sanitized;
     }
 
     private static string MaskEmail(string email)

@@ -120,6 +120,25 @@ public sealed class V1AdminLifecycleTests
         Assert.True(await f.Db.RefreshTokens.AnyAsync(t => t.UserId == target.Id && t.RevokedAt == null));
     }
 
+    [Fact]
+    public async Task Second_admin_grant_is_denied_enforcing_single_admin_cardinality()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var supervisor = await f.AddUserAsync("Supervisor", role: SystemRole.SuperAdmin);
+        var existingAdmin = await f.AddUserAsync("FirstAdmin", role: SystemRole.Admin);
+        var candidate = await f.AddUserAsync("SecondCandidate");
+        var supervisorSession = await f.AddSessionAsync(supervisor.Id);
+        var service = Service(f);
+        var principal = V1PermissionTests.Principal(supervisor.Id, supervisorSession.Id, "SuperAdmin");
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => service.SetAsync(
+            principal, candidate.Id, true, TargetedCorrectnessFixture.SecurityPin, "Grant second admin", default));
+
+        Assert.Equal("admin_limit_exceeded", ex.Code);
+        Assert.Equal(SystemRole.User, await f.Db.Users.Where(u => u.Id == candidate.Id).Select(u => u.SystemRole).SingleAsync());
+        Assert.Equal(SystemRole.Admin, await f.Db.Users.Where(u => u.Id == existingAdmin.Id).Select(u => u.SystemRole).SingleAsync());
+    }
+
     private static OrdinaryAdminLifecycle Service(TargetedCorrectnessFixture f) => new(
         f.Db, new PlatformPermissionService(f.Db),
         new AdminSecurityGuard(f.Db, new SecurityPinService(), new AccountCredentialLockout(f.Db, f.Clock)),

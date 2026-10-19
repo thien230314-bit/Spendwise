@@ -32,14 +32,17 @@ All routes are under `/api/v1/admin/support`. Supply standard bearer access toke
 | A5.6 Đã giải quyết | DONE | Đóng ca với trạng thái Resolved hoặc Rejected; yêu cầu thông điệp giải quyết rõ ràng (>= 5 ký tự); gửi email và notification cho User; ngăn ngừa chuyển trạng thái khi đã đóng; không kích hoạt chuyển tiền trái phép. |
 | A5.7 Mẫu phản hồi | DONE | Danh mục mẫu phản hồi chuẩn từ hệ thống; điền biến tự động; kiểm soát an toàn nghiêm ngặt ngăn chặn inject token/mật khẩu; cho phép tùy chọn chuyển sang trạng thái chờ phản hồi. |
 
-## Targeted Correctness Fixes (FIX-2, FIX-3)
+## Targeted Correctness Fixes (FIX-2, FIX-3, Task 07 Verification)
 - `FIX-2 (A5.2)`: Ngăn chặn triệt để Admin thường chiếm đoạt hoặc tự phân công lại ticket đã thuộc về Admin khác (`AssignedAdminId != null && AssignedAdminId != actor`). Việc tái phân công ticket bắt buộc cần thẩm quyền SuperAdmin.
 - `FIX-3 (A5.4)`: Giới hạn hồ sơ tranh chấp `FundDossier` chỉ trả về các tranh chấp có cấu trúc ràng buộc với giao dịch của vụ việc (`LinkedTransactionId == ticket.LinkedTransactionId`), ngăn rò rỉ các tranh chấp ngoài phạm vi vụ việc.
+- `Task 07 Verification (A5.4 & A5.7)`:
+  - Chỉ tính tổng số dư quỹ trên các bút toán sổ cái có trạng thái `LedgerTransactionStatus.Completed`. Bút toán pending/failed/voided không được tính vào số dư thực tế. Ghi rõ cảnh báo nếu tài khoản thủ quỹ chưa được xác minh.
+  - Hoàn thiện render email templates `support-info-request` và `support-fund-investigation` với fallback URL hợp lệ, bảo đảm an toàn injection.
 
 ## Verification and Safety Gates
 
 - Release build: `backend/SpendWise.slnx` builds with 0 errors.
-- Focused A5 tests: `AdminA5Tests` — 12 PASS / 0 FAIL / 0 SKIP (bao gồm kiểm thử xác minh FIX-2 và FIX-3).
-- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests`, `AdminA6Tests` — 116 PASS / 0 FAIL / 0 SKIP.
+- Focused A5 tests: `AdminA5Tests` — 12 PASS / 0 FAIL / 0 SKIP (bao gồm kiểm thử xác minh FIX-2, FIX-3, completed ledger filtering và email template injection prevention).
+- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests`, `AdminA6Tests`, `V1AdminLifecycleTests` — 127 PASS / 0 FAIL / 0 SKIP.
 - User.md v1.3 compliance: `CanSpend = ON` direct spending rule preserved without disruption.
 - SQL02: NOT RUN (resource gate / memory constraints preserved per project guidelines).

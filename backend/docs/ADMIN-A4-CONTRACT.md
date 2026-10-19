@@ -27,14 +27,15 @@ All routes are POST below `/api/v1/admin/support/{caseId}/transactions`. Supply 
 | A4.5 Chi tiết sổ cái | DONE | Đọc LedgerTransaction, LedgerEntries, kiểm tra tính cân bằng đa tiền tệ độc lập theo từng currency, amount dương, khớp đơn vị tiền LedgerAccount, liên kết nghiệp vụ gốc với đối chiếu amount/user/status thực sự; chỉ đọc, không sửa sổ. |
 | A4.6 Truy vết giao dịch | DONE | Truy vết request -> auth/security -> processing -> provider/webhook -> ledger outcome; ghi nhận NOT_RECORDED khi thiếu telemetry; bảo mật tuyệt đối, không lộ PIN, OTP, password hash, secret token. |
 
-## Targeted Correctness Fixes (A4-R1, A4-R2, A4-R3 / FIX-1)
+## Targeted Correctness Fixes (A4-R1, A4-R2, A4-R3 / FIX-1, Task 07 Optimization)
 - `A4-R1`: Kiểm tra cân bằng đa tiền tệ độc lập theo nhóm Currency, cấm cộng gộp giữa các đơn vị tiền khác nhau (phát hiện `MULTICURRENCY_MISMATCH`), kiểm tra amount dương và đơn vị tiền khớp với LedgerAccount.
-- `A4-R2`: Xác minh nghiệp vụ gốc dựa trên việc đối chiếu thực sự số tiền, trạng thái nghiệp vụ, quyền sở hữu User, gắn cờ `BUSINESS_BINDING_MISMATCH` khi không khớp thay vì chỉ kiểm tra ID tồn tại.
+- `A4-R2`: Xác minh nghiệp vụ gốc dựa trên việc đối chiếu thực sự số tiền, trạng thái nghiệp vụ, quyền sở hữu User, gắn cờ `BUSINESS_BINDING_MISMATCH` khi không khớp thay vì chỉ kiểm tra ID tồn tại; xác nhận trạng thái FinancialTransaction phải là Completed khi bind cá nhân.
 - `A4-R3 / FIX-1`: Hợp nhất nguồn nghiệp vụ kế thừa (GroupContribution, V1FundContribution, GroupRefund) không có FinancialTransaction vào read-model `TransactionsAsync` thống nhất với deduplication, chống leak dữ liệu nhóm và pagination ổn định.
+- `Task 07 Performance`: Khắc phục triệt để N+1 DB queries trong `TransactionsAsync` bằng cách batch nạp LedgerTransaction và SpendWiseWallet theo danh sách ID tổng hợp.
 
 ## Verification and Safety Gates
 
 - Release build: `backend/SpendWise.slnx` builds with 0 errors.
-- Focused A4 tests: `AdminA4Tests` — 14 PASS / 0 FAIL / 0 SKIP (bao gồm test A4-R1, A4-R2, A4-R3 và FIX-1).
-- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests`, `AdminA6Tests` — 116 PASS / 0 FAIL / 0 SKIP.
+- Focused A4 tests: `AdminA4Tests` — 14 PASS / 0 FAIL / 0 SKIP (bao gồm test A4-R1, A4-R2, A4-R3, FIX-1 và N+1 batched queries).
+- Regression suite: `AdminA1HttpTests`, `AdminA2HttpTests`, `AdminA3HttpTests`, `AdminA4Tests`, `AdminA5Tests`, `AdminA6Tests`, `V1AdminLifecycleTests` — 127 PASS / 0 FAIL / 0 SKIP.
 - SQL02: NOT RUN (resource gate / memory constraints preserved per project guidelines).

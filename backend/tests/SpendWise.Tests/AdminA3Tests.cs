@@ -33,7 +33,10 @@ public sealed class AdminA3Tests
         Func<Task>[] reads = [() => s.SearchAsync(p, ticket.Id, new("Investigate scope"), default), () => s.DetailAsync(p, ticket.Id, fund.Id, "Investigate scope", default),
             () => s.MembersAsync(p, ticket.Id, fund.Id, new("Investigate scope"), default), () => s.ActivityAsync(p, ticket.Id, fund.Id, new("Investigate scope"), default),
             () => s.FinanceAsync(p, ticket.Id, fund.Id, "Requests", new("Investigate scope"), default), () => s.TreasuryAsync(p, ticket.Id, fund.Id, "Investigate scope", default),
-            () => s.GovernanceAsync(p, ticket.Id, fund.Id, "Elections", new("Investigate scope"), default), () => s.CasesAsync(p, ticket.Id, fund.Id, new("Investigate scope"), default)];
+            () => s.GovernanceAsync(p, ticket.Id, fund.Id, "Elections", new("Investigate scope"), default), () => s.CasesAsync(p, ticket.Id, fund.Id, new("Investigate scope"), default),
+            () => s.DissolutionAsync(p, ticket.Id, fund.Id, "Investigate scope", default), () => s.InvitationsAsync(p, ticket.Id, fund.Id, new("Investigate scope"), default),
+            () => s.ReportHistoryAsync(p, ticket.Id, fund.Id, "Support", ticket.Id, new("Investigate scope"), default),
+            () => s.ExpensePostingsAsync(p, ticket.Id, fund.Id, Guid.NewGuid(), new("Investigate scope"), default)];
         foreach (var read in reads) await Assert.ThrowsAsync<ForbiddenException>(read);
         Assert.DoesNotContain(await f.Db.AuditLogs.ToListAsync(), a => a.Action == "A3_FUND_READ");
     }
@@ -84,13 +87,14 @@ public sealed class AdminA3Tests
         Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
     }
 
-    [Fact]
-    public async Task Finance_approval_without_ledger_stays_blocked_and_linked_case_is_not_duplicated()
+    [Theory]
+    [InlineData("Expense")] [InlineData("Withdrawal")]
+    public async Task Finance_approval_without_ledger_stays_blocked_and_linked_case_is_not_duplicated(string kind)
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin); var user = await f.AddUserAsync("Subject");
         var ticket = new SupportCase { AssignedAdminId = actor.Id, LinkedUserId = user.Id, Category = "V1FundGovernance" };
         var fund = new V1Fund("Free", "SPW000001", V1FundKind.Free, user.Id, null);
-        var request = new V1FundRequest { FundId = fund.Id, RequestedByUserId = user.Id, RecipientUserId = user.Id, Kind = "Withdrawal", AmountVnd = 100, State = "ApprovedAwaitingFinanceContract" };
+        var request = new V1FundRequest { FundId = fund.Id, RequestedByUserId = user.Id, RecipientUserId = user.Id, Kind = kind, AmountVnd = 100, State = "ApprovedAwaitingFinanceContract" };
         var history = new CaseHistory { CaseId = ticket.Id, CaseKind = CaseKind.Support, ActorId = user.Id };
         f.Db.AddRange(history, new CaseAttachment { History = history, CaseOwnerUserId = user.Id, ContentType = "image/png", Content = [1, 2], Length = 2 });
         f.Db.AddRange(ticket, fund, request, new V1FundMembership { FundId = fund.Id, UserId = user.Id, Seat = 1 },

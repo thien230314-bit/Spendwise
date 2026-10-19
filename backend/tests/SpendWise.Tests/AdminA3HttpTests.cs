@@ -32,7 +32,7 @@ public sealed class AdminA3HttpTests
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", scope.ServiceProvider.GetRequiredService<ITokenService>().CreateAccessToken(actor, session.Id).Token);
         }
         var root = $"/api/v1/admin/support/{caseId}/funds";
-        foreach (var path in new[] { "search", $"{fundId}/detail", $"{fundId}/members", $"{fundId}/activity", $"{fundId}/finance/Requests", $"{fundId}/treasury", $"{fundId}/governance/Elections", $"{fundId}/cases" })
+        foreach (var path in new[] { "search", $"{fundId}/detail", $"{fundId}/members", $"{fundId}/activity", $"{fundId}/finance/Requests", $"{fundId}/treasury", $"{fundId}/governance/Elections", $"{fundId}/cases", $"{fundId}/invitations", $"{fundId}/dissolution" })
         {
             using var response = await client.PostAsJsonAsync(root + "/" + path, new { reason = "Verify scoped group API" });
             Assert.Equal(role is SystemRole.Admin or SystemRole.SuperAdmin ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
@@ -40,6 +40,8 @@ public sealed class AdminA3HttpTests
         }
         using var foreign = await client.PostAsJsonAsync(root + $"/{Guid.NewGuid()}/detail", new { reason = "Verify foreign group denial" }); Assert.Equal(HttpStatusCode.Forbidden, foreign.StatusCode);
         using var posting = await client.PostAsJsonAsync(root + $"/{fundId}/postings/{Guid.NewGuid()}", new { reason = "Verify foreign posting denial" }); Assert.Equal(HttpStatusCode.Forbidden, posting.StatusCode);
+        using var report = await client.PostAsJsonAsync(root + $"/{fundId}/reports/Support/{Guid.NewGuid()}/history", new { reason = "Verify foreign report denial" }); Assert.Equal(HttpStatusCode.Forbidden, report.StatusCode);
+        using var expense = await client.PostAsJsonAsync(root + $"/{fundId}/expenses/{Guid.NewGuid()}/postings", new { reason = "Verify foreign expense denial" }); Assert.Equal(HttpStatusCode.Forbidden, expense.StatusCode);
         using var legacy = await client.GetAsync("/api/groups"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : HttpStatusCode.Forbidden, legacy.StatusCode);
         using var userV1 = await client.GetAsync("/api/v1/funds"); Assert.Equal(role == SystemRole.User ? HttpStatusCode.OK : HttpStatusCode.Forbidden, userV1.StatusCode);
     }

@@ -30,9 +30,18 @@ public sealed record A3Event
     public Guid? ReferenceId { get; init; }
     public string Outcome { get; init; } = "Recorded";
     public string? Detail { get; init; }
+    public Guid? CorrelationId { get; init; }
+    public string Cause { get; init; } = "NOT_RECORDED";
+    public string ReferenceVerification { get; init; } = "NOT_RECORDED";
+    public string RelatedRecordState { get; init; } = "NOT_RECORDED";
 }
 public sealed record A3Case(Guid Id, string TicketNumber, string Status, string LinkSource, string DetailEndpoint, string ActionEndpoint,
-    Guid? LinkedTransactionId, int EvidenceCount);
+    Guid? LinkedTransactionId, int EvidenceCount)
+{
+    public string Source { get; init; } = "Support";
+    public string HoldState => "NOT_IMPLEMENTED; no persisted fund expense hold source";
+    public string ExpenseRequestLinkage => "NOT_AVAILABLE; no persisted report-to-V1-request foreign key";
+}
 
 public sealed partial class AdminA3Service
 {
@@ -62,32 +71,26 @@ public sealed partial class AdminA3Service
             IQueryable<A3Event> rows = fund.Code != null
                 ? db.V1FundActivities.AsNoTracking().Where(a => a.FundId == fundId && !money.Contains(a.Event))
                     .Select(a => new A3Event { Id = a.Id, ActorId = a.ActorUserId, SubjectId = a.SubjectUserId, Source = "V1Activity", Action = a.Event, At = a.CreatedAt, ReferenceId = a.ReferenceId,
-                        Detail = a.Event == "SpendingPermissionChanged" && (a.Detail == "ON" || a.Detail == "OFF") ? a.Detail : null })
+                        Detail = a.Event == "SpendingPermissionChanged" && (a.Detail == "ON" || a.Detail == "OFF")
+                            || a.Event == "ActivityVoteClosed" && (a.Detail == "Invalidated" || a.Detail == "ApprovedAwaitingSettlement" || a.Detail == "Rejected")
+                            || a.Event == "ElectionPhaseAdvanced" && (a.Detail == "Registration" || a.Detail == "Nomination" || a.Detail == "Runoff" || a.Detail == "Confirmation" || a.Detail == "AwaitingAcceptance" || a.Detail == "Completed" || a.Detail == "Failed") ? a.Detail : null })
                 : db.GroupActivities.AsNoTracking().Where(a => a.GroupId == fundId && a.Type != GroupActivityType.Expense && a.Type != GroupActivityType.FundContribution && a.Type != GroupActivityType.FundExpense && a.Type != GroupActivityType.FundRoundPaid)
                     .Select(a => new A3Event { Id = a.Id, ActorId = a.ActorUserId, Source = "LegacyActivity", Action = a.Type.ToString(), At = a.CreatedAt, ReferenceId = a.GroupId });
             var total = await rows.CountAsync(token); var items = await rows.OrderByDescending(a => a.At).ThenBy(a => a.Id).Skip(Skip(q)).Take(q.PageSize).ToListAsync(token);
-            return new A2Page<A3Event>(clock.UtcNow, q.Page, q.PageSize, total, items.Select(a => a with { At = Utc(a.At) }).ToList());
+            return new A2Page<A3Event>(clock.UtcNow, q.Page, q.PageSize, total, await EnrichActivityAsync(fundId, fund.Code != null, items, token));
         }, ct);
 
     public Task<A2Page<A3Case>> CasesAsync(ClaimsPrincipal principal, Guid caseId, Guid fundId, A3FeedQuery q, CancellationToken ct) =>
         WithFund(principal, caseId, fundId, q.Reason, "CASES", async (ticket, fund, token) =>
         {
-            ValidateFeed(q); if (q.ParentId != null || q.Status != null) throw new AppException("invalid_case_filter", "This view returns the authorized linked case only.");
-            var linked = fund.Code != null && (await db.V1Funds.AnyAsync(f => f.Id == fundId && f.OwnerResponseCaseId == caseId, token)
-                || await db.V1FundActivities.AnyAsync(a => a.FundId == fundId && a.ReferenceId == caseId && a.Event == "OwnerResponseEscalated", token));
-            if (!linked && ticket.LinkedTransactionId is {} transactionId)
-            {
-                var ledger = await db.FinancialTransactions.AsNoTracking().Where(t => t.Id == transactionId && t.OwnerUserId == ticket.LinkedUserId)
-                    .Select(t => (Guid?)t.LedgerTransactionId).SingleOrDefaultAsync(token);
-                linked = ledger != null && (fund.Code != null
-                    ? await db.V1FundContributions.AnyAsync(c => c.FundId == fundId && c.UserId == ticket.LinkedUserId && c.LedgerTransactionId == ledger, token)
-                    : await db.FundTransactions.AnyAsync(t => t.GroupId == fundId && t.UserId == ticket.LinkedUserId && t.LedgerTransactionId == ledger, token));
-            }
-            var evidence = linked ? await db.CaseAttachments.CountAsync(a => a.CaseOwnerUserId == ticket.LinkedUserId
-                && a.History.CaseKind == CaseKind.Support && a.History.CaseId == caseId, token) : 0;
-            // No description/code substring matching: membership alone does not make a case a fund report.
-            var rows = linked ? new[] { new A3Case(ticket.Id, ticket.TicketNumber, ticket.Status.ToString(), "PersistedFundCaseReferenceOrSubjectPosting", $"/api/v1/admin/support/{caseId}/detail", $"/api/v1/admin/support/{caseId}/actions", ticket.LinkedTransactionId, evidence) } : [];
-            return new A2Page<A3Case>(clock.UtcNow, q.Page, q.PageSize, rows.Length, rows.Skip(Skip(q)).Take(q.PageSize).ToList());
+            ValidateFeed(q);
+            var rows = ReportRows(principal, ticket, fundId, fund.Code != null);
+            if (q.ParentId is {} id) rows = rows.Where(r => r.Id == id);
+            if (q.Status is {} state) rows = rows.Where(r => r.Status == state);
+            var total = await rows.CountAsync(token); var page = await rows.OrderByDescending(r => r.At).ThenBy(r => r.Source).ThenBy(r => r.Id).Skip(Skip(q)).Take(q.PageSize).ToListAsync(token);
+            var root = $"/api/v1/admin/support/{caseId}/funds/{fundId}";
+            return new A2Page<A3Case>(clock.UtcNow, q.Page, q.PageSize, total, page.Select(r => new A3Case(r.Id, r.Number, r.Status, r.Link,
+                root + $"/reports/{r.Source}/{r.Id}/history", $"/api/v1/admin/support/{(r.Source == "Support" ? r.Id : caseId)}/actions", r.TransactionId, r.Evidence) { Source = r.Source }).ToList());
         }, ct);
 
     private static void ValidateFeed(A3FeedQuery q)

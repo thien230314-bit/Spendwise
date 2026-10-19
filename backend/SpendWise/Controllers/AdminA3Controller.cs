@@ -28,4 +28,12 @@ public sealed class AdminA3Controller(AdminA3Service funds) : ControllerBase
     public Task<A2Page<A3Governance>> Governance(Guid caseId, Guid fundId, string source, A3FeedQuery request, CancellationToken ct) => funds.GovernanceAsync(User, caseId, fundId, source, request, ct);
     [HttpPost("{fundId:guid}/cases")]
     public Task<A2Page<A3Case>> Cases(Guid caseId, Guid fundId, A3FeedQuery request, CancellationToken ct) => funds.CasesAsync(User, caseId, fundId, request, ct);
+    [HttpPost("{fundId:guid}/invitations")]
+    public Task<A2Page<A3Invitation>> Invitations(Guid caseId, Guid fundId, A3FeedQuery request, CancellationToken ct) => funds.InvitationsAsync(User, caseId, fundId, request, ct);
+    [HttpPost("{fundId:guid}/dissolution")]
+    public Task<A3Dissolution> Dissolution(Guid caseId, Guid fundId, OperatorDirectoryRequest request, CancellationToken ct) => funds.DissolutionAsync(User, caseId, fundId, request.Reason, ct);
+    [HttpPost("{fundId:guid}/reports/{source}/{reportId:guid}/history")]
+    public Task<A2Page<A3ReportHistory>> ReportHistory(Guid caseId, Guid fundId, string source, Guid reportId, A3FeedQuery request, CancellationToken ct) => funds.ReportHistoryAsync(User, caseId, fundId, source, reportId, request, ct);
+    [HttpPost("{fundId:guid}/expenses/{expenseId:guid}/postings")]
+    public Task<A2Page<A3PostingCandidate>> ExpensePostings(Guid caseId, Guid fundId, Guid expenseId, A3FeedQuery request, CancellationToken ct) => funds.ExpensePostingsAsync(User, caseId, fundId, expenseId, request, ct);
 }

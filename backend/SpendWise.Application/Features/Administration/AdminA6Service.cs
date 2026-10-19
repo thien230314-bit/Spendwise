@@ -30,18 +30,19 @@ public sealed class AdminA6Service(
             throw new ForbiddenException("permission_denied", "Operator required.");
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        Guid? scopedUserId = null;
+        if (query.CaseId is not { } caseId)
+            throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
 
-        if (query.CaseId is { } caseId)
-        {
-            var ticket = await db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Id == caseId, ct)
-                ?? throw new NotFoundException("case_not_found", "Case not found.");
-            scopedUserId = ticket.LinkedUserId;
-        }
-        else if (query.UserId is { } uid)
-        {
-            scopedUserId = uid;
-        }
+        var ticket = await db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Id == caseId, ct)
+            ?? throw new NotFoundException("case_not_found", "Case not found.");
+
+        if (!await permissions.HasSupportScopeAsync(principal, caseId, ticket.LinkedUserId, ct))
+            throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
+
+        if (query.UserId is { } requestedUserId && requestedUserId != ticket.LinkedUserId)
+            throw new ForbiddenException("case_access_denied", "UserId does not match assigned case subject.");
+
+        var scopedUserId = ticket.LinkedUserId;
 
         var q = db.Notifications.AsNoTracking();
 
@@ -90,7 +91,7 @@ public sealed class AdminA6Service(
             );
         }).ToList();
 
-        audit.Add(actor, "A6_NOTIFICATIONS_SEARCH", "Notification", scopedUserId?.ToString(), purpose,
+        audit.Add(actor, "A6_NOTIFICATIONS_SEARCH", "Notification", scopedUserId.ToString(), purpose,
             new { Count = items.Count, Page = query.Page, Total = total, CaseId = query.CaseId, UserId = scopedUserId });
         await db.SaveChangesAsync(ct);
 
@@ -108,18 +109,19 @@ public sealed class AdminA6Service(
             throw new ForbiddenException("permission_denied", "Operator required.");
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        Guid? scopedUserId = null;
+        if (query.CaseId is not { } caseId)
+            throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
 
-        if (query.CaseId is { } caseId)
-        {
-            var ticket = await db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Id == caseId, ct)
-                ?? throw new NotFoundException("case_not_found", "Case not found.");
-            scopedUserId = ticket.LinkedUserId;
-        }
-        else if (query.UserId is { } uid)
-        {
-            scopedUserId = uid;
-        }
+        var ticket = await db.SupportCases.AsNoTracking().SingleOrDefaultAsync(c => c.Id == caseId, ct)
+            ?? throw new NotFoundException("case_not_found", "Case not found.");
+
+        if (!await permissions.HasSupportScopeAsync(principal, caseId, ticket.LinkedUserId, ct))
+            throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
+
+        if (query.UserId is { } requestedUserId && requestedUserId != ticket.LinkedUserId)
+            throw new ForbiddenException("case_access_denied", "UserId does not match assigned case subject.");
+
+        var scopedUserId = ticket.LinkedUserId;
 
         var unifiedDeliveries = new List<A6DeliveryHistoryItem>();
 
@@ -171,19 +173,15 @@ public sealed class AdminA6Service(
             if (query.ToUtc is { } t)
                 emailQ = emailQ.Where(e => e.CreatedAt < t);
 
-            string? targetEmail = null;
-            if (scopedUserId is { } targetUid)
+            var targetUser = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == scopedUserId, ct);
+            var targetEmail = targetUser?.Email;
+            if (!string.IsNullOrEmpty(targetEmail))
             {
-                var targetUser = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == targetUid, ct);
-                targetEmail = targetUser?.Email;
-                if (!string.IsNullOrEmpty(targetEmail))
-                {
-                    emailQ = emailQ.Where(e => e.RecipientEmail == targetEmail);
-                }
+                emailQ = emailQ.Where(e => e.RecipientEmail == targetEmail);
             }
 
-            // Only query if not scoped or scoped user had an email
-            if (scopedUserId == null || !string.IsNullOrEmpty(targetEmail))
+            // Only query if scoped user has an email
+            if (!string.IsNullOrEmpty(targetEmail))
             {
                 var emailLimit = Math.Max(200, query.Page * query.PageSize);
                 var emails = await emailQ.OrderByDescending(e => e.CreatedAt).Take(emailLimit).ToListAsync(ct);
@@ -201,7 +199,7 @@ public sealed class AdminA6Service(
 
                     unifiedDeliveries.Add(new A6DeliveryHistoryItem(
                         e.Id,
-                        scopedUserId ?? Guid.Empty,
+                        scopedUserId,
                         "Email",
                         SanitizeSubject(e.Subject),
                         MaskEmail(e.RecipientEmail),
@@ -220,10 +218,8 @@ public sealed class AdminA6Service(
         if (string.IsNullOrWhiteSpace(query.Channel) || query.Channel.Equals("Push", StringComparison.OrdinalIgnoreCase))
         {
             var pushQ = db.MobilePushDeliveries.AsNoTracking().Include(p => p.Notification).Include(p => p.Installation);
-            IQueryable<MobilePushDelivery> filteredPush = pushQ;
+            IQueryable<MobilePushDelivery> filteredPush = pushQ.Where(p => p.Notification.UserId == scopedUserId);
 
-            if (scopedUserId is { } targetUid)
-                filteredPush = filteredPush.Where(p => p.Notification.UserId == targetUid);
             if (query.FromUtc is { } f)
                 filteredPush = filteredPush.Where(p => p.CreatedAt >= f);
             if (query.ToUtc is { } t)
@@ -263,7 +259,7 @@ public sealed class AdminA6Service(
         var total = sorted.Count;
         var paged = sorted.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
 
-        audit.Add(actor, "A6_DELIVERY_HISTORY_READ", "DeliveryHistory", scopedUserId?.ToString(), purpose,
+        audit.Add(actor, "A6_DELIVERY_HISTORY_READ", "DeliveryHistory", scopedUserId.ToString(), purpose,
             new { Count = paged.Count, Total = total, Page = query.Page, ScopedUser = scopedUserId });
         await db.SaveChangesAsync(ct);
 

@@ -34,6 +34,7 @@ public sealed class AdminA6Tests
     {
         using var factory = new SpendWiseApiFactory();
         using var client = factory.CreateHttpsClient();
+        Guid caseIdForTest;
 
         using (var scope = factory.Services.CreateScope())
         {
@@ -52,19 +53,42 @@ public sealed class AdminA6Tests
             var session = new UserSession { UserId = user.Id, LastSeenAt = DateTime.UtcNow };
             db.Users.Add(user);
             db.UserSessions.Add(session);
+            var targetUser = new User
+            {
+                FullName = "TargetCustomer",
+                Email = "customer_" + key + "@test.local",
+                NormalizedEmail = "CUSTOMER_" + key + "@TEST.LOCAL",
+                SpendId = "c" + key[..11],
+                NormalizedSpendId = "C" + key[..11],
+                PasswordHash = "hash",
+                SystemRole = SystemRole.User
+            };
+            db.Users.Add(targetUser);
+
+            var supportCase = new SupportCase
+            {
+                LinkedUserId = targetUser.Id,
+                Subject = "Case for A6 route test",
+                Description = "Verification case",
+                AssignedAdminId = user.Id,
+                Status = CaseStatus.Investigating
+            };
+            db.SupportCases.Add(supportCase);
             await db.SaveChangesAsync();
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
                 scope.ServiceProvider.GetRequiredService<ITokenService>().CreateAccessToken(user, session.Id).Token);
+
+            caseIdForTest = supportCase.Id;
         }
 
         // Search notifications
         var searchResp = await client.PostAsJsonAsync("/api/v1/admin/notifications/search",
-            new { reason = "Audit notifications search" });
+            new { reason = "Audit notifications search", caseId = caseIdForTest });
 
         // Delivery history
         var deliveryResp = await client.PostAsJsonAsync("/api/v1/admin/notifications/delivery-history",
-            new { reason = "Audit delivery history" });
+            new { reason = "Audit delivery history", caseId = caseIdForTest });
 
         // Delivery failures
         var failuresResp = await client.PostAsJsonAsync("/api/v1/admin/notifications/failures",
@@ -125,14 +149,23 @@ public sealed class AdminA6Tests
             CreatedAt = f.Clock.UtcNow.AddMinutes(5)
         };
 
-        f.Db.AddRange(n1, n2);
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "A6.1 Test Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+
+        f.Db.AddRange(n1, n2, ticket);
         await f.Db.SaveChangesAsync();
 
         var service = CreateService(f);
         var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
 
         var paged = await service.NotificationsAsync(principal,
-            new A6NotificationQuery("Search notifications", UserId: subject.Id), default);
+            new A6NotificationQuery("Search notifications", CaseId: ticket.Id, UserId: subject.Id), default);
 
         Assert.Equal(2, paged.Total);
         var item1 = Assert.Single(paged.Items, i => i.Id == n1.Id);
@@ -192,14 +225,23 @@ public sealed class AdminA6Tests
             CreatedAt = f.Clock.UtcNow.AddMinutes(3)
         };
 
-        f.Db.AddRange(notif, email, installation, pushDelivery);
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "A6.2 Test Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+
+        f.Db.AddRange(notif, email, installation, pushDelivery, ticket);
         await f.Db.SaveChangesAsync();
 
         var service = CreateService(f);
         var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
 
         var paged = await service.DeliveryHistoryAsync(principal,
-            new A6DeliveryHistoryQuery("Audit history", UserId: subject.Id), default);
+            new A6DeliveryHistoryQuery("Audit history", CaseId: ticket.Id, UserId: subject.Id), default);
 
         Assert.Equal(3, paged.Total);
 
@@ -325,14 +367,23 @@ public sealed class AdminA6Tests
             CreatedAt = f.Clock.UtcNow
         };
 
-        f.Db.Add(n);
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "A6 Redaction Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+
+        f.Db.AddRange(n, ticket);
         await f.Db.SaveChangesAsync();
 
         var service = CreateService(f);
         var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
 
         var paged = await service.NotificationsAsync(principal,
-            new A6NotificationQuery("Check 8-digit redaction", UserId: subject.Id), default);
+            new A6NotificationQuery("Check 8-digit redaction", CaseId: ticket.Id, UserId: subject.Id), default);
 
         var item = Assert.Single(paged.Items);
         Assert.DoesNotContain("12345678", item.Message);
@@ -342,5 +393,161 @@ public sealed class AdminA6Tests
         Assert.DoesNotContain("topSecretValue", item.DataJson);
         Assert.DoesNotContain("myApiKey999", item.DataJson);
         Assert.DoesNotContain("87654321", item.DataJson);
+    }
+
+    [Fact]
+    public async Task Notifications_Fails_When_CaseId_Is_Missing()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.NotificationsAsync(principal,
+                new A6NotificationQuery("Attempt without case", CaseId: null, UserId: subject.Id), default));
+
+        Assert.Equal("case_access_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task DeliveryHistory_Fails_When_CaseId_Is_Missing()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.DeliveryHistoryAsync(principal,
+                new A6DeliveryHistoryQuery("Attempt without case", CaseId: null, UserId: subject.Id), default));
+
+        Assert.Equal("case_access_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task Notifications_Denies_IDOR_When_Case_Belongs_To_Different_Admin()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin1 = await f.AddUserAsync("Admin1", role: SystemRole.Admin);
+        var admin2 = await f.AddUserAsync("Admin2", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session2 = await f.AddSessionAsync(admin2.Id);
+
+        // Case assigned to Admin1, but Admin2 attempts access
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "Admin1 Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin1.Id,
+            Status = CaseStatus.Investigating
+        };
+        f.Db.SupportCases.Add(ticket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal2 = V1PermissionTests.Principal(admin2.Id, session2.Id, "Admin");
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.NotificationsAsync(principal2,
+                new A6NotificationQuery("IDOR probe", CaseId: ticket.Id, UserId: subject.Id), default));
+
+        Assert.Equal("case_access_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task Notifications_Denies_When_UserId_Mismatches_Case_Subject()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var victim = await f.AddUserAsync("Victim");
+        var otherUser = await f.AddUserAsync("OtherUser");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var ticket = new SupportCase
+        {
+            LinkedUserId = victim.Id,
+            Subject = "Victim Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+        f.Db.SupportCases.Add(ticket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        // Admin has case for victim, but asks for otherUser
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.NotificationsAsync(principal,
+                new A6NotificationQuery("Cross-user access", CaseId: ticket.Id, UserId: otherUser.Id), default));
+
+        Assert.Equal("case_access_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task DeliveryHistory_Denies_When_Case_Is_Closed_Or_Resolved()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id);
+
+        var resolvedTicket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "Resolved Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Resolved
+        };
+        f.Db.SupportCases.Add(resolvedTicket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.DeliveryHistoryAsync(principal,
+                new A6DeliveryHistoryQuery("Closed case check", CaseId: resolvedTicket.Id, UserId: subject.Id), default));
+
+        Assert.Equal("case_access_denied", ex.Code);
+    }
+
+    [Fact]
+    public async Task Notifications_Denies_When_Operator_Session_Is_Revoked()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var admin = await f.AddUserAsync("AdminOperator", role: SystemRole.Admin);
+        var subject = await f.AddUserAsync("Customer");
+        var session = await f.AddSessionAsync(admin.Id, revokedAt: f.Clock.UtcNow);
+
+        var ticket = new SupportCase
+        {
+            LinkedUserId = subject.Id,
+            Subject = "Revoked Session Case",
+            Description = "Support ticket",
+            AssignedAdminId = admin.Id,
+            Status = CaseStatus.Investigating
+        };
+        f.Db.SupportCases.Add(ticket);
+        await f.Db.SaveChangesAsync();
+
+        var service = CreateService(f);
+        var principal = V1PermissionTests.Principal(admin.Id, session.Id, "Admin");
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.NotificationsAsync(principal,
+                new A6NotificationQuery("Revoked session attempt", CaseId: ticket.Id, UserId: subject.Id), default));
+
+        Assert.Equal("permission_denied", ex.Code);
     }
 }

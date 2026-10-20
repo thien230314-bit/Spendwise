@@ -39,3 +39,14 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Outbound Withdrawal (Payout): Retail automated payout is NOT supported by SePay Bank Hub; requires enterprise corporate bank direct integration. Managed in V1.0 via verified ledger hold + admin approval workflow (external payout is DEFERRED).
 - Documentation: Added `backend/docs/TEST-ENVIRONMENT-BASELINE.md` and `backend/docs/TASK16.3-STABILIZATION.md`.
 - Safety: Zero SQL01 access; all DB actions executed against SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`).
+
+## Task 16.4 Admin Architecture Cleanup & Targeted Verification
+- Release Build: 6 projects compiled cleanly, 0 errors.
+- SuperAdmin Cleanup: Completely decoupled active administrative paths (`V1CaseWorkflow`, `V1CaseAssignment`, `AdminA1Service`, `AdminA2Relations`, `AdminA3Reports`, `AdminA5Service`, `PlatformPermissionService`, `V1BroadcastService`). SuperAdmin escalation disabled with 403 `escalation_disabled`.
+- Support Queue Visibility: Fixed unassigned ticket visibility bug in `V1CaseAssignment.QueueAsync` (`c.AssignedAdminId == actor || c.AssignedAdminId == null`). Admins can view and claim unassigned tickets.
+- Broadcast Role Targeting: Restricted strictly to `User` and `Admin`.
+- Verification Suite:
+  - Non-SQL Suite: 1,120 / 1,120 PASS (including 5 new tests in `Task16_4_AdminCleanupTests.cs`).
+  - Targeted admin lifecycle and scope authorization: 164 / 164 PASS.
+- Documentation: Added `backend/docs/TASK16.4-ADMIN-CLEANUP.md`.
+- Safety: Zero SQL01 access; no secrets in staged changes; working tree clean.

@@ -53,25 +53,11 @@ public sealed class V1CaseWorkflow(ISpendWiseDbContext db, PlatformPermissionSer
         {
             if (ticket.Status.ToString() != request.ExpectedStatus) throw new ConflictException("concurrent_case_update", "Case status changed.");
             var oldStatus = ticket.Status;
-            var supervisor = principal.IsInRole("SuperAdmin");
+            if (request.Action is "escalate" or "claim" or "guidance")
+                throw new ForbiddenException("escalation_disabled", "SuperAdmin escalation is unavailable in V1.0.");
             switch (request.Action)
             {
-                case "escalate":
-                    if (supervisor || ticket.AssignedAdminId != actor) throw new ForbiddenException("case_access_denied", "Assigned Admin required.");
-                    if (ticket.EscalatedAt is not null) throw new ConflictException("case_already_escalated", "Case already escalated.");
-                    ticket.EscalatedAt = clock.UtcNow; ticket.EscalatedById = actor; ticket.EscalationReason = message;
-                    break;
-                case "claim":
-                    if (!supervisor || ticket.EscalatedAt is null) throw new ForbiddenException("case_access_denied", "An escalated case and SuperAdmin are required.");
-                    if (ticket.EscalationReviewerId == actor) return true;
-                    if (ticket.EscalationReviewerId is not null) throw new ConflictException("case_already_claimed", "Another reviewer owns this escalation.");
-                    ticket.EscalationReviewerId = actor; break;
-                case "guidance":
-                    if (!supervisor || ticket.EscalationReviewerId != actor) throw new ForbiddenException("case_access_denied", "Assigned escalation reviewer required.");
-                    if (ticket.EscalationReviewedAt is not null) throw new ConflictException("case_already_reviewed", "Guidance is immutable.");
-                    ticket.EscalationReviewedAt = clock.UtcNow; ticket.EscalationGuidance = message; break;
                 case "status":
-                    if (ticket.EscalatedAt is not null && ticket.EscalationReviewedAt is null) throw new ConflictException("case_review_pending", "Escalation review is pending.");
                     if (ticket.AssignedAdminId != actor) throw new ForbiddenException("case_access_denied", "Assigned Admin must execute the case decision.");
                     var next = CaseWorkflowMappings.ParseSupport(request.Status ?? "");
                     CaseWorkflowMappings.EnsureSupportTransition(ticket.Status, next);
@@ -81,7 +67,7 @@ public sealed class V1CaseWorkflow(ISpendWiseDbContext db, PlatformPermissionSer
             ticket.LatestReplyAt = clock.UtcNow;
             var name = await db.Users.AsNoTracking().Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
             db.CaseHistories.Add(new CaseHistory { CaseId = id, CaseKind = CaseKind.Support, ActorId = actor,
-                ActorDisplayNameSnapshot = name, ActorRole = supervisor ? "SuperAdmin" : "Admin", Action = "V1_" + request.Action,
+                ActorDisplayNameSnapshot = name, ActorRole = "Admin", Action = "V1_" + request.Action,
                 Message = request.Action is "escalate" or "claim" or "guidance" ? "Case escalation updated." : message,
                 OldStatus = oldStatus.ToString(), NewStatus = ticket.Status.ToString() });
             audit.Add(actor, "V1_CASE_" + request.Action.ToUpperInvariant(), "SupportCase", id.ToString(), message[..Math.Min(1000, message.Length)], null);
@@ -123,7 +109,7 @@ public sealed class V1CaseWorkflow(ISpendWiseDbContext db, PlatformPermissionSer
                     ticket.Status = CaseStatus.Investigating;
             }
             var hasScope = ticket.AssignedAdminId == actor || await permissions.HasSupportScopeAsync(principal, id, subject, token);
-            if (!(claim && principal.IsInRole("SuperAdmin") && ticket.EscalatedAt != null || hasScope))
+            if (!hasScope)
                 throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
             return await action(ticket, actor, token);
         }, ct); }

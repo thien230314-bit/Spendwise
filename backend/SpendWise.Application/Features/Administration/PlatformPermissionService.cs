@@ -25,7 +25,7 @@ public sealed class PlatformPermissionService(ISpendWiseDbContext db)
         if (!await HasAsync(principal, PlatformPermission.SensitiveRead, ct)) return false;
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         return await db.SupportCases.AsNoTracking().AnyAsync(c => c.Id == caseId
-            && c.LinkedUserId == targetUserId && (c.AssignedAdminId == actor || principal.IsInRole("SuperAdmin") && c.EscalatedAt != null && c.EscalationReviewerId == actor)
+            && c.LinkedUserId == targetUserId && c.AssignedAdminId == actor
             && c.Status != CaseStatus.Resolved && c.Status != CaseStatus.Rejected && c.Status != CaseStatus.Closed, ct);
     }
 
@@ -34,7 +34,7 @@ public sealed class PlatformPermissionService(ISpendWiseDbContext db)
         if (!TryIdentity(principal, PlatformPermission.SensitiveRead, out var actor, out var session, out var role))
             return db.Users.AsNoTracking().Where(u => false);
         return db.Users.AsNoTracking().Where(u => u.Id == targetId && u.SystemRole == SystemRole.User
-            && db.SupportCases.Any(c => c.Id == caseId && c.LinkedUserId == u.Id && (c.AssignedAdminId == actor || role == SystemRole.SuperAdmin && c.EscalatedAt != null && c.EscalationReviewerId == actor)
+            && db.SupportCases.Any(c => c.Id == caseId && c.LinkedUserId == u.Id && c.AssignedAdminId == actor
                 && c.Status != CaseStatus.Resolved && c.Status != CaseStatus.Rejected && c.Status != CaseStatus.Closed)
             && db.UserSessions.Any(s => s.Id == session && s.UserId == actor && s.RevokedAt == null
                 && s.User.SystemRole == role && s.User.Status == UserStatus.Active

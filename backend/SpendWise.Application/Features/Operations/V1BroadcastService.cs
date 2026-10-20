@@ -30,7 +30,7 @@ public sealed partial class V1BroadcastService(ISpendWiseDbContext db, IClock cl
     {
         var title = InputBoundary.RequiredText(request.Title, 200, "Title"); var message = InputBoundary.RequiredText(request.Message, 1000, "Message");
         var key = InputBoundary.RequiredText(request.IdempotencyKey, 100, "Idempotency key"); var reason = Reason(request.Reason);
-        if (request.Type != "Operational" || request.TargetRole is not ("User" or "Admin" or "SuperAdmin"))
+        if (request.Type != "Operational" || request.TargetRole is not ("User" or "Admin"))
             throw new ConflictException("broadcast_contract_required", "Only operational notices with explicit supported role targeting are available. Promotions require an approved program; emergency notices require a verified incident source.");
         var actor = await OperatorAsync(principal, request.SecurityPin, ct);
         return await db.ExecuteInTransactionAsync(async token =>

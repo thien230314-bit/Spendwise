@@ -59,8 +59,8 @@ public sealed class V1CaseAssignment(ISpendWiseDbContext db, PlatformPermissionS
         var purpose = InputBoundary.RequiredText(reason, 1000, "Reason"); AdminAuditWriter.RequireReason(purpose); InputBoundary.Page(page, pageSize);
         if (page - 1 > int.MaxValue / pageSize) throw new AppException("invalid_pagination", "Page too large.");
         if (!await permissions.HasAsync(principal, PlatformPermission.OperationsRead, ct)) throw new ForbiddenException("permission_denied", "Operator required.");
-        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value); var supervisor = principal.IsInRole("SuperAdmin");
-        var rows = await db.SupportCases.AsNoTracking().Where(c => (supervisor || c.AssignedAdminId == actor)
+        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var rows = await db.SupportCases.AsNoTracking().Where(c => (c.AssignedAdminId == actor || c.AssignedAdminId == null)
                 && c.Status != CaseStatus.Closed && c.Status != CaseStatus.Rejected && c.Status != CaseStatus.Resolved)
             .OrderBy(c => c.CreatedAt).ThenBy(c => c.Id).Skip((page - 1) * pageSize).Take(pageSize)
             .Select(c => new V1CaseTaskDto(c.Id, c.TicketNumber, c.Status.ToString(), c.Priority, c.AssignedAdminId)).ToListAsync(ct);

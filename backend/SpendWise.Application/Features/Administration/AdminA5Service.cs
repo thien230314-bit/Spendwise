@@ -246,15 +246,14 @@ public sealed class AdminA5Service(
 
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        var supervisor = principal.IsInRole("SuperAdmin");
 
 
 
-        // Ordinary admin can only assign to self; SuperAdmin can assign to any eligible admin
+        // Admin assigns case to self (or target operator)
 
         var targetOperatorId = request.OperatorId == Guid.Empty ? actor : request.OperatorId;
 
-        if (!supervisor && targetOperatorId != actor)
+        if (targetOperatorId != actor)
 
             throw new ForbiddenException("assignment_denied", "Ordinary admin can only assign cases to self.");
 
@@ -284,9 +283,9 @@ public sealed class AdminA5Service(
 
             // FIX-2: Prevent ordinary admin from stealing another admin's ticket
 
-            if (!supervisor && ticket.AssignedAdminId != null && ticket.AssignedAdminId != actor)
+            if (ticket.AssignedAdminId != null && ticket.AssignedAdminId != actor)
 
-                throw new ForbiddenException("assignment_denied", "Case is already assigned to another Admin. Reassignment requires SuperAdmin.");
+                throw new ForbiddenException("assignment_denied", "Case is already assigned to another Admin.");
 
 
 
@@ -336,7 +335,7 @@ public sealed class AdminA5Service(
 
                 ActorDisplayNameSnapshot = actorName,
 
-                ActorRole = supervisor ? "SuperAdmin" : "Admin",
+                ActorRole = "Admin",
 
                 Action = "A5_ASSIGNED",
 
@@ -492,7 +491,7 @@ public sealed class AdminA5Service(
 
                 ActorDisplayNameSnapshot = actorName,
 
-                ActorRole = principal.IsInRole("SuperAdmin") ? "SuperAdmin" : "Admin",
+                ActorRole = "Admin",
 
                 Action = "request_info",
 
@@ -928,7 +927,7 @@ public sealed class AdminA5Service(
 
                 ActorDisplayNameSnapshot = actorName,
 
-                ActorRole = principal.IsInRole("SuperAdmin") ? "SuperAdmin" : "Admin",
+                ActorRole = "Admin",
 
                 Action = "status_change",
 
@@ -1270,7 +1269,7 @@ public sealed class AdminA5Service(
 
                 ActorDisplayNameSnapshot = actorName,
 
-                ActorRole = principal.IsInRole("SuperAdmin") ? "SuperAdmin" : "Admin",
+                ActorRole = "Admin",
 
                 Action = "applied_template:" + tplKey,
 

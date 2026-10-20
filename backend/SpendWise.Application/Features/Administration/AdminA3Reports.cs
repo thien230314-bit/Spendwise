@@ -23,14 +23,14 @@ public sealed partial class AdminA3Service
 
     private IQueryable<ReportRow> ReportRows(ClaimsPrincipal principal, SupportCase current, Guid fundId, bool v1)
     {
-        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value); var super = principal.IsInRole("SuperAdmin"); var subject = current.LinkedUserId;
+        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value); var subject = current.LinkedUserId;
         var postingIds = v1 ? db.V1FundContributions.Where(c => c.FundId == fundId && c.UserId == subject).Select(c => c.LedgerTransactionId)
             : db.FundTransactions.Where(t => t.GroupId == fundId && (t.UserId == subject || t.Type == SpendWise.Domain.Groups.FundTransactionType.Expense) && t.LedgerTransactionId != null).Select(t => t.LedgerTransactionId!.Value)
                 .Concat(db.GroupContributions.Where(c => c.GroupId == fundId && c.UserId == subject).Select(c => c.LedgerTransactionId))
                 .Concat(db.LedgerTransactions.Where(p => p.BusinessType == "GroupFundExpense" && db.GroupExpenses.Any(e => e.Id == p.BusinessId && e.GroupId == fundId && e.PaidByType == SpendWise.Domain.Groups.GroupExpensePaidByType.Fund)).Select(p => p.Id))
                 .Concat(db.GroupRefunds.Where(r => r.UserId == subject && r.LedgerTransactionId != null && db.GroupDeletionRequests.Any(d => d.Id == r.GroupDeletionRequestId && d.GroupId == fundId)).Select(r => r.LedgerTransactionId!.Value));
         var transactions = db.FinancialTransactions.Where(t => t.OwnerUserId == subject && postingIds.Contains(t.LedgerTransactionId));
-        var cases = db.SupportCases.AsNoTracking().Where(c => c.LinkedUserId == subject && (c.AssignedAdminId == actor || super && c.EscalatedAt != null && c.EscalationReviewerId == actor)
+        var cases = db.SupportCases.AsNoTracking().Where(c => c.LinkedUserId == subject && c.AssignedAdminId == actor
             && c.Status != CaseStatus.Closed && c.Status != CaseStatus.Resolved && c.Status != CaseStatus.Rejected
             && (v1 && (db.V1Funds.Any(f => f.Id == fundId && f.OwnerResponseCaseId == c.Id)
                 || db.V1FundActivities.Any(a => a.FundId == fundId && a.Event == "OwnerResponseEscalated" && a.ReferenceId == c.Id))

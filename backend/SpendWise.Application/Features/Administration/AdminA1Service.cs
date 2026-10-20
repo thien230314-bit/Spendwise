@@ -80,8 +80,8 @@ public sealed partial class AdminA1Service(ISpendWiseDbContext db, PlatformPermi
 
     private IQueryable<SupportCase> ScopedCases(ClaimsPrincipal principal, bool active)
     {
-        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value); var supervisor = principal.IsInRole("SuperAdmin");
-        return db.SupportCases.AsNoTracking().Where(c => (c.AssignedAdminId == actor || supervisor && c.EscalatedAt != null && c.EscalationReviewerId == actor)
+        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        return db.SupportCases.AsNoTracking().Where(c => c.AssignedAdminId == actor
             && db.Users.Any(u => u.Id == c.LinkedUserId && u.SystemRole == SystemRole.User)
             && (!active || c.Status != CaseStatus.Closed && c.Status != CaseStatus.Resolved && c.Status != CaseStatus.Rejected));
     }

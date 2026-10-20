@@ -563,8 +563,19 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
 2. **Cách ly email kiểm thử (Email Test Isolation):**
    - `ConfiguredEmailSender.cs` chặn tuyệt đối việc gửi email test ra internet; các domain `.test`, `.invalid` được lưu vào thư mục pickup nội bộ hoặc ném exception nếu cố tình dùng SMTP. Môi trường `Testing` luôn cưỡng chế chế độ `Pickup`.
 3. **Nghiệm thu năng lực tích hợp SePay:**
-   - **Liên kết ngân hàng:** Đã hỗ trợ qua SePay Hosted Link Hub và webhook.
-   - **Nạp ví (Inbound):** Đã hỗ trợ qua Webhook IPN (`transfer_type=in`), xác thực chữ ký và chống trùng lặp.
-   - **Rút tiền (Outbound / Payout):** Cổng SePay Bank Hub cho tài khoản cá nhân KHÔNG cung cấp API tự động chi tiền ra ngoài (yêu cầu hợp đồng doanh nghiệp kết nối trực tiếp với ngân hàng đối tác như TPBank/VietinBank Corporate). Trong V1.0, Backend xử lý giữ tiền và trừ sổ cái an toàn; luồng chi tiền tự động ra ngoài được phân loại là DEFERRED tích hợp đối tác sau.
+   - **Liên kết ngân hàng:** Có adapter SePay Hosted Link Hub và webhook; audit 2026-10-20 chưa có Bank Hub credentials nên DOCUMENTED_ONLY / CREDENTIALS_REQUIRED.
+   - **Nạp ví (Inbound):** IPN có xác thực secret và chống trùng, ghi nhận BankTransaction; không tự ghi có Wallet/Ledger. TestMode có exact-amount confirmation riêng. Chưa chứng minh linked-bank top-up thật; không xem IPN ingestion là wallet settlement.
+   - **Rút tiền (Outbound / Payout):** PAYOUT_API_NOT_AVAILABLE trong adapter và Bank Hub catalogue đã rà; quyền tài khoản UNKNOWN, không khẳng định mọi sản phẩm SePay đều không hỗ trợ. Refund giao dịch thu gốc cho VietinBank doanh nghiệp đủ điều kiện là sản phẩm khác, chưa chứng minh rút ví tùy ý. Provider payout vẫn PENDING xác nhận hợp đồng/API.
+
 4. **Bảo đảm an toàn dữ liệu:**
    - Tuyệt đối không chạm vào SQL01 (`DESKTOP-B5KA3LT\SQLEXPRESS01\SpendWiseDb`). Mọi test chạy trên SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`). Không can thiệp Frontend/Mobile.
+
+## External API audit — 2026-10-20
+
+Evidence và ma trận đầy đủ: [CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md](backend/docs/CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md). Đây là cập nhật capability; không thay yêu cầu hoặc triển khai Backend.
+
+- SePay v2 Sandbox: token và GET account/history200 (**AUTH_VERIFIED / SANDBOX_VERIFIED chỉ cho đọc**). Bank Hub chưa auth. `accumulated` chưa được xác nhận là available balance realtime; authorized debit và payout còn UNKNOWN. Giữ yêu cầu làm mờ nguồn thiếu tiền, Backend kiểm tra lại cả phí, nạp toàn bộ sau xác nhận đúng amount/reference. UI **FRONTEND PENDING**; provider top-up/withdrawal chưa nghiệm thu.
+- Gemini: key được chấp nhận ở model list200; model đang cấu hình `gemini-1.5-flash` metadata404 và đã shutdown theo Google. **CONFIG_ERROR / DEPRECATED; inference/chat NOT VERIFIED**. Chờ PO duyệt model/budget; chưa sửa cấu hình.
+- Gmail SMTP: cấu hình Development explicit Smtp; TLS1.3 và AUTH235 thành công. **SMTP_CONNECTION_VERIFIED / SMTP_AUTH_VERIFIED / DELIVERY_NOT_TESTED**; không gửi thư.
+- Push: Backend dùng Expo, hiện delivery disabled. Empty receipts lookup200 chỉ chứng minh endpoint truy cập được; client registration/platform credentials/device delivery chưa nghiệm thu. Không khẳng định FCM đã tích hợp trực tiếp hoặc Push đã hoạt động.
+- Không truy cập database, không giao dịch ngân hàng/gửi thông báo, không đổi provider. **Full Newman E2E NOT RUN; FRONTEND UI NOT YET VERIFIED** trong audit này. Các kết quả Core trước đó là bằng chứng lịch sử, không phải lượt chạy mới.

@@ -72,8 +72,18 @@ Task 16.2 covers Backend Adversarial Audit, Financial Bug Fixes, and Real API Ac
 - Decision 2 (Account Restrictions): Level 1 Financial Restriction (debits blocked, read preserved) vs Level 2 Account Lock (login blocked, sessions revoked).
 - Decision 3 (Rejoin Entitlements): Fresh episode with 0 VND carryover. Equal split and remainder distribution guarded against zero-entitlement members.
 - Decision 4 (Election Governance): Default policy parameters, winner rejection, electorate snapshot, and activity evidence enforcement.
-- Task 16.3 Core Backend Stabilization: Dispute atomicity and state guards verified; email test isolation hardened; SePay capability baseline documented (Bank linking and Deposit supported; retail Payout deferred to corporate direct bank contracts). All tests on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`), zero SQL01 access.
+- Task 16.3 Core Backend Stabilization: Dispute atomicity and state guards verified; email test isolation hardened. Historical SePay capability wording is superseded by the 2026-10-20 External API audit below: linking adapter is not authenticated acceptance; IPN ingestion is not wallet credit. Historical tests used SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`), zero SQL01 access.
 
 ## Task 17 — bổ sung Product Owner
 
 Theme Light/Dark/System và VI/EN là bắt buộc cho V1.0. API preferences là dữ liệu của tài khoản đang đăng nhập, không mở quyền Admin sửa tùy chọn của người khác. Backend có kiểm chứng lưu/đọc/đổi tài khoản/fresh login; UI vẫn FRONTEND PENDING. Core Newman và các provider được phân loại riêng trong `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`; không dùng Postman để xác nhận theme/bản dịch UI. Giữ nguyên chính sách nạp toàn bộ sau provider xác nhận; không coi SePay Test Mode là chứng nhận balance/debit của API thật.
+
+## External API audit — 2026-10-20
+
+Evidence: [CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md](backend/docs/CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md). Chỉ kiểm tra source/docs và kết nối provider an toàn; không thay đổi Core, policy hoặc cấu hình deployment.
+
+- Gmail Development: SMTP_CONFIGURATION_PRESENT, SMTP_CONNECTION_VERIFIED (TLS1.3), SMTP_AUTH_VERIFIED (235), DELIVERY_NOT_TESTED. Outbox/internal delivery status không chứng minh inbox. Không gửi email/OTP trong audit.
+- Expo là push adapter hiện có, delivery disabled; empty receipt lookup200 không chứng minh credentials project hay device delivery. Native client/platform credentials còn PENDING; enhanced security bearer chưa được adapter cấu hình. Admin broadcast/outbox không được gắn live push VERIFIED từ kết quả này.
+- Gemini dùng chung provider cho User/Admin: key metadata200 nhưng model cấu hình gemini-1.5-flash404/đã shutdown; CONFIG_ERROR / DEPRECATED. Không inference, chưa đổi model; PO cần duyệt model/budget/quota.
+- SePay TestMode account/history GET200 chỉ xác nhận đọc Sandbox. Bank Hub CREDENTIALS_REQUIRED; available balance, authorized debit và payout entitlement UNKNOWN. IPN chỉ ghi nhận BankTransaction, chưa chứng minh wallet settlement. PAYOUT_API_NOT_AVAILABLE chỉ trong adapter/catalogue đã rà, không kết luận mọi sản phẩm SePay; enterprise original-refund khác rút ví. Operations cần xác nhận hợp đồng/quyền/reconciliation trước nghiệm thu provider.
+- Không truy cập SQL01 hoặc database khác, không gửi thông báo/giao dịch tiền, không thay settings. **Full Newman E2E NOT RUN; FRONTEND UI NOT YET VERIFIED**. Không dùng audit này để promote kết quả E2E hoặc production readiness.

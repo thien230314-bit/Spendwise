@@ -51,7 +51,7 @@ POST `/api/v1/admin/notifications/search`, `/delivery-history`, `/failures`, `/t
 
 Approved system broadcast routes: POST `/api/v1/system/broadcasts`, `/{id}/publish`, `/{id}/cancel`, `/{id}/status`, protected by maintenance permission and PIN/request safeguards. Existing drafts, recipient snapshots and publication state are preserved.
 
-Status: IMPLEMENTED internal notifications/outbox; SMTP acceptance and local pickup are not proof of mailbox delivery. LIVE DELIVERY NOT VERIFIED. External push delivery LIVE NOT VERIFIED.
+Status: IMPLEMENTED internal notifications/outbox; Task G3 verified Gmail SMTP real inbox delivery and OTP extraction to external mailbox via disposable inbox (`swk64oznds@maxxspace.com`), confirming STARTTLS, TLS 1.3, AUTH LOGIN (235) and inbox receipt. Expo Push API contract and error handling verified; physical mobile device delivery remains `DEVICE_DELIVERY_NOT_VERIFIED` (requires connected mobile device with registered token).
 
 ## ADM-05 — Maintenance
 

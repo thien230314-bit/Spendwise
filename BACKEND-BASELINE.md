@@ -78,3 +78,18 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Withdrawal: PAYOUT_PROVIDER_REQUIRED; ledger hold + manual admin review model maintained.
 - Targeted Test Suite: 84/84 PASS (SePayTestModeBankingTests, SePayBankHubGatewayTests, SePayTestModeAccountReaderTests, BankHubApplicationTests).
 - Documentation: Created backend/docs/ANTIGRAVITY-SEPAY-G2-VERIFICATION.md; updated User.md and Admin.md.
+
+
+## Task G3 — SMTP Email Real Delivery & Expo Push Notifications Verification
+- Release Build: 6 projects compiled cleanly: 0 errors, 0 warnings.
+- SMTP Live Delivery Verified:
+  - Gmail SMTP credentials loaded from User Secrets (smtp.gmail.com:587, cocktailsome@gmail.com).
+  - STARTTLS & LOGIN AUTH verified: 235 Accepted.
+  - Live Delivery Tested: Synthetic OTP email sent to independent test mailbox (swk64oznds@maxxspace.com via Mail.tm API). Message accepted (250 OK) and arrived in inbox within 3 seconds.
+  - OTP Extraction: Verified exact code 849201 extracted from delivered body (INBOX_DELIVERY_VERIFIED, OTP_EXTRACTED_VERIFIED).
+- Expo Push Capabilities Verified:
+  - Receipts service verified: GET https://exp.host/--/api/v2/push/getReceipts returned HTTP 200 OK.
+  - Send endpoint & Error Contract verified: POST https://exp.host/--/api/v2/push/send with synthetic token returned HTTP 200 with DeviceNotRegistered error, matching ExpoPushSender.cs token revocation contract (EXPO_CONTRACT_VERIFIED).
+  - Physical Mobile Delivery: Accurately recorded as DEVICE_DELIVERY_NOT_VERIFIED due to lack of connected physical mobile device in workspace.
+- Targeted Test Suite: 188 / 188 PASS (Email, OTP, Mobile Push Token management, Notification mapping).
+- Documentation: Created backend/docs/ANTIGRAVITY-SMTP-EXPO-G3-VERIFICATION.md; updated User.md, Admin.md, and BACKEND-BASELINE.md.

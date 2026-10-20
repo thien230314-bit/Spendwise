@@ -35,6 +35,8 @@ public sealed class V1FundMembership : BaseEntity
     public bool CanSpend { get; set; }
     public DateTime JoinedAt { get; set; }
     public DateTime? LeftAt { get; set; }
+    // Null preserves legacy history-based calculation; new episodes track their own refunds.
+    public long? RefundedVnd { get; set; }
 }
 
 public sealed class V1FundInvitation : BaseEntity

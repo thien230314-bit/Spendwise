@@ -18,7 +18,7 @@ using SpendWise.Infrastructure.Persistence;
 
 namespace SpendWise.Tests;
 
-// Factory chạy đúng HTTP pipeline nhưng thay SQL Server bằng SQLite cô lập cho test.
+// Real HTTP pipeline with isolated SQLite or an explicitly validated owned SQL02 fixture.
 internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection? connection;
@@ -26,15 +26,20 @@ internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
     private readonly string sqliteConnectionString;
     private readonly IReadOnlyDictionary<string, string?> configurationOverrides;
     private readonly IClock? clock;
+    private readonly string? sqlConnection;
 
     public SpendWiseApiFactory(
         IReadOnlyDictionary<string, string?>? configurationOverrides = null,
         bool useIndependentDatabaseConnections = false,
-        IClock? clock = null)
+        IClock? clock = null,
+        string? sqlConnection = null)
     {
         this.clock = clock;
+        if (sqlConnection is not null) SqlTestFixtureLifecycle.ValidateOwnedConnection(sqlConnection);
+        this.sqlConnection = sqlConnection;
         this.configurationOverrides = configurationOverrides ?? new Dictionary<string, string?>();
-        if (useIndependentDatabaseConnections)
+        if (sqlConnection is not null) sqliteConnectionString = string.Empty;
+        else if (useIndependentDatabaseConnections)
         {
             // File SQLite tạm cho phép hai HTTP request dùng hai connection/DbContext thật sự độc lập.
             databasePath = Path.Combine(
@@ -108,7 +113,9 @@ internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<ISpendWiseDbContext>();
             services.AddDbContext<SpendWiseDbContext>(options =>
             {
-                if (connection is null)
+                if (sqlConnection is not null)
+                    options.UseSqlServer(sqlConnection);
+                else if (connection is null)
                     options.UseSqlite(sqliteConnectionString);
                 else
                     options.UseSqlite(connection);
@@ -132,9 +139,11 @@ internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
             BaseAddress = new Uri("https://localhost"),
             AllowAutoRedirect = false
         });
-        using var scope = Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>()
-            .Database.EnsureCreated();
+        if (sqlConnection is null)
+        {
+            using var scope = Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>().Database.EnsureCreated();
+        }
         return client;
     }
 

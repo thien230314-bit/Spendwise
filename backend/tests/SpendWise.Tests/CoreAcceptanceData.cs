@@ -19,11 +19,14 @@ internal sealed record CoreFundSeed(Guid FundId, User Owner, User Member, User A
 internal static class CoreAcceptanceData
 {
     internal const string Pin = IdentityTestData.DefaultPin;
-    internal static V1FundService Funds(SpendWiseDbContext db) => new(db, new SystemClock(),
-        new(db, new SecurityPinService(), new AccountCredentialLockout(db, new SystemClock())),
-        new NotificationService(db), new LedgerService(db, new SystemClock()));
+    internal static V1FundService Funds(SpendWiseDbContext db, IClock? suppliedClock = null)
+    {
+        var clock = suppliedClock ?? new SystemClock();
+        return new(db, clock, new(db, new SecurityPinService(), new AccountCredentialLockout(db, clock)),
+            new NotificationService(db), new LedgerService(db, clock));
+    }
 
-    internal static async Task<CoreFundSeed> SeedAsync(SpendWiseDbContext db, bool fixedFund = true)
+    internal static async Task<CoreFundSeed> SeedAsync(SpendWiseDbContext db, bool fixedFund = true, bool ledgerOpening = false)
     {
         var owner = CoreAcceptanceHttpTests.SyntheticUser(); var member = CoreAcceptanceHttpTests.SyntheticUser();
         owner.EmailVerifiedAt = member.EmailVerifiedAt = DateTime.UtcNow;
@@ -31,8 +34,16 @@ internal static class CoreAcceptanceData
         var session = new UserSession { UserId = admin.Id, LastSeenAt = DateTime.UtcNow };
         var ow = WalletFactory.Create(owner.Id, "Synthetic owner", WalletType.Main, true);
         var mw = WalletFactory.Create(member.Id, "Synthetic member", WalletType.Main, true);
-        ow.AvailableBalance = ow.LedgerAccount.Balance = mw.AvailableBalance = mw.LedgerAccount.Balance = 2_000_000;
+        ow.AvailableBalance = ow.LedgerAccount.Balance = mw.AvailableBalance = mw.LedgerAccount.Balance = ledgerOpening ? 0 : 2_000_000;
         db.AddRange(owner, member, admin, session, ow, mw); await db.SaveChangesAsync();
+        if (ledgerOpening)
+        {
+            var source = new LedgerAccount { Code = "SYNTHETIC-OPENING", Name = "Synthetic opening source", Type = LedgerAccountType.ExternalSource, IsSystem = true };
+            db.LedgerAccounts.Add(source); await db.SaveChangesAsync();
+            var ledger = new LedgerService(db, new SystemClock());
+            foreach (var wallet in new[] { ow, mw })
+                await ledger.PostAsync(source.Id, wallet.LedgerAccount.Id, 2_000_000, "VND", "SyntheticOpening", wallet.Id, "synthetic-opening", wallet.Id.ToString("N"), "Synthetic fixture funding", default);
+        }
         var funds = Funds(db);
         var fund = await funds.CreateAsync(owner.Id, new("Synthetic core acceptance", fixedFund ? "Fixed" : "Free", fixedFund ? 1_000_000 : null, Pin), default);
         db.V1FundMemberships.Add(new() { FundId = fund.Id, UserId = member.Id, Seat = 2 }); await db.SaveChangesAsync();

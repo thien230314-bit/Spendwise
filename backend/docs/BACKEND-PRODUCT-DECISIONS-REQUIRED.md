@@ -1,6 +1,8 @@
 # SpendWise V1.0 — Product Decisions and Status (Task 16.1)
 
-Updated 2026-10-20. Product Owner Task 16.1 approved the four decisions below; no reapproval is requested. Approval is distinct from execution evidence: current tests and remaining acceptance limitations are in `CODEX-FINAL-CORE-ACCEPTANCE.md`. Overall Backend remains PARTIAL, including the preserved A2.3 PARTIAL / POLICY_BLOCKED baseline.
+Updated 2026-10-20, Task 17. The four Product Owner decisions remain approved. A2.3 is APPROVED / IMPLEMENTED / VERIFIED; its old POLICY_BLOCKED marker is retired under explicit Task 17 authorization. Core status: **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. Evidence: `CODEX-TASK17-CORE-CLOSURE.md`; prior counts/gaps are historical. External checks and full E2E are still required.
+
+Task 17 implements approved Fixed settlement with stable-seat integer remainder allocation shared by preview and execution, persisted consenting carry-over, refund-before-removal for nonconsent, zero old entitlement for a new membership episode, and current-period proposal admission with the existing single-active-proposal index. Maintenance reopening now performs real ledger/account/wallet checks under exclusive admission. No new refund policy or automatic Owner assignment is introduced.
 
 ## 1. Approved & Implemented Decisions (Task 16.1)
 
@@ -53,3 +55,7 @@ The following external integrations remain intentionally deferred / unverified i
 - Real SePay bank webhooks and live external bank transfers (offline fallback: 404 outside Development).
 - Real live external SMTP delivery and push notification delivery (offline testing uses Pickup mode).
 - Upstream package advisories for `System.Security.Cryptography.Pkcs 9.0.4` remain documented.
+
+## Task 17 — chỉ đạo bổ sung Product Owner
+
+Theme Light/Dark/System, VI/EN bắt buộc; Backend lưu theo tài khoản, kiểm chứng HTTP/SQL02 đổi tài khoản và fresh login; Frontend/Mobile UI PENDING. Cho phép một lượt canonical Core Newman sau targeted PASS và SQL02 isolation; khi lỗi chỉ chạy lại nhóm bị ảnh hưởng. Không gọi thêm mô hình AI review. Phân loại Core E2E, provider và UI riêng. Giữ nguyên nạp/rút đã duyệt: đủ available balance mới cho chọn, backend kiểm tra lại, không nạp phần, chỉ cộng ví sau xác nhận toàn bộ; SePay live balance/debit phải xác minh riêng, không tuyên bố từ fake/Test Mode.

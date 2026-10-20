@@ -2085,6 +2085,57 @@ collection["item"].append({
     "item": integration_items
 })
 
+# Task 17: real HTTP workflows; matured activity/election fixtures are supplied by the owned SQL02 runner.
+core = []
+def core_req(name, method, path, token="core_owner_token", body=None, status=200, checks="", capture=None):
+    tests = f'pm.test("{name}: status", () => pm.response.to.have.status({status}));'
+    if capture:
+        tests += f'\npm.environment.set("{capture}", pm.response.json().id);'
+    if checks:
+        tests += '\npm.test("' + name + ': state", () => { ' + checks + ' });'
+    core.append(make_req(name, method, path, body=body, token_var=token, test_script=tests))
+
+for theme, lang in [("light", "vi-VN"), ("dark", "en-US"), ("system", "vi-VN")]:
+    core_req("Preferences " + theme, "PUT", "api/users/me/preferences", "userA_accessToken", {"preferredTheme": theme, "preferredLanguage": lang, "defaultCurrency": "VND"}, checks=f'pm.expect(pm.response.json().preferredTheme).eql("{theme}"); pm.expect(pm.response.json().preferredLanguage).eql("{lang}");')
+core_req("Other account preferences", "GET", "api/users/me", "userB_accessToken", checks='pm.expect(pm.response.json().preferredTheme).eql("system");')
+core_req("Original account preferences retained", "GET", "api/users/me", "userA_accessToken", checks='pm.expect(pm.response.json().preferredTheme).eql("system"); pm.expect(pm.response.json().preferredLanguage).eql("vi-VN");')
+core_req("Election freezes finance", "POST", "api/v1/funds/{{core_election_fund}}/contributions", "core_member_token", {"walletId":"{{core_member_wallet}}", "amountVnd":1, "idempotencyKey":"newman-election-frozen", "securityPin":"{{default_pin}}"}, 409)
+core_req("Election no-votes failure", "POST", "api/v1/funds/elections/{{core_election}}/advance", "core_member_token", checks='pm.expect(pm.response.json().phase).eql("Failed"); pm.expect(pm.response.json().failureReason).eql("NoVotes");')
+core_req("Owner settles approved activity", "POST", "api/v1/funds/activity-proposals/{{core_proposal}}/settle", body={"securityPin":"{{default_pin}}"}, checks='pm.expect(pm.response.json().state).eql("Settled");')
+core_req("Settlement replay", "POST", "api/v1/funds/activity-proposals/{{core_proposal}}/settle", body={"securityPin":"{{default_pin}}"}, checks='pm.expect(pm.response.json().state).eql("Settled");')
+core_req("Carry-over finance", "GET", "api/v1/funds/{{core_fund}}/finance", checks='var f=pm.response.json(); pm.expect(f.balanceVnd).eql(1000000); pm.expect(f.obligations.map(o=>o.paidVnd)).eql([500000,500000]);')
+core_req("Support intake", "POST", "api/cases/support", "core_member_token", {"category":"General", "priority":"Normal", "subject":"Synthetic Newman support", "description":"Synthetic account investigation"}, capture="core_case")
+core_req("Support claim", "POST", "api/v1/admin/support/{{core_case}}/assign", "core_admin_token", {"operatorId":"{{core_admin}}", "reason":"Synthetic claim"})
+core_req("Support request information", "POST", "api/v1/admin/support/{{core_case}}/request-info", "core_admin_token", {"reason":"Synthetic request", "message":"Provide synthetic receipt"})
+core_req("Support user reply", "POST", "api/cases/support/{{core_case}}/messages", "core_member_token", {"message":"Synthetic receipt supplied"})
+status_path="api/v1/admin/support/{{core_case}}/users/{{core_member}}/status"
+status_body={"status":"Restricted", "reason":"Synthetic verified report", "securityPin":"{{default_pin}}"}
+core_req("User cannot restrict", "PUT", status_path, "core_owner_token", status_body, 403)
+core_req("Admin restrict", "PUT", status_path, "core_admin_token", status_body, 204)
+p2p={"sourceWalletId":"{{core_owner_wallet}}", "recipientUserId":"{{core_member}}", "amount":1000, "description":"Synthetic restricted inbound", "idempotencyKey":"newman-inbound", "securityPin":"{{default_pin}}"}
+core_req("Restricted inbound P2P", "POST", "api/transfers/p2p", body=p2p, status=201)
+core_req("Restricted outbound denied", "POST", "api/transfers/p2p", "core_member_token", {**p2p,"sourceWalletId":"{{core_member_wallet}}", "recipientUserId":"{{core_owner}}", "idempotencyKey":"newman-outbound-denied"}, 403)
+core_req("Restricted refund preview", "GET", "api/v1/funds/{{core_fund}}/refund-preview", "core_member_token", checks='pm.expect(pm.response.json().eligibleRefundAmountVnd).eql(500000);')
+for label in ["Refund", "Refund replay"]:
+    core_req(label, "POST", "api/v1/funds/{{core_fund}}/leave", "core_member_token", {"securityPin":"{{default_pin}}", "idempotencyKey":"newman-refund", "destinationWalletId":"{{core_member_wallet}}"}, checks='pm.expect(pm.response.json().refundAmountVnd).eql(500000);')
+core_req("Admin lock", "PUT", status_path, "core_admin_token", {**status_body,"status":"Locked"}, 204)
+core_req("Locked token denied", "GET", "api/users/me", "core_member_token", status=401)
+core_req("Admin unlock", "PUT", status_path, "core_admin_token", {**status_body,"status":"Active"}, 204)
+core_req("Unlocked old token still denied", "GET", "api/users/me", "core_member_token", status=401)
+core_req("Support resolve", "POST", "api/v1/admin/support/{{core_case}}/resolve", "core_admin_token", {"reason":"Synthetic reviewed evidence", "resolutionMessage":"Synthetic resolved", "isRejected":False})
+broadcast={"type":"Operational", "targetRole":"User", "title":"Synthetic Newman notice", "message":"Synthetic operation notice", "idempotencyKey":"newman-broadcast", "securityPin":"{{default_pin}}", "reason":"Synthetic operations"}
+core_req("User broadcast denied", "POST", "api/v1/system/broadcasts", "core_owner_token", broadcast, 403)
+core_req("Broadcast draft", "POST", "api/v1/system/broadcasts", "core_admin_token", broadcast, capture="core_broadcast")
+core_req("Broadcast publish", "POST", "api/v1/system/broadcasts/{{core_broadcast}}/publish", "core_admin_token", {"scheduledFor":None,"expectedRevision":1,"securityPin":"{{default_pin}}","reason":"Synthetic publish"}, 204)
+core_req("Broadcast status", "POST", "api/v1/system/broadcasts/{{core_broadcast}}/status", "core_admin_token", {"reason":"Synthetic check"}, checks='pm.expect(pm.response.json().state).eql("Scheduled");')
+core_req("Broadcast cancel draft", "POST", "api/v1/system/broadcasts", "core_admin_token", {**broadcast,"idempotencyKey":"newman-cancel"}, capture="core_cancel_broadcast")
+core_req("Broadcast cancel", "POST", "api/v1/system/broadcasts/{{core_cancel_broadcast}}/cancel", "core_admin_token", {"securityPin":"{{default_pin}}","reason":"Synthetic cancel"}, 204)
+core_req("Emergency maintenance", "POST", "api/v1/system/maintenance/emergency", "core_admin_token", {"expectedEndsAt":"{{core_maintenance_end}}", "scope":"Money", "securityPin":"{{default_pin}}", "reason":"Synthetic incident", "impactConfirmation":"CONFIRM_MAINTENANCE_IMPACT", "idempotencyKey":"newman-emergency"}, capture="core_maintenance")
+core_req("Maintenance gates money", "GET", "api/wallets", "core_owner_token", status=503)
+core_req("Maintenance safe reopen", "POST", "api/v1/system/maintenance/{{core_maintenance}}/close", "core_admin_token", {"securityPin":"{{default_pin}}","reason":"Synthetic reconciliation complete"}, 204)
+core_req("Money restored", "GET", "api/wallets", checks='pm.expect(pm.response.json().find(w=>w.id===pm.environment.get("core_member_wallet"))).eql(undefined);')
+collection["item"].append({"name":"10-Core Closure and Preferences", "item":core})
+
 with open("backend/postman/SpendWise-V1-Full-E2E.postman_collection.json", "w", encoding="utf-8") as f:
     json.dump(collection, f, indent=2, ensure_ascii=False)
 

@@ -127,7 +127,7 @@ public sealed partial class V1FundService
 
                     .Select(o => o.RequiredVnd).SingleAsync(token);
 
-                var paid = (await db.V1FundContributions.AsNoTracking().Where(c => c.MembershipId == membership.Id).Select(c => c.AmountVnd).ToListAsync(token)).Sum();
+                var paid = (await ActivityPaidAsync(fundId, token)).GetValueOrDefault(membership.Id);
 
                 if (request.AmountVnd > required - paid) throw new ConflictException("contribution_exceeds_obligation", "Contribution exceeds current unpaid obligation.");
 

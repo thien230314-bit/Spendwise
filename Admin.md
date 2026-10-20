@@ -1,6 +1,6 @@
 # SpendWise V1.0 — Admin backend contract (Task 16.1)
 
-Updated 2026-10-20. Current verification and remaining gaps are recorded in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`; earlier task counts are historical. Overall Backend V1.0 remains PARTIAL. A1 remains LOCKED (4/4); A2 retains four DONE functions and A2.3 PARTIAL / POLICY_BLOCKED under AGENTS.md.
+Updated 2026-10-20, Task 17. **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. Current evidence: `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`; earlier task counts are historical. A1 remains LOCKED (4/4); A2.3 is APPROVED / IMPLEMENTED / VERIFIED under the existing two-level policy. External providers and full E2E remain unverified.
 
 ## Roles and access
 
@@ -22,11 +22,11 @@ Status: A1 remains functional Backend LOCKED (4/4), subject to actual regression
 
 POST `/api/v1/admin/users/search` provides paginated ordinary-user search. Scoped POST routes under `/api/v1/admin/support/{caseId}/users/{userId}`: `/profile`, `/sessions`, `/restrictions`, `/revoke-sessions`, `/groups`, `/friends`, `/history`.
 
-PUT `/api/v1/admin/support/{caseId}/users/{userId}/status` accepts `{ "status": "Active|Restricted|Locked", "reason": "required rationale", "securityPin": "<six-digit-admin-pin>" }`. Requires an active case assigned to the authenticated Admin and linked to the ordinary User. Status, lock-time session/refresh revocation, audit and SecurityAlert notification commit atomically. Repeating the current status adds no new status-change notification. Locked sessions stay revoked after unlock; a fresh login is required. Suspended/Deleted accounts and administrative peers cannot be changed through this command. This implements the approved Decision 2 portion without promoting A2.3 as a whole.
+PUT `/api/v1/admin/support/{caseId}/users/{userId}/status` accepts `{ "status": "Active|Restricted|Locked", "reason": "required rationale", "securityPin": "<six-digit-admin-pin>" }`. Requires an active case assigned to the authenticated Admin and linked to the ordinary User. Status, lock-time session/refresh revocation, audit and SecurityAlert notification commit atomically. Repeating the current status adds no new status-change notification. Locked sessions stay revoked after unlock; a fresh login is required. Suspended/Deleted accounts and administrative peers cannot be changed through this command. Task 17 verifies this approved policy including inbound P2P and refunds.
 
 Read or restrict only within the authorized active support case. Session revocation prevents reuse; account restrictions do not transfer fund ownership or erase financial entitlements. No password/PIN/OTP/hash/token is exposed to Admin. No arbitrary ledger balance editing.
 
-Status: A2 retains its baseline PARTIAL / POLICY_BLOCKED classification for A2.3; tested Decision 2 behavior is listed in the current acceptance report.
+Status: A2.3 APPROVED / IMPLEMENTED / VERIFIED; actual HTTP/SQL02 and session evidence is in the Task 17 report.
 - Level 1 — Financial Restriction (`UserStatus.Restricted`): blocks outbound debit transfers/expenses/fund contributions/fund requests; preserves login, token refresh, read-only balance/profile, support intake, and inbound credits/refunds.
 - Level 2 — Account Lock (`UserStatus.Locked`): immediate session revocation, 403 `account_unavailable` on login, token refresh blocked. Reversible by Admin.
 
@@ -55,7 +55,7 @@ Status: IMPLEMENTED internal notifications/outbox; SMTP acceptance and local pic
 
 Canonical root `/api/v1/system/maintenance`: GET status; POST create; POST `/{id}/reminders`, `/emergency`, `/{id}/extend`, `/{id}/review`, `/{id}/cancel`, `/{id}/close`; PUT `/{id}`. Read permissions and write permissions follow controller policies and current session checks. User status is also exposed via `/api/system/maintenance`.
 
-Maintenance gates protect money/group operations and preserve committed ledger history. Safety-sensitive activation can remain blocked by the configured `IV1MaintenanceSafety` implementation. Do not bypass a safety adapter or simulate a successful production maintenance exercise.
+Maintenance gates protect money/group operations and preserve committed ledger history. Reopening uses `V1LedgerMaintenanceSafety` inside exclusive maintenance admission: no pending ledger/processing transfers, wallet/account equality, account balances equal posted net entries (including original reversed postings), and positive balanced entries in one currency per posting. Any inconsistency keeps maintenance closed to financial traffic; no success is simulated. Schedule, reminders, reschedule, activation, emergency admission, extend, review and close have targeted HTTP/SQL02 evidence. Deployment and live-provider reconciliation are not certified by these tests.
 
 Status: PARTIAL where deployment safety evidence/configuration is unavailable; production activation NOT RUN.
 
@@ -71,3 +71,7 @@ Task 16.2 covers Backend Adversarial Audit, Financial Bug Fixes, and Real API Ac
 - Decision 3 (Rejoin Entitlements): Fresh episode with 0 VND carryover. Equal split and remainder distribution guarded against zero-entitlement members.
 - Decision 4 (Election Governance): Default policy parameters, winner rejection, electorate snapshot, and activity evidence enforcement.
 - Task 16.3 Core Backend Stabilization: Dispute atomicity and state guards verified; email test isolation hardened; SePay capability baseline documented (Bank linking and Deposit supported; retail Payout deferred to corporate direct bank contracts). All tests on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`), zero SQL01 access.
+
+## Task 17 — bổ sung Product Owner
+
+Theme Light/Dark/System và VI/EN là bắt buộc cho V1.0. API preferences là dữ liệu của tài khoản đang đăng nhập, không mở quyền Admin sửa tùy chọn của người khác. Backend có kiểm chứng lưu/đọc/đổi tài khoản/fresh login; UI vẫn FRONTEND PENDING. Core Newman và các provider được phân loại riêng trong `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`; không dùng Postman để xác nhận theme/bản dịch UI. Giữ nguyên chính sách nạp toàn bộ sau provider xác nhận; không coi SePay Test Mode là chứng nhận balance/debit của API thật.

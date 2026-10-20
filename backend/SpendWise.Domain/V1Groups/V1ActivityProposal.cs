@@ -13,6 +13,8 @@ public sealed class V1ActivityProposal : BaseEntity
     public DateTime? FinishedAt { get; set; }
     public DateTime? ReminderSentAt { get; set; }
     public string State { get; set; } = "Voting";
+    public DateTime? SettledAt { get; set; }
+    public long? StartedRevision { get; set; }
 }
 public sealed class V1ActivityVoter : BaseEntity
 {
@@ -20,4 +22,5 @@ public sealed class V1ActivityVoter : BaseEntity
     public Guid UserId { get; set; }
     public Guid MembershipId { get; set; }
     public bool? Support { get; set; }
+    public long? CarryOverVnd { get; set; }
 }

@@ -172,6 +172,7 @@ public sealed partial class V1FundService
                 });
             }
 
+            membership.RefundedVnd = checked((membership.RefundedVnd ?? 0) + refundAmount);
             membership.LeftAt = clock.UtcNow;
 
             await ActivityAsync(fund.Id, actorUserId, "MemberLeft", token,
@@ -297,6 +298,7 @@ public sealed partial class V1FundService
                 });
             }
 
+            membership.RefundedVnd = checked((membership.RefundedVnd ?? 0) + refundAmount);
             membership.LeftAt = clock.UtcNow;
 
             await ActivityAsync(fund.Id, actorUserId, "MemberKicked", token,
@@ -481,7 +483,15 @@ public sealed partial class V1FundService
             .Where(ft => ft.RelatedBusinessId == fund.Id && ft.Type == FinancialTransactionType.Refund && ft.Status == FinancialTransactionStatus.Completed)
             .ToListAsync(ct);
 
-        var totalContributed = contributions.Sum(c => c.AmountVnd);
+        var period = fund.Kind == V1FundKind.Fixed ? await CurrentActivityAsync(fund.Id, ct) : null;
+        var activityPaid = period is not null ? await ActivityPaidAsync(fund.Id, ct) : null;
+        if (period is not null)
+        {
+            var settlementPrefix = $"v1-fund-activity-refund:{period.Id:N}:";
+            var settlementPostings = await db.LedgerTransactions.AsNoTracking().Where(t => t.IdempotencyScope != null && t.IdempotencyScope.StartsWith(settlementPrefix)).Select(t => t.Id).ToListAsync(ct);
+            previousRefunds = previousRefunds.Where(r => r.CreatedAt >= period.SettledAt && !settlementPostings.Contains(r.LedgerTransactionId)).ToList();
+        }
+        var totalContributed = activityPaid is null ? contributions.Sum(c => c.AmountVnd) : activityPaid.Values.Sum();
         var totalPriorRefunds = previousRefunds.Sum(r => (long)r.Amount);
         var totalSpent = totalContributed - totalPriorRefunds - (long)currentBalance;
         if (totalSpent < 0) totalSpent = 0;
@@ -500,10 +510,10 @@ public sealed partial class V1FundService
 
             foreach (var m in activeMembers)
             {
-                var paid = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
+                var paid = activityPaid?.GetValueOrDefault(m.Id) ?? contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
                 var required = obligations.SingleOrDefault(o => o.MembershipId == m.Id)?.RequiredVnd ?? 0;
                 var lockedExcess = Math.Max(0, paid - required);
-                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
+                var priorRef = m.RefundedVnd ?? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
                 var protectedExcess = Math.Max(0, lockedExcess - priorRef);
                 memberStats[m.UserId] = (paid, required, lockedExcess, priorRef, protectedExcess);
                 totalProtectedExcess += protectedExcess;
@@ -557,73 +567,30 @@ public sealed partial class V1FundService
                 m => memberStats.TryGetValue(m.UserId, out var st) ? Math.Min(st.Paid, st.Required) : 0L);
             var sumWeights = weights.Values.Sum();
 
-            if (isDissolution)
+            var payouts = activeMembers.ToDictionary(m => m.UserId, m => memberStats[m.UserId].ProtectedExcess);
+            var remainingBalance = (long)currentBalance - payouts.Values.Sum();
+            if (remainingBalance > 0 && sumWeights > 0)
             {
-                // In dissolution: First allocate protected excess to each member
-                var payouts = new Dictionary<Guid, long>();
-                long excessTotal = 0;
                 foreach (var m in activeMembers)
-                {
-                    var excess = memberStats[m.UserId].ProtectedExcess;
-                    payouts[m.UserId] = excess;
-                    excessTotal += excess;
-                }
+                    payouts[m.UserId] += (long)Math.Floor((decimal)remainingBalance * weights[m.UserId] / sumWeights);
 
-                var remainingBalance = (long)currentBalance - excessTotal;
-                if (remainingBalance > 0 && sumWeights > 0)
-                {
-                    foreach (var m in activeMembers)
-                    {
-                        var share = (long)Math.Floor((decimal)remainingBalance * weights[m.UserId] / sumWeights);
-                        payouts[m.UserId] += share;
-                    }
-                }
-                else if (remainingBalance > 0 && sumWeights == 0)
-                {
-                    throw new ConflictException("zero_entitlement_dissolution_blocked",
-                        "Cannot dissolve fund: active members have zero valid obligation entitlement to receive the remaining balance.");
-                }
-
-                // Allocate remainder (đồng dư) starting from lowest seat ONLY to members with positive weight or payout!
-                var eligibleMembers = activeMembers.Where(m => weights.GetValueOrDefault(m.UserId) > 0 || payouts.GetValueOrDefault(m.UserId) > 0).ToList();
-                var allocatedSum = payouts.Values.Sum();
-                var remainder = (long)currentBalance - allocatedSum;
+                // Preview and execution use the same stable-seat allocation of whole đồng.
+                var eligibleMembers = activeMembers.Where(m => weights[m.UserId] > 0 || payouts[m.UserId] > 0).ToList();
+                var remainder = (long)currentBalance - payouts.Values.Sum();
                 for (var i = 0; i < remainder && i < eligibleMembers.Count; i++)
-                {
-                    payouts[eligibleMembers[i].UserId] += 1;
-                }
-
-                foreach (var m in activeMembers)
-                {
-                    results[m.UserId] = (payouts[m.UserId], "CaseB_DissolveFixed");
-                }
-                return new UnifiedCalculationResult(results, (long)currentBalance, currentBalance);
+                    payouts[eligibleMembers[i].UserId]++;
             }
-            else
+            else if (remainingBalance > 0 && sumWeights == 0 && isDissolution)
             {
-                // Individual leave/kick
-                foreach (var targetUserId in singleMemberUserIds!)
-                {
-                    if (!memberStats.TryGetValue(targetUserId, out var stats))
-                    {
-                        results[targetUserId] = (0, "NoContribution");
-                        continue;
-                    }
-
-                    // 1. Return protected excess first
-                    var excessPart = Math.Min((long)currentBalance, stats.ProtectedExcess);
-                    // 2. Share of available balance
-                    long sharePart = 0;
-                    if (availableForSharing > 0 && sumWeights > 0)
-                    {
-                        sharePart = (long)Math.Floor((decimal)availableForSharing * weights[targetUserId] / sumWeights);
-                    }
-
-                    var totalRefund = Math.Max(0, Math.Min((long)currentBalance, excessPart + sharePart));
-                    results[targetUserId] = (totalRefund, "CaseB_FixedSpentClearShare");
-                }
-                return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);
+                throw new ConflictException("zero_entitlement_dissolution_blocked",
+                    "Cannot dissolve fund: active members have zero valid obligation entitlement to receive the remaining balance.");
             }
+
+            foreach (var userId in isDissolution ? activeMembers.Select(m => m.UserId) : singleMemberUserIds!)
+                results[userId] = payouts.TryGetValue(userId, out var payout)
+                    ? (Math.Max(0, Math.Min((long)currentBalance, payout)), isDissolution ? "CaseB_DissolveFixed" : "CaseB_FixedSpentClearShare")
+                    : (0, "NoContribution");
+            return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);
         }
         else // Free Fund
         {

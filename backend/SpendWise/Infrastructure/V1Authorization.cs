@@ -57,7 +57,7 @@ public static class V1Authorization
         var reminders = services.AddOptions<SpendWise.Application.Features.Operations.V1ReminderPolicy>();
         if (configuration is not null) reminders.Bind(configuration.GetSection("V1:MaintenanceReminders"));
         services.AddScoped<SpendWise.Application.Features.Operations.V1MaintenanceReminders>();
-        services.AddScoped<SpendWise.Application.Features.Operations.IV1MaintenanceSafety, SpendWise.Application.Features.Operations.UnconfiguredMaintenanceSafety>();
+        services.AddScoped<SpendWise.Application.Features.Operations.IV1MaintenanceSafety, SpendWise.Application.Features.Operations.V1LedgerMaintenanceSafety>();
         services.AddScoped<OrdinaryAdminLifecycle>();
         services.AddScoped<IAuthorizationHandler, PlatformPermissionAuthorizationHandler>();
         services.AddAuthorization(options =>

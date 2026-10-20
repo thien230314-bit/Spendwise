@@ -2,7 +2,7 @@
 
 Date: 2026-10-20 (Asia/Saigon). Baseline: `98fde85f46887c4f101e6871387cd881a2d3514c`; main; clean workspace. Tasks 11–16 establish implementation history and incremental gap closure. Task 16.1 implements and verifies 4 approved Product Owner business decisions.
 
-Overall Backend V1.0: **PARTIAL**. A1 remains LOCKED (4/4); A2 retains four DONE functions and A2.3 PARTIAL / POLICY_BLOCKED. The four product decisions remain approved. Current source fixes, direct SQL02/HTTP evidence and exact unverified scope are recorded in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`; all Task 16.x counts below are historical. Roles: User and one active system Admin operating five Admin areas; SuperAdmin is disabled.
+Current Task 17 core status: **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. A1 remains LOCKED; A2.3 approved two-level restriction policy is IMPLEMENTED / VERIFIED. Current evidence and exact limits: `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`. All Task 16.x results below are historical. This status does not certify external providers, production deployment or full E2E. Roles remain User and one active system Admin across five areas; SuperAdmin remains disabled.
 
 Task 16.1 confirms full regression and E2E verification across all systems:
 - Release build: 6 projects compiled cleanly with 0 errors.

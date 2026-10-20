@@ -93,8 +93,9 @@ public sealed partial class V1FundService
     private async Task RequireContributionAccountingAsync(V1FundTreasury treasury, CancellationToken ct)
     {
         await RequireReconciledAccountingAsync(treasury, ct);
+        var period = await CurrentActivityAsync(treasury.FundId, ct);
         var outflows = await db.LedgerTransactions.AsNoTracking().Include(t => t.Entries)
-            .Where(t => t.Entries.Any(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit)).ToListAsync(ct);
+            .Where(t => (period == null || t.CreatedAt >= period.SettledAt) && t.Entries.Any(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit)).ToListAsync(ct);
         foreach (var refund in outflows)
         {
             var debit = refund.Entries.SingleOrDefault(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit);
@@ -166,8 +167,7 @@ public sealed partial class V1FundService
     {
         var members = await ActiveMembersAsync(fund.Id, ct);
         var current = fund.Kind == V1FundKind.Free || (treasury.Revision > 0 && treasury.TargetVnd == fund.TargetVnd && treasury.MembershipSignature == MembershipSignature(members));
-        var paid = (await db.V1FundContributions.AsNoTracking().Where(c => c.FundId == fund.Id).ToListAsync(ct))
-            .GroupBy(c => c.MembershipId).ToDictionary(g => g.Key, g => g.Sum(c => c.AmountVnd));
+        var paid = await ActivityPaidAsync(fund.Id, ct);
         var obligations = await db.V1FundObligations.AsNoTracking().Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).OrderBy(o => o.Seat).ToListAsync(ct);
         var rows = obligations.Select(o => new V1ObligationDto(o.UserId, o.Seat, o.RequiredVnd, paid.GetValueOrDefault(o.MembershipId),
             Math.Max(0, o.RequiredVnd - paid.GetValueOrDefault(o.MembershipId)), Math.Max(0, paid.GetValueOrDefault(o.MembershipId) - o.RequiredVnd))).ToList();

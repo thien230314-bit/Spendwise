@@ -66,6 +66,9 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [HttpGet("activity-proposals/{id:guid}")]
     public Task<V1ActivityProposalDto> ActivityProposal(Guid id, CancellationToken ct) => funds.ActivityProposalAsync(Actor, id, ct);
 
+    [HttpPost("activity-proposals/{id:guid}/settle"), EnableRateLimiting("financial")]
+    public Task<V1ActivityProposalDto> SettleActivity(Guid id, V1PinRequest request, CancellationToken ct) => funds.SettleActivityAsync(Actor, id, request.SecurityPin, ct);
+
     [HttpPost("activity-proposals/{id:guid}/vote"), EnableRateLimiting("financial")]
     public Task<V1ActivityProposalDto> VoteActivity(Guid id, V1ActivityVoteRequest request, CancellationToken ct)
     {

@@ -87,7 +87,7 @@ public sealed class P2PTransferCommandHandler(
         {
             throw new ConflictException("sender_unavailable", "Sender account is not active.");
         }
-        if (recipient.Status != UserStatus.Active)
+        if (recipient.Status is not (UserStatus.Active or UserStatus.Restricted))
         {
             throw new ConflictException("recipient_unavailable", "Recipient account is not active.");
         }

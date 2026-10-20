@@ -145,6 +145,7 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             ["/api/v1/admin/support/{caseId}/users/{userId}/sessions"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/restrictions"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/status"] = ["put"],
+            ["/api/v1/funds/activity-proposals/{id}/settle"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/groups"] = ["post"],
             ["/api/v1/admin/support/{caseId}/users/{userId}/friends"] = ["post"],

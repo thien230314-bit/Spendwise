@@ -119,7 +119,7 @@ public sealed class V1MaintenanceService(ISpendWiseDbContext db, IClock clock, P
             await db.AcquireMaintenanceAdmissionAsync(true, token);
             var result = await safety.CheckAsync(id, token);
             if (!result.Ready || string.IsNullOrWhiteSpace(result.EvidenceId) || result.EvidenceId.Length > 200)
-                throw new ConflictException("maintenance_safety_not_configured", "Approved reopening safety evidence is required.");
+                throw new ConflictException("maintenance_safety_not_ready", "Reopening requires consistent completed ledger postings and wallet balances.");
             plan.ClosedAt = clock.UtcNow;
             plan.CloseSafetyEvidenceId = result.EvidenceId;
         }, "V1_MAINTENANCE_CLOSED", ct);

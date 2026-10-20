@@ -22,10 +22,10 @@ public sealed partial class V1FundService
             if (fund.Kind != V1FundKind.Fixed) throw new ConflictException("fixed_fund_required", "Only Fixed funds have activity cycles.");
             if (fund.ActivityClosedAt is not null) return true;
             await RequireNoActiveElectionAsync(fundId, token);
-            if (await db.V1FundRequests.AnyAsync(x => x.FundId == fundId && (x.State == "AwaitingOwnerReview" || x.State == "ApprovedAwaitingFinanceContract"), token))
+            if (await db.V1FundRequests.AnyAsync(x => x.FundId == fundId && (x.State == "AwaitingOwnerReview" || x.State == "ApprovedAwaitingFinanceContract" || x.State == "Pending24h" || x.State == "Suspended"), token))
                 throw new ConflictException("fund_requests_pending", "Resolve outstanding requests before closing the activity.");
             var treasury = await db.V1FundTreasuries.SingleOrDefaultAsync(t => t.FundId == fundId, token);
-            if (treasury is not null) { await FreshAccountAsync(treasury.LedgerAccountId, token); await RequireUnspentAccountingAsync(treasury, token); }
+            if (treasury is not null) { await FreshAccountAsync(treasury.LedgerAccountId, token); await RequireReconciledAccountingAsync(treasury, token); }
             await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.ActivityClosedAt, (DateTime?)clock.UtcNow), token);
             await ActivityAsync(fundId, actor, "ActivityClosed", token); return true;
         }, ct);

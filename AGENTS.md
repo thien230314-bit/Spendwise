@@ -3,7 +3,7 @@
 ## Scope and safety
 
 - Follow the Product Owner's current task and User.md and Admin.md. Their BLOCKER/PENDING markers do not authorize implementation.
-- A1 is functional Backend LOCKED (4/4). A2 has four DONE functions; A2.3 remains PARTIAL / POLICY_BLOCKED. Backend V1.0 overall is PARTIAL. Never promote these statuses without evidence and approval where required.
+- A1 is functional Backend LOCKED (4/4). A2 has five verified functions, including A2.3 under the approved Task 17 restriction policy. Core business logic status: CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK; external providers and full E2E remain unverified. Evidence: backend/docs/CODEX-TASK17-CORE-CLOSURE.md. Never promote broader release statuses without evidence and approval where required.
 - Preserve locked modules and unrelated local work. Frontend/mobile are read-only unless the task explicitly authorizes them.
 - Never force-push, rewrite remote history, reset --hard, restore a whole checkpoint over source, change live SQL data or apply production migrations without explicit task authorization.
 - Do not call real providers, reset credentials or run DB-writing tests without verified isolated fixtures and authority.

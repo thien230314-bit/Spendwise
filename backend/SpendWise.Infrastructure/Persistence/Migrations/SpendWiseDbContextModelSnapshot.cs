@@ -4473,6 +4473,12 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("StartedRevision")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -4503,6 +4509,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("CarryOverVnd")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4953,6 +4962,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("LeftAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("RefundedVnd")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Seat")
                         .HasColumnType("int");

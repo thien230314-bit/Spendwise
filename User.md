@@ -1,8 +1,19 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
-> CURRENT STATUS (2026-10-20): Backend V1.0 remains PARTIAL; A1 LOCKED and A2.3 PARTIAL / POLICY_BLOCKED are retained. Current, directly executed acceptance evidence is in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`. Earlier task test counts are historical, not current acceptance proof. The four decisions remain approved; later unapproved BLOCKER labels do not reopen those decisions.
+> CURRENT STATUS (2026-10-20, Task 17): **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. A1 remains LOCKED. A2.3 approved restriction policy is implemented and verified. Current evidence: `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`; earlier counts and gap reports are historical. Live providers and Full Postman E2E remain separate acceptance steps.
 
-Current implementation corrections: Admin restrict/lock/unlock uses the case-scoped PUT status route documented in Admin.md. Dispute resolution serializes with cancellation/payout on the fund lock. Fixed rejoin may confirm obligations and contribute after fully reconciled membership refunds; expense outflows retain their previous guard, and refund formulas are unchanged. Election coverage timestamps with explicit UTC/offset configuration are normalized to UTC before evaluating the 15-day condition.
+Restricted users retain inbound P2P and Fixed/Free refunds; outbound debit guards remain enforced. Locked users cannot reuse sessions, refresh or log in; unlock requires fresh login. Fixed activity settlement uses POST `/api/v1/funds/activity-proposals/{id}/settle` with Owner PIN after approved voting. Nonparticipants receive the same exact integer allocation as preview before removal; consenting members retain cash through persisted carry-over snapshots, without new ledger money. A new membership episode starts with zero old entitlement. Previous-period expenses do not block contributions in the next period. One active proposal per fund is enforced by the existing SQL unique index; settlement also requires the current closed period. Current Owner must consent; no automatic Owner appointment is introduced.
+
+
+## V1.0 bắt buộc — Theme và ngôn ngữ (Task 17)
+
+- Theme: Light / Dark / System (`light|dark|system`). Language: Tiếng Việt / English (`vi-VN|en-US`). Đây là yêu cầu bắt buộc, không phải tính năng tùy chọn.
+- Backend: PUT `/api/users/me/preferences` với `{ preferredLanguage, preferredTheme, defaultCurrency: "VND" }`; GET `/api/users/me` và kết quả login trả lại lựa chọn đã lưu. Chỉ sửa người dùng từ token; không nhận UserId do client chỉ định. Mặc định backend: `system`, `vi-VN`. Giá trị sai trả400 và không đổi lựa chọn cũ.
+- Đồng bộ thiết bị: client tải hồ sơ sau login/chuyển tài khoản, áp dụng đúng tài khoản; local cache không được ghi đè lựa chọn server hoặc rò tùy chọn sang tài khoản khác. Backend HTTP/SQL02 đã kiểm chứng ba theme, hai ngôn ngữ, đổi tài khoản và fresh login. Hiển thị/chuyển theme, bản dịch đầy đủ, System phản ứng với OS và đồng bộ UI nhiều thiết bị: **FRONTEND PENDING / FRONTEND UI NOT YET VERIFIED**. Web có ThemeProvider/I18nContext; Mobile `useTheme` hiện đọc OS. Task 17 không sửa Frontend/Mobile và Postman không chứng minh giao diện hoạt động.
+
+## Ngân hàng liên kết — giữ nguyên chính sách nạp/rút đã duyệt
+
+UI phải vô hiệu hóa ngân hàng khi số dư khả dụng nhỏ hơn số tiền nạp; chỉ cho chọn khi đủ. Backend phải kiểm tra lại trước giao dịch; không nạp một phần, không cộng ví sớm; chỉ cộng đủ sau xác nhận provider thành công toàn bộ giao dịch với đúng số tiền/tham chiếu. Không đổi logic nạp/rút trong Task 17. Kiểm tra số dư và giao dịch exact amount đang có ở đường SePay Test Mode không phải bằng chứng API SePay thật hỗ trợ đọc available balance hoặc debit. Hai khả năng này phải xác minh ở giai đoạn provider, tuyệt đối không giả lập thành VERIFIED. **PROVIDER INTEGRATION NOT YET VERIFIED**; retail payout vẫn theo giới hạn hợp đồng đã ghi trong baseline.
 
 ## Task 16.1 — implementation and API map
 

@@ -41,7 +41,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var number = await db.V1FundCodeCounters.Where(c => c.Id == 1).Select(c => c.NextValue - 1).SingleAsync(token);
             var fund = new V1Fund(name, "SPW" + number.ToString("D6", System.Globalization.CultureInfo.InvariantCulture), kind, userId, request.TargetVnd);
             db.V1Funds.Add(fund);
-            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = 1, JoinedAt = clock.UtcNow });
+            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = 1, JoinedAt = clock.UtcNow, RefundedVnd = 0 });
             await ActivityAsync(fund.Id, userId, "Created", token);
             await db.SaveChangesAsync(token);
             return Map(fund);
@@ -147,7 +147,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var occupied = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
             var seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
             await RequireNoActiveElectionAsync(fund.Id, token);
-            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = seat, JoinedAt = clock.UtcNow });
+            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = seat, JoinedAt = clock.UtcNow, RefundedVnd = 0 });
             await db.V1FundInvitations.Where(i => i.Id == inviteId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Accepted)
                 .SetProperty(i => i.AcceptedAt, clock.UtcNow), token);
             await ActivityAsync(fund.Id, userId, "Joined", token, referenceId: invite.Id);

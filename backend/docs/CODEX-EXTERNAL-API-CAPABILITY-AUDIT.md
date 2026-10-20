@@ -163,3 +163,12 @@ Lượt Python urllib ban đầu trả403 cho hai SePay v2 GET; chẩn đoán m�
 | Expo | Public receipt lookup VERIFIED; delivery disabled/unverified | KEEP / CONFIG_FIX; conditional security UPGRADE | Adapter có, chưa nghiệm thu client/platform | PO cung cấp project/platform credentials qua secret store, quyết định enhanced security; task riêng cho client/build/delivery |
 
 Quyết định audit: không thay provider, không đổi logic all-or-nothing, model, cấu hình hay dependency. Các credentials Gemini/TestMode/SMTP hiện có được chấp nhận ở phép thử đã nêu, không yêu cầu reset vô cớ. Production provisioning, Bank Hub credentials và quyền nghiệp vụ vẫn cần chủ tài khoản; không gửi secrets vào tài liệu/chat. User.md/Admin.md được đồng bộ capability, không hạ yêu cầu sản phẩm hoặc dùng network metadata thay nghiệm thu UI/Core E2E. Dừng sau bàn giao; chưa khởi động task thay thế.
+
+---
+
+## Cập nhật Task G2 — SePay Banking Integration (2026-10-20)
+- API v2 Sandbox: SANDBOX_VERIFIED. Đọc danh sách tài khoản (GET /v2/bank-accounts) và tra cứu giao dịch (GET /v2/transactions) trả về HTTP 200 OK với User Secrets token.
+- Bank Hub: DOCUMENTED_ONLY / CREDENTIALS_REQUIRED. Cần bộ thông tin CompanyXid, ClientId, ClientSecret riêng biệt để kích hoạt Hosted Link.
+- Số dư khả dụng & Trải nghiệm MoMo: Trường ccumulated trong API v2/Webhook là số dư tài khoản merchant tại SePay, không phải số dư tài khoản ngân hàng cá nhân của User. Provider chưa có API đọc số dư realtime của tài khoản cá nhân. Backend trả BALANCE_UNAVAILABLE để xử lý fallback chuẩn, không đoán mò hoặc gán mặc định 0.
+- All-Or-Nothing Top-Up: 12/12 invariant tests PASS. Không có nạp một phần, không double-credit, khóa single-flight và ghi sổ cái nguyên tử.
+- Payout / Withdrawal: SePay bán lẻ chưa mở API tự động chi tiền; tiếp tục áp dụng quy trình Ledger Hold + Admin đối soát.

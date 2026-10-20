@@ -562,10 +562,12 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
    - Bắt buộc khoản chi bị khiếu nại phải ở trạng thái `Suspended` mới được xử lý; nếu không lập tức throw `ConflictException("disputed_request_not_suspended")`. Khi có lỗi, toàn bộ transaction rollback hoàn toàn (không lưu Admin gán dở dang).
 2. **Cách ly email kiểm thử (Email Test Isolation):**
    - `ConfiguredEmailSender.cs` chặn tuyệt đối việc gửi email test ra internet; các domain `.test`, `.invalid` được lưu vào thư mục pickup nội bộ hoặc ném exception nếu cố tình dùng SMTP. Môi trường `Testing` luôn cưỡng chế chế độ `Pickup`.
-3. **Nghiệm thu năng lực tích hợp SePay:**
-   - **Liên kết ngân hàng:** Có adapter SePay Hosted Link Hub và webhook; audit 2026-10-20 chưa có Bank Hub credentials nên DOCUMENTED_ONLY / CREDENTIALS_REQUIRED.
-   - **Nạp ví (Inbound):** IPN có xác thực secret và chống trùng, ghi nhận BankTransaction; không tự ghi có Wallet/Ledger. TestMode có exact-amount confirmation riêng. Chưa chứng minh linked-bank top-up thật; không xem IPN ingestion là wallet settlement.
-   - **Rút tiền (Outbound / Payout):** PAYOUT_API_NOT_AVAILABLE trong adapter và Bank Hub catalogue đã rà; quyền tài khoản UNKNOWN, không khẳng định mọi sản phẩm SePay đều không hỗ trợ. Refund giao dịch thu gốc cho VietinBank doanh nghiệp đủ điều kiện là sản phẩm khác, chưa chứng minh rút ví tùy ý. Provider payout vẫn PENDING xác nhận hợp đồng/API.
+3. **Nghiệm thu năng lực tích hợp SePay & Trải nghiệm Nạp ví (Task G2):**
+   - **Liên kết ngân hàng (Bank Hub):** Có adapter SePay Hosted Link Hub và webhook; trạng thái DOCUMENTED_ONLY / CREDENTIALS_REQUIRED do chưa có production/sandbox Bank Hub credentials riêng biệt.
+   - **Đọc số dư khả dụng & Làm mờ nguồn tiền (MoMo-like UX):** Trường accumulated trong SePay v2 là số dư tài khoản merchant, không phải số dư tài khoản cá nhân của người dùng; Bank Hub chưa mở API đọc số dư thời gian thực của tài khoản cá nhân. Khi không có số dư xác thực, Backend trả BALANCE_UNAVAILABLE để Frontend hiển thị trạng thái tương ứng, không mặc định số dư bằng 0 để làm mờ sai nguồn tiền. Khi có số dư, Frontend thực hiện quy tắc UsableBankBalance >= RequestedAmount + ApplicableSourceFees.
+   - **Chính sách Nạp ví All-Or-Nothing:** Bắt buộc nạp đủ 100% số tiền yêu cầu. Không chấp nhận nạp một phần. Không trừ tiền và không credit ví khi chưa có xác nhận từ provider. Giao dịch chuyển tiền lệch số tiền được lưu vào BankTransaction để đối soát, không tự động hoàn tất.
+   - **Rút tiền (Outbound / Payout):** SePay không hỗ trợ API tự động chi tiền ra ngoài (PAYOUT_PROVIDER_REQUIRED). Rút tiền thực hiện qua quy trình giữ chỗ ledger (Ledger Hold), trừ số dư khả dụng ngay lập tức để chống double-spend, và chuyển vào hàng đợi Admin đối soát/thực hiện thủ công.
+   - **Cổng thanh toán (Payment Gateway):** Khảo sát độc lập Sandbox checkout (pay-sandbox.sepay.vn) hỗ trợ QR/NAPAS; tách biệt với luồng liên kết ngân hàng trực tiếp.
 
 4. **Bảo đảm an toàn dữ liệu:**
    - Tuyệt đối không chạm vào SQL01 (`DESKTOP-B5KA3LT\SQLEXPRESS01\SpendWiseDb`). Mọi test chạy trên SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`). Không can thiệp Frontend/Mobile.

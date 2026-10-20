@@ -65,3 +65,16 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Single synthetic inference smoke test: 200 OK, FinishReason = STOP, promptTokens = 11, candidatesTokens = 6.
   - Targeted AI Unit & Integration Tests: 28/28 PASS (GeminiProviderTests, AiHardeningTests), 24/24 PASS (AdminAiBackendTests, AiConcurrencyHttpTests).
 - Documentation: Added backend/docs/ANTIGRAVITY-GEMINI-FREE-TIER-VERIFICATION.md; updated User.md and Admin.md.
+
+## Task G2 — SePay Banking Integration & Financial Safety Verification
+- Release Build: 6 projects compiled cleanly: 0 errors, 0 warnings.
+- SePay Capabilities Evaluated:
+  - SePay API v2: SANDBOX_VERIFIED (read bank-accounts and transactions 200 OK via User Secrets token).
+  - SePay Bank Hub: DOCUMENTED_ONLY / CREDENTIALS_REQUIRED (missing separate CompanyXid/ClientSecret credentials).
+  - SePay Payment Gateway: Sandbox checkout (pay-sandbox.sepay.vn) identified; distinct from linked-bank auto debit.
+- Financial Invariants & MoMo-like Top-Up:
+  - Balance Verification: End-user bank available balance is not provided by provider; BALANCE_UNAVAILABLE fallback enforced without guessing or defaulting to 0.
+  - All-Or-Nothing Top-Up: Strictly verified across 12 targeted unit/integration tests. No partial credits, no double-spending, atomic ledger posting.
+  - Withdrawal: PAYOUT_PROVIDER_REQUIRED; ledger hold + manual admin review model maintained.
+- Targeted Test Suite: 84/84 PASS (SePayTestModeBankingTests, SePayBankHubGatewayTests, SePayTestModeAccountReaderTests, BankHubApplicationTests).
+- Documentation: Created backend/docs/ANTIGRAVITY-SEPAY-G2-VERIFICATION.md; updated User.md and Admin.md.

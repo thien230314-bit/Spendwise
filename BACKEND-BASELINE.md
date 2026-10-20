@@ -52,3 +52,16 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Targeted admin lifecycle and scope authorization: 164 / 164 PASS.
 - Documentation: Added `backend/docs/TASK16.4-ADMIN-CLEANUP.md`.
 - Safety: Zero SQL01 access; no secrets in staged changes; working tree clean.
+
+## Task G1 — Gemini Free Tier Model Integration (gemini-3.5-flash-lite)
+- Release Build: 0 errors.
+- Configuration:
+  - User Secrets correctly loaded: Gemini:Model = gemini-3.5-flash-lite.
+  - Development configuration: Updated appsettings.Development.json from deprecated gemini-1.5-flash to gemini-3.5-flash-lite.
+  - Precedence verified: User Secrets (Gemini:Model) properly overrides appsettings.
+- Capability & Verification:
+  - Model gemini-3.5-flash-lite verified via Google API (v1beta/models/gemini-3.5-flash-lite).
+  - Free Tier confirmed: Key authenticated, quota intact, zero billing incurred.
+  - Single synthetic inference smoke test: 200 OK, FinishReason = STOP, promptTokens = 11, candidatesTokens = 6.
+  - Targeted AI Unit & Integration Tests: 28/28 PASS (GeminiProviderTests, AiHardeningTests), 24/24 PASS (AdminAiBackendTests, AiConcurrencyHttpTests).
+- Documentation: Added backend/docs/ANTIGRAVITY-GEMINI-FREE-TIER-VERIFICATION.md; updated User.md and Admin.md.

@@ -84,6 +84,15 @@ SePay API v2 có hoàn tiền giao dịch thu gốc, giới hạn VietinBank doa
 
 Key hiện tại được chấp nhận: model listing200, 63 models. Cấu hình `gemini-1.5-flash` không có trong list; GET metadata model đó404. Changelog Google ghi Gemini1.5 đã shutdown ngày2025-09-29 [G1]. Kết luận: **AUTH_VERIFIED cho key; DEPRECATED (đã shutdown) + CONFIG_ERROR cho model; inference/chat NOT VERIFIED**. Không gọi generateContent vì model đang cấu hình không dùng được; không tự thay model.
 
+### Gemini (Cập nhật Task G1 — 2026-10-20)
+Product Owner đã chọn model gemini-3.5-flash-lite (Free Tier). Cấu hình đã được cập nhật qua User Secrets (Gemini:Model = gemini-3.5-flash-lite) và ppsettings.Development.json.
+- API Key: AUTH_VERIFIED (Google API listing 50 models trả về HTTP 200).
+- Model: MODEL_VERIFIED (models/gemini-3.5-flash-lite tồn tại và hỗ trợ generateContent).
+- Free Tier: Confirmed; không bật billing, không phát sinh chi phí.
+- Synthetic Inference: INFERENCE_VERIFIED (single test hoàn tất với finishReason STOP, 17 tokens).
+- Unit & HTTP Test Suite: 28/28 provider tests PASS; 24/24 AI HTTP tests PASS.
+
+
 Metadata bằng key hiện tại liệt kê `gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`, đều hỗ trợ generateContent, input1,048,576/output65,536 tokens. Metadata không chứng minh quota/inference thành công [G2]. Đề xuất PO cân nhắc3.5 Flash-Lite cho chi phí;3.8 Flash nếu cần năng lực cao hơn. Giá Standard công bố tại ngày audit:3.5 Flash-Lite USD0.30 input/2.50 output mỗi triệu tokens;3.8 Flash USD0.75/3.75 đến2026-12-31, USD1.50/7.50 từ2027-01-01 [G3]. Đây không phải dự toán/billing của tài khoản. Quota phụ thuộc model/project/tier, cần chủ tài khoản kiểm tra dashboard [G4]. Model2.5 có hạn chế availability cho người dùng mới theo trang vòng đời [G5]; không chọn mặc định chỉ vì list có tên.
 
 Adapter REST v1beta hiện có contents user/model, systemInstruction, inlineData, functionDeclarations.parametersJsonSchema, tool loop tối đa5 và server allowlist/confirmation. Đây là schema code, chưa kiểm chứng inference/tool compatibility với model thay thế. Không có SDK bắt buộc nâng cấp ngay; bước sau là duyệt model/config/budget rồi synthetic inference và tool contract an toàn. Missing model/key hoặc lỗi transport trả controlled503; provider “Configured” chỉ là presence. Key resolver dùng null-coalescing giữa Gemini:ApiKey và env alias, không bảo đảm fallback nếu config là chuỗi rỗng; không gặp trường hợp đó trong cấu hình đã kiểm tra.

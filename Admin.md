@@ -64,7 +64,8 @@ Task 16.2 covers Backend Adversarial Audit, Financial Bug Fixes, and Real API Ac
 - Non-SQL Tests: 1,063 / 1,063 PASS (includes 6 audit tests in Task16_2_AdversarialAuditTests.cs and 7 tests in Task16_1_ApprovedDecisionsTests.cs).
 - SQL02 Integration Tests: 179 / 179 PASS on SpendWise_Test_Runner.
 - Newman E2E Suite: 105 / 105 requests PASS, 177 / 177 assertions PASS on SpendWise_E2E_Test.
-- Decision 1 (Dispute Resolution): Auto-assigned investigation, atomic resolution, 0 VND ledger leak.
+- Decision 1 (Dispute Resolution): Auto-assigned investigation, atomic resolution inside WithCaseAsync transaction boundary, 0 VND ledger leak, guarded against non-suspended requests (ConflictException: disputed_request_not_suspended).
 - Decision 2 (Account Restrictions): Level 1 Financial Restriction (debits blocked, read preserved) vs Level 2 Account Lock (login blocked, sessions revoked).
 - Decision 3 (Rejoin Entitlements): Fresh episode with 0 VND carryover. Equal split and remainder distribution guarded against zero-entitlement members.
 - Decision 4 (Election Governance): Default policy parameters, winner rejection, electorate snapshot, and activity evidence enforcement.
+- Task 16.3 Core Backend Stabilization: Dispute atomicity and state guards verified; email test isolation hardened; SePay capability baseline documented (Bank linking and Deposit supported; retail Payout deferred to corporate direct bank contracts). All tests on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`), zero SQL01 access.

@@ -948,9 +948,13 @@ public sealed class AdminA5Service(
 
                 var disputedRequest = await db.V1FundRequests.SingleOrDefaultAsync(r => r.Id == fundRequestId, token);
 
-                if (disputedRequest is not null && disputedRequest.State == "Suspended")
+                if (disputedRequest is null || disputedRequest.State != "Suspended")
 
                 {
+
+                    throw new ConflictException("disputed_request_not_suspended", "Disputed request must be in Suspended state to be resolved.");
+
+                }
 
                     var disputedFund = await db.V1Funds.SingleOrDefaultAsync(f => f.Id == disputedRequest.FundId, token);
 
@@ -1036,8 +1040,6 @@ public sealed class AdminA5Service(
 
                     }
 
-                }
-
             }
 
 
@@ -1107,13 +1109,6 @@ public sealed class AdminA5Service(
         var ticket = await db.SupportCases.SingleOrDefaultAsync(c => c.Category == "V1FundDispute" && c.LinkedTransactionId == requestId, ct)
             ?? throw new NotFoundException("dispute_case_not_found", "No support case found for this disputed request.");
 
-        if (ticket.AssignedAdminId is null && Guid.TryParse(principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var actorId))
-        {
-            ticket.AssignedAdminId = actorId;
-            ticket.Status = CaseStatus.Investigating;
-            await db.SaveChangesAsync(ct);
-        }
-
         return await ResolveAsync(principal, ticket.Id, request, ct);
     }
 

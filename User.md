@@ -535,3 +535,19 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
    - **Full Non-SQL Test Suite:** 1.063 / 1.063 test PASS (100% xanh, bao gồm 6 audit unit tests chuyên biệt trong `Task16_2_AdversarialAuditTests.cs` và 7 test nghiệp vụ trong `Task16_1_ApprovedDecisionsTests.cs`).
    - **SQL02 Integration Test Suite:** 179 / 179 test PASS trên instance cơ sở dữ liệu thực tế SQL02 `SpendWise_Test_Runner`.
    - **Full Newman E2E Suite:** 105 / 105 requests PASS, 177 / 177 assertions PASS (100% xanh trên database `SpendWise_E2E_Test`).
+
+---
+
+## PHỤ LỤC F — Ổn định hóa Core Backend & Đánh giá năng lực SePay (Task 16.3)
+
+1. **Tính nguyên tử và chốt trạng thái giải quyết khiếu nại (Dispute Transaction Atomicity):**
+   - Tự gán quyền xử lý và giải quyết khiếu nại được gom chung vào một transaction duy nhất trong `workflow.WithCaseAsync`.
+   - Bắt buộc khoản chi bị khiếu nại phải ở trạng thái `Suspended` mới được xử lý; nếu không lập tức throw `ConflictException("disputed_request_not_suspended")`. Khi có lỗi, toàn bộ transaction rollback hoàn toàn (không lưu Admin gán dở dang).
+2. **Cách ly email kiểm thử (Email Test Isolation):**
+   - `ConfiguredEmailSender.cs` chặn tuyệt đối việc gửi email test ra internet; các domain `.test`, `.invalid` được lưu vào thư mục pickup nội bộ hoặc ném exception nếu cố tình dùng SMTP. Môi trường `Testing` luôn cưỡng chế chế độ `Pickup`.
+3. **Nghiệm thu năng lực tích hợp SePay:**
+   - **Liên kết ngân hàng:** Đã hỗ trợ qua SePay Hosted Link Hub và webhook.
+   - **Nạp ví (Inbound):** Đã hỗ trợ qua Webhook IPN (`transfer_type=in`), xác thực chữ ký và chống trùng lặp.
+   - **Rút tiền (Outbound / Payout):** Cổng SePay Bank Hub cho tài khoản cá nhân KHÔNG cung cấp API tự động chi tiền ra ngoài (yêu cầu hợp đồng doanh nghiệp kết nối trực tiếp với ngân hàng đối tác như TPBank/VietinBank Corporate). Trong V1.0, Backend xử lý giữ tiền và trừ sổ cái an toàn; luồng chi tiền tự động ra ngoài được phân loại là DEFERRED tích hợp đối tác sau.
+4. **Bảo đảm an toàn dữ liệu:**
+   - Tuyệt đối không chạm vào SQL01 (`DESKTOP-B5KA3LT\SQLEXPRESS01\SpendWiseDb`). Mọi test chạy trên SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`). Không can thiệp Frontend/Mobile.

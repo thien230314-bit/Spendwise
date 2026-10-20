@@ -47,6 +47,20 @@ public sealed class ConfiguredEmailSender(
         await SendSmtpAsync(message, cancellationToken);
     }
 
+    public static bool IsReservedTestRecipient(string email)
+    {
+        try
+        {
+            var host = new MailAddress(email).Host;
+            return host.EndsWith(".test", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(".invalid", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
     private async Task SendRecoveryAsync(
         string email,
         string rawToken,
@@ -68,7 +82,7 @@ public sealed class ConfiguredEmailSender(
 
     private async Task SendSmtpAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        if (new MailAddress(message.RecipientEmail).Host.EndsWith(".test", StringComparison.OrdinalIgnoreCase))
+        if (IsReservedTestRecipient(message.RecipientEmail))
             throw new InvalidOperationException("Reserved test recipients cannot be sent through SMTP.");
         // SMTP là provider-neutral; secret chỉ đọc từ deployment configuration.
         var settings = ReadSmtpSettings();

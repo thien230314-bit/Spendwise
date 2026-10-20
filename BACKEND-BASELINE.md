@@ -27,3 +27,15 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
 - Bugs Fixed:
   1. Zero-Entitlement Dissolution: Equal fallback & 1 VND remainder restricted to positive-entitlement members only.
   2. Dispute Resolution: Auto-assigned investigating admin ensures atomic, unblocked resolution.
+
+## Task 16.3 Core Backend Stabilization & SePay Capability Baseline
+- Release Build: 6 projects compiled cleanly, 0 errors.
+- Dispute Transaction Atomicity (B1): Ticket self-assignment executes within the `WithCaseAsync` database transaction boundary; resolving a non-suspended request aborts with `ConflictException("disputed_request_not_suspended")`.
+- Email Test Isolation (B3): Hardened RFC 2606/6761 reserved domain protection (`.test`, `.invalid`); `ConfiguredEmailSender.cs` throws if SMTP is targeted with test domains and forces pickup mode in Testing environments.
+- Targeted Verification (B2): Focused verification with 6/6 `Task16_2_AdversarialAuditTests`, 7/7 `Task16_1_ApprovedDecisionsTests`, 48/48 Email isolation tests, and 15/15 `V1FundSqlServerTests` on SQL02.
+- SePay Capability Status:
+  - Bank Account Linking: Supported via Hosted Link & webhook.
+  - Inbound Top-Up (Deposit): Supported via Webhook IPN (`transfer_type=in`).
+  - Outbound Withdrawal (Payout): Retail automated payout is NOT supported by SePay Bank Hub; requires enterprise corporate bank direct integration. Managed in V1.0 via verified ledger hold + admin approval workflow (external payout is DEFERRED).
+- Documentation: Added `backend/docs/TEST-ENVIRONMENT-BASELINE.md` and `backend/docs/TASK16.3-STABILIZATION.md`.
+- Safety: Zero SQL01 access; all DB actions executed against SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`).

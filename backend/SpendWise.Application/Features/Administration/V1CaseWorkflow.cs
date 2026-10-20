@@ -114,8 +114,16 @@ public sealed class V1CaseWorkflow(ISpendWiseDbContext db, PlatformPermissionSer
             if (db is DbContext context) await context.Entry(ticket).ReloadAsync(token);
             if (ticket.LinkedUserId != subject || !await db.Users.AsNoTracking().AnyAsync(u => u.Id == subject && u.SystemRole == SystemRole.User, token))
                 throw new ForbiddenException("case_access_denied", "Ordinary User subject required.");
-            if (ticket.Status is CaseStatus.Resolved or CaseStatus.Rejected or CaseStatus.Closed
-                || !(claim && principal.IsInRole("SuperAdmin") && ticket.EscalatedAt != null || await permissions.HasSupportScopeAsync(principal, id, subject, token)))
+            if (ticket.Status is CaseStatus.Resolved or CaseStatus.Rejected or CaseStatus.Closed)
+                throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
+            if (ticket.Category == "V1FundDispute" && ticket.AssignedAdminId == null)
+            {
+                ticket.AssignedAdminId = actor;
+                if (ticket.Status is CaseStatus.New or CaseStatus.Open)
+                    ticket.Status = CaseStatus.Investigating;
+            }
+            var hasScope = ticket.AssignedAdminId == actor || await permissions.HasSupportScopeAsync(principal, id, subject, token);
+            if (!(claim && principal.IsInRole("SuperAdmin") && ticket.EscalatedAt != null || hasScope))
                 throw new ForbiddenException("case_access_denied", "An assigned active case is required.");
             return await action(ticket, actor, token);
         }, ct); }

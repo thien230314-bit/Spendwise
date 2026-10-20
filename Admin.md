@@ -59,4 +59,12 @@ Status: PARTIAL where deployment safety evidence/configuration is unavailable; p
 
 ## Verification and operating boundary
 
-Task14 covers Backend only. No Frontend/Mobile work, SQL01 access, production migration, credential reset or live Gemini/SePay call is authorized by this contract. Release/non-SQL/Newman evidence and remaining Task15 work are in `backend/docs/TASK14-VERIFICATION.md`. Legacy historical reports remain evidence of their own task only.
+Task 16.2 covers Backend Adversarial Audit, Financial Bug Fixes, and Real API Acceptance. No Frontend/Mobile work, SQL01 access, production migration, credential reset or live Gemini/SePay call is authorized.
+- Release Build: 0 errors, 16 warnings.
+- Non-SQL Tests: 1,063 / 1,063 PASS (includes 6 audit tests in Task16_2_AdversarialAuditTests.cs and 7 tests in Task16_1_ApprovedDecisionsTests.cs).
+- SQL02 Integration Tests: 179 / 179 PASS on SpendWise_Test_Runner.
+- Newman E2E Suite: 105 / 105 requests PASS, 177 / 177 assertions PASS on SpendWise_E2E_Test.
+- Decision 1 (Dispute Resolution): Auto-assigned investigation, atomic resolution, 0 VND ledger leak.
+- Decision 2 (Account Restrictions): Level 1 Financial Restriction (debits blocked, read preserved) vs Level 2 Account Lock (login blocked, sessions revoked).
+- Decision 3 (Rejoin Entitlements): Fresh episode with 0 VND carryover. Equal split and remainder distribution guarded against zero-entitlement members.
+- Decision 4 (Election Governance): Default policy parameters, winner rejection, electorate snapshot, and activity evidence enforcement.

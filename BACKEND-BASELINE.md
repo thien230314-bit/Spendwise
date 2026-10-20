@@ -15,6 +15,15 @@ Task 16.1 confirms full regression and E2E verification across all systems:
   3. Membership Entitlements & Rejoin: Fresh membership episode (`m.Id`) initiated upon rejoining. Entitlement without new contributions in that episode is exactly 0 VND. Free Fund net equity scopes contributions to `c.MembershipId == m.Id` and withdrawals/prior refunds to `CreatedAt >= m.JoinedAt`.
   4. Owner Election & Governance: Approved default timeline configured in `V1ElectionPolicy.cs` (24h/48h/24h/24h/24h, `FreezeMembership=true`, `AllowContributions=false`). Elected winner can reject ownership via `POST /api/v1/funds/elections/{id}/reject` (`RejectElectedOwnershipAsync`) transitioning election to `Failed` with reason `WinnerRejected`. Locked voters cannot cast ballots; locked winners cannot accept ownership. Financial operations and invitations are paused during active elections.
 
-Read `User.md` for product requirements and API mapping, `Admin.md` for the five-area contract, `backend/docs/BACKEND-PRODUCT-DECISIONS-REQUIRED.md` for closed decisions, and `backend/docs/TASK16.1-VERIFICATION.md` for actual current evidence.
+Read `User.md` for product requirements and API mapping, `Admin.md` for the five-area contract, `backend/docs/BACKEND-PRODUCT-DECISIONS-REQUIRED.md` for closed decisions, and `backend/docs/TASK16.2-FINAL-AUDIT.md` for actual current evidence.
 
 SQL01 must not be accessed. All integration and Newman runs used isolated fixtures on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02\SpendWise_E2E_Test`). No production migration, real provider call, credential reset, Frontend/Mobile edit or source ZIP is part of this task. Test evidence, pickup files, private environments and logs remain outside tracked source under `E:\source\task14-results`.
+
+## Task 16.2 Adversarial Audit & Verification Results
+- Release Build: 0 errors, 16 warnings.
+- Non-SQL Tests: 1,063 / 1,063 PASS (including 6 audit tests in Task16_2_AdversarialAuditTests.cs and 7 tests in Task16_1_ApprovedDecisionsTests.cs).
+- SQL02 Integration Tests: 179 / 179 PASS on SpendWise_Test_Runner.
+- Full Newman E2E Suite: 105 / 105 requests PASS, 177 / 177 assertions PASS on SpendWise_E2E_Test.
+- Bugs Fixed:
+  1. Zero-Entitlement Dissolution: Equal fallback & 1 VND remainder restricted to positive-entitlement members only.
+  2. Dispute Resolution: Auto-assigned investigating admin ensures atomic, unblocked resolution.

@@ -521,3 +521,17 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
    - Người thắng cử có quyền từ chối tiếp nhận quyền chủ nhóm qua `POST /api/v1/funds/elections/{id}/reject`. Khi từ chối, bầu cử kết thúc thất bại với lý do `WinnerRejected`, chủ nhóm danh nghĩa cũ vẫn được giữ, thành viên có quyền rời nhóm và nhận hoàn tiền.
    - Thành viên bị khóa không được bỏ phiếu và không được nhận quyền chủ nhóm. Cử tri đoàn được chốt tại thời điểm mở bầu cử.
    - Tạm dừng mọi thao tác tài chính (đóng góp, yêu cầu chi/rút) và lời mời mới trong suốt thời gian diễn ra bầu cử (`election_finance_paused`).
+
+---
+
+## PHỤ LỤC E — Kết quả kiểm tra độc lập và báo cáo nghiệm thu Task 16.2 (Adversarial Audit & Final Fixes)
+
+1. **Khắc phục lõi tài chính khi giải thể quỹ (Zero-Entitlement Dissolution Invariant):**
+   - Đã sửa cơ chế chia đều (equal split) và phân bổ tiền lẻ 1 VNĐ trong `V1FundRefunds.cs` để chỉ tính trên các thành viên có quyền lợi dương (`hasEntitlement`). Ngăn chặn tuyệt đối nguy cơ thành viên không có đóng góp/quyền lợi bị nhận nhầm tiền lẻ khi quỹ giải thể.
+2. **Khắc phục tính nguyên tử và phân quyền khi xử lý khiếu nại (Dispute Resolution Operator Auto-Assignment):**
+   - Đã bổ sung cơ chế tự động gán Admin (`ticket.AssignedAdminId = actorId`) và chuyển case sang `Investigating` trong `AdminA5Service.ResolveDisputeRequestAsync` nếu phiếu khiếu nại chưa có người tiếp nhận, đảm bảo quy trình phê duyệt khiếu nại khoản chi lớn luôn thành công nguyên tử theo đúng phân quyền của Admin hệ thống.
+3. **Kết quả kiểm chứng:**
+   - **Release Build:** 0 lỗi (0 errors, 16 warnings).
+   - **Full Non-SQL Test Suite:** 1.063 / 1.063 test PASS (100% xanh, bao gồm 6 audit unit tests chuyên biệt trong `Task16_2_AdversarialAuditTests.cs` và 7 test nghiệp vụ trong `Task16_1_ApprovedDecisionsTests.cs`).
+   - **SQL02 Integration Test Suite:** 179 / 179 test PASS trên instance cơ sở dữ liệu thực tế SQL02 `SpendWise_Test_Runner`.
+   - **Full Newman E2E Suite:** 105 / 105 requests PASS, 177 / 177 assertions PASS (100% xanh trên database `SpendWise_E2E_Test`).

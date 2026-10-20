@@ -526,6 +526,11 @@ public sealed partial class V1FundService
                         results[m.UserId] = (amount, "CaseA_Unspent");
                         allocated += amount;
                     }
+                    if (allocated < (long)currentBalance)
+                    {
+                        throw new ConflictException("zero_entitlement_dissolution_blocked",
+                            "Cannot dissolve fund: active members unspent contributions are less than the current fund balance.");
+                    }
                     return new UnifiedCalculationResult(results, allocated, currentBalance);
                 }
                 else
@@ -575,16 +580,17 @@ public sealed partial class V1FundService
                 }
                 else if (remainingBalance > 0 && sumWeights == 0)
                 {
-                    var equal = remainingBalance / activeMembers.Count;
-                    foreach (var m in activeMembers) payouts[m.UserId] += equal;
+                    throw new ConflictException("zero_entitlement_dissolution_blocked",
+                        "Cannot dissolve fund: active members have zero valid obligation entitlement to receive the remaining balance.");
                 }
 
-                // Allocate remainder (đồng dư) starting from lowest seat
+                // Allocate remainder (đồng dư) starting from lowest seat ONLY to members with positive weight or payout!
+                var eligibleMembers = activeMembers.Where(m => weights.GetValueOrDefault(m.UserId) > 0 || payouts.GetValueOrDefault(m.UserId) > 0).ToList();
                 var allocatedSum = payouts.Values.Sum();
                 var remainder = (long)currentBalance - allocatedSum;
-                for (var i = 0; i < remainder && i < activeMembers.Count; i++)
+                for (var i = 0; i < remainder && i < eligibleMembers.Count; i++)
                 {
-                    payouts[activeMembers[i].UserId] += 1;
+                    payouts[eligibleMembers[i].UserId] += 1;
                 }
 
                 foreach (var m in activeMembers)
@@ -650,20 +656,24 @@ public sealed partial class V1FundService
                         payouts[m.UserId] = share;
                     }
                 }
+                else if ((long)currentBalance > 0 && sumNetEquity == 0)
+                {
+                    throw new ConflictException("zero_entitlement_dissolution_blocked",
+                        "Cannot dissolve fund: no active members have valid contribution entitlement to receive the remaining balance.");
+                }
                 else
                 {
-                    var equal = (long)currentBalance / activeMembers.Count;
-                    foreach (var m in activeMembers) payouts[m.UserId] = equal;
+                    foreach (var m in activeMembers) payouts[m.UserId] = 0;
                 }
 
                 // Distribute remainder (đồng dư)
+                var eligibleMembers = activeMembers.Where(m => memberNetEquity.GetValueOrDefault(m.UserId) > 0).ToList();
                 var allocatedSum = payouts.Values.Sum();
                 var remainder = (long)currentBalance - allocatedSum;
-                for (var i = 0; i < remainder && i < activeMembers.Count; i++)
+                for (var i = 0; i < remainder && i < eligibleMembers.Count; i++)
                 {
-                    payouts[activeMembers[i].UserId] += 1;
+                    payouts[eligibleMembers[i].UserId] += 1;
                 }
-
                 foreach (var m in activeMembers)
                 {
                     results[m.UserId] = (payouts[m.UserId], "CaseC_DissolveFree");

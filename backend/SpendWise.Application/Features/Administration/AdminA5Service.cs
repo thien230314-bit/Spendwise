@@ -1107,6 +1107,13 @@ public sealed class AdminA5Service(
         var ticket = await db.SupportCases.SingleOrDefaultAsync(c => c.Category == "V1FundDispute" && c.LinkedTransactionId == requestId, ct)
             ?? throw new NotFoundException("dispute_case_not_found", "No support case found for this disputed request.");
 
+        if (ticket.AssignedAdminId is null && Guid.TryParse(principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var actorId))
+        {
+            ticket.AssignedAdminId = actorId;
+            ticket.Status = CaseStatus.Investigating;
+            await db.SaveChangesAsync(ct);
+        }
+
         return await ResolveAsync(principal, ticket.Id, request, ct);
     }
 

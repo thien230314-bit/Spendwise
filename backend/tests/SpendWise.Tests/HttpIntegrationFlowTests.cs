@@ -278,6 +278,39 @@ public sealed class HttpIntegrationFlowTests
         }
     }
 
+    [Fact]
+    public async Task Financial_rate_limit_returns_429_after_fixed_window_is_exhausted()
+    {
+        // Arrange: Cấu hình FinancialPermitLimit = 5 để kiểm tra chính xác policy "financial"
+        using var factory = new SpendWiseApiFactory(new Dictionary<string, string?>
+        {
+            ["RateLimiting:FinancialPermitLimit"] = "5"
+        });
+        using var client = factory.CreateHttpsClient();
+        var user = await RegisterAsync(client, "Financial Rate Limit User");
+        UseToken(client, user.AccessToken);
+
+        // Act: Gửi 6 request liên tiếp vào endpoint có [EnableRateLimiting("financial")]
+        var responses = new List<HttpResponseMessage>();
+        for (var attempt = 0; attempt < 6; attempt++)
+        {
+            using var form = new MultipartFormDataContent();
+            using var file = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            form.Add(file, "file", $"receipt_{attempt}.png");
+            responses.Add(await client.PostAsync("/api/evidence", form));
+        }
+
+        // Assert: 5 request đầu được Controller xử lý thành công (201 Created), request thứ 6 nhận 429 Too Many Requests
+        Assert.All(responses.Take(5), response =>
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+        Assert.Equal(HttpStatusCode.TooManyRequests, responses[5].StatusCode);
+        foreach (var response in responses)
+        {
+            response.Dispose();
+        }
+    }
+
     private static async Task<AuthResponse> RegisterAsync(HttpClient client, string name)
     {
         client.DefaultRequestHeaders.Authorization = null;

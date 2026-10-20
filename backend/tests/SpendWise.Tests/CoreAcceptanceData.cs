@@ -38,8 +38,13 @@ internal static class CoreAcceptanceData
         db.AddRange(owner, member, admin, session, ow, mw); await db.SaveChangesAsync();
         if (ledgerOpening)
         {
-            var source = new LedgerAccount { Code = "SYNTHETIC-OPENING", Name = "Synthetic opening source", Type = LedgerAccountType.ExternalSource, IsSystem = true };
-            db.LedgerAccounts.Add(source); await db.SaveChangesAsync();
+            var source = await db.LedgerAccounts.SingleOrDefaultAsync(x => x.Code == "SYNTHETIC-OPENING");
+            if (source is null)
+            {
+                source = new LedgerAccount { Code = "SYNTHETIC-OPENING", Name = "Synthetic opening source", Type = LedgerAccountType.ExternalSource, IsSystem = true };
+                db.LedgerAccounts.Add(source);
+                await db.SaveChangesAsync();
+            }
             var ledger = new LedgerService(db, new SystemClock());
             foreach (var wallet in new[] { ow, mw })
                 await ledger.PostAsync(source.Id, wallet.LedgerAccount.Id, 2_000_000, "VND", "SyntheticOpening", wallet.Id, "synthetic-opening", wallet.Id.ToString("N"), "Synthetic fixture funding", default);

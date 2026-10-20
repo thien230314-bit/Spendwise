@@ -108,3 +108,24 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
 - Core Backend Status: **CORE BACKEND E2E VERIFIED**.
 - External Providers Status: Gemini Free Tier inference verified (G1); SePay Sandbox verified & retail banking boundaries documented (G2); SMTP live inbox delivery verified (G3); Expo push API contract verified, physical device receipt pending mobile app phase.
 - Documentation: Created `backend/docs/ANTIGRAVITY-FULL-E2E-G4-ACCEPTANCE.md`; updated `User.md`, `Admin.md`, `BACKEND-BASELINE.md`.
+
+## Task G5 — Final Backend Security, Business Coverage & E2E Hardening Acceptance
+- Release Build: All 6 projects compiled cleanly: 0 errors, 0 warnings.
+- Security Hardening Verified:
+  - Auth rate limiting returns 429 when quota (10 requests/min) is exhausted.
+  - Financial rate limiting returns 429 when quota is exhausted (`RateLimiting:FinancialPermitLimit`).
+  - Strict IDOR boundaries enforced across wallets, bank link sessions, evidence uploads, and support cases (User A cannot access User B data).
+  - Security PIN brute force locks out accounts; constant-time PIN comparison verified.
+  - Session revocation and refresh token rotation verified across identity tests.
+- Financial Invariants Verified:
+  - Double-entry ledger balance conservation: sum(debit) == sum(credit) invariant held 100%.
+  - Exact VND rounding (0 decimal places) enforced; no floating-point discrepancies.
+  - Idempotency key handling prevents double-spend and double-credit under concurrent attempts.
+- Governance & Election Lifecycle:
+  - 14/14 states and edge cases verified across `V1ElectionTests` and `Task17ElectionSqlHttpTests` (inactivity proof, nomination, voting, runoff, tie-breaking, confirmation, acceptance expiration, and finance freezing).
+- Clean Full Newman E2E Suite:
+  - Total Requests: 141 executed (141 Passed, 0 Failed, 0 Skipped).
+  - Total Assertions: 227 evaluated (227 Passed, 0 Failed, 0 Skipped).
+  - Executed against clean SQL Server database (`SpendWise_E2E_G4` on SQL02).
+- Core Backend Status: **CORE BACKEND SECURITY & E2E ACCEPTANCE PASSED**.
+- Documentation: Created `backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md`; updated `User.md`, `Admin.md`, `BACKEND-BASELINE.md`.

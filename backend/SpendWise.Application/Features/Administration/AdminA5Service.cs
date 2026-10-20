@@ -945,7 +945,14 @@ public sealed class AdminA5Service(
 
             {
 
+                var fundId = await db.V1FundRequests.AsNoTracking().Where(r => r.Id == fundRequestId)
+                    .Select(r => (Guid?)r.FundId).SingleOrDefaultAsync(token);
+                // Serialize with cancellation and payout before reading the request state.
+                if (fundId is null || await db.V1Funds.Where(f => f.Id == fundId && f.DissolvedAt == null)
+                    .ExecuteUpdateAsync(s => s.SetProperty(f => f.UpdatedAt, f => f.UpdatedAt), token) != 1)
+                    throw new ConflictException("disputed_fund_unavailable", "Active disputed fund required.");
                 var disputedRequest = await db.V1FundRequests.SingleOrDefaultAsync(r => r.Id == fundRequestId, token);
+                if (disputedRequest is not null && db is DbContext tracked) await tracked.Entry(disputedRequest).ReloadAsync(token);
 
                 if (disputedRequest is null || disputedRequest.State != "Suspended")
 

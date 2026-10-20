@@ -23,7 +23,7 @@ using Xunit;
 
 namespace SpendWise.Tests;
 
-public sealed class V1FundSqlServerTests : SqlTestFixtureScope
+public sealed partial class V1FundSqlServerTests : SqlTestFixtureScope
 {
     [Fact]
     public async Task Admin_A1_SQL_projections_read_actual_sources_and_preserve_nullable_task_deadline()
@@ -454,7 +454,7 @@ public sealed class V1FundSqlServerTests : SqlTestFixtureScope
     {
         var clock = new SystemClock();
         return new(db, new(db), new(db, new(db), new(db), new SpendWise.Infrastructure.Notifications.NotificationService(db), clock), new(db),
-            new(db, new SecurityPinService(), new AccountCredentialLockout(db, clock)), new(db, null!, clock), clock);
+            new(db, new SecurityPinService(), new AccountCredentialLockout(db, clock)), new(db, null!, clock), clock, new SpendWise.Infrastructure.Notifications.NotificationService(db));
     }
 
     private static User SyntheticUser()

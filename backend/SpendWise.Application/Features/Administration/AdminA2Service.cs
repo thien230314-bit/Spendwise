@@ -8,6 +8,7 @@ using SpendWise.Application.Features.Authentication;
 using SpendWise.Domain.Admin;
 using SpendWise.Domain.Identity;
 using SpendWise.Domain.Finance;
+using SpendWise.Application.Notifications;
 
 namespace SpendWise.Application.Features.Administration;
 
@@ -17,12 +18,13 @@ public sealed record A2User(Guid Id, string SpendId, string DisplayName, string 
 public sealed record A2Profile(A2User User, Guid CaseId, IReadOnlyList<V1InvestigatedWallet> Wallets);
 public sealed record A2Session(Guid Id, string DeviceName, DateTime CreatedAt, DateTime LastSeenAt, DateTime? RevokedAt, string State);
 public sealed record A2RevokeRequest(string Reason, string SecurityPin, Guid? SessionId = null);
+public sealed record A2StatusRequest(string Status, string Reason, string SecurityPin);
 public sealed record A2Restrictions(string LoginStatus, DateTime? LastLoginAt, int RevokedSessions, bool EmergencyOutgoingControlAvailable,
     string OutgoingControlStatus, IReadOnlyList<A2WalletState> Wallets, string Provenance);
 public sealed record A2WalletState(Guid Id, string Type, string Status);
 
 public sealed partial class AdminA2Service(ISpendWiseDbContext db, PlatformPermissionService permissions, V1CaseWorkflow workflow,
-    AdminAuditWriter audit, AdminSecurityGuard security, AuthenticationSupport authentication, IClock clock)
+    AdminAuditWriter audit, AdminSecurityGuard security, AuthenticationSupport authentication, IClock clock, INotificationService notifications)
 {
     public async Task<A2Page<A2User>> SearchAsync(ClaimsPrincipal principal, A2Query query, CancellationToken ct)
     {
@@ -128,6 +130,31 @@ public sealed partial class AdminA2Service(ISpendWiseDbContext db, PlatformPermi
             if (request.SessionId is {} selected) await authentication.RevokeSessionAsync(userId, selected, token);
             else await authentication.RevokeAllSessionsAsync(userId, token);
             audit.Add(actor, "A2_SESSION_REVOKED", "User", userId.ToString(), request.Reason, new { CaseId = caseId, request.SessionId, Outcome = "Revoked" });
+            return true;
+        }, ct);
+    }
+
+    public async Task ChangeStatusAsync(ClaimsPrincipal principal, Guid caseId, Guid userId, A2StatusRequest request, CancellationToken ct)
+    {
+        await RequireScopeAsync(principal, caseId, userId, request.Reason, ct);
+        if (request.Status is not ("Active" or "Restricted" or "Locked"))
+            throw new AppException("invalid_user_status", "Use Active, Restricted or Locked.");
+        var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        await security.VerifyAsync(actor, request.SecurityPin, ct, SystemRole.Admin);
+        await WithSubject(principal, caseId, userId, request.Reason, "STATUS", async token =>
+        {
+            var user = await AdminSecurityGuard.RequireOrdinaryTargetAsync(db, userId, token);
+            if (user.Status is not (UserStatus.Active or UserStatus.Restricted or UserStatus.Locked))
+                throw new ConflictException("account_status_requires_review", "This account is outside the approved restriction workflow.");
+            var next = Enum.Parse<UserStatus>(request.Status);
+            if (user.Status == next) return false;
+            var previous = user.Status;
+            user.Status = next;
+            if (next == UserStatus.Locked) await authentication.RevokeAllSessionsAsync(userId, token);
+            audit.Add(actor, "A2_ACCOUNT_STATUS_CHANGED", "User", userId.ToString(), request.Reason,
+                new { CaseId = caseId, PreviousStatus = previous.ToString(), NewStatus = request.Status });
+            await notifications.CreateAsync(userId, "SecurityAlert", "Account status changed",
+                $"Your account status is now {request.Status}. Reason: {request.Reason}", new { CaseId = caseId, Status = request.Status }, token);
             return true;
         }, ct);
     }

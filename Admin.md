@@ -1,6 +1,6 @@
 # SpendWise V1.0 — Admin backend contract (Task 16.1)
 
-Updated 2026-10-20 from current Controllers, Application services, role tests and the Task 16.1 Product Owner instruction. Overall backend status: COMPLETE for V1.0 scope with 4 approved product decisions implemented. Test results are recorded in `backend/docs/TASK16.1-VERIFICATION.md`.
+Updated 2026-10-20. Current verification and remaining gaps are recorded in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`; earlier task counts are historical. Overall Backend V1.0 remains PARTIAL. A1 remains LOCKED (4/4); A2 retains four DONE functions and A2.3 PARTIAL / POLICY_BLOCKED under AGENTS.md.
 
 ## Roles and access
 
@@ -22,9 +22,11 @@ Status: A1 remains functional Backend LOCKED (4/4), subject to actual regression
 
 POST `/api/v1/admin/users/search` provides paginated ordinary-user search. Scoped POST routes under `/api/v1/admin/support/{caseId}/users/{userId}`: `/profile`, `/sessions`, `/restrictions`, `/revoke-sessions`, `/groups`, `/friends`, `/history`.
 
+PUT `/api/v1/admin/support/{caseId}/users/{userId}/status` accepts `{ "status": "Active|Restricted|Locked", "reason": "required rationale", "securityPin": "<six-digit-admin-pin>" }`. Requires an active case assigned to the authenticated Admin and linked to the ordinary User. Status, lock-time session/refresh revocation, audit and SecurityAlert notification commit atomically. Repeating the current status adds no new status-change notification. Locked sessions stay revoked after unlock; a fresh login is required. Suspended/Deleted accounts and administrative peers cannot be changed through this command. This implements the approved Decision 2 portion without promoting A2.3 as a whole.
+
 Read or restrict only within the authorized active support case. Session revocation prevents reuse; account restrictions do not transfer fund ownership or erase financial entitlements. No password/PIN/OTP/hash/token is exposed to Admin. No arbitrary ledger balance editing.
 
-Status: A2 User Management IMPLEMENTED & VERIFIED.
+Status: A2 retains its baseline PARTIAL / POLICY_BLOCKED classification for A2.3; tested Decision 2 behavior is listed in the current acceptance report.
 - Level 1 — Financial Restriction (`UserStatus.Restricted`): blocks outbound debit transfers/expenses/fund contributions/fund requests; preserves login, token refresh, read-only balance/profile, support intake, and inbound credits/refunds.
 - Level 2 — Account Lock (`UserStatus.Locked`): immediate session revocation, 403 `account_unavailable` on login, token refresh blocked. Reversible by Admin.
 

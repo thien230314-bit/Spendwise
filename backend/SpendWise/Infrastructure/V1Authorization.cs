@@ -30,6 +30,12 @@ public static class V1Authorization
         if (configuration is not null) election.Bind(configuration.GetSection("V1:Elections"));
         var activity = services.AddOptions<SpendWise.Application.Features.V1Groups.V1ActivityPolicy>();
         if (configuration is not null) activity.Bind(configuration.GetSection("V1:Activity"));
+        // Configuration binding converts explicit UTC/offset timestamps to local DateTime values.
+        activity.PostConfigure(p =>
+        {
+            if (p.CoverageStartsAtUtc is { Kind: DateTimeKind.Local } start)
+                p.CoverageStartsAtUtc = start.ToUniversalTime();
+        });
         services.AddScoped<SpendWise.Application.Features.V1Groups.V1ActivityService>();
         services.AddScoped<SpendWise.Application.Features.V1Groups.IV1InactivityEvidence>(sp => sp.GetRequiredService<SpendWise.Application.Features.V1Groups.V1ActivityService>());
         services.AddScoped<PlatformPermissionService>();

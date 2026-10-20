@@ -105,7 +105,7 @@ public sealed partial class V1FundService
 
             var treasury = await TreasuryAsync(fund, token);
 
-            if (fund.Kind == V1FundKind.Fixed) await RequireUnspentAccountingAsync(treasury, token);
+            if (fund.Kind == V1FundKind.Fixed) await RequireContributionAccountingAsync(treasury, token);
 
             else await RequireReconciledAccountingAsync(treasury, token);
 

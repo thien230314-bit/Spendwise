@@ -25,11 +25,14 @@ internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
     private readonly string? databasePath;
     private readonly string sqliteConnectionString;
     private readonly IReadOnlyDictionary<string, string?> configurationOverrides;
+    private readonly IClock? clock;
 
     public SpendWiseApiFactory(
         IReadOnlyDictionary<string, string?>? configurationOverrides = null,
-        bool useIndependentDatabaseConnections = false)
+        bool useIndependentDatabaseConnections = false,
+        IClock? clock = null)
     {
+        this.clock = clock;
         this.configurationOverrides = configurationOverrides ?? new Dictionary<string, string?>();
         if (useIndependentDatabaseConnections)
         {
@@ -92,6 +95,11 @@ internal sealed class SpendWiseApiFactory : WebApplicationFactory<Program>
         });
         builder.ConfigureServices(services =>
         {
+            if (clock is not null)
+            {
+                services.RemoveAll<IClock>();
+                services.AddSingleton(clock);
+            }
             // Background workers không cần chạy trong test request ngắn và có thể tranh connection SQLite.
             services.RemoveAll<IHostedService>();
             services.RemoveAll<DbContextOptions<SpendWiseDbContext>>();

@@ -30,7 +30,7 @@ public sealed partial class V1FundService
             if (fund.ActivityClosedAt is not null) throw new ConflictException("activity_closed", "Closed activity obligations cannot change.");
             if (fund.Kind != V1FundKind.Fixed) throw new ConflictException("fixed_fund_required", "Free funds have no fixed obligations.");
             var treasury = await TreasuryAsync(fund, token);
-            await RequireUnspentAccountingAsync(treasury, token);
+            await RequireContributionAccountingAsync(treasury, token);
             var members = await ActiveMembersAsync(fundId, token);
             var signature = MembershipSignature(members);
             if (treasury.Revision == 0 || treasury.TargetVnd != request.TargetVnd || treasury.MembershipSignature != signature)
@@ -89,6 +89,23 @@ public sealed partial class V1FundService
         .Where(m => m.FundId == id && m.LeftAt == null).OrderBy(m => m.Seat).ToListAsync(ct);
     private static string MembershipSignature(IReadOnlyCollection<V1FundMembership> members) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("|", members.OrderBy(m => m.Seat).Select(m => $"{m.Id:N}:{m.UserId:N}:{m.Seat}")))));
+
+    private async Task RequireContributionAccountingAsync(V1FundTreasury treasury, CancellationToken ct)
+    {
+        await RequireReconciledAccountingAsync(treasury, ct);
+        var outflows = await db.LedgerTransactions.AsNoTracking().Include(t => t.Entries)
+            .Where(t => t.Entries.Any(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit)).ToListAsync(ct);
+        foreach (var refund in outflows)
+        {
+            var debit = refund.Entries.SingleOrDefault(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit);
+            if (refund.BusinessType != "V1FundRefund" || refund.BusinessId != treasury.FundId || refund.Entries.Count != 2
+                || debit is null || debit.Amount <= 0 || refund.Entries.Any(e => e.Currency != "VND" || e.Amount != debit.Amount)
+                || refund.Entries.Count(e => e.Direction == LedgerEntryDirection.Debit && e.LedgerAccountId != treasury.LedgerAccountId) != 1
+                || !await db.FinancialTransactions.AnyAsync(f => f.LedgerTransactionId == refund.Id && f.RelatedBusinessId == treasury.FundId
+                    && f.Type == FinancialTransactionType.Refund && f.Status == FinancialTransactionStatus.Completed && f.Amount == debit.Amount && f.Currency == "VND", ct))
+                throw new ConflictException("FINANCE_BLOCKED", "Only reconciled membership refunds may precede new Fixed contributions.");
+        }
+    }
 
     private async Task RequireUnspentAccountingAsync(V1FundTreasury treasury, CancellationToken ct)
     {

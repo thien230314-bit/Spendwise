@@ -30,6 +30,11 @@ public sealed class AdminA2Controller(AdminA2Service users) : ControllerBase
     public async Task<IActionResult> Revoke(Guid caseId, Guid userId, A2RevokeRequest request, CancellationToken ct)
     { await users.RevokeAsync(User, caseId, userId, request, ct); return NoContent(); }
 
+    [HttpPut("support/{caseId:guid}/users/{userId:guid}/status")]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> Status(Guid caseId, Guid userId, A2StatusRequest request, CancellationToken ct)
+    { await users.ChangeStatusAsync(User, caseId, userId, request, ct); return NoContent(); }
+
     [HttpPost("support/{caseId:guid}/users/{userId:guid}/groups")]
     public Task<A2Page<A2Group>> Groups(Guid caseId, Guid userId, A2Query query, CancellationToken ct) => users.GroupsAsync(User, caseId, userId, query, ct);
     [HttpPost("support/{caseId:guid}/users/{userId:guid}/friends")]

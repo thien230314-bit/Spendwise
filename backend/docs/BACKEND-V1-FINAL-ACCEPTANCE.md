@@ -1,7 +1,8 @@
 # SpendWise V1.0 — Current Backend Acceptance (Task 16.3)
 
 **Date:** 2026-10-20  
-**Overall Core Backend Status:** **STABILIZED, COMPLETE & VERIFIED FOR V1.0 SCOPE**  
+**Overall Core Backend Status:** **CORE BACKEND PARTIAL**
+**Current evidence:** `CODEX-FINAL-CORE-ACCEPTANCE.md` supersedes historical completion claims and counts below. A1 remains LOCKED; A2.3 remains PARTIAL / POLICY_BLOCKED; maintenance deployment safety remains unverified. Targeted SQL02/HTTP acceptance does not verify live providers or all production operations.
 **Evidence Records:** `TASK16.2-FINAL-AUDIT.md`, `TASK16.3-STABILIZATION.md`, `TEST-ENVIRONMENT-BASELINE.md`  
 
 ---

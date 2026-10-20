@@ -1,6 +1,6 @@
 # SpendWise V1.0 — Product Decisions and Status (Task 16.1)
 
-Updated 2026-10-20. Product Owner Task 16.1 officially approved and closed the 4 remaining core business logic decisions. All 4 decisions have been implemented in production code, integrated into routing/services, and verified by targeted tests, full test suites, and Newman E2E.
+Updated 2026-10-20. Product Owner Task 16.1 approved the four decisions below; no reapproval is requested. Approval is distinct from execution evidence: current tests and remaining acceptance limitations are in `CODEX-FINAL-CORE-ACCEPTANCE.md`. Overall Backend remains PARTIAL, including the preserved A2.3 PARTIAL / POLICY_BLOCKED baseline.
 
 ## 1. Approved & Implemented Decisions (Task 16.1)
 
@@ -11,6 +11,7 @@ Updated 2026-10-20. Product Owner Task 16.1 officially approved and closed the 4
   - *Invalid Report (`IsRejected`):* Unsuspends the expense back to `Pending24h` without resetting the 24-hour clock, does not auto-payout, closes the SupportCase (`Rejected`), logs an audit event, and notifies members.
 
 ### Decision 2: Admin Account Restrictions
+- Canonical command: PUT `/api/v1/admin/support/{caseId}/users/{userId}/status`, with Status, Reason and SecurityPin. Active assigned case, ordinary User target and Admin PIN are required; account status, audit, notification and lock-time credential revocation share one transaction.
 - **Level 1 — Financial Restriction (`UserStatus.Restricted`):**
   - Outbound debits are blocked (P2P transfer, wallet transfer, manual expense, multi-wallet expense, fund contributions, fund requests).
   - Permitted operations: Login, session refresh, viewing balances/history/profile, submitting SupportCases, receiving incoming P2P transfers, receiving refunds.
@@ -19,7 +20,7 @@ Updated 2026-10-20. Product Owner Task 16.1 officially approved and closed the 4
   - Active sessions revoked immediately upon lock.
   - Refresh token rotation denied.
   - Support case channel retained for appeal.
-  - Admin can unlock back to `Active` (which revokes credentials to force a fresh login).
+  - Admin can unlock back to `Active`; credentials revoked during locking remain revoked, so unlocking requires a fresh login.
 
 ### Decision 3: Fixed & Free Fund Membership Entitlements & Rejoin
 - **Episode Scope:** When a member leaves a fund, receives their settlement/refund, and later rejoins, a fresh membership episode (`m.Id`) is established with `JoinedAt = now`.

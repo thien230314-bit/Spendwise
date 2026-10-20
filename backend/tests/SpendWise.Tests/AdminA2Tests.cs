@@ -34,8 +34,9 @@ public sealed class AdminA2Tests
         await Assert.ThrowsAsync<ForbiddenException>(() => service.ProfileAsync(p, ticket.Id, user.Id, "Downgraded operator", default));
     }
 
-    [Fact]
-    public async Task Audit_failure_rolls_back_session_and_refresh_revocation()
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Audit_failure_rolls_back_session_refresh_and_account_status(bool changeStatus)
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync(); var actor = await f.AddUserAsync("Operator", role: SystemRole.Admin); var user = await f.AddUserAsync("Subject");
         var p = V1PermissionTests.Principal(actor.Id, (await f.AddSessionAsync(actor.Id)).Id, "Admin"); var target = await f.AddSessionAsync(user.Id);
@@ -44,10 +45,15 @@ public sealed class AdminA2Tests
         await using var db = new SpendWise.Infrastructure.Persistence.SpendWiseDbContext(new DbContextOptionsBuilder<SpendWise.Infrastructure.Persistence.SpendWiseDbContext>()
             .UseSqlite(f.Db.Database.GetDbConnection()).AddInterceptors(new FailDecisionAudit()).Options, f.Clock);
         var service = new AdminA2Service(db, new(db), new(db, new(db), new(db), new SpendWise.Infrastructure.Notifications.NotificationService(db), f.Clock), new(db),
-            new(db, new SecurityPinService(), new AccountCredentialLockout(db, f.Clock)), new(db, null!, f.Clock), f.Clock);
-        var failure = await Assert.ThrowsAsync<DbUpdateException>(() => service.RevokeAsync(p, ticket.Id, user.Id, new("Rollback proof", TargetedCorrectnessFixture.SecurityPin, target.Id), default));
+            new(db, new SecurityPinService(), new AccountCredentialLockout(db, f.Clock)), new(db, null!, f.Clock), f.Clock, new SpendWise.Infrastructure.Notifications.NotificationService(db));
+        var failure = await Assert.ThrowsAsync<DbUpdateException>(() => changeStatus
+            ? service.ChangeStatusAsync(p, ticket.Id, user.Id, new("Locked", "Rollback proof", TargetedCorrectnessFixture.SecurityPin), default)
+            : service.RevokeAsync(p, ticket.Id, user.Id, new("Rollback proof", TargetedCorrectnessFixture.SecurityPin, target.Id), default));
         Assert.Equal("Synthetic audit failure", Assert.IsType<InvalidOperationException>(failure.InnerException).Message);
         Assert.Null(await f.Db.UserSessions.Where(s => s.Id == target.Id).Select(s => s.RevokedAt).SingleAsync());
+        Assert.Null(await f.Db.RefreshTokens.Where(t => t.UserSessionId == target.Id).Select(t => t.RevokedAt).SingleAsync());
+        Assert.Equal(UserStatus.Active, await f.Db.Users.Where(u => u.Id == user.Id).Select(u => u.Status).SingleAsync());
+        Assert.Empty(await f.Db.Notifications.ToListAsync());
         Assert.Null(await f.Db.RefreshTokens.Where(r => r.UserSessionId == target.Id).Select(r => r.RevokedAt).SingleAsync());
         Assert.False(await f.Db.AuditLogs.AnyAsync(a => a.Action == "A2_SESSION_REVOKED"));
     }
@@ -58,7 +64,7 @@ public sealed class AdminA2Tests
             System.Data.Common.DbCommand command, Microsoft.EntityFrameworkCore.Diagnostics.CommandEventData eventData,
             Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<System.Data.Common.DbDataReader> result, CancellationToken ct = default)
         {
-            if (command.Parameters.Cast<System.Data.Common.DbParameter>().Any(p => p.Value is string value && value == "A2_SESSION_REVOKED")) throw new InvalidOperationException("Synthetic audit failure");
+            if (command.Parameters.Cast<System.Data.Common.DbParameter>().Any(p => p.Value is string value && value is "A2_SESSION_REVOKED" or "A2_ACCOUNT_STATUS_CHANGED")) throw new InvalidOperationException("Synthetic audit failure");
             return base.ReaderExecutingAsync(command, eventData, result, ct);
         }
     }
@@ -128,7 +134,7 @@ public sealed class AdminA2Tests
     internal static AdminA2Service Service(TargetedCorrectnessFixture f) => new(f.Db, new(f.Db),
         new(f.Db, new(f.Db), new(f.Db), new SpendWise.Infrastructure.Notifications.NotificationService(f.Db), f.Clock),
         new(f.Db), new(f.Db, new SecurityPinService(), new AccountCredentialLockout(f.Db, f.Clock)),
-        new(f.Db, null!, f.Clock), f.Clock);
+        new(f.Db, null!, f.Clock), f.Clock, new SpendWise.Infrastructure.Notifications.NotificationService(f.Db));
 
     [Fact]
     public async Task Directory_is_masked_exact_search_filtered_stable_and_excludes_operator_accounts()

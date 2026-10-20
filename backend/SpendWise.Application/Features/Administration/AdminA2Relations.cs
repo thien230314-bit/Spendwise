@@ -73,7 +73,7 @@ public sealed partial class AdminA2Service
             Validate(query); RejectSearch(query); if (query.Status is not null) throw new AppException("invalid_history_filter", "History has typed source outcomes, not a shared status enum.");
             var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var cases = db.SupportCases.Where(c => c.LinkedUserId == userId && c.AssignedAdminId == actor);
-            string[] actions = ["LOCK_USER", "UNLOCK_USER", "REVOKE_SESSIONS", "A2_SESSION_REVOKED", "RESET_USER_PASSWORD", "RESET_USER_SECURITY_PIN"];
+            string[] actions = ["LOCK_USER", "UNLOCK_USER", "RESTRICT_USER", "A2_ACCOUNT_STATUS_CHANGED", "REVOKE_SESSIONS", "A2_SESSION_REVOKED", "RESET_USER_PASSWORD", "RESET_USER_SECURITY_PIN"];
             var history = db.CaseHistories.AsNoTracking().Where(h => h.CaseKind == CaseKind.Support && cases.Any(c => c.Id == h.CaseId))
                 .Select(h => new A2HistoryItem { Id = h.Id, Source = "CaseHistory", Action = h.Action, ActorId = h.ActorId, At = h.CreatedAt,
                     Reason = h.Action == "V1_escalate" || h.Action == "V1_claim" || h.Action == "V1_guidance" ? "Internal escalation event; use authorized case detail" : h.Message,

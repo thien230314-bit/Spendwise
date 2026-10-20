@@ -1,6 +1,8 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
-> TASK 16.1 CURRENT STATUS (2026-10-20): 4 approved Product Owner decisions officially implemented and verified. All core Backend business logic completed. The implementation map below reflects the canonical state. 1,109 non-SQL tests PASS, 127 SQL02 integration tests PASS, 105 Newman requests / 177 assertions PASS.
+> CURRENT STATUS (2026-10-20): Backend V1.0 remains PARTIAL; A1 LOCKED and A2.3 PARTIAL / POLICY_BLOCKED are retained. Current, directly executed acceptance evidence is in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`. Earlier task test counts are historical, not current acceptance proof. The four decisions remain approved; later unapproved BLOCKER labels do not reopen those decisions.
+
+Current implementation corrections: Admin restrict/lock/unlock uses the case-scoped PUT status route documented in Admin.md. Dispute resolution serializes with cancellation/payout on the fund lock. Fixed rejoin may confirm obligations and contribute after fully reconciled membership refunds; expense outflows retain their previous guard, and refund formulas are unchanged. Election coverage timestamps with explicit UTC/offset configuration are normalized to UTC before evaluating the 15-day condition.
 
 ## Task 16.1 — implementation and API map
 

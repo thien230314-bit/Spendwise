@@ -46,12 +46,14 @@ public sealed class EmailDeliveryModeTests
         }
     }
 
-    [Fact]
-    public async Task Development_smtp_uses_existing_smtp_path_without_pickup()
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task Valid_smtp_uses_existing_smtp_path_without_pickup(string environment)
     {
         await using var server = new LocalSmtpServer();
         var logger = new CollectingLogger<ConfiguredEmailSender>();
-        var sender = CreateSender(SmtpValues(server.Port), Environments.Development, logger);
+        var sender = CreateSender(SmtpValues(server.Port), environment, logger);
 
         await sender.SendAsync(Message, default);
         var received = await server.MessageReceived.WaitAsync(TimeSpan.FromSeconds(5));
@@ -111,13 +113,15 @@ public sealed class EmailDeliveryModeTests
     }
 
     [Theory]
-    [InlineData("Development")]
-    [InlineData("Production")]
-    public async Task Reserved_test_recipient_is_rejected_before_smtp(string environment)
+    [InlineData("Development", "TEST")]
+    [InlineData("Production", "TEST")]
+    [InlineData("Development", "invalid")]
+    [InlineData("Production", "invalid")]
+    public async Task Reserved_test_recipient_is_rejected_before_smtp(string environment, string domain)
     {
         var sender = CreateSender(SmtpValues(1), environment);
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            sender.SendAsync(Message with { RecipientEmail = "e2e@spendwise.TEST" }, default));
+            sender.SendAsync(Message with { RecipientEmail = "e2e@spendwise." + domain }, default));
         Assert.Equal("Reserved test recipients cannot be sent through SMTP.", error.Message);
     }
 

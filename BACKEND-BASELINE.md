@@ -2,7 +2,7 @@
 
 Date: 2026-10-20 (Asia/Saigon). Baseline: `98fde85f46887c4f101e6871387cd881a2d3514c`; main; clean workspace. Tasks 11–16 establish implementation history and incremental gap closure. Task 16.1 implements and verifies 4 approved Product Owner business decisions.
 
-Overall Backend V1.0: **FUNCTIONAL COMPLETE (4/4 Approved Decisions Implemented: Fixed Fund Dispute Resolution, Level 1 & Level 2 Account Restrictions, Fresh Membership Episodes & Scoped Rejoin Equity, Owner Election Governance & Timeline Defaults)**. Roles: User and one active system Admin operating five Admin areas; SuperAdmin is disabled.
+Overall Backend V1.0: **PARTIAL**. A1 remains LOCKED (4/4); A2 retains four DONE functions and A2.3 PARTIAL / POLICY_BLOCKED. The four product decisions remain approved. Current source fixes, direct SQL02/HTTP evidence and exact unverified scope are recorded in `backend/docs/CODEX-FINAL-CORE-ACCEPTANCE.md`; all Task 16.x counts below are historical. Roles: User and one active system Admin operating five Admin areas; SuperAdmin is disabled.
 
 Task 16.1 confirms full regression and E2E verification across all systems:
 - Release build: 6 projects compiled cleanly with 0 errors.

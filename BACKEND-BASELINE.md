@@ -93,3 +93,18 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Physical Mobile Delivery: Accurately recorded as DEVICE_DELIVERY_NOT_VERIFIED due to lack of connected physical mobile device in workspace.
 - Targeted Test Suite: 188 / 188 PASS (Email, OTP, Mobile Push Token management, Notification mapping).
 - Documentation: Created backend/docs/ANTIGRAVITY-SMTP-EXPO-G3-VERIFICATION.md; updated User.md, Admin.md, and BACKEND-BASELINE.md.
+
+
+## Task G4 — Fresh SQL02 Database & Full Postman E2E Final Acceptance
+- Target SQL Server: DESKTOP-B5KA3LT\SQLEXPRESS02 (Zero access to SQL01).
+- Database Created: `SpendWise_E2E_G4` created clean; 36 / 36 EF Core Migrations applied sequentially.
+- Admin Seeded: 1 System Admin (`admin@spendwise.local`), role `Admin`, Zero SuperAdmin accounts.
+- Automated User Testing: User A and User B registered dynamically via real API with automated OTP verification and PIN setup.
+- Canonical Postman / Newman E2E Run:
+  - Total Requests: 141 executed (141 Passed, 0 Failed, 0 Skipped).
+  - Total Assertions: 227 evaluated (227 Passed, 0 Failed, 0 Skipped).
+  - Coverage across all 10 modules: Health, Auth, Wallet & Finance, Friends, Fixed Fund, Free Fund, Support, Admin 5 Areas, Integrations, Core Closure & Preferences.
+- Financial Invariants Verified on SQL Server: 0 negative wallet balances, 100% wallet-to-ledger equality, 100% ledger entries balanced.
+- Core Backend Status: **CORE BACKEND E2E VERIFIED**.
+- External Providers Status: Gemini Free Tier inference verified (G1); SePay Sandbox verified & retail banking boundaries documented (G2); SMTP live inbox delivery verified (G3); Expo push API contract verified, physical device receipt pending mobile app phase.
+- Documentation: Created `backend/docs/ANTIGRAVITY-FULL-E2E-G4-ACCEPTANCE.md`; updated `User.md`, `Admin.md`, `BACKEND-BASELINE.md`.

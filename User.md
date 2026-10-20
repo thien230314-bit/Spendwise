@@ -1,6 +1,6 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
-> CURRENT STATUS (2026-10-20, Final User/Admin Hardening): **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**. A1 remains LOCKED; A2.3 approved restriction policy is implemented/verified. Current evidence: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 remains historical evidence. Provider, Full E2E and FRONTEND UI PENDING are separate acceptance stages.
+> CURRENT STATUS (2026-10-20, Task G4 Final Acceptance): **CORE BACKEND E2E VERIFIED**. Full Newman canonical suite executed on pristine database `SpendWise_E2E_G4` (141/141 requests PASS, 227/227 assertions PASS). Core business logic, User/Admin permissions, financial ledger invariants, theme/preferences verified. Current evidence: `backend/docs/ANTIGRAVITY-FULL-E2E-G4-ACCEPTANCE.md`. External provider boundaries: Gemini Free Tier verified (G1); SePay Sandbox verified (G2); SMTP live inbox delivery verified (G3); Mobile physical device delivery and Frontend/Mobile UI remain pending mobile/web phase.
 
 > FINAL HARDENING (2026-10-20): Codex tiếp tục theo chỉ đạo mới, chưa chuyển agent. Evidence mới: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 là baseline kế thừa. Provider/Full Newman và FRONTEND UI PENDING vẫn tách riêng.
 

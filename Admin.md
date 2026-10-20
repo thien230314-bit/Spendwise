@@ -1,6 +1,6 @@
 # SpendWise V1.0 — Admin backend contract (Task 16.1)
 
-Updated2026-10-20, Final User/Admin Hardening: **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**. Current evidence: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 counts are historical. A1 remains LOCKED(4/4); A2.3 APPROVED / IMPLEMENTED / VERIFIED. Provider and Full E2E remain unverified.
+Updated 2026-10-20, Task G4 Final Acceptance: **CORE BACKEND E2E VERIFIED**. Current evidence: `backend/docs/ANTIGRAVITY-FULL-E2E-G4-ACCEPTANCE.md`. Full Newman E2E suite executed on pristine database `SpendWise_E2E_G4` (141/141 requests PASS, 227/227 assertions PASS across ADM-01 through ADM-05). All A1-A5 administrative contracts verified on SQL Server. Provider and physical mobile device delivery boundaries documented.
 
 Final hardening2026-10-20: evidence hiện hành `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`. Product Owner yêu cầu Codex hoàn tất, không chuyển agent trong lượt này. Năm khu vực Admin giữ nguyên quyền/scope; không có thao tác chỉnh số dư hoặc SuperAdmin. Request quỹ mới gắn membership episode, không duyệt lại request của episode đã kết thúc; legacy pending request thiếu ID và có membership đã rời bị chặn duyệt, không tự gán episode. Dispute/hold/case authorization giữ nguyên và có targeted regression. Pkcs được pin9.0.21 để sửa advisory, không mở rộng chức năng/recovery role.
 

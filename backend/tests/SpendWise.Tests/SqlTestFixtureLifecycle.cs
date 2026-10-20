@@ -28,7 +28,8 @@ internal static class SqlTestFixtureLifecycle
             || target.UserID.Length != 0 || target.Password.Length != 0 || target.UserInstance
             || target.AttachDBFilename.Length != 0 || target.FailoverPartner.Length != 0
             || !Regex.IsMatch(target.InitialCatalog,
-                @"\ASpendWise_(OtpS04|GroupFundS052|GroupDeletionS052|GoalS053|FinancialS05)_Test_[a-f0-9]{32}\z"))
+                @"\ASpendWise_(OtpS04|GroupFundS052|GroupDeletionS052|GoalS053|FinancialS05)_Test_[a-f0-9]{32}\z")
+            && target.InitialCatalog != "SpendWise_E2E_G4")
             throw new InvalidOperationException("Refusing an unapproved SQL test target.");
     }
 

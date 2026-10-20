@@ -59,3 +59,7 @@ The following external integrations remain intentionally deferred / unverified i
 ## Task 17 — chỉ đạo bổ sung Product Owner
 
 Theme Light/Dark/System, VI/EN bắt buộc; Backend lưu theo tài khoản, kiểm chứng HTTP/SQL02 đổi tài khoản và fresh login; Frontend/Mobile UI PENDING. Cho phép một lượt canonical Core Newman sau targeted PASS và SQL02 isolation; khi lỗi chỉ chạy lại nhóm bị ảnh hưởng. Không gọi thêm mô hình AI review. Phân loại Core E2E, provider và UI riêng. Giữ nguyên nạp/rút đã duyệt: đủ available balance mới cho chọn, backend kiểm tra lại, không nạp phần, chỉ cộng ví sau xác nhận toàn bộ; SePay live balance/debit phải xác minh riêng, không tuyên bố từ fake/Test Mode.
+
+## Final User/Admin Hardening — 2026-10-20
+
+Chỉ đạo mới yêu cầu Codex tiếp tục; tạm thay phân công chuyển Antigravity trong Task17. Không đổi bốn quyết định đã duyệt. Sửa triển khai Decision3: Free refund counter theo episode, withdrawal/request mới lưu membership ID; không dùng thời gian làm định danh episode và không duyệt request từ episode đã kết thúc. Legacy completed rows dùng fallback lịch sử; pending request thiếu ID với membership đã rời bị chặn duyệt thay vì đoán episode. Không backfill tiền/ownership tự động. Thêm một nullable column bằng migration nguồn, chưa apply Production. Dependency Pkcs9.0.4 từ SqlClient6.1.1 được override9.0.21 (bản vá cùng major). Evidence/giới hạn trong `CODEX-USER-ADMIN-FINAL-HARDENING.md`. Không Full Newman/provider live/UI trong lượt này.

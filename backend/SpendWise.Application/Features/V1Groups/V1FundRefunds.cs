@@ -604,8 +604,8 @@ public sealed partial class V1FundService
             foreach (var m in activeMembers)
             {
                 var contrib = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
-                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId && w.CreatedAt >= m.JoinedAt).Sum(w => w.AmountVnd);
-                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
+                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId && (w.RequestedByMembershipId == m.Id || (w.RequestedByMembershipId == null && w.CreatedAt >= m.JoinedAt))).Sum(w => w.AmountVnd);
+                var priorRef = m.RefundedVnd ?? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
                 var net = Math.Max(0, contrib - wd - priorRef);
                 memberNetEquity[m.UserId] = net;
             }

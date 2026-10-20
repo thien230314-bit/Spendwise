@@ -6,6 +6,7 @@ public sealed class V1FundRequest : BaseEntity
 {
     public Guid FundId { get; set; }
     public Guid RequestedByUserId { get; set; }
+    public Guid? RequestedByMembershipId { get; set; }
     public Guid RecipientUserId { get; set; }
     public long OwnershipRevision { get; set; }
     public string Kind { get; set; } = string.Empty;

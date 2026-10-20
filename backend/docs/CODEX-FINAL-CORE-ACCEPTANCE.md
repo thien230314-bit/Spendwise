@@ -1,6 +1,6 @@
 # SpendWise V1.0 — Codex core acceptance
 
-> Historical pre-Task17 acceptance record. Current status, resolved gaps and fresh test evidence are in `CODEX-TASK17-CORE-CLOSURE.md`. PARTIAL/POLICY_BLOCKED and NOT RUN entries below describe that earlier run only.
+> Historical pre-Task17 acceptance record. Current evidence is in `CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 remains an intermediate historical record. PARTIAL/POLICY_BLOCKED and NOT RUN entries below describe that earlier run only.
 
 Date: 2026-10-20. Result: **CORE BACKEND PARTIAL**.
 

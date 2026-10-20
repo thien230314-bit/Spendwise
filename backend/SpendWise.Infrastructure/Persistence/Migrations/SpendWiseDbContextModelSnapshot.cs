@@ -5071,6 +5071,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("RecipientUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("RequestedByMembershipId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
 

@@ -1,8 +1,8 @@
 # SpendWise V1.0 — Current Backend Acceptance (Task 16.3)
 
 **Date:** 2026-10-20  
-**Overall Core Backend Status:** **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**
-**Current evidence:** `CODEX-TASK17-CORE-CLOSURE.md` supersedes historical statuses/counts below. A1 remains LOCKED; A2.3 approved policy verified; maintenance core safety verified on owned SQL02 fixtures. Live providers, production migration and full E2E are not covered.
+**Overall Core Backend Status:** **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**
+**Current evidence:** `CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 and counts below are historical. A1 remains LOCKED; A2.3 approved policy verified. Core targeted checks do not verify provider live, Full E2E, UI or Production deployment.
 **Evidence Records:** `TASK16.2-FINAL-AUDIT.md`, `TASK16.3-STABILIZATION.md`, `TEST-ENVIRONMENT-BASELINE.md`  
 
 ---

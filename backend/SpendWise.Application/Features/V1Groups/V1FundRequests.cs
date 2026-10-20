@@ -60,6 +60,7 @@ public sealed partial class V1FundService
             var fund = await LockFundAsync(fundId, token);
 
             await RequireMemberAsync(actor, fundId, token);
+            var membershipId = await db.V1FundMemberships.Where(m => m.FundId == fundId && m.UserId == actor && m.LeftAt == null).Select(m => m.Id).SingleAsync(token);
 
 
 
@@ -162,6 +163,7 @@ public sealed partial class V1FundService
                         {
 
                             FundId = fundId,
+                            RequestedByMembershipId = membershipId,
 
                             RequestedByUserId = actor,
 
@@ -278,6 +280,7 @@ public sealed partial class V1FundService
                 {
 
                     FundId = fundId,
+                    RequestedByMembershipId = membershipId,
 
                     RequestedByUserId = actor,
 
@@ -326,6 +329,7 @@ public sealed partial class V1FundService
                 {
 
                     FundId = fundId,
+                    RequestedByMembershipId = membershipId,
 
                     RequestedByUserId = actor,
 
@@ -424,6 +428,9 @@ public sealed partial class V1FundService
                 throw new ConflictException("fund_request_hold_active", "The server-side 24-hour hold has not elapsed.");
 
             await RequireMemberAsync(item.RequestedByUserId, fund.Id, token);
+            if ((item.RequestedByMembershipId is { } membershipId && !await db.V1FundMemberships.AnyAsync(m => m.Id == membershipId && m.LeftAt == null, token))
+                || (item.RequestedByMembershipId == null && await db.V1FundMemberships.AnyAsync(m => m.FundId == fund.Id && m.UserId == item.RequestedByUserId && m.LeftAt != null, token)))
+                throw new ConflictException("fund_request_membership_changed", "The requesting membership episode has ended.");
 
             await RequireActorAsync(item.RecipientUserId, token);
 

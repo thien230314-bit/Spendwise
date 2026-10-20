@@ -4,6 +4,8 @@ Date: 2026-10-20 (Asia/Saigon). Baseline: `98fde85f46887c4f101e6871387cd881a2d35
 
 Current Task 17 core status: **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. A1 remains LOCKED; A2.3 approved two-level restriction policy is IMPLEMENTED / VERIFIED. Current evidence and exact limits: `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`. All Task 16.x results below are historical. This status does not certify external providers, production deployment or full E2E. Roles remain User and one active system Admin across five areas; SuperAdmin remains disabled.
 
+Final hardening2026-10-20: **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**. Evidence: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`. Free Fund membership-episode refund/withdrawal and stale request admission fixed; Pkcs pinned9.0.21, current NuGet audit clean; final Release build0 errors/0 warnings. Task17 and Task16 counts remain historical. No Full Newman/provider/UI/Production migration in this pass; Codex completes this task under the latest instruction, without agent transfer.
+
 Task 16.1 confirms full regression and E2E verification across all systems:
 - Release build: 6 projects compiled cleanly with 0 errors.
 - Non-SQL suite: 1,109 passed, 0 failed, 0 skipped.

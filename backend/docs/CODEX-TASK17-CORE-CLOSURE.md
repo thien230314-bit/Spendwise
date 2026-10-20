@@ -1,5 +1,7 @@
 # Task 17 — đóng khoảng trống Core Backend và bàn giao
 
+> Task17 historical handoff. Product Owner subsequently requested Codex to continue hardening without agent transfer. Current evidence: `CODEX-USER-ADMIN-FINAL-HARDENING.md`. Earlier Pkcs warnings and handoff assignments below describe that run; final hardening supersedes them.
+
 Ngày 2026-10-20, nhánh `main`. HEAD đầu vào `6064f932a22f81f80346d2d85284357993b7963e`, workspace sạch; fetch đầu/cuối không phân kỳ với origin/main. Báo cáo này thay thế các trạng thái còn thiếu của báo cáo nghiệm thu trước; không thay lịch sử các lượt kiểm thử cũ.
 
 **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. A1 giữ LOCKED (4/4); A2.3 **APPROVED / IMPLEMENTED / VERIFIED** theo chính sách hai cấp đã được Product Owner phê duyệt. Đây không phải chứng nhận Production hoặc 100% Final E2E. Chỉ đạo cuối chuyển External API và Full Postman/Newman sang **Antigravity**; Codex dừng tại bàn giao Task 17.

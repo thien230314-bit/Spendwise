@@ -77,7 +77,7 @@ User.md/Admin.md đồng bộ episode guards và giới hạn; AGENTS.md chỉ �
 
 ## F. Git
 
-Before `e3f28b4991d481e7c31994c033699622a35149a3`, main sạch, origin/main0/0. Scoped changes: FundRequests/FundRefunds, V1FundRequest entity, one migration + Designer/model snapshot, Infrastructure.csproj, FinalUserAdminSqlHttpTests và các docs nêu trên. Commit/push SHA thực tế được ghi sau publish; explicit staging, full staged-blob secret scan và fetch trước push, không force.
+Before `e3f28b4991d481e7c31994c033699622a35149a3`, main sạch, origin/main0/0. Scoped changes: FundRequests/FundRefunds, V1FundRequest entity, one migration + Designer/model snapshot, Infrastructure.csproj, FinalUserAdminSqlHttpTests và các docs nêu trên. Source/docs commit sau: [`d5f658606ceb577b69c30c440ece58ea3c7851bc`](https://github.com/thien230314-bit/Spendwise/commit/d5f658606ceb577b69c30c440ece58ea3c7851bc), **push PASS** lên `origin/main`; working tree sạch sau source push.17 explicit staged paths; diff check PASS; scan đủ17 staged blobs/741.905 bytes không phát hiện credential/token/private key/connection password/real email. Fetch trước commit0/0, trước push remote ahead0; không force. Commit documentation tiếp theo chỉ ghi SHA/push thực tế; final HEAD ghi ở lời kết chat.
 
 ## G. Kết luận
 

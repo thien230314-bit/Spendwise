@@ -64,4 +64,8 @@ Không còn Core blocker tái hiện được trong các gate Task17 sau final t
 
 ## E. Git và final handoff
 
-Source/docs commit và push được ghi bằng SHA thực tế trong bản handoff cuối. Stage explicit scoped paths, review staged diff, scan toàn bộ staged blobs; fetch main trước push, không force. Không publish config/secrets/DB/log/report raw/pickup/token. Sau bàn giao, Codex dừng Task17.
+- HEAD trước: `6064f932a22f81f80346d2d85284357993b7963e`.
+- Source/docs commit: [`e92d3948621daeb9849550544bf2729104a12cae`](https://github.com/thien230314-bit/Spendwise/commit/e92d3948621daeb9849550544bf2729104a12cae), **push PASS** lên `origin/main`; source working tree sạch sau push.
+- Stage38 explicit scoped files; `git diff --cached --check` PASS; đã review source/fixture/schema/docs và scan toàn bộ38 staged blobs (1.175.248 bytes), không phát hiện token/private key/password connection string/real email. Không publish config/secrets/DB/log/raw results/pickup/token.
+- Fetch trước push: local ahead1 / remote ahead0, không conflict, không force. Commit documentation tiếp theo chỉ ghi SHA/push thực tế của source; final HEAD của bản bàn giao nằm trong lời kết chat.
+- Chỉ đạo cuối: Antigravity nhận External APIs và Full Postman/Newman; Codex không khởi chạy thêm Newman/provider, không tiếp tục mở rộng collection, không bắt đầu task mới.

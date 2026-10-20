@@ -44,20 +44,26 @@ public sealed class ChangeUserStatusCommandHandler(
 
             var previousStatus = user.Status;
             user.Status = status;
-            if (previousStatus != status
-                && (previousStatus == UserStatus.Active || status == UserStatus.Active))
+            if (previousStatus != status)
             {
-                // Khóa hoặc kích hoạt lại đều thu hồi credential cũ để buộc đăng nhập mới.
+                // Any status change revokes prior sessions to enforce new status parameters
                 await authentication.RevokeAllSessionsAsync(user.Id, token);
             }
 
+            var auditAction = status switch
+            {
+                UserStatus.Active => "UNLOCK_USER",
+                UserStatus.Restricted => "RESTRICT_USER",
+                _ => "LOCK_USER"
+            };
+
             audit.Add(
                 command.AdminId,
-                status == UserStatus.Active ? "UNLOCK_USER" : "LOCK_USER",
+                auditAction,
                 "User",
                 command.UserId.ToString(),
                 command.Request.Reason,
-                null);
+                new { PreviousStatus = previousStatus.ToString(), NewStatus = status.ToString() });
             await db.SaveChangesAsync(token);
 
             return AdminMappings.ToDto(user);

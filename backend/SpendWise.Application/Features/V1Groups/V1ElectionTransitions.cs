@@ -58,6 +58,8 @@ public sealed partial class V1FundService
         return await WithElectionAsync(actor, id, async (e, fund, token) =>
         {
             await RequireElectorAsync(actor, id, token);
+            var winner = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == actor, token);
+            if (winner?.Status != SpendWise.Domain.Identity.UserStatus.Active) throw new ForbiddenException("account_not_active", "Winner account is not active.");
             if (e.WinnerUserId != actor) throw new ForbiddenException("not_elected_candidate", "Only the elected candidate may accept.");
             if (e.Phase == V1ElectionPhase.Completed) return ElectionDto(e);
             if (e.Phase != V1ElectionPhase.AwaitingAcceptance || await PhaseExpiredAsync(e, token)) throw new ConflictException("election_acceptance_closed", "Acceptance is unavailable.");
@@ -74,5 +76,20 @@ public sealed partial class V1FundService
             return ElectionDto(e);
         }, ct);
     }
+    public async Task<V1ElectionDto> RejectElectedOwnershipAsync(Guid actor, Guid id, string pin, CancellationToken ct)
+    {
+        await RequireActorAsync(actor, ct); await security.VerifyAsync(actor, pin, ct);
+        return await WithElectionAsync(actor, id, async (e, fund, token) =>
+        {
+            await RequireElectorAsync(actor, id, token);
+            if (e.WinnerUserId != actor) throw new ForbiddenException("not_elected_candidate", "Only the elected candidate may reject.");
+            if (e.FinishedAt is not null) return ElectionDto(e);
+            if (e.Phase != V1ElectionPhase.AwaitingAcceptance || await PhaseExpiredAsync(e, token)) throw new ConflictException("election_acceptance_closed", "Acceptance/rejection is unavailable.");
+            FailElection(e, "WinnerRejected");
+            await ActivityAsync(fund.Id, actor, "ElectionOwnershipRejected", token, e.IncumbentUserId, referenceId: id);
+            return ElectionDto(e);
+        }, ct);
+    }
+
     private void FailElection(V1Election e, string reason) { e.Phase = V1ElectionPhase.Failed; e.FailureReason = reason; e.FinishedAt = clock.UtcNow; }
 }

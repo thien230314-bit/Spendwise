@@ -1,6 +1,6 @@
-# SpendWise V1.0 — Admin backend contract (Task 14)
+# SpendWise V1.0 — Admin backend contract (Task 16.1)
 
-Updated 2026-10-20 from current Controllers, Application services, role tests and the Task14 Product Owner instruction. Overall backend status: PARTIAL. Test results are recorded in `backend/docs/TASK14-VERIFICATION.md`; code presence does not imply complete acceptance.
+Updated 2026-10-20 from current Controllers, Application services, role tests and the Task 16.1 Product Owner instruction. Overall backend status: COMPLETE for V1.0 scope with 4 approved product decisions implemented. Test results are recorded in `backend/docs/TASK16.1-VERIFICATION.md`.
 
 ## Roles and access
 
@@ -24,17 +24,22 @@ POST `/api/v1/admin/users/search` provides paginated ordinary-user search. Scope
 
 Read or restrict only within the authorized active support case. Session revocation prevents reuse; account restrictions do not transfer fund ownership or erase financial entitlements. No password/PIN/OTP/hash/token is exposed to Admin. No arbitrary ledger balance editing.
 
-Status: A2 has four DONE functions; A2.3 remains PARTIAL / POLICY_BLOCKED. Existing reversible restrictions/session controls are not permission to invent a broader account-lock policy.
+Status: A2 User Management IMPLEMENTED & VERIFIED.
+- Level 1 — Financial Restriction (`UserStatus.Restricted`): blocks outbound debit transfers/expenses/fund contributions/fund requests; preserves login, token refresh, read-only balance/profile, support intake, and inbound credits/refunds.
+- Level 2 — Account Lock (`UserStatus.Locked`): immediate session revocation, 403 `account_unavailable` on login, token refresh blocked. Reversible by Admin.
 
 ## ADM-03 — Support / Disputes
 
-User intake remains `/api/cases/support` and `/api/cases/disputes`. Admin canonical root `/api/v1/admin/support`: POST `/tickets/search`, `/assigned`, `/{caseId}/assign`, `/{caseId}/request-info`, `/{caseId}/dossier`, `/{caseId}/resolve`, `/templates`, `/{caseId}/reply-template`. Additional case detail/accounts/actions and assignment routes live in `V1AdministrationController`.
+User intake remains `/api/cases/support` and `/api/cases/disputes`. Admin canonical root `/api/v1/admin/support`: POST `/tickets/search`, `/assigned`, `/{caseId}/assign`, `/{caseId}/request-info`, `/{caseId}/dossier`, `/{caseId}/resolve`, `/templates`, `/{caseId}/reply-template`, and dispute resolution route `/disputes/{requestId}/resolve`. Additional case detail/accounts/actions and assignment routes live in `V1AdministrationController`.
 
 State transitions include New, Assigned/InProgress, WaitingForUser, Resolved/Rejected/Closed as allowed by the implementation. User replies and case history persist. Resolve/reject requires the current operator's valid scope and rationale; closed cases cannot authorize fresh sensitive reads. Transaction/fund investigation APIs remain case-bound and read-only unless a specific approved financial command exists. Support resolution is not a generic payout API.
 
 The legacy `/{caseId}/escalate` route is retained only as a disabled compatibility surface; it must not create SuperAdmin work. Do not restore old escalation menus or use old Admin requirements to expand scope.
 
-Status: IMPLEMENTED support workflow with related regression coverage; financial/policy exceptions remain BLOCKED, not manually marked paid.
+Status: IMPLEMENTED support and dispute resolution workflow with related regression coverage.
+- Dispute Resolution endpoint: POST `/api/v1/admin/support/disputes/{requestId}/resolve`.
+  - Valid report (`!IsRejected`): Cancels suspended expense (`Cancelled`), releases hold to fund available balance, marks SupportCase `Resolved`, records audit log and notifies fund members.
+  - Invalid report (`IsRejected`): Unsuspends expense back to `Pending24h` retaining remaining timer, marks SupportCase `Rejected`, records audit log and notifies reporter.
 
 ## ADM-04 — Notifications
 

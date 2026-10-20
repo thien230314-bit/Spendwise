@@ -503,7 +503,7 @@ public sealed partial class V1FundService
                 var paid = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
                 var required = obligations.SingleOrDefault(o => o.MembershipId == m.Id)?.RequiredVnd ?? 0;
                 var lockedExcess = Math.Max(0, paid - required);
-                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId).Sum(r => (long)r.Amount);
+                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
                 var protectedExcess = Math.Max(0, lockedExcess - priorRef);
                 memberStats[m.UserId] = (paid, required, lockedExcess, priorRef, protectedExcess);
                 totalProtectedExcess += protectedExcess;
@@ -630,9 +630,9 @@ public sealed partial class V1FundService
             var memberNetEquity = new Dictionary<Guid, long>();
             foreach (var m in activeMembers)
             {
-                var contrib = contributions.Where(c => c.UserId == m.UserId).Sum(c => c.AmountVnd);
-                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId).Sum(w => w.AmountVnd);
-                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId).Sum(r => (long)r.Amount);
+                var contrib = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
+                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId && w.CreatedAt >= m.JoinedAt).Sum(w => w.AmountVnd);
+                var priorRef = previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
                 var net = Math.Max(0, contrib - wd - priorRef);
                 memberNetEquity[m.UserId] = net;
             }
@@ -674,7 +674,7 @@ public sealed partial class V1FundService
             {
                 foreach (var targetUserId in singleMemberUserIds!)
                 {
-                    if (!memberNetEquity.TryGetValue(targetUserId, out var net))
+                    if (!memberNetEquity.TryGetValue(targetUserId, out var net) || net <= 0)
                     {
                         results[targetUserId] = (0, "NoContribution");
                         continue;
@@ -691,7 +691,7 @@ public sealed partial class V1FundService
                         if (sumNetEquity > 0)
                             share = (long)Math.Floor((decimal)currentBalance * net / sumNetEquity);
                         else
-                            share = (long)Math.Floor((decimal)currentBalance / activeMembers.Count);
+                            share = 0;
 
                         var refund = Math.Max(0, Math.Min((long)currentBalance, share));
                         results[targetUserId] = (refund, "CaseC_FreeSharedExpenseClearShare");

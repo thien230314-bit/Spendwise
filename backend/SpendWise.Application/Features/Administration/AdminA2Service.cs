@@ -97,9 +97,18 @@ public sealed partial class AdminA2Service(ISpendWiseDbContext db, PlatformPermi
             var user = await db.Users.AsNoTracking().SingleAsync(u => u.Id == userId, token);
             var wallets = await db.Wallets.AsNoTracking().Where(w => w.OwnerUserId == userId).OrderBy(w => w.Id)
                 .Select(w => new A2WalletState(w.Id, w.Type.ToString(), w.Status.ToString())).ToListAsync(token);
+            var restrictionLevel = user.Status switch
+            {
+                UserStatus.Restricted => "Level 1: Financial Restriction (Outbound debits blocked, read/login preserved)",
+                UserStatus.Locked => "Level 2: Account Lock (Login blocked, sessions revoked)",
+                UserStatus.Suspended => "Suspended (Pending security review)",
+                _ => "None (Active)"
+            };
             return new A2Restrictions(user.Status.ToString(), user.LastLoginAt is {} at ? Utc(at) : null,
-                await db.UserSessions.CountAsync(s => s.UserId == userId && s.RevokedAt != null, token), false, "POLICY_BLOCKED", wallets,
-                "Stored status only; decision actor/reason/time require matching history evidence. Login status, session revocation and Legacy wallet freeze are separate; no new outgoing-money restriction is inferred.");
+                await db.UserSessions.CountAsync(s => s.UserId == userId && s.RevokedAt != null, token),
+                user.Status == UserStatus.Restricted || user.Status == UserStatus.Locked,
+                restrictionLevel, wallets,
+                "Decision 2 approved: Level 1 Financial Restriction allows login, balances, incoming/refunds while blocking outbound debits; Level 2 Account Lock disables login/sessions.");
         }, ct);
 
     public async Task RevokeAsync(ClaimsPrincipal principal, Guid caseId, Guid userId, A2RevokeRequest request, CancellationToken ct)

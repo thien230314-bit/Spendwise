@@ -27,6 +27,8 @@ public sealed partial class V1FundService
         WithElectionAsync(actor, id, async (e, fund, token) =>
         {
             await RequireElectorAsync(actor, id, token);
+            var voter = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == actor, token);
+            if (voter?.Status != SpendWise.Domain.Identity.UserStatus.Active) throw new ForbiddenException("account_not_active", "Voter account is not active.");
             var replay = await db.V1ElectionBallots.AsNoTracking().SingleOrDefaultAsync(b => b.ElectionId == id && b.VoterUserId == actor && b.Round == request.Round, token);
             if (replay is not null)
             {

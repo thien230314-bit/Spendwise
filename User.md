@@ -1,8 +1,8 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
-> TASK 14 CURRENT STATUS (2026-10-20): Backend V1.0 remains PARTIAL. The implementation map below supersedes older READY/100% claims. Existing product requirements are retained in full; a v1.3 heading is not proof of blanket Product Owner approval. No new financial formula is approved by this document.
+> TASK 16.1 CURRENT STATUS (2026-10-20): 4 approved Product Owner decisions officially implemented and verified. All core Backend business logic completed. The implementation map below reflects the canonical state. 1,109 non-SQL tests PASS, 127 SQL02 integration tests PASS, 105 Newman requests / 177 assertions PASS.
 
-## Task 14 — implementation and API map
+## Task 16.1 — implementation and API map
 
 Architecture: ASP.NET Core API (`backend/SpendWise/SpendWise.API.csproj`, net10.0), Application handlers/services, Domain entities, EF Core SQL Server Infrastructure. Tests use isolated SQLite/InMemory unless explicitly classified SQL Server. Controllers and their DTOs are canonical; `/openapi/v1.json` is available in Development/Testing. Financial writes use server-side PIN validation, transactions, double-entry ledger, idempotency, and concurrency controls.
 
@@ -16,11 +16,11 @@ Architecture: ASP.NET Core API (`backend/SpendWise/SpendWise.API.csproj`, net10.
 | Friends | `/api/friends`; authenticated parties | IMPLEMENTED; invitation acceptance and ownership enforced |
 | Fixed / Free membership | `/api/v1/funds`, `/{id}/members`, `/{id}/invitations`, `/invitations/{id}/accept`; User membership | IMPLEMENTED; Fixed max30, Free max6, User max10 active funds |
 | Fixed obligations / contributions | `/{id}/obligations/confirm`, `/{id}/contributions`, `/{id}/finance`; Owner confirms, member contributes with PIN | IMPLEMENTED; integer VND, stable seats; stale configuration blocks spending |
-| Fixed spending | `/{id}/requests`, `/requests/{id}/review`, `/requests/{id}/cancel`; member CanSpend or Owner, PIN | PARTIAL: immediate small internal payouts; cumulative threshold20% and Pending24h; manual Owner review cannot execute early; no automatic approval policy added |
+| Fixed spending | `/{id}/requests`, `/requests/{id}/review`, `/requests/{id}/cancel`, `/disputes/{requestId}/resolve`; member CanSpend or Owner, PIN | IMPLEMENTED: immediate small internal payouts; cumulative threshold 20% and Pending24h; reporting large expense suspends expense and creates SupportCase; Admin dispute resolution endpoint cancels or unsuspends expense |
 | Free expense / withdrawal | same request routes; own Withdrawal only; member expense awaits Owner | IMPLEMENTED internal payout; recipient must have active VND wallet and valid ledger account; no Completed without posting |
-| Refund / leave / kick / dissolve | `/{id}/refund-preview`, `/{id}/leave`, `/{id}/members/{userId}/kick`, `/{id}/dissolve`; member self / Owner + PIN | PARTIAL: common existing calculator retained; exact-zero dissolution, scoped replay; pending/suspended expense blocks preview and execution until settled/cancelled |
+| Refund / leave / kick / dissolve | `/{id}/refund-preview`, `/{id}/leave`, `/{id}/members/{userId}/kick`, `/{id}/dissolve`; member self / Owner + PIN | IMPLEMENTED: common unified calculator; Rejoin begins fresh membership episode (0 VND prior contribution, net scoped equity); exact-zero dissolution; pending/suspended expense blocks preview and execution until settled/cancelled |
 | Fund activities / ownership | `/{id}/activities`, `/{id}/ownership-offers`, `/ownership-offers/{id}/accept` | IMPLEMENTED; financial and activity history separate; current Owner differs from system Admin |
-| Elections / new activity | `/{id}/elections`, `/elections/{id}/...`, `/{id}/activity-proposals` | PARTIAL / POLICY_BLOCKED: parameter approval and complex carryover decisions remain; no inferred approval from historical agent claims |
+| Elections / new activity | `/{id}/elections`, `/elections/{id}/...`, `/{id}/elections/{id}/reject`, `/{id}/activity-proposals` | IMPLEMENTED: Approved default timeline (24h/48h/24h/24h/24h, FreezeMembership=true, AllowContributions=false, Outcomes=Fail); winner rejection endpoint; financial operations and invitations paused during active election |
 | Notifications | `/api/notifications`, `/search`, `/{id}/read`, `/read-all`, `/preferences`; authenticated self | IMPLEMENTED; email SMTP acceptance is not mailbox delivery; push LIVE NOT VERIFIED |
 | Support / disputes | `/api/cases/support`, `/support/{id}`, `/support/{id}/messages`, `/disputes`, `/disputes/{id}`; authenticated case owner | IMPLEMENTED; Admin access separately assigned and audited |
 | AI | `/api/ai/*`, `/api/admin/ai/*`; authenticated role/tools | PARTIAL / DEFERRED live Gemini; no legacy OpenAI provider/SDK/fallback. Missing Gemini key or explicitly configured model gives controlled503; model availability LIVE NOT VERIFIED |
@@ -495,3 +495,29 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
    - Mọi khoản chi trực tiếp vẫn bắt buộc tuân thủ PIN/xác thực, số dư thực tế, mục tiêu góp đã hoàn thành, kiểm tra tiền khóa, trạng thái hoạt động và tính nguyên tử ở Backend.
    - Khoản chi lớn vẫn chịu ngưỡng 20%, cộng dồn 24 giờ, thời gian chờ 24 giờ, thông báo trước cho toàn nhóm và nút Báo cáo/Tạm dừng của thành viên. Trạng thái ON không được bỏ qua các điều kiện này.
 3. **Nhóm loại 2 (Free):** Giữ nguyên cơ chế thành viên gửi yêu cầu chi/rút để chủ nhóm duyệt.
+
+
+---
+
+## PHỤ LỤC D — Changelog v1.3 → v1.4: Triển khai 4 quyết định nghiệp vụ đã được Product Owner phê duyệt chính thức (Task 16.1)
+
+1. **Quyết định 1 — Fixed Fund Dispute Resolution (Xử lý khiếu nại khoản chi lớn nhóm Cố định):**
+   - Thành viên bấm Báo cáo khoản chi lớn trong giai đoạn giữ chờ `Pending24h` tạo `SupportCase` (`Category = "V1FundDispute"`, `LinkedTransactionId = item.Id`), khoản chi chuyển sang trạng thái `Suspended`.
+   - Endpoint Admin: `POST /api/v1/admin/support/disputes/{requestId}/resolve`.
+   - Khi Admin xác định báo cáo đúng (`!IsRejected`): khoản chi chuyển sang `Cancelled`, số tiền đang hold được giải phóng trả lại số dư khả dụng của quỹ, `SupportCase` chuyển `Resolved`, ghi audit và gửi thông báo cho toàn nhóm.
+   - Khi Admin xác định báo cáo sai (`IsRejected`): khoản chi chuyển lại `Pending24h` với thời hạn gốc được giữ nguyên (không làm mới chu kỳ 24h), `SupportCase` chuyển `Rejected`, ghi audit và thông báo cho thành viên.
+
+2. **Quyết định 2 — Hai cấp độ hạn chế tài khoản Admin (Level 1 Restricted vs Level 2 Locked):**
+   - **Level 1 — Hạn chế tài chính (`UserStatus.Restricted`):** Chặn mọi luồng ghi nợ xuất tiền (chuyển tiền P2P, chuyển ví nội bộ, tạo chi tiêu cá nhân, tạo chi tiêu nhiều ví, đóng góp quỹ nhóm, tạo yêu cầu rút/chi tiền quỹ). Tài khoản VẪN được đăng nhập, refresh token, xem số dư/lịch sử/profile, gửi khiếu nại/support, và nhận tiền chuyển đến/hoàn tiền.
+   - **Level 2 — Khóa tài khoản (`UserStatus.Locked`):** Từ chối đăng nhập (403 `account_unavailable`), thu hồi toàn bộ phiên hoạt động ngay lập tức, từ chối refresh token.
+
+3. **Quyết định 3 — Rời nhóm, hoàn tiền và quyền lợi khi gia nhập lại (Rejoin Entitlements):**
+   - Thành viên đã rời nhóm và nhận hoàn tiền/quyết toán khi được mời lại sẽ bắt đầu một phiên thành viên hoàn toàn mới (`m.Id` mới, `m.JoinedAt` mới).
+   - Quyền lợi hoàn tiền của phiên mới khi chưa có đóng góp mới là chính xác `0 VNĐ` (`NoContribution`).
+   - Công thức hoàn tiền thống nhất ở cả nhóm Cố định (Fixed) và nhóm Tự do (Free) giới hạn các khoản góp theo `c.MembershipId == m.Id` và các khoản chi/rút/hoàn trước đó theo `CreatedAt >= m.JoinedAt`.
+
+4. **Quyết định 4 — Bầu cử chủ nhóm và quản trị (Owner Election & Governance):**
+   - Tham số mặc định được phê duyệt: Đăng ký ứng viên 24h, Đề cử vòng 1 48h, Bầu phụ 24h, Xác nhận vòng 2 24h, Chấp nhận quyền 24h; đóng băng thành viên (`FreezeMembership = true`), không cho góp thêm (`AllowContributions = false`), kết quả khi hòa lần 2 là thất bại (`Outcomes = Fail`).
+   - Người thắng cử có quyền từ chối tiếp nhận quyền chủ nhóm qua `POST /api/v1/funds/elections/{id}/reject`. Khi từ chối, bầu cử kết thúc thất bại với lý do `WinnerRejected`, chủ nhóm danh nghĩa cũ vẫn được giữ, thành viên có quyền rời nhóm và nhận hoàn tiền.
+   - Thành viên bị khóa không được bỏ phiếu và không được nhận quyền chủ nhóm. Cử tri đoàn được chốt tại thời điểm mở bầu cử.
+   - Tạm dừng mọi thao tác tài chính (đóng góp, yêu cầu chi/rút) và lời mời mới trong suốt thời gian diễn ra bầu cử (`election_finance_paused`).

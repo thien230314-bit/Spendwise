@@ -4,18 +4,18 @@ namespace SpendWise.Application.Features.V1Groups;
 
 public sealed class V1ElectionPolicy
 {
-    public string? Version { get; set; }
-    public int? RegistrationSeconds { get; set; }
-    public int? NominationSeconds { get; set; }
-    public int? RunoffSeconds { get; set; }
-    public int? ConfirmationSeconds { get; set; }
-    public int? AcceptanceSeconds { get; set; }
-    public bool? FreezeMembership { get; set; }
-    public bool? AllowContributions { get; set; }
-    public string? NoCandidatesOutcome { get; set; }
-    public string? NoVotesOutcome { get; set; }
-    public string? AcceptanceExpiryOutcome { get; set; }
-    public string? EligibilityChangeOutcome { get; set; }
+    public string? Version { get; set; } = "V1.0";
+    public int? RegistrationSeconds { get; set; } = 86400;
+    public int? NominationSeconds { get; set; } = 172800;
+    public int? RunoffSeconds { get; set; } = 86400;
+    public int? ConfirmationSeconds { get; set; } = 86400;
+    public int? AcceptanceSeconds { get; set; } = 86400;
+    public bool? FreezeMembership { get; set; } = true;
+    public bool? AllowContributions { get; set; } = false;
+    public string? NoCandidatesOutcome { get; set; } = "Fail";
+    public string? NoVotesOutcome { get; set; } = "Fail";
+    public string? AcceptanceExpiryOutcome { get; set; } = "Fail";
+    public string? EligibilityChangeOutcome { get; set; } = "Fail";
     public V1ElectionPolicySnapshot Snapshot()
     {
         if (string.IsNullOrWhiteSpace(Version) || Version.Length > 100 || RegistrationSeconds is null or <= 0 || NominationSeconds is null or <= 0

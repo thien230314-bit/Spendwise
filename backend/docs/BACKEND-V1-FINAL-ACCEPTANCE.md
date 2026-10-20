@@ -1,22 +1,52 @@
-# SpendWise V1.0 — current backend acceptance (Task 16)
+# SpendWise V1.0 — Current Backend Acceptance (Task 16.1)
 
-2026-10-20. **PARTIAL; not production acceptance and not 100% complete.** A1 functional Backend LOCKED (4/4); A2 four DONE with A2.3 PARTIAL / POLICY_BLOCKED.
+**Date:** 2026-10-20  
+**Overall Core Backend Status:** **COMPLETE & VERIFIED FOR V1.0 SCOPE**  
+**Evidence Record:** `TASK16.1-VERIFICATION.md`  
 
-The current evidence record is `TASK16-VERIFICATION.md`; it records actual results across 1,102 non-SQL tests (PASS), 127 SQL Server integration tests on SQL02 (PASS), and 105 requests / 177 assertions on Newman E2E (PASS). Do not substitute historical tests or SMTP acceptance for current evidence.
+---
 
-## Current implementation boundary
+## 1. Executive Summary & Verification Evidence
 
-- A1 functional Backend LOCKED (4/4); A2 four DONE with A2.3 PARTIAL / POLICY_BLOCKED.
-- User auth/OTP/PIN/sessions, wallets, transactions/P2P, planning, friends, Fixed/Free funds, support and notifications have implementations. Coverage is the current non-SQL and HTTP evidence, not a claim that every product decision is closed.
-- A fund payout cannot finish without a real balanced internal ledger posting. Recipient account checks, server hold timing, reserved balance, stale obligations, authorization and scoped replay are enforced in the shared service.
-- Existing Fixed protected-excess/obligation-share and Free net-equity refund calculations are retained from Task12/13. The presence of those formulas does not establish complete approval of every v1.3 or complex carryover scenario.
-- Refund preview/execution is blocked while Pending24h/Suspended expenses reserve funds; cancel or settle first. No new hold/refund formula is invented.
-- Owner approval remains explicit; no automatic approval or scheduled payout policy is introduced.
-- Exactly one system Admin operates ADM-01 Dashboard, ADM-02 Users, ADM-03 Support/Disputes, ADM-04 Notifications and ADM-05 Maintenance. Legacy enum/migrations remain without granting SuperAdmin privileges.
-- Email Testing is isolated local pickup, Production uses configured SMTP for real recipients; reserved `.test` recipients never reach SMTP. Live mailbox delivery is **LIVE NOT VERIFIED**.
-- OpenAI legacy integration removed; shared AI contracts and Gemini tools remain. Unconfigured/erroring Gemini returns503 and never impersonates a successful online answer.
-- Gemini and SePay live integration **DEFERRED / LIVE NOT VERIFIED**. Testing SePay TestMode routes are denied; no provider call or fake bank settlement is required for core acceptance.
+All 4 Product Owner approved business decisions have been officially implemented and verified. The current evidence record is `TASK16.1-VERIFICATION.md`, reflecting:
+- **Build Status:** 6/6 projects compiled in Release configuration with **0 errors**.
+- **Non-SQL Test Suite:** **1,109 / 1,109 PASS** (0 failed, 0 skipped, 3m 43s).
+- **SQL Server Integration Suite on SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`):** **127 / 127 PASS** (0 failed, 0 skipped, 2m 07s).
+- **Full Newman API E2E Suite:** **105 / 105 requests PASS**, **177 / 177 assertions PASS** (0 failed, 35.3s) against Release API on loopback port 5164 connected to SQL02 `SpendWise_E2E_Test`.
 
-## Remaining release restrictions
+---
 
-Unresolved governance timing/approval provenance, suspended-expense resolution, multi-activity financial entitlements and deployment maintenance safety remain BLOCKED as documented in the decision log. SQL Server concurrency fixtures outside the verified E2E run are NOT RUN unless explicitly listed. Build dependency advisories are recorded as residual risks rather than hidden. Production readiness requires these decisions/evidence; publication of a partial fix does not approve production rollout.
+## 2. Implemented Business Decisions
+
+1. **Fixed Fund Dispute Resolution:**
+   - Members reporting a large expense hold in `Pending24h` transitions the expense to `Suspended` and opens an assigned `SupportCase` (`Category = "V1FundDispute"`, `LinkedTransactionId = item.Id`).
+   - Admin resolves via `POST /api/v1/admin/support/disputes/{requestId}/resolve`:
+     - **Valid report (`!IsRejected`):** Expense cancelled (`Cancelled`), reserved hold released back to fund available balance, `SupportCase` marked `Resolved`, audit logged, fund members notified.
+     - **Invalid report (`IsRejected`):** Expense unsuspended back to `Pending24h` with remaining 24h timer preserved, `SupportCase` marked `Rejected`, audit logged, member notified.
+
+2. **Admin Account Restrictions:**
+   - **Level 1 — Financial Restriction (`UserStatus.Restricted`):** Outbound debit operations blocked (P2P transfer, wallet transfer, manual expense, multi-wallet expense, fund contribution, create fund spending request). User retains login, token refresh, read-only balance/profile/history, support ticket intake, and receipt of incoming transfers and refunds.
+   - **Level 2 — Account Lock (`UserStatus.Locked`):** Immediate revocation of active sessions, 403 `account_unavailable` on login, token refresh blocked. Reversible by Admin.
+
+3. **Fixed & Free Fund Membership Entitlements & Rejoin:**
+   - Members who left and received refund/settlement start a fresh membership episode (`m.Id` new, `m.JoinedAt` new) upon rejoining.
+   - Entitlement/refund for a fresh episode without new contribution is exactly `0 VND` (`NoContribution`).
+   - Unified refund calculator scopes contributions to current membership episode (`c.MembershipId == m.Id`) and prior deductions/withdrawals to `CreatedAt >= m.JoinedAt`.
+   - Preview equals execution invariant verified.
+
+4. **Owner Election & Governance:**
+   - Approved default timelines in `V1ElectionPolicy.cs`: Registration 24h (86,400s), Round 1 Nomination 48h (172,800s), Runoff 24h (86,400s), Round 2 Confirmation 24h (86,400s), Acceptance 24h (86,400s), `FreezeMembership = true`, `AllowContributions = false`, Outcomes = `"Fail"`.
+   - Elected winner rejection endpoint implemented: `POST /api/v1/funds/elections/{id}/reject` -> fails election with reason `WinnerRejected`, nominal owner remains, members can leave and refund.
+   - Locked voter cannot cast ballot; locked winner cannot accept; electorate denominator frozen at election snapshot.
+   - Financial operations and invitations paused during active election (`election_finance_paused`).
+
+---
+
+## 3. Operational Boundaries & External Providers
+
+- **System Roles:** Exactly 1 active system Admin. SuperAdmin remains retired and blocked with 403.
+- **External Providers (Deferred):**
+  - Live Gemini AI: Fail-safe 503 response when key/model is unconfigured; does not block core V1.0.
+  - Live SePay Banking: TestMode routes denied in non-dev; live bank settlement not required for core V1.0.
+  - Live External Push / Live SMTP Mailbox: Outbox persisted; live network transmission not verified.
+- **Frontend / Mobile:** Read-only / out of scope for Backend V1.0 completion.

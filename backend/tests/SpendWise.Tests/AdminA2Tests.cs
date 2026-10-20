@@ -107,7 +107,7 @@ public sealed class AdminA2Tests
         var page2 = await service.HistoryAsync(p, ticket.Id, user.Id, new("Read page", Page: 2, PageSize: 1), default); Assert.NotEqual(page1.Items[0].Id, page2.Items[0].Id);
         var json = JsonSerializer.Serialize(history); Assert.DoesNotContain("private-unrelated", json); Assert.DoesNotContain("private-recovery-note", json); Assert.DoesNotContain("Duplicate companion", json);
         var state = await service.RestrictionsAsync(p, ticket.Id, user.Id, "Inspect restrictions", default);
-        Assert.Equal("Locked", state.LoginStatus); Assert.False(state.EmergencyOutgoingControlAvailable); Assert.Equal("POLICY_BLOCKED", state.OutgoingControlStatus);
+        Assert.Equal("Locked", state.LoginStatus); Assert.True(state.EmergencyOutgoingControlAvailable); Assert.Contains("Level 2", state.OutgoingControlStatus);
         Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
     }
 

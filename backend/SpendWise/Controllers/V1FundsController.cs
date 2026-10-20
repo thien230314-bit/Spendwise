@@ -96,6 +96,10 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [EnableRateLimiting("financial")]
     public Task<V1ElectionDto> AcceptElection(Guid id, V1PinRequest request, CancellationToken ct) => funds.AcceptElectedOwnershipAsync(Actor, id, request.SecurityPin, ct);
 
+    [HttpPost("elections/{id:guid}/reject")]
+    [EnableRateLimiting("financial")]
+    public Task<V1ElectionDto> RejectElection(Guid id, V1PinRequest request, CancellationToken ct) => funds.RejectElectedOwnershipAsync(Actor, id, request.SecurityPin, ct);
+
     [HttpGet("{id:guid}/contribution-allocation")]
     public Task<V1ContributionAllocationDto> Allocation(Guid id, CancellationToken ct) => funds.ContributionAllocationAsync(Actor, id, ct);
 

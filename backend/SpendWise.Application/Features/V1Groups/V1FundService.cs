@@ -92,6 +92,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             await LockUsersAsync([ownerId, targetId], token);
             var fund = await LockFundAsync(fundId, token);
             await RequireMemberAsync(ownerId, fundId, token);
+            await RequireNoActiveElectionAsync(fundId, token);
             var proposed = fund.Kind == V1FundKind.Fixed && fund.OwnerUserId != ownerId;
             await RequireCapacityAsync(targetId, token);
             await RequireRoomAsync(fund, token);
@@ -130,6 +131,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var invite = await db.V1FundInvitations.AsNoTracking().SingleOrDefaultAsync(i => i.Id == inviteId && i.InvitedUserId == userId, token)
                 ?? throw new NotFoundException("fund_invitation_not_found", "Invitation not found.");
             var fund = await LockFundAsync(invite.FundId, token);
+            await RequireNoActiveElectionAsync(fund.Id, token);
             invite = await db.V1FundInvitations.AsNoTracking().SingleAsync(i => i.Id == inviteId, token);
             if (invite.Status == V1InvitationStatus.Accepted)
             {
@@ -239,7 +241,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
     private async Task RequireActorAsync(Guid userId, CancellationToken ct)
     {
         if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == userId && u.SystemRole == SystemRole.User
-                && u.Status == UserStatus.Active && u.EmailVerifiedAt != null && !u.MustChangePassword, ct))
+                && (u.Status == UserStatus.Active || u.Status == UserStatus.Restricted) && u.EmailVerifiedAt != null && !u.MustChangePassword, ct))
             throw new ForbiddenException("active_user_required", "An active verified User is required.");
     }
 

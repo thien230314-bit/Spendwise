@@ -64,9 +64,9 @@ public sealed class SessionEnforcementTests
     }
 
     [Fact]
-    public async Task Restricted_account_session_is_invalid()
+    public async Task Restricted_account_session_is_valid_for_reading()
     {
-        // Arrange: tài khoản Restricted vẫn còn bản ghi session cũ.
+        // Arrange: theo Quyết định 2, tài khoản Restricted được phép duy trì phiên đọc.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var user = await fixture.AddUserAsync("Restricted user", UserStatus.Restricted);
         var session = await fixture.AddSessionAsync(user.Id);
@@ -75,8 +75,8 @@ public sealed class SessionEnforcementTests
         // Act: kiểm tra phiên của tài khoản Restricted.
         var valid = await validator.IsValidAsync(user.Id, session.Id, default);
 
-        // Assert: chỉ tài khoản Active mới vượt qua validator.
-        Assert.False(valid);
+        // Assert: Quyết định 2 cho phép phiên Restricted để xem số dư, lịch sử, profile.
+        Assert.True(valid);
     }
 
     [Fact]

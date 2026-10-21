@@ -181,6 +181,49 @@ public sealed class EmailFoundationTests
         {
             ["Token"] = "PIN-DEMO-TOKEN", ["ExpiresAt"] = "2026-09-29T12:10:00Z"
         }, "PIN-DEMO-TOKEN");
+        yield return ("email-change-verification", new()
+        {
+            ["Email"] = "new@example.test", ["Otp"] = "71549203", ["Minutes"] = "10"
+        }, "71549203");
+        yield return ("email-change-notice", new()
+        {
+            ["OldEmail"] = "old@example.test", ["NewEmail"] = "new@example.test",
+            ["ChangedAt"] = "2026-10-21 16:00:00 UTC"
+        }, "new@example.test");
+        yield return ("support-info-request", new()
+        {
+            ["TicketNumber"] = "SW-DEMO-001", ["Subject"] = "Yêu cầu bổ sung",
+            ["RequiredDocuments"] = "Hóa đơn thanh toán", ["Note"] = "Chụp rõ nét",
+            ["ActionUrl"] = actionUrl
+        }, "SW-DEMO-001");
+        yield return ("support-fund-investigation", new()
+        {
+            ["TicketNumber"] = "SW-DEMO-001", ["FundName"] = "Quỹ khẩn cấp",
+            ["CurrentPhase"] = "Đối soát ngân hàng", ["Note"] = "Đang tra soát",
+            ["ActionUrl"] = actionUrl
+        }, "SW-DEMO-001");
+    }
+
+    [Fact]
+    public async Task Automated_email_dispatch_uses_fake_sender_and_never_sends_externally()
+    {
+        var fakeSender = new RecordingSender();
+        var message = new EmailMessage("safe-unit-test@example.test", "Unit Test", "<p>Body</p>", "Body");
+        await fakeSender.SendAsync(message, CancellationToken.None);
+
+        Assert.Single(fakeSender.SentMessages);
+        Assert.Equal("safe-unit-test@example.test", fakeSender.SentMessages[0].RecipientEmail);
+    }
+
+    private sealed class RecordingSender : ITransactionalEmailSender
+    {
+        public List<EmailMessage> SentMessages { get; } = [];
+
+        public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
+        {
+            SentMessages.Add(message);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FailingSender : ITransactionalEmailSender

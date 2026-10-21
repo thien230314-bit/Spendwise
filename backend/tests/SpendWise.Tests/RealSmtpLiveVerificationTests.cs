@@ -17,15 +17,37 @@ using Xunit.Abstractions;
 
 namespace SpendWise.Tests;
 
+/// <summary>
+/// Custom xUnit Fact: Tự động SKIP nếu biến môi trường SPENDWISE_ENABLE_LIVE_SMTP_TESTS != true.
+/// Đảm bảo tuyệt đối không gửi email thật trong CI hoặc khi chạy toàn bộ test tự động mặc định.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+public sealed class LiveSmtpFactAttribute : FactAttribute
+{
+    public LiveSmtpFactAttribute()
+    {
+        var envVal = Environment.GetEnvironmentVariable("SPENDWISE_ENABLE_LIVE_SMTP_TESTS");
+        var isEnabled = string.Equals(envVal, "true", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(envVal, "1", StringComparison.OrdinalIgnoreCase);
+
+        if (!isEnabled)
+        {
+            Skip = "Opt-in: Live SMTP test is disabled by default. Set SPENDWISE_ENABLE_LIVE_SMTP_TESTS=true to enable.";
+        }
+    }
+}
+
+/// <summary>
+/// Kiểm thử thủ công (Opt-In Manual Tests) cho việc gửi email thật qua SMTP và vòng đời Outbox trên SQL02.
+/// Mặc định KHÔNG chạy trong CI hoặc khi chạy toàn bộ test tự động (xUnit sẽ SKIP hoàn toàn).
+/// Chỉ kích hoạt khi có:
+///   SPENDWISE_ENABLE_LIVE_SMTP_TESTS=true
+///   SPENDWISE_LIVE_SMTP_RECIPIENT=&lt;email_thử_nghiệm&gt;
+///   SPENDWISE_SQL02_CONNECTION=&lt;chuỗi_kết_nối_sql02&gt; (cho test outbox)
+/// </summary>
+[Trait("Category", "ManualLiveSmtp")]
 public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
 {
-    private const string Sql02Connection =
-        @"Server=DESKTOP-B5KA3LT\SQLEXPRESS02;Database=SpendWise_E2E_G4;Trusted_Connection=True;TrustServerCertificate=True";
-
-    private const string PrimaryRecipient = "lethien241205@gmail.com";
-    private const string PlusOldRecipient = "lethien241205+spw-old@gmail.com";
-    private const string PlusNewRecipient = "lethien241205+spw-new@gmail.com";
-
     private sealed class DevelopmentHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Development";
@@ -48,7 +70,31 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         string Subject,
         Dictionary<string, string?> TemplateValues);
 
-    private IServiceProvider BuildServiceProvider(IConfiguration configuration)
+    private static IConfiguration LoadConfiguration()
+    {
+        return new ConfigurationBuilder()
+            .AddUserSecrets("SpendWise-Development")
+            .AddEnvironmentVariables()
+            .Build();
+    }
+
+    private static string? GetConfiguredRecipient(IConfiguration config)
+    {
+        return Environment.GetEnvironmentVariable("SPENDWISE_LIVE_SMTP_RECIPIENT")
+            ?? config["LiveTest:SmtpRecipient"]
+            ?? config["Email:LiveTestRecipient"];
+    }
+
+    private static string? GetConfiguredSql02Connection(IConfiguration config)
+    {
+        return Environment.GetEnvironmentVariable("SPENDWISE_SQL02_CONNECTION")
+            ?? config.GetConnectionString("Sql02Connection")
+            ?? config.GetConnectionString("SpendWise_E2E_G4")
+            ?? config.GetConnectionString("SpendWiseDb")
+            ?? config.GetConnectionString("DefaultConnection");
+    }
+
+    private static IServiceProvider BuildServiceProvider(IConfiguration configuration, string? sqlConnection = null)
     {
         var services = new ServiceCollection();
 
@@ -60,9 +106,12 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         services.AddLogging(builder => builder.AddDebug());
         services.AddDataProtection();
 
-        services.AddDbContext<SpendWiseDbContext>(options =>
-            options.UseSqlServer(Sql02Connection));
-        services.AddScoped<ISpendWiseDbContext>(sp => sp.GetRequiredService<SpendWiseDbContext>());
+        if (!string.IsNullOrWhiteSpace(sqlConnection))
+        {
+            services.AddDbContext<SpendWiseDbContext>(options =>
+                options.UseSqlServer(sqlConnection));
+            services.AddScoped<ISpendWiseDbContext>(sp => sp.GetRequiredService<SpendWiseDbContext>());
+        }
 
         services.AddScoped<IEmailContentProtector, EmailContentProtector>();
         services.AddScoped<ConfiguredEmailSender>();
@@ -73,17 +122,34 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         return services.BuildServiceProvider();
     }
 
-    [Fact]
+    [LiveSmtpFact]
     public async Task Verify_All_14_Email_Types_Sent_Via_Gmail_Smtp_Tls()
     {
-        var config = new ConfigurationBuilder()
-            .AddUserSecrets("SpendWise-Development")
-            .AddEnvironmentVariables()
-            .Build();
+        var config = LoadConfiguration();
 
-        Assert.False(string.IsNullOrWhiteSpace(config["Email:Smtp:Host"]), "Email:Smtp:Host must be configured in user secrets.");
-        Assert.False(string.IsNullOrWhiteSpace(config["Email:Smtp:Username"]), "Email:Smtp:Username must be configured in user secrets.");
-        Assert.False(string.IsNullOrWhiteSpace(config["Email:Smtp:Password"]), "Email:Smtp:Password must be configured in user secrets.");
+        // 1. Kiểm tra email người nhận từ cấu hình môi trường (không hardcode trong source)
+        var primaryRecipient = GetConfiguredRecipient(config);
+        if (string.IsNullOrWhiteSpace(primaryRecipient) || !primaryRecipient.Contains('@'))
+        {
+            output.WriteLine("SKIPPED: Live SMTP tests require a valid recipient email. Set SPENDWISE_LIVE_SMTP_RECIPIENT environment variable.");
+            return;
+        }
+
+        // 2. Kiểm tra thông tin cấu hình SMTP
+        if (string.IsNullOrWhiteSpace(config["Email:Smtp:Host"]) ||
+            string.IsNullOrWhiteSpace(config["Email:Smtp:Username"]) ||
+            string.IsNullOrWhiteSpace(config["Email:Smtp:Password"]))
+        {
+            output.WriteLine("SKIPPED: Live SMTP credentials (Host, Username, Password) are not configured.");
+            return;
+        }
+
+        // 3. Sinh địa chỉ plus-addressing động từ email người nhận được cấu hình
+        var atIndex = primaryRecipient.IndexOf('@');
+        var userPart = primaryRecipient[..atIndex];
+        var domainPart = primaryRecipient[atIndex..];
+        var plusOldRecipient = $"{userPart}+spw-old{domainPart}";
+        var plusNewRecipient = $"{userPart}+spw-new{domainPart}";
 
         var sp = BuildServiceProvider(config);
         using var scope = sp.CreateScope();
@@ -98,11 +164,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Mã xác thực đăng ký (Registration OTP)",
                 "Xác thực & Đăng nhập",
                 "registration-verification",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Mã xác thực đăng ký tài khoản",
                 new Dictionary<string, string?>
                 {
-                    ["Email"] = PrimaryRecipient,
+                    ["Email"] = primaryRecipient,
                     ["Otp"] = "83920147",
                     ["Minutes"] = "10"
                 }),
@@ -112,11 +178,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Mã OTP đặt lại mật khẩu (Password Reset OTP)",
                 "Xác thực & Đăng nhập",
                 "password-reset-verification",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Mã OTP đặt lại mật khẩu",
                 new Dictionary<string, string?>
                 {
-                    ["Email"] = PrimaryRecipient,
+                    ["Email"] = primaryRecipient,
                     ["Otp"] = "49201835",
                     ["Minutes"] = "10"
                 }),
@@ -126,11 +192,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Mã xác thực thay đổi email (Change Email OTP - Plus Addressing)",
                 "Xác thực & Đăng nhập",
                 "email-change-verification",
-                PlusNewRecipient,
+                plusNewRecipient,
                 "[SpendWise] Mã xác thực thay đổi email",
                 new Dictionary<string, string?>
                 {
-                    ["Email"] = PlusNewRecipient,
+                    ["Email"] = plusNewRecipient,
                     ["Otp"] = "71549203",
                     ["Minutes"] = "10"
                 }),
@@ -141,12 +207,12 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Cảnh báo bảo mật: Thay đổi email (Security Notice - Old Email)",
                 "Cảnh báo bảo mật",
                 "email-change-notice",
-                PlusOldRecipient,
+                plusOldRecipient,
                 "[SpendWise] Cảnh báo bảo mật: Email tài khoản đã thay đổi",
                 new Dictionary<string, string?>
                 {
-                    ["OldEmail"] = PlusOldRecipient,
-                    ["NewEmail"] = PlusNewRecipient,
+                    ["OldEmail"] = plusOldRecipient,
+                    ["NewEmail"] = plusNewRecipient,
                     ["ChangedAt"] = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss 'UTC'")
                 }),
 
@@ -155,11 +221,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Thông báo mật khẩu đã được đặt lại (Password Reset Success)",
                 "Cảnh báo bảo mật",
                 "password-reset-success",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Mật khẩu đã được đặt lại thành công",
                 new Dictionary<string, string?>
                 {
-                    ["UserName"] = "Lê Thiện",
+                    ["UserName"] = "Test User",
                     ["ChangedAt"] = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss 'UTC'"),
                     ["ActionUrl"] = "https://spendwise.local/login"
                 }),
@@ -169,11 +235,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Cảnh báo đăng nhập thiết bị mới (New Device Login Alert)",
                 "Cảnh báo bảo mật",
                 "new-device-login",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Cảnh báo bảo mật: Đăng nhập từ trình duyệt mới",
                 new Dictionary<string, string?>
                 {
-                    ["UserName"] = "Lê Thiện",
+                    ["UserName"] = "Test User",
                     ["LoginTime"] = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss 'UTC'"),
                     ["DeviceName"] = "Windows 11 PC (Chrome 131)",
                     ["BrowserInfo"] = "Chrome 131.0 on Windows",
@@ -186,7 +252,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Cấp lại mã PIN bảo mật (Security PIN Reset Token)",
                 "Cảnh báo bảo mật",
                 "security-pin-reset",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Yêu cầu đặt lại mã PIN bảo mật",
                 new Dictionary<string, string?>
                 {
@@ -201,11 +267,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Chào mừng thành viên mới (Registration Welcome)",
                 "Vòng đời người dùng",
                 "registration-welcome",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Chào mừng bạn đến với SpendWise",
                 new Dictionary<string, string?>
                 {
-                    ["UserName"] = "Lê Thiện",
+                    ["UserName"] = "Test User",
                     ["ActionUrl"] = "https://spendwise.local/app",
                     ["ActionText"] = "Bắt đầu khám phá SpendWise"
                 }),
@@ -215,11 +281,11 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Chào mừng người dùng quay trở lại (Welcome Back Inactive User)",
                 "Vòng đời người dùng",
                 "welcome-back",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Chào mừng bạn quay trở lại SpendWise",
                 new Dictionary<string, string?>
                 {
-                    ["UserName"] = "Lê Thiện",
+                    ["UserName"] = "Test User",
                     ["ActionUrl"] = "https://spendwise.local/app"
                 }),
 
@@ -229,7 +295,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Tiếp nhận yêu cầu hỗ trợ (Support Case Received)",
                 "Hỗ trợ & Khiếu nại",
                 "support-received",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Đã tiếp nhận yêu cầu hỗ trợ #SPW-2026-9041",
                 new Dictionary<string, string?>
                 {
@@ -245,7 +311,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Giải quyết yêu cầu hỗ trợ thành công (Support Case Resolved)",
                 "Hỗ trợ & Khiếu nại",
                 "support-resolved",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Yêu cầu hỗ trợ #SPW-2026-9041 đã được giải quyết",
                 new Dictionary<string, string?>
                 {
@@ -259,7 +325,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Thông báo từ chối yêu cầu hỗ trợ (Support Case Rejected)",
                 "Hỗ trợ & Khiếu nại",
                 "support-rejected",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Thông báo về yêu cầu hỗ trợ #SPW-2026-8812",
                 new Dictionary<string, string?>
                 {
@@ -273,7 +339,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Yêu cầu bổ sung chứng từ (Support Documents Requested)",
                 "Hỗ trợ & Khiếu nại",
                 "support-info-request",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Yêu cầu bổ sung chứng từ cho yêu cầu #SPW-2026-9041",
                 new Dictionary<string, string?>
                 {
@@ -289,7 +355,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 "Cập nhật tiến trình tra soát tài chính (Fund Investigation Progress)",
                 "Hỗ trợ & Khiếu nại",
                 "support-fund-investigation",
-                PrimaryRecipient,
+                primaryRecipient,
                 "[SpendWise] Cập nhật tiến độ điều tra quỹ — Yêu cầu #SPW-2026-9041",
                 new Dictionary<string, string?>
                 {
@@ -301,10 +367,10 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
                 })
         };
 
-        output.WriteLine("=== BẮT ĐẦU KIỂM THỬ GỬI EMAIL THẬT QUA GMAIL SMTP ===");
-        output.WriteLine($"Người nhận chính: {PrimaryRecipient}");
-        output.WriteLine($"Plus addressing nhận mới: {PlusNewRecipient}");
-        output.WriteLine($"Plus addressing nhận cũ: {PlusOldRecipient}");
+        output.WriteLine("=== BẮT ĐẦU KIỂM THỬ THỦ CÔNG GỬI EMAIL THẬT QUA GMAIL SMTP ===");
+        output.WriteLine($"Người nhận chính: {primaryRecipient}");
+        output.WriteLine($"Plus addressing nhận mới: {plusNewRecipient}");
+        output.WriteLine($"Plus addressing nhận cũ: {plusOldRecipient}");
         output.WriteLine($"Tổng số loại email kiểm thử: {testCases.Count}");
         output.WriteLine("---------------------------------------------------------");
 
@@ -330,15 +396,33 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         output.WriteLine("=== HOÀN TẤT GỬI TOÀN BỘ 14 LOẠI EMAIL THẬT QUA GMAIL SMTP ===");
     }
 
-    [Fact]
+    [LiveSmtpFact]
     public async Task Verify_Sql02_Outbox_Dispatch_Lifecycle_Via_Real_Smtp()
     {
-        var config = new ConfigurationBuilder()
-            .AddUserSecrets("SpendWise-Development")
-            .AddEnvironmentVariables()
-            .Build();
+        var config = LoadConfiguration();
 
-        var sp = BuildServiceProvider(config);
+        // 1. Kiểm tra email người nhận từ môi trường
+        var primaryRecipient = GetConfiguredRecipient(config);
+        if (string.IsNullOrWhiteSpace(primaryRecipient) || !primaryRecipient.Contains('@'))
+        {
+            output.WriteLine("SKIPPED: SQL02 Outbox live test requires a valid recipient email. Set SPENDWISE_LIVE_SMTP_RECIPIENT environment variable.");
+            return;
+        }
+
+        // 2. Kiểm tra chuỗi kết nối SQL02 từ môi trường/cấu hình (không hardcode)
+        var sql02Connection = GetConfiguredSql02Connection(config);
+        if (string.IsNullOrWhiteSpace(sql02Connection))
+        {
+            output.WriteLine("SKIPPED: SQL02 Outbox live test requires SQL connection string. Set SPENDWISE_SQL02_CONNECTION environment variable.");
+            return;
+        }
+
+        var atIndex = primaryRecipient.IndexOf('@');
+        var userPart = primaryRecipient[..atIndex];
+        var domainPart = primaryRecipient[atIndex..];
+        var plusNewRecipient = $"{userPart}+spw-new{domainPart}";
+
+        var sp = BuildServiceProvider(config, sql02Connection);
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
         var queue = scope.ServiceProvider.GetRequiredService<IEmailDeliveryQueue>();
@@ -348,14 +432,14 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         // Test SQL02 transactional outbox queue & dispatch with Change Email OTP (plus addressing)
         var rendered = renderer.Render("email-change-verification", new Dictionary<string, string?>
         {
-            ["Email"] = PlusNewRecipient,
+            ["Email"] = plusNewRecipient,
             ["Otp"] = "98234105",
             ["Minutes"] = "10"
         });
 
         var dedupKey = $"email:live-smtp-verification:{Guid.NewGuid():N}";
         var msg = new EmailMessage(
-            PlusNewRecipient,
+            plusNewRecipient,
             "[SpendWise Outbox] Xác nhận thay đổi email qua SQL02 Outbox",
             rendered.HtmlBody,
             rendered.TextBody);
@@ -372,7 +456,7 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         // Dispatch via real SMTP
         var dispatched = await dispatcher.DispatchByIdAsync(
             pendingMessage.Id,
-            PlusNewRecipient,
+            plusNewRecipient,
             dedupKey,
             CancellationToken.None);
         Assert.True(dispatched, "EmailOutboxDispatcher failed to dispatch outbox message via SMTP.");
@@ -385,13 +469,13 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         Assert.Equal(EmailDeliveryStatus.Sent, sentMessage.Status);
         Assert.NotNull(sentMessage.SentAt);
         Assert.Null(sentMessage.LastError);
-        Assert.Equal(string.Empty, sentMessage.HtmlBody); // Wiped after successful send for privacy!
+        Assert.Equal(string.Empty, sentMessage.HtmlBody); // Xóa nội dung sau khi gửi thành công để bảo mật thông tin
         Assert.Equal(string.Empty, sentMessage.TextBody);
 
         output.WriteLine("=== SQL02 OUTBOX REAL SMTP DISPATCH TEST ===");
         output.WriteLine($"DeduplicationKey: {dedupKey}");
         output.WriteLine($"Outbox Id: {sentMessage.Id}");
-        output.WriteLine($"Recipient: {PlusNewRecipient}");
+        output.WriteLine($"Recipient: {plusNewRecipient}");
         output.WriteLine($"Status in SQL02: {sentMessage.Status}");
         output.WriteLine($"SentAt in SQL02: {sentMessage.SentAt:yyyy-MM-dd HH:mm:ss 'UTC'}");
         output.WriteLine("SQL02 Outbox lifecycle PASS: Encrypted on enqueue -> Dispatched via Gmail SMTP -> Updated Sent -> Content wiped.");

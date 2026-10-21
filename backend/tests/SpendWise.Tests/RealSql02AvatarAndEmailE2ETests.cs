@@ -347,4 +347,199 @@ public sealed class RealSql02AvatarAndEmailE2ETests
             Assert.Equal(500_000, walletBalance);
         }
     }
+
+    [Fact]
+    public async Task Real_SQL02_Atomic_PendingNewEmail_Cooldown_Protection_E2E()
+    {
+        Environment.SetEnvironmentVariable("SPENDWISE_SQL_TEST_INSTANCE", @"DESKTOP-B5KA3LT\SQLEXPRESS02");
+        using var factory = new SpendWiseApiFactory(sqlConnection: Sql02Connection);
+        using var client = factory.CreateHttpsClient();
+
+        Guid userId;
+        string initialEmail;
+        string password = "StrongPass1";
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+            var pinService = new SecurityPinService();
+
+            var uniqueUser = Guid.NewGuid().ToString("N");
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = "SQL02 Cooldown User",
+                Email = $"sql02_cd_{uniqueUser}@spendwise.test",
+                NormalizedEmail = $"SQL02_CD_{uniqueUser.ToUpperInvariant()}@SPENDWISE.TEST",
+                SpendId = uniqueUser[..12],
+                NormalizedSpendId = uniqueUser[..12].ToUpperInvariant(),
+                PasswordHash = passwordService.Hash(password),
+                SecurityPinHash = pinService.Hash(IdentityTestData.DefaultPin),
+                EmailVerifiedAt = DateTime.UtcNow,
+                SystemRole = SystemRole.User,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+
+            userId = user.Id;
+            initialEmail = user.Email;
+        }
+
+        // Login
+        var auth = await IdentityTestData.LoginAndVerifyPinAsync(client, initialEmail, password);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+
+        // 1. Request change to Email A
+        var emailA = $"email_a_{Guid.NewGuid():N}@spendwise.test";
+        var resA = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(emailA));
+        Assert.Equal(HttpStatusCode.OK, resA.StatusCode);
+
+        // Verify SQL02: PendingNewEmail is emailA
+        await using (var connection = new SqlConnection(Sql02Connection))
+        {
+            await connection.OpenAsync();
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT PendingNewEmail FROM Users WHERE Id = @UserId";
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            var pendingEmail = (string)(await cmd.ExecuteScalarAsync())!;
+            Assert.Equal(emailA, pendingEmail);
+        }
+
+        // 2. Immediately request change to Email B (within cooldown)
+        var emailB = $"email_b_{Guid.NewGuid():N}@spendwise.test";
+        var resB = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(emailB));
+        Assert.Equal(HttpStatusCode.TooManyRequests, resB.StatusCode); // Blocked by cooldown!
+
+        // 3. Verify SQL02 directly: PendingNewEmail remains emailA, NOT emailB!
+        await using (var connection = new SqlConnection(Sql02Connection))
+        {
+            await connection.OpenAsync();
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT PendingNewEmail FROM Users WHERE Id = @UserId";
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            var pendingEmail = (string)(await cmd.ExecuteScalarAsync())!;
+            Assert.Equal(emailA, pendingEmail);
+            Assert.NotEqual(emailB, pendingEmail);
+        }
+
+        // 4. Confirm with OTP A -> Updates to Email A, NEVER to Email B!
+        var confirmRes = await client.PostAsJsonAsync(
+            "/api/users/me/email/confirm",
+            new ConfirmChangeEmailRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, confirmRes.StatusCode);
+
+        var profile = await confirmRes.Content.ReadFromJsonAsync<UserProfile>();
+        Assert.NotNull(profile);
+        Assert.Equal(emailA, profile.Email);
+
+        // 5. Query SQL02: Email is Email A, PendingNewEmail cleared
+        await using (var connection = new SqlConnection(Sql02Connection))
+        {
+            await connection.OpenAsync();
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT Email, PendingNewEmail FROM Users WHERE Id = @UserId";
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync());
+            Assert.Equal(emailA, reader.GetString(0));
+            Assert.True(await reader.IsDBNullAsync(1));
+        }
+    }
+
+    [Fact]
+    public async Task Real_SQL02_FailedAttempts_Durable_Accounting_And_Lockout_E2E()
+    {
+        Environment.SetEnvironmentVariable("SPENDWISE_SQL_TEST_INSTANCE", @"DESKTOP-B5KA3LT\SQLEXPRESS02");
+        using var factory = new SpendWiseApiFactory(sqlConnection: Sql02Connection);
+        using var client = factory.CreateHttpsClient();
+
+        Guid userId;
+        string initialEmail;
+        string password = "StrongPass1";
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+            var pinService = new SecurityPinService();
+
+            var uniqueUser = Guid.NewGuid().ToString("N");
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = "SQL02 Failed Attempts User",
+                Email = $"sql02_fa_{uniqueUser}@spendwise.test",
+                NormalizedEmail = $"SQL02_FA_{uniqueUser.ToUpperInvariant()}@SPENDWISE.TEST",
+                SpendId = uniqueUser[..12],
+                NormalizedSpendId = uniqueUser[..12].ToUpperInvariant(),
+                PasswordHash = passwordService.Hash(password),
+                SecurityPinHash = pinService.Hash(IdentityTestData.DefaultPin),
+                EmailVerifiedAt = DateTime.UtcNow,
+                SystemRole = SystemRole.User,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+
+            userId = user.Id;
+            initialEmail = user.Email;
+        }
+
+        // Login
+        var auth = await IdentityTestData.LoginAndVerifyPinAsync(client, initialEmail, password);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+
+        // 1. Request change email
+        var newEmail = $"fa_target_{Guid.NewGuid():N}@spendwise.test";
+        var reqRes = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        Assert.Equal(HttpStatusCode.OK, reqRes.StatusCode);
+
+        // 2. Perform 5 consecutive WRONG OTP attempts ("00000000")
+        // After each attempt, verify SQL02 durable accounting of FailedAttempts
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            var wrongOtpRes = await client.PostAsJsonAsync(
+                "/api/users/me/email/confirm",
+                new ConfirmChangeEmailRequest("00000000"));
+            Assert.Equal(HttpStatusCode.BadRequest, wrongOtpRes.StatusCode);
+
+            await using var connection = new SqlConnection(Sql02Connection);
+            await connection.OpenAsync();
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT TOP 1 FailedAttempts, RevokedAt FROM EmailVerificationTokens WHERE UserId = @UserId AND Purpose = 'ChangeEmail' ORDER BY CreatedAt DESC";
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync());
+            var failedAttemptsInDb = reader.GetInt32(0);
+            var isRevokedInDb = !await reader.IsDBNullAsync(1);
+
+            Assert.Equal(attempt, failedAttemptsInDb); // Durably incremented and committed in SQL02!
+            if (attempt == 5)
+            {
+                Assert.True(isRevokedInDb); // Automatically revoked upon reaching threshold!
+            }
+        }
+
+        // 3. Attempt with CORRECT OTP ("12345678") after lockout -> MUST BE REJECTED!
+        var correctOtpAfterLockout = await client.PostAsJsonAsync(
+            "/api/users/me/email/confirm",
+            new ConfirmChangeEmailRequest("12345678"));
+        Assert.Equal(HttpStatusCode.BadRequest, correctOtpAfterLockout.StatusCode);
+
+        // 4. Verify SQL02: Email was NOT changed, still initialEmail
+        await using (var connection = new SqlConnection(Sql02Connection))
+        {
+            await connection.OpenAsync();
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT Email, PendingNewEmail FROM Users WHERE Id = @UserId";
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync());
+            Assert.Equal(initialEmail, reader.GetString(0)); // NOT changed!
+        }
+    }
 }

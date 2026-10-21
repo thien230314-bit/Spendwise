@@ -330,6 +330,14 @@ public sealed class EmailVerificationSupport(
                 setters => setters.SetProperty(item => item.RevokedAt, now),
                 cancellationToken);
 
+        // Atomically update user's PendingNewEmail in the same transaction
+        await db.Users
+            .Where(u => u.Id == user.Id)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(u => u.PendingNewEmail, newEmail),
+                cancellationToken);
+        user.PendingNewEmail = newEmail;
+
         var otp = otpService.CreateOtp();
         var token = new EmailVerificationToken
         {

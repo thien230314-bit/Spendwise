@@ -41,10 +41,7 @@ public sealed class RequestChangeEmailCommandHandler(
         if (isDuplicate)
             throw new AppException("duplicate_email", "Email address is already in use by another account.", 409);
 
-        // Update PendingNewEmail on user
-        user.PendingNewEmail = command.Request.NewEmail.Trim();
-        await db.SaveChangesAsync(ct);
-
+        // Issue OTP and atomically update PendingNewEmail in the same transaction
         return await emailVerification.IssueChangeEmailOtpAsync(
             user,
             command.Request.NewEmail.Trim(),

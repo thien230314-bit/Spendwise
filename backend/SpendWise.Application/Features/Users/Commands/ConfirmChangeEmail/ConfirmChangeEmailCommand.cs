@@ -67,7 +67,7 @@ public sealed class ConfirmChangeEmailCommandHandler(
                 || token.ExpiresAt <= now
                 || token.FailedAttempts >= policy.MaximumFailedAttempts)
             {
-                throw EmailVerificationSupport.VerificationFailure();
+                return null;
             }
 
             if (!otpService.VerifyOtp(user.Id, EmailVerificationSupport.ChangeEmailPurpose, otp, token.CodeHash))
@@ -88,7 +88,7 @@ public sealed class ConfirmChangeEmailCommandHandler(
                                     : item.RevokedAt),
                         transactionToken);
 
-                throw EmailVerificationSupport.VerificationFailure();
+                return null;
             }
 
             // Mark token as used

@@ -159,6 +159,7 @@ public sealed class AuthenticationSupport(
             user.DefaultCurrency,
             user.CreatedAt,
             user.LastLoginAt,
-            user.EngagementEmailOptIn);
+            user.EngagementEmailOptIn,
+            user.AvatarUrl);
     }
 }

@@ -10,13 +10,15 @@ public enum SystemRole { SystemAdmin = 0, User = 1, Admin = 2, SuperAdmin = 3 }
 public enum UserStatus { Active, Restricted, Locked, Suspended }
 public enum LoginChallengePurpose { PinSetup, PinVerification }
 public enum SecurityPinResetPurpose { SelfService, AdminEnrollment }
-public enum EmailVerificationPurpose { Registration, ResetPassword }
+public enum EmailVerificationPurpose { Registration, ResetPassword, ChangeEmail }
 
 public sealed class User : BaseEntity
 {
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string NormalizedEmail { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
+    public string? PendingNewEmail { get; set; }
     public string SpendId { get; set; } = string.Empty;
     public string NormalizedSpendId { get; set; } = string.Empty;
     // Phone của tài khoản mới luôn lưu dạng 10 chữ số 0XXXXXXXXX.

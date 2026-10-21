@@ -45,4 +45,4 @@ public sealed record AuthResponse(
     string? DeviceTrustToken = null);
 public sealed record UserProfile(Guid Id, string FullName, string Email, string SpendId, string? Phone, string SystemRole,
     string Status, bool MustChangePassword, string PreferredLanguage, string PreferredTheme, string DefaultCurrency,
-    DateTime CreatedAt, DateTime? LastLoginAt, bool EngagementEmailOptIn);
+    DateTime CreatedAt, DateTime? LastLoginAt, bool EngagementEmailOptIn, string? AvatarUrl = null);

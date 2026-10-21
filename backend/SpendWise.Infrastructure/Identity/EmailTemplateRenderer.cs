@@ -35,8 +35,62 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             return NewDeviceLogin(values);
         if (string.Equals(templateName, "security-pin-reset", StringComparison.Ordinal))
             return SecurityPinReset(values);
+        if (string.Equals(templateName, "email-change-verification", StringComparison.Ordinal))
+            return EmailChangeVerification(values);
+        if (string.Equals(templateName, "email-change-notice", StringComparison.Ordinal))
+            return EmailChangeNotice(values);
 
         return Generic(values);
+    }
+
+    private static RenderedEmail EmailChangeVerification(IReadOnlyDictionary<string, string?> values)
+    {
+        var email = Value(values, "Email", string.Empty);
+        var otp = Value(values, "Otp", string.Empty);
+        var minutes = Value(values, "Minutes", "10");
+        var content = Intro("Bạn vừa yêu cầu thay đổi địa chỉ email cho tài khoản SpendWise của mình. Sử dụng mã OTP bên dưới để xác nhận email mới.") +
+                      OtpCard("Mã xác thực đổi email", otp) +
+                      DetailCard(
+                          DetailRow("Email mới", email) +
+                          DetailRow("Thời hạn", $"{minutes} phút")) +
+                      SecurityNote(
+                          "Không chia sẻ mã này với bất kỳ ai. Nếu bạn không yêu cầu thay đổi email, hãy kiểm tra bảo mật tài khoản ngay lập tức.") +
+                      MutedNote("Mã OTP này chỉ có hiệu lực một lần.");
+        var text = $"[SpendWise] Xác nhận thay đổi email\n\n" +
+                   $"Email mới: {email}\nMã xác thực: {otp}\nMã có hiệu lực trong {minutes} phút.\n\n" +
+                   "Không chia sẻ mã này với bất kỳ ai.\n\n" + AutomatedFooter;
+        return new RenderedEmail(
+            Layout(
+                "SpendWise — Xác nhận thay đổi email",
+                "Mã xác thực đổi địa chỉ email của bạn",
+                "BẢO MẬT TÀI KHOẢN",
+                "Xác nhận thay đổi email",
+                content),
+            text);
+    }
+
+    private static RenderedEmail EmailChangeNotice(IReadOnlyDictionary<string, string?> values)
+    {
+        var oldEmail = Value(values, "OldEmail", string.Empty);
+        var newEmail = Value(values, "NewEmail", string.Empty);
+        var content = Intro("Địa chỉ email liên kết với tài khoản SpendWise của bạn vừa được thay đổi thành công.") +
+                      DetailCard(
+                          DetailRow("Email cũ", oldEmail) +
+                          DetailRow("Email mới", newEmail) +
+                          DetailRow("Thời gian", DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss") + " UTC")) +
+                      SecurityNote(
+                          "Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với bộ phận hỗ trợ SpendWise để bảo vệ tài khoản của bạn.");
+        var text = $"[SpendWise] Cảnh báo bảo mật: Email của bạn đã được thay đổi\n\n" +
+                   $"Email cũ: {oldEmail}\nEmail mới: {newEmail}\n\n" +
+                   "Nếu bạn không thực hiện thay đổi này, vui lòng liên hệ hỗ trợ ngay.\n\n" + AutomatedFooter;
+        return new RenderedEmail(
+            Layout(
+                "SpendWise — Thông báo thay đổi email",
+                "Email của tài khoản đã được thay đổi",
+                "CẢNH BÁO BẢO MẬT",
+                "Thay đổi email thành công",
+                content),
+            text);
     }
 
     private static RenderedEmail RegistrationVerification(IReadOnlyDictionary<string, string?> values)

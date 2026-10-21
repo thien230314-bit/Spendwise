@@ -3526,6 +3526,10 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -3576,6 +3580,10 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("PasswordLockoutUntil")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("PendingNewEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)

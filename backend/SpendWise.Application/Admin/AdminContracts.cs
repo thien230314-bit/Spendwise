@@ -7,7 +7,7 @@ public sealed record AdminDashboardDto(int TotalUsers, int ActiveUsers, int NewU
     int RiskCases, int Disputes, int SupportCases, int AiRequests, string SystemHealth,
     SpendWise.Application.Features.Administration.A1Summary? Overview = null);
 public sealed record AdminUserDto(Guid Id, string FullName, string Email, string SpendId, string Status, string SystemRole,
-    bool MustChangePassword, bool HasSecurityPin, DateTime CreatedAt, DateTime? LastLoginAt);
+    bool MustChangePassword, bool HasSecurityPin, DateTime CreatedAt, DateTime? LastLoginAt, string? AvatarUrl = null, bool EmailVerified = true);
 public sealed record ChangeUserStatusRequest(string Status, string Reason, string AdminPin);
 public sealed record AdminCredentialResetRequest(string Reason, string AdminPin);
 public sealed record AdminTemporaryPasswordResponse(Guid UserId, string TemporaryPassword, bool MustChangePassword);

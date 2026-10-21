@@ -38,7 +38,9 @@ public sealed class SearchAdminUsersQueryHandler(
                 user.MustChangePassword,
                 user.SecurityPinHash != null,
                 user.CreatedAt,
-                user.LastLoginAt))
+                user.LastLoginAt,
+                user.AvatarUrl,
+                user.EmailVerifiedAt != null))
             .ToListAsync(cancellationToken);
     }
 }

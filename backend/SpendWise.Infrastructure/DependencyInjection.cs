@@ -42,6 +42,7 @@ public static class DependencyInjection
         }
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddScoped<IAvatarStorage, LocalAvatarStorage>();
         services.Configure<SePayBankHubOptions>(
             configuration.GetSection(SePayBankHubOptions.SectionName));
         services.AddHttpClient("SePayBankHub", client =>

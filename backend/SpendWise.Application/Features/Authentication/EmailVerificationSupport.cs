@@ -18,6 +18,7 @@ public sealed class EmailVerificationSupport(
 {
     public const string RegistrationPurpose = "REGISTER";
     public const string PasswordResetPurpose = "RESET_PASSWORD";
+    public const string ChangeEmailPurpose = "CHANGE_EMAIL";
 
     public Task<EmailVerificationPendingResponse> IssueRegistrationOtpAsync(
         User user,
@@ -267,6 +268,119 @@ public sealed class EmailVerificationSupport(
                 rendered.HtmlBody,
                 rendered.TextBody),
             $"email:password-reset-success:{resetOtpTokenId:N}",
+            cancellationToken);
+    }
+
+    public async Task<EmailVerificationPendingResponse> IssueChangeEmailOtpAsync(
+        User user,
+        string newEmail,
+        string? ipAddress,
+        CancellationToken cancellationToken) =>
+        await db.ExecuteInTransactionAsync(
+            token => IssueChangeEmailOtpCoreAsync(user, newEmail, ipAddress, token),
+            cancellationToken);
+
+    private async Task<EmailVerificationPendingResponse> IssueChangeEmailOtpCoreAsync(
+        User user,
+        string newEmail,
+        string? ipAddress,
+        CancellationToken cancellationToken)
+    {
+        var ipHash = string.IsNullOrWhiteSpace(ipAddress) ? null : otpService.HashRateLimitKey(ipAddress);
+        if (!await db.TryAcquireEmailVerificationLockAsync(user.Id, ipHash, cancellationToken))
+            throw RateLimited();
+
+        var now = clock.UtcNow;
+        var hourStart = now.AddHours(-1);
+        var recentForAccount = await db.EmailVerificationTokens
+            .Where(item => item.UserId == user.Id
+                && item.Purpose == EmailVerificationPurpose.ChangeEmail
+                && item.CreatedAt >= hourStart)
+            .OrderByDescending(item => item.CreatedAt)
+            .Select(item => new { item.CreatedAt })
+            .ToListAsync(cancellationToken);
+
+        if (recentForAccount.Count >= policy.MaximumSendsPerHourPerAccount)
+            throw RateLimited();
+        if (recentForAccount.FirstOrDefault() is { } latest
+            && latest.CreatedAt.Add(policy.ResendCooldown) > now)
+        {
+            throw new AppException(
+                "email_verification_cooldown",
+                "Please wait before requesting another verification email.",
+                429);
+        }
+
+        if (ipHash is not null)
+        {
+            var recentForIp = await db.EmailVerificationTokens.CountAsync(
+                item => item.RequestIpHash == ipHash && item.CreatedAt >= hourStart,
+                cancellationToken);
+            if (recentForIp >= policy.MaximumSendsPerHourPerIp)
+                throw RateLimited();
+        }
+
+        // Revoke active change email tokens for this user
+        await db.EmailVerificationTokens
+            .Where(item => item.UserId == user.Id
+                && item.Purpose == EmailVerificationPurpose.ChangeEmail
+                && item.UsedAt == null
+                && item.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(item => item.RevokedAt, now),
+                cancellationToken);
+
+        var otp = otpService.CreateOtp();
+        var token = new EmailVerificationToken
+        {
+            UserId = user.Id,
+            CodeHash = otpService.HashOtp(user.Id, ChangeEmailPurpose, otp),
+            Purpose = EmailVerificationPurpose.ChangeEmail,
+            ExpiresAt = now.Add(policy.OtpLifetime),
+            RequestIpHash = ipHash
+        };
+        db.EmailVerificationTokens.Add(token);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var rendered = renderer.Render("email-change-verification", new Dictionary<string, string?>
+        {
+            ["Email"] = newEmail,
+            ["Otp"] = otp,
+            ["Minutes"] = ((int)policy.OtpLifetime.TotalMinutes).ToString()
+        });
+        await emailQueue.EnqueueAsync(
+            new EmailMessage(
+                newEmail,
+                "[SpendWise] Mã xác thực thay đổi email",
+                rendered.HtmlBody,
+                rendered.TextBody,
+                token.ExpiresAt),
+            $"email:change-email-otp:{token.Id:N}",
+            cancellationToken);
+
+        return new EmailVerificationPendingResponse(
+            "EMAIL_CHANGE_OTP_SENT",
+            token.ExpiresAt,
+            (int)policy.ResendCooldown.TotalSeconds);
+    }
+
+    public async Task QueueEmailChangeNoticeAsync(
+        string oldEmail,
+        string newEmail,
+        CancellationToken cancellationToken)
+    {
+        var rendered = renderer.Render("email-change-notice", new Dictionary<string, string?>
+        {
+            ["OldEmail"] = oldEmail,
+            ["NewEmail"] = newEmail
+        });
+        await emailQueue.EnqueueAsync(
+            new EmailMessage(
+                oldEmail,
+                "[SpendWise] Cảnh báo bảo mật: Email tài khoản đã thay đổi",
+                rendered.HtmlBody,
+                rendered.TextBody),
+            $"email:change-notice:{Guid.NewGuid():N}",
             cancellationToken);
     }
 

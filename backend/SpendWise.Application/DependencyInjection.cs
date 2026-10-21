@@ -16,6 +16,7 @@ using SpendWise.Application.Features.Friends;
 using SpendWise.Application.Features.Admin.Cases;
 using SpendWise.Application.Features.Notifications;
 using SpendWise.Application.Features.AdminAi;
+using SpendWise.Application.Features.Users;
 
 namespace SpendWise.Application;
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<AccountCredentialLockout>();
         services.AddScoped<SecurityPinResetSupport>();
         services.AddScoped<EmailVerificationSupport>();
+        services.AddScoped<AvatarSupport>();
         services.AddScoped<InteractiveLoginSupport>();
         services.AddScoped<ManualTransactionCreator>();
         services.AddScoped<BudgetReader>();

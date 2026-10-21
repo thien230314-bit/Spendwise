@@ -228,6 +228,229 @@ public sealed class UserAvatarAndEmailChangeTests
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ConfirmEmailChange_ExpiredOtp_ReturnsBadRequest()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+
+        Guid userId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var user = CreateUser("Expired OTP User");
+            db.Users.Add(user);
+            var session = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+                IpAddress = "127.0.0.1",
+                UserAgent = "TestAgent"
+            };
+            db.UserSessions.Add(session);
+            await db.SaveChangesAsync();
+
+            userId = user.Id;
+            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(user, session.Id).Token);
+        }
+
+        var newEmail = $"expired_test_{Guid.NewGuid():N}@spendwise.local";
+        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
+
+        // Expire the token in DB
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var token = await db.EmailVerificationTokens
+                .Where(t => t.UserId == userId && t.Purpose == EmailVerificationPurpose.ChangeEmail)
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstAsync();
+            token.ExpiresAt = DateTime.UtcNow.AddMinutes(-5);
+            await db.SaveChangesAsync();
+        }
+
+        // Try confirm with expired OTP
+        var confirmResponse = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        Assert.Equal(HttpStatusCode.BadRequest, confirmResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ConfirmEmailChange_ReusedOtp_ReturnsBadRequest()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+
+        Guid userId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var user = CreateUser("Reused OTP User");
+            db.Users.Add(user);
+            var session = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+                IpAddress = "127.0.0.1",
+                UserAgent = "TestAgent"
+            };
+            db.UserSessions.Add(session);
+            await db.SaveChangesAsync();
+
+            userId = user.Id;
+            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(user, session.Id).Token);
+        }
+
+        var newEmail = $"reused_test_{Guid.NewGuid():N}@spendwise.local";
+        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
+
+        // Confirm 1st time: SUCCESS
+        var confirm1 = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, confirm1.StatusCode);
+
+        // Confirm 2nd time with reused OTP: FAILS
+        var confirm2 = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        Assert.Equal(HttpStatusCode.BadRequest, confirm2.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadAvatar_InvalidExtension_ReturnsBadRequest()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var user = CreateUser("Bad Extension User");
+            db.Users.Add(user);
+            var session = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+                IpAddress = "127.0.0.1",
+                UserAgent = "TestAgent"
+            };
+            db.UserSessions.Add(session);
+            await db.SaveChangesAsync();
+
+            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(user, session.Id).Token);
+        }
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(ValidPngBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Add(fileContent, "file", "avatar.exe");
+
+        var response = await client.PostAsync("/api/users/me/avatar", content);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadAvatar_OversizedFile_ReturnsBadRequest()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var user = CreateUser("Oversized File User");
+            db.Users.Add(user);
+            var session = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+                IpAddress = "127.0.0.1",
+                UserAgent = "TestAgent"
+            };
+            db.UserSessions.Add(session);
+            await db.SaveChangesAsync();
+
+            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(user, session.Id).Token);
+        }
+
+        // 5 MB + 1 byte
+        var oversizedBytes = new byte[5 * 1024 * 1024 + 1];
+        // Prepend PNG magic bytes so it passes magic byte check but fails size check
+        Array.Copy(ValidPngBytes, oversizedBytes, ValidPngBytes.Length);
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(oversizedBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        content.Add(fileContent, "file", "large_avatar.png");
+
+        var response = await client.PostAsync("/api/users/me/avatar", content);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Profile_IdentityIsolation_CannotModifyAnotherUser()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+
+        Guid userAId;
+        Guid userBId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var userA = CreateUser("User A");
+            var userB = CreateUser("User B");
+            db.Users.AddRange(userA, userB);
+            var sessionA = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = userA.Id,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+                IpAddress = "127.0.0.1",
+                UserAgent = "TestAgent"
+            };
+            db.UserSessions.Add(sessionA);
+            await db.SaveChangesAsync();
+
+            userAId = userA.Id;
+            userBId = userB.Id;
+
+            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(userA, sessionA.Id).Token);
+        }
+
+        // User A uploads avatar
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(ValidPngBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        content.Add(fileContent, "file", "avatar_a.png");
+
+        var uploadRes = await client.PostAsync("/api/users/me/avatar", content);
+        Assert.Equal(HttpStatusCode.OK, uploadRes.StatusCode);
+
+        // Verify User A has avatar, but User B's profile is untouched
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var dbUserA = await db.Users.FindAsync(userAId);
+            var dbUserB = await db.Users.FindAsync(userBId);
+
+            Assert.NotNull(dbUserA?.AvatarUrl);
+            Assert.Null(dbUserB?.AvatarUrl); // User B completely untouched!
+        }
+    }
+
     private static User CreateUser(string fullName)
     {
         var id = Guid.NewGuid();

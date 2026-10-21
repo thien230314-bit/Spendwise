@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Users;
 using SpendWise.Application.Features.Users.Commands.ConfirmChangeEmail;
@@ -63,6 +64,7 @@ public sealed class UsersController(
     }
 
     [HttpPost("email/request")]
+    [EnableRateLimiting("emailVerification")]
     public async Task<ActionResult<EmailVerificationPendingResponse>> RequestEmailChange(
         [FromBody] RequestChangeEmailRequest request,
         CancellationToken ct)
@@ -72,6 +74,7 @@ public sealed class UsersController(
     }
 
     [HttpPost("email/confirm")]
+    [EnableRateLimiting("emailVerification")]
     public async Task<ActionResult<UserProfile>> ConfirmEmailChange(
         [FromBody] ConfirmChangeEmailRequest request,
         CancellationToken ct)

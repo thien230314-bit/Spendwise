@@ -11,7 +11,7 @@ type AuthContextValue = {
   login: (identifier: string, password: string) => Promise<LoginChallengeResponse>;
   verifyRegistrationEmail: (email: string, otp: string) => Promise<LoginChallengeResponse>;
   completePin: (pin: string, confirmPin?: string) => Promise<void>;
-  cancelChallenge: () => void; logout: () => Promise<void>;
+  cancelChallenge: () => void; logout: () => Promise<void>; updateUser: (updatedUser: UserProfile) => void;
 };
 const AuthContext = createContext<AuthContextValue | null>(null);
 const USER_ONLY_MESSAGE = 'Ứng dụng di động SpendWise hiện chỉ hỗ trợ tài khoản người dùng.';
@@ -88,14 +88,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [acceptAuth, challenge]);
 
   const cancelChallenge = useCallback(() => { setChallenge(null); setStatus('unauthenticated'); }, []);
+  const updateUser = useCallback((updatedUser: UserProfile) => { setUser(updatedUser); }, []);
+
   const logout = useCallback(async () => {
     const refreshToken = refreshTokenRef.current;
     try { if (refreshToken && accessTokenRef.current) await authApi.logout(refreshToken); }
     finally { await clearLocalSession(); setStatus('unauthenticated'); }
   }, [clearLocalSession]);
 
-  const value = useMemo(() => ({ status, user, challenge, login, verifyRegistrationEmail, completePin, cancelChallenge, logout }),
-    [status, user, challenge, login, verifyRegistrationEmail, completePin, cancelChallenge, logout]);
+  const value = useMemo(() => ({ status, user, challenge, login, verifyRegistrationEmail, completePin, cancelChallenge, logout, updateUser }),
+    [status, user, challenge, login, verifyRegistrationEmail, completePin, cancelChallenge, logout, updateUser]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

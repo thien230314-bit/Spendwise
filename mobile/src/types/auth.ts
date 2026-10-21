@@ -20,6 +20,8 @@ export interface UserProfile {
   createdAt: string;
   lastLoginAt: string | null;
   engagementEmailOptIn: boolean;
+  avatarUrl?: string | null;
+  pendingNewEmail?: string | null;
 }
 
 export interface AuthResponse {

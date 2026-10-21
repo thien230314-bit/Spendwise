@@ -11,7 +11,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (!environment.isApiConfigured) throw new ApiError('Chưa cấu hình EXPO_PUBLIC_API_BASE_URL.', 'configuration');
   const { authenticated = false, retryAfterRefresh = true, ...requestInit } = options;
   const headers = new Headers(requestInit.headers);
-  if (requestInit.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (requestInit.body && !(requestInit.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (authenticated) {
     const token = authHooks.getAccessToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);

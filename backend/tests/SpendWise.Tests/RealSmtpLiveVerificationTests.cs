@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -85,13 +86,37 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
             ?? config["Email:LiveTestRecipient"];
     }
 
-    private static string? GetConfiguredSql02Connection(IConfiguration config)
+    internal static string? GetConfiguredSql02Connection(IConfiguration config)
     {
         return Environment.GetEnvironmentVariable("SPENDWISE_SQL02_CONNECTION")
             ?? config.GetConnectionString("Sql02Connection")
-            ?? config.GetConnectionString("SpendWise_E2E_G4")
-            ?? config.GetConnectionString("SpendWiseDb")
-            ?? config.GetConnectionString("DefaultConnection");
+            ?? config.GetConnectionString("SpendWise_E2E_G4");
+    }
+
+    internal static void ValidateSql02ConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "FAIL: SQL02 Outbox live test requires SPENDWISE_SQL02_CONNECTION or ConnectionStrings:Sql02Connection / SpendWise_E2E_G4.");
+        }
+
+        var builder = new SqlConnectionStringBuilder(connectionString);
+
+        var dataSource = builder.DataSource?.Trim() ?? string.Empty;
+        var initialCatalog = builder.InitialCatalog?.Trim() ?? string.Empty;
+
+        var isAllowedServer = string.Equals(dataSource, @"DESKTOP-B5KA3LT\SQLEXPRESS02", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(dataSource, @".\SQLEXPRESS02", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(dataSource, @"localhost\SQLEXPRESS02", StringComparison.OrdinalIgnoreCase);
+
+        var isAllowedDatabase = string.Equals(initialCatalog, "SpendWise_E2E_G4", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAllowedServer || !isAllowedDatabase)
+        {
+            throw new InvalidOperationException(
+                $"SAFETY VIOLATION: Refusing to connect to non-SQL02 target. Server must be DESKTOP-B5KA3LT\\SQLEXPRESS02 (got '{dataSource}') and Database must be SpendWise_E2E_G4 (got '{initialCatalog}'). Connection to SQL01 or production database is strictly blocked.");
+        }
     }
 
     private static IServiceProvider BuildServiceProvider(IConfiguration configuration, string? sqlConnection = null)
@@ -409,13 +434,10 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
             return;
         }
 
-        // 2. Kiểm tra chuỗi kết nối SQL02 từ môi trường/cấu hình (không hardcode)
+        // 2. Kiểm tra chuỗi kết nối SQL02: Bắt buộc đúng DESKTOP-B5KA3LT\SQLEXPRESS02 và SpendWise_E2E_G4.
+        // Nếu thiếu hoặc không khớp, FAIL ngay trước khi mở kết nối!
         var sql02Connection = GetConfiguredSql02Connection(config);
-        if (string.IsNullOrWhiteSpace(sql02Connection))
-        {
-            output.WriteLine("SKIPPED: SQL02 Outbox live test requires SQL connection string. Set SPENDWISE_SQL02_CONNECTION environment variable.");
-            return;
-        }
+        ValidateSql02ConnectionString(sql02Connection);
 
         var atIndex = primaryRecipient.IndexOf('@');
         var userPart = primaryRecipient[..atIndex];
@@ -479,5 +501,62 @@ public sealed class RealSmtpLiveVerificationTests(ITestOutputHelper output)
         output.WriteLine($"Status in SQL02: {sentMessage.Status}");
         output.WriteLine($"SentAt in SQL02: {sentMessage.SentAt:yyyy-MM-dd HH:mm:ss 'UTC'}");
         output.WriteLine("SQL02 Outbox lifecycle PASS: Encrypted on enqueue -> Dispatched via Gmail SMTP -> Updated Sent -> Content wiped.");
+    }
+
+    [Fact]
+    public void Sql02_validation_accepts_valid_sql02_connection()
+    {
+        const string validConn = @"Server=DESKTOP-B5KA3LT\SQLEXPRESS02;Database=SpendWise_E2E_G4;Trusted_Connection=True;TrustServerCertificate=True";
+        var ex = Record.Exception(() => ValidateSql02ConnectionString(validConn));
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Sql02_validation_rejects_sql01_database()
+    {
+        const string sql01Conn = @"Server=DESKTOP-B5KA3LT\SQLEXPRESS02;Database=SpendWiseDb;Trusted_Connection=True;TrustServerCertificate=True";
+        var ex = Assert.Throws<InvalidOperationException>(() => ValidateSql02ConnectionString(sql01Conn));
+        Assert.Contains("SAFETY VIOLATION", ex.Message);
+        Assert.Contains("SpendWise_E2E_G4", ex.Message);
+    }
+
+    [Fact]
+    public void Sql02_validation_rejects_wrong_server_instance()
+    {
+        const string wrongServerConn = @"Server=DESKTOP-B5KA3LT;Database=SpendWise_E2E_G4;Trusted_Connection=True;TrustServerCertificate=True";
+        var ex = Assert.Throws<InvalidOperationException>(() => ValidateSql02ConnectionString(wrongServerConn));
+        Assert.Contains("SAFETY VIOLATION", ex.Message);
+        Assert.Contains("SQLEXPRESS02", ex.Message);
+    }
+
+    [Fact]
+    public void Sql02_validation_rejects_missing_connection_string()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => ValidateSql02ConnectionString(null));
+        Assert.Contains("FAIL", ex.Message);
+    }
+
+    [Fact]
+    public void GetConfiguredSql02Connection_ignores_SpendWiseDb_and_DefaultConnection()
+    {
+        var inMemoryConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:SpendWiseDb"] = @"Server=DESKTOP-B5KA3LT;Database=SpendWiseDb;Trusted_Connection=True;",
+                ["ConnectionStrings:DefaultConnection"] = @"Server=DESKTOP-B5KA3LT;Database=SpendWiseDb;Trusted_Connection=True;"
+            })
+            .Build();
+
+        var currentEnv = Environment.GetEnvironmentVariable("SPENDWISE_SQL02_CONNECTION");
+        try
+        {
+            Environment.SetEnvironmentVariable("SPENDWISE_SQL02_CONNECTION", null);
+            var result = GetConfiguredSql02Connection(inMemoryConfig);
+            Assert.Null(result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("SPENDWISE_SQL02_CONNECTION", currentEnv);
+        }
     }
 }

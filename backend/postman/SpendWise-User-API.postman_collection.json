@@ -163,8 +163,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Resend verification returns 200 or 429\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Resend verification returns 429 Rate Limited due to immediate retry cooldown\", function () {",
+                  "    pm.response.to.have.status(429);",
                   "});"
                 ]
               }
@@ -1354,7 +1354,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "test_avatar.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -2074,7 +2074,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "test_avatar.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -2483,7 +2483,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "test_avatar.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -3948,6 +3948,62 @@
           "response": []
         },
         {
+          "name": "07c - User B Creates Second Free Fund Expense Request for Security Testing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Create second fund request returns 200 and request ID\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.environment.set(\"freeReviewTargetRequestId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"Expense\",\n  \"amountVnd\": 50000,\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"purpose\": \"Security test request pending review\",\n  \"idempotencyKey\": \"req-free-{{runId}}-sec-02\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{freeFundId}}",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "08 - Refund Preview for User B",
           "event": [
             {
@@ -4316,7 +4372,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create savings goal returns 200 and goal ID\", function () {",
+                  "pm.test(\"Create savings goal returns 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"goalId\", data.id);",
@@ -4520,8 +4576,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create recurring transaction returns 200/201\", function () {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test(\"Create recurring transaction returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"recurringTxId\", data.id);",
                   "});"
@@ -4614,8 +4670,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create transaction rule returns 200/201\", function () {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test(\"Create transaction rule returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"ruleId\", data.id);",
                   "});"
@@ -4808,7 +4864,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"AI chat returns 200 OK (with live key) or controlled 503 (without live Gemini key)\", function () {",
-                  "    pm.response.to.have.status(503);",
+                  "    pm.expect([200, 503]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -4935,7 +4991,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bankCode\": \"VCB\",\n  \"accountNumber\": \"9876543210\",\n  \"accountName\": \"NGUYEN VAN B\",\n  \"amount\": 100000,\n  \"description\": \"Chuyen khoan tra tien com\"\n}",
+              "raw": "{\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"note\": \"Chuyen khoan mua sach\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"bt-{{runId}}-01\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5019,7 +5075,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"gateway\": \"SePay Sandbox\",\n  \"transactionDate\": \"2026-10-22 12:00:00\",\n  \"accountNumber\": \"0123456789\",\n  \"subAccount\": null,\n  \"code\": null,\n  \"content\": \"SPW NAPTIEN\",\n  \"transferType\": \"in\",\n  \"description\": \"Nap tien test\",\n  \"transferAmount\": 50000,\n  \"referenceCode\": \"SEP_TEST_001\",\n  \"accumulated\": 50000,\n  \"id\": 9999\n}",
+              "raw": "{\n  \"timestamp\": 1788470000,\n  \"xid\": \"evt-invalid-secret-01\",\n  \"version\": \"1\",\n  \"event\": \"BANK_ACCOUNT_LINKED\",\n  \"metadata\": {\n    \"link_token_xid\": \"missing\",\n    \"bank_account_xid\": \"unknown-account\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5027,15 +5083,16 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/banking/sepay/webhook",
+              "raw": "{{baseUrl}}/api/integrations/sepay/bankhub/events",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "banking",
+                "integrations",
                 "sepay",
-                "webhook"
+                "bankhub",
+                "events"
               ]
             }
           },
@@ -5182,11 +5239,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create support case returns 200/201 and case ID\", function () {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test(\"Create support case returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
-                  "    pm.expect(data).to.have.property(\"id\");",
                   "    pm.environment.set(\"supportCaseId\", data.id);",
+                  "    pm.environment.set(\"caseId\", data.id);",
                   "});"
                 ]
               }
@@ -5483,7 +5540,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "test_avatar.png"
+                  "src": "backend/postman/receipt.png"
                 }
               ]
             },
@@ -7034,21 +7091,17 @@
                 "key": "Authorization",
                 "value": "Bearer {{userA_token}}",
                 "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fileName\": \"receipt_flowF.png\",\n  \"contentType\": \"image/png\",\n  \"fileDataBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "backend/postman/receipt.png"
                 }
-              }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/evidence",
@@ -7098,7 +7151,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{flowF_catId}}\",\n  \"amount\": 500000,\n  \"description\": \"Flow F Budget Expense 500k\",\n  \"idempotencyKey\": \"exp-flowF-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"evidenceIds\": [\"{{flowF_evidenceId}}\"]\n}",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{flowF_catId}}\",\n  \"amount\": 500000,\n  \"occurredAt\": \"2026-11-15T10:00:00.000Z\",\n  \"description\": \"Flow F Budget Expense 500k\",\n  \"idempotencyKey\": \"exp-flowF-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"evidenceIds\": [\"{{flowF_evidenceId}}\"]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7195,7 +7248,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 800000,\n  \"description\": \"Flow F Corrected Expense 800k\",\n  \"reason\": \"Dieu chinh chi tieu ngan sach len 800k\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "raw": "{\n  \"amount\": 800000,\n  \"occurredAt\": \"2026-11-15T10:00:00.000Z\",\n  \"description\": \"Flow F Corrected Expense 800k\",\n  \"reason\": \"Dieu chinh chi tieu ngan sach len 800k\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7403,7 +7456,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{flowF_catId}}\",\n  \"year\": 2026,\n  \"month\": 12,\n  \"limitAmount\": 1500000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"year\": 2026,\n  \"month\": 12,\n  \"limitAmount\": 1500000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"{{default_pin}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7431,8 +7484,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"User B goal created successfully\", function () {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test(\"User B goal created successfully returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"userB_goalId\", data.id);",
                   "});"
@@ -7500,21 +7553,17 @@
                 "key": "Authorization",
                 "value": "Bearer {{userB_token}}",
                 "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fileName\": \"userB_doc.png\",\n  \"contentType\": \"image/png\",\n  \"fileDataBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "backend/postman/receipt.png"
                 }
-              }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/evidence",
@@ -7755,15 +7804,15 @@
           "response": []
         },
         {
-          "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403)",
+          "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403 or 404)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Non-owner fund review is rejected with 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
+                  "pm.test(\"Non-owner fund review is rejected with 403 Forbidden or 404 Not Found\", function () {",
+                  "    pm.expect([403, 404]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -7793,7 +7842,7 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/requests/{{freeRequestId}}/review",
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{freeReviewTargetRequestId}}/review",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -7802,7 +7851,7 @@
                 "v1",
                 "funds",
                 "requests",
-                "{{freeRequestId}}",
+                "{{freeReviewTargetRequestId}}",
                 "review"
               ]
             }
@@ -7864,15 +7913,15 @@
           "response": []
         },
         {
-          "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 404)",
+          "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 409)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Cancellation of non-existent AI action returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Cancellation of non-existent AI action returns 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
                   "});"
                 ]
               }

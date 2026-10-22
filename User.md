@@ -581,3 +581,44 @@ Evidence và ma trận đầy đủ: [CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md](ba
 - Gmail SMTP: cấu hình Development explicit Smtp; TLS1.3 và AUTH235 thành công. **SMTP_CONNECTION_VERIFIED / SMTP_AUTH_VERIFIED / DELIVERY_NOT_TESTED**; không gửi thư.
 - Push: Backend dùng Expo, hiện delivery disabled. Empty receipts lookup200 chỉ chứng minh endpoint truy cập được; client registration/platform credentials/device delivery chưa nghiệm thu. Không khẳng định FCM đã tích hợp trực tiếp hoặc Push đã hoạt động.
 - Không truy cập database, không giao dịch ngân hàng/gửi thông báo, không đổi provider. **Full Newman E2E NOT RUN; FRONTEND UI NOT YET VERIFIED** trong audit này. Các kết quả Core trước đó là bằng chứng lịch sử, không phải lượt chạy mới.
+
+---
+
+## PHỤ LỤC G — Đồng bộ 100% Tính năng & API User Backend (Cập nhật 22/10/2026)
+
+> **Mục tiêu đồng bộ:** Ghi nhận toàn bộ 205 User endpoints trên 20 bộ Controller hiện có của Backend vào đặc tả chính thức `User.md`. Không xóa bỏ tính năng Backend đã có để ép khớp tài liệu cũ; không bỏ qua các tính năng tương thích ngược (Legacy Groups); giữ nguyên toàn bộ các quy tắc bảo toàn tiền và các BLOCKER sản phẩm đã chốt.
+
+Chi tiết kiểm kê toàn diện từng endpoint, tham số request/response, validation và kiểm soát an toàn được ghi nhận tại tài liệu liên kết: [BACKEND-USER-FEATURE-INVENTORY.md](backend/docs/BACKEND-USER-FEATURE-INVENTORY.md).
+
+### 1. Quản lý Ảnh đại diện (Real Avatar Upload)
+- **Endpoint:** `POST /api/users/me/avatar` (yêu cầu xác thực User).
+- **Cơ chế:** Nhận tệp qua `multipart/form-data` (`IFormFile File`), kiểm tra Content-Type và magic bytes hợp lệ của các định dạng `.jpg`, `.jpeg`, `.png`, `.webp`. Dung lượng tối đa cho phép là **5MB** (5,242,880 bytes).
+- **Lưu trữ:** Lưu trữ tệp vật lý an toàn tại thư mục máy chủ `/avatars/<userId>_<timestamp>.<ext>`.
+- **Cập nhật dữ liệu:** Gán đường dẫn vào trường `AvatarUrl` của thực thể `User`. Đồng thời URL này được đồng bộ hiển thị trong hồ sơ người dùng (`UserProfileDto`), danh sách bạn bè (`FriendDto`), lời mời kết bạn (`FriendRequestDto`), và danh sách thành viên quỹ V1 (`V1MemberDto`).
+
+### 2. Đổi Email an toàn qua OTP xác thực (Atomic Email Change via OTP)
+- **Luồng 2 bước bảo vệ tài khoản:**
+  1. `POST /api/users/me/email/request`: Người dùng nhập email mới (`newEmail`). Backend kiểm tra định dạng email chuẩn, xác minh email mới chưa từng được đăng ký trong hệ thống (`duplicate_email` 409). Sau đó tạo mã OTP ngẫu nhiên 6 chữ số có thời hạn 15 phút, lưu vào trường `PendingNewEmail` và phát thông điệp Outbox gửi email OTP đến địa chỉ mới.
+  2. `POST /api/users/me/email/confirm`: Người dùng nhập email mới và mã OTP đã nhận. Backend xác thực OTP: nếu sai hoặc hết hạn trả về lỗi 400; nếu đúng, thực hiện cập nhật nguyên tử đồng thời `Email` và `NormalizedEmail` sang giá trị mới, xóa sạch `PendingNewEmail` và đánh dấu OTP đã được tiêu thụ (chống tái sử dụng OTP).
+
+### 3. Khám phá & Tìm kiếm Bạn bè Công khai (Friend Discovery)
+- **Endpoint:** `GET /api/friends/discover?searchTerm=...&page=...&pageSize=...` (yêu cầu xác thực User).
+- **Rate Limit riêng biệt:** Áp dụng ASP.NET Core Rate Limiting policy `userDiscovery` giới hạn tối đa **30 requests/phút** theo từng User ID đã xác thực để ngăn chặn hành vi cào quét dữ liệu người dùng (scraping). Trả về mã lỗi HTTP 429 khi vượt quá giới hạn.
+- **Phòng chống tràn số (Overflow Protection):** Ràng buộc tham số `page` tối đa không vượt quá `100,000`. Phép tính bỏ qua bản ghi `Skip = (page - 1) * pageSize` sử dụng số nguyên có kiểm tra giới hạn để ngăn chặn lỗi số học overflow.
+- **Bảo mật danh tính & Chống rò rỉ thông tin cá nhân (Privacy Leak Prevention):**
+  - Chỉ trả về: `userId`, `spendId`, `displayName` (ưu tiên `DisplayName` nếu có, fallback `FullName`), `avatarUrl`, và `relationshipStatus` (`None`, `OutgoingPending`, `IncomingPending`, `Friends`).
+  - Tuyệt đối loại bỏ các trường nhạy cảm: `email`, `phoneNumber`, `nickname` cá nhân của bạn bè.
+
+### 4. Hệ thống Rate Limiters & Kiểm soát Tải Concurrency
+- `auth`: 10 requests/phút cho các luồng đăng ký, đăng nhập.
+- `emailVerification`: 10 requests/phút cho các thao tác gửi/xác thực mã OTP email.
+- `userDiscovery`: 30 requests/phút cho tìm kiếm khám phá người dùng.
+- `financial`: 30 requests/phút cho các giao dịch chuyển tiền, chi tiêu, nạp rút, đóng góp và biểu quyết quỹ.
+- `ai`: 15 requests/phút cho tương tác trợ lý tài chính Gemini.
+- `user-chat:{userId}`: Giới hạn tối đa **2 cuộc hội thoại đồng thời** trên mỗi tài khoản người dùng để ngăn cản việc spam sinh tải AI.
+
+### 5. Duy trì Tương thích ngược Nhóm cũ (Legacy Groups Compatibility)
+- Bộ Controller `/api/groups` (29 endpoints) tiếp tục được duy trì đầy đủ để phục vụ dữ liệu lịch sử và các ứng dụng tích hợp cũ.
+- Hệ thống quỹ authoritative phục vụ Mobile User là **Quỹ V1 (`/api/v1/funds`)** với 36 endpoints hỗ trợ đầy đủ Fixed Fund (`CanSpend`), Free Fund (xét duyệt chi/rút), Bầu cử Chủ quỹ 2 vòng, Biểu quyết hoạt động mới 24h, Quyết toán chia lại tiền rải đồng dư và Giải thể quỹ khi số dư về đúng 0 VND.
+- Tài khoản bị hạn chế tài chính (`Restricted` Level 1): Không được ghi nợ xuất tiền (chuyển P2P, chuyển ví, tạo chi tiêu, góp quỹ, xin rút quỹ); vẫn được đăng nhập, đổi theme/language, đổi mật khẩu, upload avatar, gửi hỗ trợ và nhận tiền chuyển đến/hoàn tiền.
+- Tài khoản bị khóa (`Locked` Level 2): Từ chối đăng nhập (403), thu hồi toàn bộ token và phiên hoạt động.

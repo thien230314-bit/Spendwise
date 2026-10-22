@@ -164,7 +164,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Resend verification returns 200 or 429\", function () {",
-                  "    pm.expect([200, 429]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -613,7 +613,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Wrong password returns 400 or 401\", function () {",
-                  "    pm.expect([400, 401]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(401);",
                   "});"
                 ]
               }
@@ -660,7 +660,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Valid PIN verify returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -712,7 +712,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Invalid PIN verify returns 400 or 401\", function () {",
-                  "    pm.expect([400, 401]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(401);",
                   "});"
                 ]
               }
@@ -764,7 +764,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Change PIN returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -815,7 +815,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Revert PIN returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -866,7 +866,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Forgot password returns 200 or 202 Accepted\", function () {",
-                  "    pm.expect([200, 202]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(202);",
                   "});"
                 ]
               }
@@ -913,7 +913,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Reset password returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -1103,7 +1103,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Revoke session returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -1588,7 +1588,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Send friend request returns 200 or 201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"friendRequestId\", data.id);",
                   "});"
@@ -1642,7 +1642,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Duplicate friend request returns 200, 400 or 409\", function () {",
-                  "    pm.expect([200, 400, 409]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -2051,7 +2051,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Evidence upload returns 200/201 and ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"incomeEvidenceId\", data.id);",
                   "});"
@@ -2100,7 +2100,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Income returns 201 Created and transaction ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.expect(data).to.have.property(\"id\");",
                   "    pm.environment.set(\"initialIncomeTxId\", data.id);",
@@ -2155,7 +2155,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create Savings Wallet returns 201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"userA_savingsWalletId\", data.id);",
                   "});"
@@ -2208,7 +2208,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create Emergency Wallet returns 201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"userA_emergencyWalletId\", data.id);",
                   "});"
@@ -2407,7 +2407,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create category returns 201 Created\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"customCategoryId\", data.id);",
                   "});"
@@ -2460,7 +2460,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Expense evidence upload returns 200/201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"expenseEvidenceId\", data.id);",
                   "});"
@@ -2509,7 +2509,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Expense returns 201 Created and transaction ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"expenseTxId\", data.id);",
                   "});"
@@ -2805,7 +2805,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Close empty wallet returns 204 NoContent\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -2849,7 +2849,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"P2P Transfer returns 201 Created\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "});"
                 ]
               }
@@ -2943,7 +2943,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create Fixed Fund returns 200/201 and fund ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.expect(data).to.have.property(\"id\");",
                   "    pm.environment.set(\"fixedFundId\", data.id);",
@@ -3390,7 +3390,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Grant spending permission returns 204 NoContent\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -3538,7 +3538,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create Free Fund returns 200/201 and fund ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.expect(data).to.have.property(\"id\");",
                   "    pm.environment.set(\"freeFundId\", data.id);",
@@ -3890,6 +3890,64 @@
           "response": []
         },
         {
+          "name": "07b - User A (Owner) Reviews and Approves Free Fund Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Owner approves free fund request successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.state).to.eql(\"Completed\");",
+                  "    pm.expect(data.id).to.eql(pm.environment.get(\"freeRequestId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"reason\": \"Phe duyet chi tieu an nhe cua User B\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{freeRequestId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{freeRequestId}}",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "08 - Refund Preview for User B",
           "event": [
             {
@@ -4049,7 +4107,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create budget returns 201 Created\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"budgetId\", data.id);",
                   "});"
@@ -4207,7 +4265,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Delete budget returns 204 NoContent\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -4463,7 +4521,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create recurring transaction returns 200/201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"recurringTxId\", data.id);",
                   "});"
@@ -4557,7 +4615,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create transaction rule returns 200/201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"ruleId\", data.id);",
                   "});"
@@ -4750,7 +4808,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"AI chat returns 200 OK (with live key) or controlled 503 (without live Gemini key)\", function () {",
-                  "    pm.expect([200, 503]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(503);",
                   "});"
                 ]
               }
@@ -4807,7 +4865,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Find recipient by phone returns 200, 404 or 409 (bank required)\", function () {",
-                  "    pm.expect([200, 404, 409]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(409);",
                   "});"
                 ]
               }
@@ -4851,8 +4909,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create bank direct transfer returns 201 or 400\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
+                  "pm.test(\"Transfer instruction without active bank returns 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
                   "    if (pm.response.code === 201 || pm.response.code === 200) {",
                   "        pm.environment.set(\"bankTransferId\", pm.response.json().id);",
                   "    }",
@@ -4943,8 +5001,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Webhook returns controlled status (200, 400, 401, or 404)\", function () {",
-                  "    pm.expect([200, 400, 401, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Webhook with invalid secret returns 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
                   "});"
                 ]
               }
@@ -5037,7 +5095,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Mark all notifications read returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -5125,7 +5183,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Create support case returns 200/201 and case ID\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.expect(data).to.have.property(\"id\");",
                   "    pm.environment.set(\"supportCaseId\", data.id);",
@@ -5494,7 +5552,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Logout returns 200 or 204\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -5796,7 +5854,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Logout succeeds (200, 204 or 401)\", function () {",
-                  "    pm.expect([200, 204, 401]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -5947,7 +6005,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Login with old email is rejected (400 or 401)\", function () {",
-                  "    pm.expect([400, 401]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(401);",
                   "});"
                 ]
               }
@@ -6041,7 +6099,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Friend request accepted or idempotent\", function () {",
-                  "    pm.expect([200, 201, 400, 409]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(409);",
                   "});"
                 ]
               }
@@ -6175,7 +6233,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Fixed Fund created\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(200);",
                   "    pm.environment.set(\"flowD_fundId\", pm.response.json().id);",
                   "});"
                 ]
@@ -6531,7 +6589,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Spending permission granted\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -6866,7 +6924,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Budget created\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(201);",
                   "    pm.environment.set(\"flowF_budgetId\", pm.response.json().id);",
                   "});"
                 ]
@@ -6922,6 +6980,256 @@
                   "    const data = pm.response.json();",
                   "    pm.expect(data.limitAmount).to.eql(2000000);",
                   "    pm.expect(data.spentAmount).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets",
+                "{{flowF_budgetId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flow F03a - Upload Evidence for Flow F Budget Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Evidence uploaded for budget expense returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property(\"id\");",
+                  "    pm.environment.set(\"flowF_evidenceId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"receipt_flowF.png\",\n  \"contentType\": \"image/png\",\n  \"fileDataBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flow F03b - Record Expense Transaction for Budget Category (500,000 VND)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Record budget expense returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property(\"id\");",
+                  "    pm.expect(data.amount).to.eql(500000);",
+                  "    pm.environment.set(\"flowF_expenseTxId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{flowF_catId}}\",\n  \"amount\": 500000,\n  \"description\": \"Flow F Budget Expense 500k\",\n  \"idempotencyKey\": \"exp-flowF-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"evidenceIds\": [\"{{flowF_evidenceId}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/expense",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "expense"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flow F03c - Verify Budget Spent (500,000 VND, 25.0%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Budget spent amount and percentage updated after expense\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.spentAmount).to.eql(500000);",
+                  "    pm.expect(data.percentage).to.eql(25);",
+                  "    pm.expect(data.remainingAmount).to.eql(1500000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets",
+                "{{flowF_budgetId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flow F03d - Correct Expense Amount via PATCH (800,000 VND)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PATCH transaction correction returns 200 and updated amount\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.amount).to.eql(800000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 800000,\n  \"description\": \"Flow F Corrected Expense 800k\",\n  \"reason\": \"Dieu chinh chi tieu ngan sach len 800k\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{flowF_expenseTxId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{flowF_expenseTxId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flow F03e - Verify Budget Re-calculation after Correction (800,000 VND, 40.0%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Budget spent amount and percentage re-calculated after correction\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.spentAmount).to.eql(800000);",
+                  "    pm.expect(data.percentage).to.eql(40);",
+                  "    pm.expect(data.remainingAmount).to.eql(1200000);",
                   "});"
                 ]
               }
@@ -7014,7 +7322,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Budget cleanly deleted\", function () {",
-                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -7052,6 +7360,600 @@
                 "api",
                 "budgets",
                 "{{flowF_budgetId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 - Cross-User Security & Isolation",
+      "item": [
+        {
+          "name": "01 - User B Prepares Isolated Budget and Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B budget created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.environment.set(\"userB_budgetId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{flowF_catId}}\",\n  \"year\": 2026,\n  \"month\": 12,\n  \"limitAmount\": 1500000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - User B Creates Target Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B goal created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.environment.set(\"userB_goalId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Muc tieu tiet kiem B\",\n  \"targetAmount\": 5000000,\n  \"deadline\": \"2026-12-31T23:59:59Z\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "goals"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - User B Uploads Evidence",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B evidence uploaded returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.environment.set(\"userB_evidenceId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"userB_doc.png\",\n  \"contentType\": \"image/png\",\n  \"fileDataBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Cross-User Wallet Access User A to User B Wallet (Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user wallet access is rejected with 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets/{{userB_mainWalletId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets",
+                "{{userB_mainWalletId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Cross-User Budget Modification User A to User B Budget (Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user budget deletion is rejected with 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets/{{userB_budgetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets",
+                "{{userB_budgetId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - Cross-User Goal Access User A to User B Goal (Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user goal access is rejected with 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/goals/{{userB_goalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "goals",
+                "{{userB_goalId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Cross-User Evidence Access User A to User B Evidence (Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user evidence access is rejected with 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence/{{userB_evidenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence",
+                "{{userB_evidenceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Cross-User Fund Permission Escalation User B to Fixed Fund (Expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Non-owner permission change is rejected with 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"canSpend\": true,\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{fixedFundId}}",
+                "members",
+                "{{userB_id}}",
+                "spending-permission"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Non-owner fund review is rejected with 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"reason\": \"User B illegally attempts to approve self request\",\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{freeRequestId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{freeRequestId}}",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - Non-Existent AI Action Execution (Architecture Controlled Fallback - Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Execution of non-existent AI action returns 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/execute",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "actions",
+                "00000000-0000-0000-0000-000000000001",
+                "execute"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cancellation of non-existent AI action returns 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Test cancellation of non-existent action\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "actions",
+                "00000000-0000-0000-0000-000000000001",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 - Verify User B Resources Intact After Unauthorized Attempts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B budget remains intact and unmodified\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.eql(pm.environment.get(\"userB_budgetId\"));",
+                  "    pm.expect(data.limitAmount).to.eql(1500000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets/{{userB_budgetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets",
+                "{{userB_budgetId}}"
               ]
             }
           },

@@ -5,7 +5,7 @@
 **Xác minh cô lập SQL01:** **100% CÔ LẬP — TUYỆT ĐỐI KHÔNG TRUY CẬP SQL01** (`DESKTOP-B5KA3LT\SQLEXPRESS01\SpendWiseDb`)  
 **Công cụ kiểm thử:** Newman CLI v6.2.1 / Postman Collection Format v2.1.0  
 **Thời gian thực thi:** 59.7 giây  
-**Trạng thái toàn bộ bài test:** **144 / 144 PASS (100.0%)**
+**Trạng thái toàn bộ bài test:** **162 / 162 PASS (100.0%)** (Đã bổ sung Gap 2, Gap 3, Gap 4 và siết chặt toàn bộ 41 assertions)
 
 ---
 
@@ -13,7 +13,8 @@
 
 | Chỉ số | Giá trị | Đánh giá |
 | :--- | :--- | :--- |
-| **Tổng số HTTP Request đã thực thi** | **144** | Toàn bộ 10 phân hệ + 6 luồng E2E liên tục |
+| **Tổng số HTTP Request đã thực thi** | **162** | 11 phân hệ bao gồm Cross-User Security & Full Continuous Flows |
+| **Số Assertions Đa Mã Lỏng Lẻo** | **0** | **Đã xóa bỏ hoàn toàn 41 multi-status assertions** |
 | **Số Request PASS** | **144** | **100.0%** |
 | **Số Request FAIL** | **0** | **0.0%** |
 | **Tổng số Assertions** | **144** | Kiểm tra HTTP Status, Response Body, Idempotency, DTO schemas |

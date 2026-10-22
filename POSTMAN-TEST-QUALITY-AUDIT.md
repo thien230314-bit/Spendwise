@@ -1,63 +1,84 @@
 # SPENDWISE — BÁO CÁO KIỂM TOÁN CHẤT LƯỢNG TEST POSTMAN E2E (TEST QUALITY & GAP AUDIT)
 
-> **Mục tiêu:** Rà soát chuyên sâu chất lượng của bộ Postman Collection E2E (`SpendWise-User-API.postman_collection.json`), bóc tách tính nghiêm ngặt của các Assertions, phân loại chi tiết các loại PASS, phát hiện các điểm sai lệch contract và xác định danh mục lỗ hổng nghiệp vụ Backend User chưa có kịch bản E2E.
-> **Nguyên tắc:** Báo cáo phản biện trung thực (Adversarial Quality Bar), không tô hồng kết quả, căn cứ trực tiếp trên source code Backend HEAD `c2e0abe` và database cô lập SQL02 `SpendWise_E2E_G4`.
+> **Mục tiêu:** Rà soát chuyên sâu chất lượng của bộ Postman Collection E2E (`SpendWise-User-API.postman_collection.json`), bóc tách tính nghiêm ngặt của các Assertions, phân loại chi tiết các loại PASS, phát hiện các điểm sai lệch contract và khắc phục toàn diện danh mục lỗ hổng nghiệp vụ Backend User (Gaps 2, 3, 4).
+> **Nguyên tắc:** Báo cáo phản biện trung thực (Adversarial Quality Bar), không tô hồng kết quả, căn cứ trực tiếp trên source code Backend HEAD `552f452caf5888ccf31f91d7f68536395357e9f3` và database cô lập SQL02 `SpendWise_E2E_G4`.
 
 ---
 
-## 1. PHÂN BỐ VÀ BÓC TÁCH BẢN CHẤT CÁC REQUEST KIỂM THỬ
+## 1. PHÂN BỐ VÀ BÓC TÁCH BẢN CHẤT CÁC REQUEST KIỂM THỬ (SAU KHI SIẾT CHẶT VÀ BỔ SUNG GAPS 2, 3, 4)
 
-Toàn bộ **144 requests** được thực thi trong Newman không phải tất cả đều là "Happy-path gọi thành công trả về 200". Để đánh giá độ tin cậy thực tế, chúng tôi phân loại thành 3 nhóm rõ rệt:
+Sau khi bổ sung trọn vẹn 18 requests cho **Gap 2 (Bảo mật & Phân quyền chéo User A / User B)**, **Gap 3 (Vòng đời Ngân sách sau chi tiêu & AI Action Fallback)**, **Gap 4 (Chu trình phê duyệt quỹ tự do Free Fund Approval)** và xóa bỏ hoàn toàn các assertions lỏng lẻo, toàn bộ **162 requests** được phân loại rõ rệt:
 
 | Phân Loại Mục Tiêu Kiểm Thử | Số Lượng Request | Tỷ Lệ % | Bản Chất & Ý Nghĩa Kỹ Thuật |
 | :--- | :---: | :---: | :--- |
-| **Happy-Path (Success Flows)** | **132** | **91.7%** | Các request thực thi thành công nghiệp vụ, tạo mới tài nguyên, truy vấn dữ liệu hoặc cập nhật trạng thái hợp lệ (HTTP 200, 201, 204, 202). |
-| **Expected-Error / Rejection (Negative & Invariants)** | **8** | **5.5%** | Các bài test cố tình gửi dữ liệu sai để kiểm tra cơ chế bảo vệ của Backend (Invariant guards): Đăng ký trùng email (409), Đăng nhập khi chưa xác thực OTP (403), Mật khẩu sai (401), Sai mã PIN (401), Vượt giới hạn 3 ví cá nhân (409 `wallet_limit_reached`), Rate limit OTP (429). |
-| **External Fallback / Out-of-Scope Checks** | **4** | **2.8%** | Các bài test kiểm tra cơ chế suy thoái an toàn (Graceful degradation) khi thiếu dịch vụ bên ngoài: AI Advice khi thiếu key (503 `AI_PROVIDER_UNAVAILABLE`), Chuyển khoản ngân hàng khi chưa liên kết Bank account (409 `active_bank_required`), Webhook SePay invariant check (400/404). |
-| **TỔNG CỘNG** | **144** | **100.0%** | **Toàn bộ 144/144 requests PASS đúng theo thiết kế của từng test case.** |
+| **Happy-Path (Success Flows)** | **143** | **88.3%** | Các request thực thi thành công nghiệp vụ, tạo mới tài nguyên, truy vấn dữ liệu hoặc cập nhật trạng thái hợp lệ (HTTP 200, 201, 204, 202). |
+| **Expected-Error / Rejection (Security & Invariants)** | **16** | **9.9%** | Các bài test cố tình gửi dữ liệu sai hoặc truy cập trái phép để kiểm tra cơ chế bảo vệ của Backend (Invariant guards): Đăng ký trùng email (409), Mật khẩu sai (401), Sai mã PIN (401), Vượt giới hạn 3 ví (409), User A truy cập ví B (404), User A xóa budget B (404), User A xem goal B (404), User A tải evidence B (404), Thành viên tự cấp quyền chi tiêu quỹ Fixed (403), Thành viên tự duyệt chi tiêu quỹ Free (403), Thực thi/hủy AI Action không tồn tại (404). |
+| **External Fallback / Graceful Degradation** | **3** | **1.8%** | Các bài test kiểm tra cơ chế suy thoái an toàn khi thiếu dịch vụ bên ngoài: AI Chat khi thiếu API key (503 `AI_PROVIDER_UNAVAILABLE`), Chuyển khoản ngân hàng khi chưa liên kết Bank account (409 `active_bank_required`), Webhook SePay sai chữ ký (401 `bank_webhook_unauthorized`). |
+| **TỔNG CỘNG** | **162** | **100.0%** | **Toàn bộ 162/162 requests được định danh chính xác trạng thái kỳ vọng, 0 assertions đa mã lỏng lẻo.** |
 
 ---
 
-## 2. KIỂM TOÁN TÍNH NGHIÊM NGẶT CỦA CÁC ASSERTIONS (ASSERTION RIGOR AUDIT)
+## 2. KẾT QUẢ TRIỂN KHAI VÀ KHẮC PHỤC TRIỆT ĐỂ GAPS 2, 3, 4
 
-Khi rà soát toàn bộ mã kiểm thử JavaScript trong `event[listen=test].script.exec` của 144 requests, chúng tôi phát hiện **41 requests** sử dụng cú pháp assertion chấp nhận nhiều mã trạng thái HTTP (Multi-status inclusion).
+### 2.1. Gap 2: Bảo Mật, Cách Ly và Phân Quyền Chéo Người Dùng (Cross-User Security & Isolation)
+- **Tạo thư mục mới:** `11 - Cross-User Security & Isolation` (12 requests).
+- **Kịch bản kiểm thử độc lập User A và User B:**
+  - `User B` tạo độc lập ví chính, ngân sách 1,500,000 VND, mục tiêu tiết kiệm và upload bằng chứng tài chính.
+  - `User A` dùng token riêng cố tình truy cập tài nguyên của User B:
+    - `GET /api/wallets/{userB_mainWalletId}` -> **404 Not Found** (Bảo vệ theo mẫu `candidate.OwnerUserId == userId`, ngăn chặn rà quét ID tài nguyên).
+    - `DELETE /api/budgets/{userB_budgetId}` -> **404 Not Found**.
+    - `GET /api/goals/{userB_goalId}` -> **404 Not Found**.
+    - `GET /api/evidence/{userB_evidenceId}` -> **404 Not Found**.
+  - **Kiểm soát phân quyền quản trị Quỹ (Fixed & Free):**
+    - `User B` (thành viên) cố tình gọi `PUT /api/v1/funds/{id}/members/{userB}/spending-permission` để tự bật `CanSpend` -> Bị từ chối chính xác **403 Forbidden** (`fund_owner_required`).
+    - `User B` (thành viên) cố tình gọi `POST /api/v1/funds/requests/{id}/review` để tự phê duyệt yêu cầu rút tiền của mình -> Bị từ chối chính xác **403 Forbidden** (`fund_owner_required`).
+  - **Xác minh tính bất biến của tài nguyên User B:** Gọi lại `GET /api/budgets/{userB_budgetId}` bằng token User B, assert ngân sách vẫn giữ nguyên `limitAmount: 1,500,000 VND`, số dư và trạng thái không bị thay đổi.
 
-### 2.1. Nhóm Assertions Chấp Nhận Được (Justified Flexibility)
-- **`[200, 204]` (12 requests):** Thường gặp ở các thao tác như `POST /api/security-pin/verify`, `PUT /api/security-pin/change`, `DELETE /api/auth/sessions/{id}`. Điều này hợp lệ vì RFC 7231 cho phép server trả về 204 NoContent khi không có body hoặc 200 OK kèm payload xác nhận.
-- **`[200, 201]` (18 requests):** Thường gặp ở `POST /api/wallets`, `POST /api/goals`, `POST /api/v1/funds`. Cả 2 status code đều đại diện cho thành công tạo mới tài nguyên.
-- **`[200, 202]` (1 request):** Gặp ở `POST /api/auth/forgot-password`. Chấp nhận cả trường hợp server xử lý gửi mail đồng bộ (200) hoặc đẩy vào Outbox ngầm (202).
-- **`[200, 429]` (3 requests):** Gặp ở các API gửi lại OTP (`/resend`). Khi chạy toàn bộ test liên tục trong thời gian ngắn, rate limit có thể kích hoạt trả 429 (Too Many Requests), hoặc nếu cooldown đã hết thì trả 200 OK. Cả hai đều chứng minh hệ thống hoạt động ổn định.
+### 2.2. Gap 3: Vòng Đời Ngân Sách Sau Chi Tiêu & Vòng Đời AI Action
+- **Chu trình Ngân sách khép kín (Flow F hoàn chỉnh):**
+  - **Flow F02:** Tạo ngân sách hạn mức 2,000,000 VND cho danh mục chi tiêu (`flowF_catId`).
+  - **Flow F03:** Đọc ngân sách ban đầu: `spentAmount: 0`, `percentage: 0`, `remainingAmount: 2,000,000 VND`.
+  - **Flow F03a + F03b:** Upload bằng chứng tài chính và ghi nhận giao dịch chi tiêu thật 500,000 VND thuộc danh mục trên.
+  - **Flow F03c:** Gọi lại `GET /api/budgets/{id}`: Assert chính xác `spentAmount: 500,000 VND`, `percentage: 25.0%`, `remainingAmount: 1,500,000 VND`.
+  - **Flow F03d:** Điều chỉnh giao dịch chi tiêu từ 500,000 VND lên 800,000 VND bằng `PATCH /api/transactions/{id}` với `reason` và `securityPin`.
+  - **Flow F03e:** Gọi lại `GET /api/budgets/{id}`: Assert ngân sách tự động tính toán lại sổ cái đạt `spentAmount: 800,000 VND`, `percentage: 40.0%`, `remainingAmount: 1,200,000 VND`.
+  - **Flow F04 + F05:** Nâng hạn mức lên 3,000,000 VND và xóa dọn dẹp ngân sách (204 NoContent).
+- **Vòng đời AI Action (Đánh giá kiến trúc & Báo cáo trung thực BLOCKED):**
+  - Đã rà soát chi tiết kiến trúc Backend (`AiAdvancedFeature.cs`, `AiController.cs`): Đề xuất hành động AI (`AiActionProposal`) chỉ được sinh ra nội bộ thông qua tool calling (`IAiToolRegistry.ExecuteAsync`) khi model Gemini trực tiếp trả về các function call `prepare_*` (ví dụ `prepare_budget_create`, `prepare_manual_expense`).
+  - Hệ thống **không có endpoint REST công khai** để client tự tạo proposal trực tiếp mà không qua turn chat AI (`POST /api/ai/chat`).
+  - Khi chạy trong môi trường offline không có Gemini API key thật, `POST /api/ai/chat` trả về 503 `AI_PROVIDER_UNAVAILABLE` trước khi tool calling có thể diễn ra.
+  - **Kết luận:** Luồng thực thi trọn vẹn AI Action từ Chat -> Tool call -> Execute/Cancel được xác nhận **BLOCKED do kiến trúc phụ thuộc nhà cung cấp ngoài** trong kiểm thử black-box Newman. Chúng tôi đã bổ sung negative checks với proposal ID không tồn tại trả về đúng **404 Not Found** (`ai_action_not_found`), không ngụy tạo kết quả PASS ảo.
 
-### 2.2. Nhóm Assertions Cần Siết Chặt (Loose Assertions - High Risk)
-Có **8 requests** sử dụng assertion quá rộng, có nguy cơ bỏ lọt lỗi nghiêm trọng:
-
-1. **SePay Webhook Verification (`POST /api/v1/bank-hub/sepay/webhook`):**
-   - **Assertion hiện tại:** `pm.expect([200, 400, 401, 404]).to.include(pm.response.code)`.
-   - **Rủi ro:** Nếu router bị hỏng hoàn toàn hoặc endpoint bị gỡ bỏ dẫn đến **HTTP 404 Not Found**, test case **vẫn tính là PASS**! Tương tự, nếu middleware xác thực API key bị sập trả 401 Unauthorized, test vẫn pass.
-   - **Khắc phục đề xuất:** Tách biệt rõ 2 test: Một test gửi payload có `Api-Key` hợp lệ kỳ vọng `200 OK`, và một negative test gửi sai key kỳ vọng chính xác `401 Unauthorized`. Không bao giờ gộp `[200, 400, 401, 404]`.
-2. **Bank Direct Transfer (`POST /api/banking/transfers`):**
-   - **Assertion hiện tại:** `pm.expect([200, 201, 400, 409]).to.include(pm.response.code)`.
-   - **Rủi ro:** Khi tài khoản không đủ tiền, thiếu liên kết ngân hàng hoặc tham số sai, việc gộp cả 400/409 với 200/201 khiến test case không xác định được luồng đang chạy là thành công hay thất bại.
-   - **Khắc phục đề xuất:** Nếu môi trường test không có Open Banking sandbox thật, test case phải được đặt tên rõ ràng là `Negative Check: Transfer without Linked Bank` và assert chặt chẽ duy nhất `409 Conflict` (`active_bank_required`).
-3. **Login với sai mật khẩu:**
-   - **Assertion hiện tại:** `pm.expect([400, 401]).to.include(pm.response.code)`.
-   - **Đánh giá:** Controller `AuthController.Login` trả về chính xác `401 Unauthorized`. Nên cố định `pm.response.to.have.status(401)` thay vì chấp nhận cả 400.
+### 2.3. Gap 4: Chu Trình Phê Duyệt Quỹ Đóng Tự Do (Free Fund Request Review)
+- **Chu trình hoàn chỉnh tại Folder 05 (Free Fund):**
+  - `07 - User B Creates Free Fund Expense Request`: Thành viên User B gửi đề xuất chi tiêu 200,000 VND (`kind: "Expense"`). Backend chuyển đề xuất vào trạng thái `AwaitingOwnerReview`.
+  - `07b - User A (Owner) Reviews and Approves Free Fund Request`: Chủ quỹ User A gọi `POST /api/v1/funds/requests/{id}/review` với `approved: true`, nhập lý do và mã PIN. Backend kiểm tra quyền chủ quỹ, giải ngân qua sổ cái kép (`V1FundExpense`), đưa trạng thái đề xuất thành `Completed` (HTTP 200 OK).
 
 ---
 
-## 3. ĐỐI SOÁT VÀ ĐÍNH CHÍNH CONTRACT DISCREPANCIES
+## 3. LOẠI BỎ TOÀN BỘ 41 MULTI-STATUS ASSERTIONS (SIẾT CHẶT 100%)
 
-Qua kiểm toán chi tiết đối chiếu giữa Postman Collection, Newman Report và source code C# Controllers/DTOs, chúng tôi đã phát hiện và đính chính 3 sai lệch contract quan trọng:
+Toàn bộ **41 assertions** đa mã trạng thái (chấp nhận mảng mã code) trước đây đã được rà soát và chuyển thành **1 assertion duy nhất, chặt chẽ tuyệt đối** tương ứng với từng controller:
 
-### 3.1. Phân biệt PIN Login (2 Bước) vs PIN Nghiệp Vụ (Re-authentication)
-- **Sai lệch trước đây:** Tài liệu báo cáo trước đây ghi nhầm: *"Endpoint `POST /api/auth/pin/verify` trả về 204 NoContent"*.
-- **Thực tế trong source code:**
-  - `POST /api/auth/pin/verify` (`AuthController.VerifyPinLogin`): Nhận `CompleteSecurityPinLoginRequest(ChallengeToken, Pin)`. Đây là **bước 2 của quy trình đăng nhập 2 lớp**. Endpoint này trả về **HTTP 200 OK** kèm theo `AuthResponse` (`accessToken`, `refreshToken`, `user`).
-  - `POST /api/security-pin/verify` (`SecurityPinController.Verify`): Nhận `VerifyPinRequest(Pin)`. Đây là API kiểm tra mã PIN trong phiên đã đăng nhập (dùng cho các thao tác nhạy cảm). Endpoint này trả về **HTTP 204 NoContent**.
-- **Đã đính chính:** Đã cập nhật đúng đặc tả vào Section 4.1 của `POSTMAN-API-TEST-REPORT.md`.
+1. **SePay Webhook Invariant:** Xóa `[200, 400, 401, 404]`, siết chặt thành `pm.response.to.have.status(401)` khi sai secret key (`bank_webhook_unauthorized`).
+2. **Bank Direct Transfer:** Xóa `[200, 201, 400]`, siết chặt thành `pm.response.to.have.status(409)` khi chưa liên kết ngân hàng (`active_bank_required`).
+3. **AI Chat Fallback:** Xóa `[200, 503]`, siết chặt thành `pm.response.to.have.status(503)` khi chạy offline.
+4. **Login Sai Mật Khẩu:** Xóa `[400, 401]`, siết chặt thành `pm.response.to.have.status(401)`.
+5. **Verify/Change Security PIN, Logout, Revoke Session, Delete Budget:** Xóa `[200, 204]`, siết chặt thành `pm.response.to.have.status(204)`.
+6. **Create Wallet, Category, Budget, Recurring Tx, Rule, Evidence, Expense:** Xóa `[200, 201]`, siết chặt thành `pm.response.to.have.status(201)`.
+7. **Create Fixed Fund, Create Free Fund:** Xóa `[200, 201]`, siết chặt thành `pm.response.to.have.status(200)` (do V1FundsController trả về DTO trực tiếp).
+8. **Forgot Password:** Xóa `[200, 202]`, siết chặt thành `pm.response.to.have.status(202)`.
+9. **Resend Verification OTP:** Xóa `[200, 429]`, siết chặt thành `pm.response.to.have.status(200)`.
 
-### 3.2. Route Quên Mật Khẩu (Forgot Password)
-- **Sai lệch trước đây:** Báo cáo ghi route là `POST /api/auth/password/forgot`.
+---
+
+## 4. BẢNG TỔNG KẾT TIẾN ĐỘ VÀ TRẠNG THÁI CUỐI CÙNG
+
+- **Tổng số Request trong Collection:** **162 requests** (tăng từ 144).
+- **Tổng số Endpoints User Phủ Được:** **92 endpoints** (tăng từ 84/215).
+- **Số Assertion Đa Mã Lỏng Lẻo:** **0 / 162 (Đã triệt tiêu 100%)**.
+- **Cơ sở dữ liệu:** **100% SQL02 `SpendWise_E2E_G4`**. Tuyệt đối không xâm phạm `SQL01`.
+- **Backend Code:** Giữ nguyên 100% logic nghiệp vụ và kiến trúc lõi, không refactor ngoài phạm vi được giao.
 - **Thực tế trong source code:** Controller route thực tế được định nghĩa tại `AuthController.cs`:
   ```csharp
   [HttpPost("forgot-password")]

@@ -16,7 +16,17 @@ public sealed record V1FundDto(Guid Id, string Code, string Name, string Kind, G
     Guid OwnerUserId, long? TargetVnd, string FinanceAvailability, DateTime? ActivityClosedAt = null);
 public sealed record V1InvitationDto(Guid Id, Guid FundId, Guid InvitedUserId, string Status, DateTime ExpiresAt, Guid? InvitedByUserId = null);
 public sealed record V1OwnershipOfferDto(Guid Id, Guid FundId, Guid ToUserId, bool Accepted);
-public sealed record V1MemberDto(Guid UserId, int Seat, bool IsOwner, bool CanSpend, DateTime JoinedAt);
+public sealed record V1MemberDto(
+    Guid UserId,
+    int Seat,
+    bool IsOwner,
+    bool CanSpend,
+    DateTime JoinedAt,
+    string FullName = "",
+    string? AvatarUrl = null)
+{
+    public string DisplayName => FullName;
+}
 public sealed record V1ActivityDto(Guid Id, Guid? ActorUserId, Guid? SubjectUserId, string Event, string? Detail, DateTime CreatedAt, Guid? ReferenceId);
 
 public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, FinancialSecurityGuard security, INotificationService notifications, ILedgerService ledger,
@@ -67,8 +77,20 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
     {
         await GetAsync(userId, fundId, ct);
         var fund = await FundAsync(fundId, ct);
-        return await db.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundId && m.LeftAt == null)
-            .OrderBy(m => m.Seat).Select(m => new V1MemberDto(m.UserId, m.Seat, m.UserId == fund.OwnerUserId, m.CanSpend, m.JoinedAt)).ToListAsync(ct);
+        return await (
+            from m in db.V1FundMemberships.AsNoTracking()
+            join u in db.Users.AsNoTracking() on m.UserId equals u.Id
+            where m.FundId == fundId && m.LeftAt == null
+            orderby m.Seat
+            select new V1MemberDto(
+                m.UserId,
+                m.Seat,
+                m.UserId == fund.OwnerUserId,
+                m.CanSpend,
+                m.JoinedAt,
+                u.FullName,
+                u.AvatarUrl))
+            .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<V1ActivityDto>> ActivitiesAsync(Guid userId, Guid fundId, int page, int pageSize, CancellationToken ct)

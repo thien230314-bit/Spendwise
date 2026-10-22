@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
+using SpendWise.Application.Finance;
 using SpendWise.Application.Notifications;
 using SpendWise.Application.Social;
 using SpendWise.Domain.Identity;
@@ -11,6 +12,7 @@ using SpendWise.Domain.Social;
 namespace SpendWise.Application.Features.Friends;
 
 public sealed record SearchFriendContactQuery(Guid UserId, string Contact, string? Kind = null) : IRequest<FriendContactDto>;
+public sealed record DiscoverUsersQuery(Guid UserId, string Query, int Page = 1, int PageSize = 20) : IRequest<PagedResult<UserDiscoveryDto>>;
 public sealed record GetFriendsQuery(Guid UserId) : IRequest<IReadOnlyList<FriendDto>>;
 public sealed record GetIncomingFriendRequestsQuery(Guid UserId) : IRequest<IReadOnlyList<FriendRequestDto>>;
 public sealed record GetOutgoingFriendRequestsQuery(Guid UserId) : IRequest<IReadOnlyList<FriendRequestDto>>;
@@ -156,7 +158,8 @@ internal static class FriendFeatureSupport
                 user.Phone,
                 preference.Nickname,
                 preference.IsFavorite,
-                friendship.AcceptedAt))
+                friendship.AcceptedAt,
+                user.AvatarUrl))
             .SingleAsync(cancellationToken);
         var common = await CommonGroupsAsync(db, currentUserId, [friendUserId], cancellationToken);
         return result with { CommonGroups = common.GetValueOrDefault(friendUserId) ?? [] };
@@ -186,7 +189,8 @@ internal static class FriendFeatureSupport
         other.SpendId,
         request.Message,
         request.Status.ToString(),
-        request.CreatedAt);
+        request.CreatedAt,
+        other.AvatarUrl);
 
     public static async Task<bool> ResolvePendingAsync(ISpendWiseDbContext db, FriendRequest request,
         FriendRequestStatus outcome, DateTime now, CancellationToken ct)
@@ -231,7 +235,7 @@ public sealed class SearchFriendContactQueryHandler(ISpendWiseDbContext db)
         }
 
         var state = await FriendFeatureSupport.StateAsync(db, query.UserId, user.Id, cancellationToken);
-        return new FriendContactDto(user.Id, user.FullName, user.SpendId, kind == "spendId" && state != "FRIENDS" ? null : user.Phone, state);
+        return new FriendContactDto(user.Id, user.FullName, user.SpendId, kind == "spendId" && state != "FRIENDS" ? null : user.Phone, state, user.AvatarUrl);
     }
 }
 
@@ -257,7 +261,7 @@ public sealed class GetFriendsQueryHandler(ISpendWiseDbContext db)
                 var user = users[item.FriendUserId];
                 var preference = preferences[item.Id];
                 return new FriendDto(user.Id, user.FullName, user.SpendId, user.Phone,
-                    preference.Nickname, preference.IsFavorite, item.AcceptedAt) { CommonGroups = common.GetValueOrDefault(user.Id) ?? [] };
+                    preference.Nickname, preference.IsFavorite, item.AcceptedAt, user.AvatarUrl) { CommonGroups = common.GetValueOrDefault(user.Id) ?? [] };
             })
             .OrderByDescending(item => item.IsFavorite)
             .ThenBy(item => item.Nickname ?? item.FullName, StringComparer.OrdinalIgnoreCase)
@@ -274,7 +278,7 @@ public sealed class GetIncomingFriendRequestsQueryHandler(ISpendWiseDbContext db
             .Where(item => item.AddresseeUserId == query.UserId && item.Status == FriendRequestStatus.Pending)
             .OrderByDescending(item => item.CreatedAt)
             .Select(item => new FriendRequestDto(item.Id, item.RequesterUserId, item.RequesterUser.FullName,
-                item.RequesterUser.SpendId, item.Message, item.Status.ToString(), item.CreatedAt))
+                item.RequesterUser.SpendId, item.Message, item.Status.ToString(), item.CreatedAt, item.RequesterUser.AvatarUrl))
             .ToListAsync(cancellationToken);
 }
 
@@ -286,8 +290,97 @@ public sealed class GetOutgoingFriendRequestsQueryHandler(ISpendWiseDbContext db
             .Where(item => item.RequesterUserId == query.UserId && item.Status == FriendRequestStatus.Pending)
             .OrderByDescending(item => item.CreatedAt)
             .Select(item => new FriendRequestDto(item.Id, item.AddresseeUserId, item.AddresseeUser.FullName,
-                item.AddresseeUser.SpendId, item.Message, item.Status.ToString(), item.CreatedAt))
+                item.AddresseeUser.SpendId, item.Message, item.Status.ToString(), item.CreatedAt, item.AddresseeUser.AvatarUrl))
             .ToListAsync(cancellationToken);
+}
+
+public sealed class DiscoverUsersQueryHandler(ISpendWiseDbContext db)
+    : IRequestHandler<DiscoverUsersQuery, PagedResult<UserDiscoveryDto>>
+{
+    public async Task<PagedResult<UserDiscoveryDto>> Handle(DiscoverUsersQuery query, CancellationToken cancellationToken)
+    {
+        var rawQuery = query.Query?.Trim();
+        if (string.IsNullOrWhiteSpace(rawQuery) || rawQuery.Length < 2 || rawQuery.Length > 80)
+        {
+            throw new AppException("invalid_input", "Search query must be between 2 and 80 characters.");
+        }
+
+        if (query.Page < 1 || query.PageSize < 1 || query.PageSize > 50)
+        {
+            throw new AppException("invalid_pagination", "Page must be at least 1 and pageSize must be between 1 and 50.");
+        }
+
+        if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == query.UserId && u.Status == UserStatus.Active
+            && u.SystemRole == SystemRole.User, cancellationToken))
+        {
+            throw new ForbiddenException("user_unavailable", "An active User is required.");
+        }
+
+        var baseQuery = db.Users.AsNoTracking()
+            .Where(u => u.Id != query.UserId
+                && u.Status == UserStatus.Active
+                && u.SystemRole == SystemRole.User
+                && u.FullName.Contains(rawQuery));
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        var pagedUsers = await baseQuery
+            .OrderBy(u => u.FullName)
+            .ThenBy(u => u.Id)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(u => new
+            {
+                u.Id,
+                u.FullName,
+                u.AvatarUrl,
+                u.SpendId
+            })
+            .ToListAsync(cancellationToken);
+
+        var targetIds = pagedUsers.Select(u => u.Id).ToList();
+        HashSet<Guid> friendSet = [];
+        HashSet<Guid> sentSet = [];
+        HashSet<Guid> receivedSet = [];
+
+        if (targetIds.Count > 0)
+        {
+            var friendships = await db.Friendships.AsNoTracking()
+                .Where(f => f.EndedAt == null && (
+                    (f.LowerUserId == query.UserId && targetIds.Contains(f.HigherUserId)) ||
+                    (f.HigherUserId == query.UserId && targetIds.Contains(f.LowerUserId))))
+                .Select(f => f.LowerUserId == query.UserId ? f.HigherUserId : f.LowerUserId)
+                .ToListAsync(cancellationToken);
+            friendSet = friendships.ToHashSet();
+
+            var pendingRequests = await db.FriendRequests.AsNoTracking()
+                .Where(r => r.Status == FriendRequestStatus.Pending && (
+                    (r.RequesterUserId == query.UserId && targetIds.Contains(r.AddresseeUserId)) ||
+                    (r.AddresseeUserId == query.UserId && targetIds.Contains(r.RequesterUserId))))
+                .Select(r => new { r.RequesterUserId, r.AddresseeUserId })
+                .ToListAsync(cancellationToken);
+
+            sentSet = pendingRequests.Where(r => r.RequesterUserId == query.UserId).Select(r => r.AddresseeUserId).ToHashSet();
+            receivedSet = pendingRequests.Where(r => r.AddresseeUserId == query.UserId).Select(r => r.RequesterUserId).ToHashSet();
+        }
+
+        var items = pagedUsers.Select(u =>
+        {
+            var state = friendSet.Contains(u.Id) ? "FRIENDS"
+                : sentSet.Contains(u.Id) ? "REQUEST_SENT"
+                : receivedSet.Contains(u.Id) ? "REQUEST_RECEIVED"
+                : "NONE";
+
+            return new UserDiscoveryDto(
+                u.Id,
+                u.FullName,
+                u.AvatarUrl,
+                u.SpendId,
+                state);
+        }).ToList();
+
+        return new PagedResult<UserDiscoveryDto>(items, query.Page, query.PageSize, totalCount);
+    }
 }
 
 public sealed class SendFriendRequestCommandHandler(

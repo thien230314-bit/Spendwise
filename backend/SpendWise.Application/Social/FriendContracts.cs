@@ -5,7 +5,8 @@ public sealed record FriendContactDto(
     string FullName,
     string SpendId,
     string? Phone,
-    string State);
+    string State,
+    string? AvatarUrl = null);
 
 public sealed record SendFriendRequest(string Contact, string? Message = null, string? ContactKind = null);
 public sealed record FriendRequestDto(
@@ -15,7 +16,8 @@ public sealed record FriendRequestDto(
     string SpendId,
     string? Message,
     string Status,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? AvatarUrl = null);
 public sealed record FriendDto(
     Guid UserId,
     string FullName,
@@ -23,9 +25,17 @@ public sealed record FriendDto(
     string? Phone,
     string? Nickname,
     bool IsFavorite,
-    DateTime FriendsSince)
+    DateTime FriendsSince,
+    string? AvatarUrl = null)
 {
     public IReadOnlyList<FriendCommonGroupDto> CommonGroups { get; init; } = [];
 }
 public sealed record FriendCommonGroupDto(Guid Id, string Name, string Model, string? Code);
 public sealed record UpdateFriendPreferenceRequest(string? Nickname, bool IsFavorite);
+
+public sealed record UserDiscoveryDto(
+    Guid UserId,
+    string FullName,
+    string? AvatarUrl,
+    string SpendId,
+    string RelationshipState);

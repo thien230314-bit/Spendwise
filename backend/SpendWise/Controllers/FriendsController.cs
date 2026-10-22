@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Friends;
+using SpendWise.Application.Finance;
 using SpendWise.Application.Social;
 
 namespace SpendWise.API.Controllers;
@@ -15,6 +16,14 @@ public sealed class FriendsController(IMediator mediator, ICurrentUser currentUs
     [HttpGet("search")]
     public Task<FriendContactDto> Search([FromQuery] string contact, CancellationToken ct, [FromQuery] string? kind = null) =>
         mediator.Send(new SearchFriendContactQuery(UserId(), contact, kind), ct);
+
+    [HttpGet("discover")]
+    public Task<PagedResult<UserDiscoveryDto>> Discover(
+        [FromQuery] string query,
+        CancellationToken ct,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20) =>
+        mediator.Send(new DiscoverUsersQuery(UserId(), query, page, pageSize), ct);
 
     [HttpGet]
     public Task<IReadOnlyList<FriendDto>> List(CancellationToken ct) =>

@@ -1,8 +1,8 @@
 # GOOGLE AI STUDIO FRONTEND FIX SPECIFICATION
 
 > **Dành cho:** Kỹ sư hoàn thiện Frontend Google AI Studio / SpendWise User Mobile  
-> **Mục tiêu:** Đồng bộ 100% Client-side Logic với Backend ASP.NET Core chính thức.  
-> **Nguyên tắc:** Không giả lập popup thành công nếu Backend từ chối; thực thi đúng luồng xác thực PIN và phân trang API.
+> **Mục tiêu:** Đồng bộ 100% Mock State và Data Contract của Google AI Studio với Backend ASP.NET Core chính thức.  
+> **Nguyên tắc:** Mô phỏng đúng các bước xác thực bảo mật, phân định rõ định danh `userId` vs `requestId`, và giữ nghiêm ngặt nghiệp vụ Quỹ cố định vs Quỹ tự do.
 
 ---
 
@@ -22,27 +22,38 @@
 
 ---
 
-### 1.2 Tích hợp Khám phá Người dùng Mới (`GET /api/friends/discover`)
-- **Vấn đề hiện tại:** Thanh tìm kiếm tại tab Bạn bè (`FriendsScreen.tsx`) chỉ lọc chuỗi trên mảng bạn bè hiện có (`friends.filter(...)`). Nếu gõ tên người lạ ("Nguyen"), giao diện hiển thị "Không tìm thấy người dùng phù hợp".
-- **Quy chuẩn Backend:**
-  - Endpoint: `GET /api/friends/discover?query={term}&page={page}&pageSize={pageSize}`
-  - Tham số: `query` tối thiểu 2 ký tự, tối đa 80 ký tự.
-  - Rate limiting: Endpoint có giới hạn 30 lượt gọi/phút. Cần debounce tối thiểu 300ms - 500ms trước khi gửi request.
-  - Phản hồi: `PagedResult<UserDiscoveryDto>`:
+### 1.2 Tích hợp Khám phá Người dùng Mới & Phân định Định danh (User Discovery & Request ID Integrity)
+- **Vấn đề hiện tại:** 
+  1. Thanh tìm kiếm tại tab Bạn bè (`FriendsScreen.tsx`) chỉ lọc chuỗi trên mảng bạn bè hiện có (`friends.filter(...)`). Nếu gõ tên người lạ ("Nguyen"), giao diện hiển thị "Không tìm thấy người dùng phù hợp".
+  2. Frontend dễ nhầm lẫn giữa **`userId`** và **`requestId`** khi thao tác với các mối quan hệ bạn bè.
+- **Quy chuẩn Backend & Phân định Định danh:**
+  - Endpoint tìm kiếm toàn cục: `GET /api/friends/discover?query={term}&page={page}&pageSize={pageSize}`
+  - Model trả về: `PagedResult<UserDiscoveryDto>`
     ```typescript
     interface UserDiscoveryDto {
-      userId: string;
+      userId: string;          // GUID của User được tìm thấy
       fullName: string;
       avatarUrl: string | null;
       spendId: string;
       relationshipState: 'NONE' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'FRIENDS';
     }
     ```
-- **Xử lý UI tương ứng theo `relationshipState`:**
-  - `NONE`: Hiển thị nút "Kết bạn" (`POST /api/friends/requests`).
-  - `REQUEST_SENT`: Hiển thị nhãn "Đã gửi lời mời" kèm nút "Hủy" (`DELETE /api/friends/requests/{id}`).
-  - `REQUEST_RECEIVED`: Hiển thị nút "Chấp nhận" (`POST /api/friends/requests/{id}/accept`) và "Từ chối".
-  - `FRIENDS`: Hiển thị nút "Chuyển tiền" hoặc nhãn "Bạn bè".
+  - **LƯU Ý ĐẶC BIỆT VỀ ĐỊNH DANH:**
+    - `UserDiscoveryDto` **CHỈ CHỨA `userId`**, hoàn toàn **KHÔNG CHỨA `requestId`**.
+    - Khi gửi lời mời mới: `POST /api/friends/requests` với body `{ "contact": user.spendId }` (hoặc phone/email).
+    - Khi nhận được kết quả `relationshipState === 'REQUEST_SENT'` (chờ đối phương phản hồi): Muốn **Hủy** lời mời, Frontend phải tra cứu `requestId` từ danh sách lời mời đã gửi (`GET /api/friends/requests/outgoing`), sau đó gọi `DELETE /api/friends/requests/{requestId}`. **Tuyệt đối KHÔNG truyền `userId` vào URL xóa request!**
+    - Khi nhận được kết quả `relationshipState === 'REQUEST_RECEIVED'` (đối phương gửi cho mình): Muốn **Chấp nhận**, Frontend phải tra cứu `requestId` từ danh sách lời mời đến (`GET /api/friends/requests/incoming`), sau đó gọi `POST /api/friends/requests/{requestId}/accept`.
+  - Rate limiting: Endpoint `GET /api/friends/discover` có giới hạn 30 lượt gọi/phút. Cần debounce tối thiểu 300ms - 500ms trước khi gửi request.
+
+---
+
+### 1.3 Quy trình Đăng ký 3 Bước Rời (Register → Email OTP → PIN Setup)
+- **Vấn đề hiện tại:** Form Đăng ký hiện tại gộp chung cả Mật khẩu và Mã PIN 6 số trên cùng một form 1 bước, sau đó tạo tài khoản ngay.
+- **Quy chuẩn Backend:**
+  - **Bước 1:** `POST /api/auth/register` (nhận Họ tên, Email, Mật khẩu, Số điện thoại).
+  - **Bước 2:** Xác thực email qua mã OTP 8 chữ số (`POST /api/auth/email-verification/verify`).
+  - **Bước 3:** Cài đặt mã PIN giao dịch 6 chữ số lần đầu (`POST /api/auth/pin/setup`).
+  - Frontend cần tách thành quy trình wizard 3 bước rõ ràng để phản ánh trung thực kiến trúc bảo mật của SpendWise.
 
 ---
 

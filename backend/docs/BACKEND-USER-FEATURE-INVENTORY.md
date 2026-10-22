@@ -116,7 +116,7 @@ Quản lý kết nối bạn bè hai chiều giữa các người dùng trong h�
 #### 3. Danh sách Endpoints
 - `GET /api/friends` — Lấy danh sách bạn bè hiện tại (kèm `friendUserId`, `displayName`, `spendId`, `avatarUrl`, `isFavorite`, `commonGroupsCount`).
 - `GET /api/friends/search?query=...` — Tìm kiếm bạn bè trong danh bạ bạn bè hiện có theo tên hoặc SpendId.
-- `GET /api/friends/discover?searchTerm=...&page=1&pageSize=20` — Tìm kiếm công khai người dùng hệ thống để kết bạn. Phân trang an toàn (max 100,000 page). Áp dụng Rate Limit riêng `userDiscovery` (30 req/min).
+- `GET /api/friends/discover?query=...&page=1&pageSize=20` — Tìm kiếm công khai người dùng hệ thống để kết bạn. Phân trang an toàn (max 100,000 page). Áp dụng Rate Limit riêng `userDiscovery` (30 req/min). Parameter chính xác là `query`.
 - `GET /api/friends/requests/incoming` — Lấy danh sách lời mời kết bạn gửi đến cho người dùng hiện tại.
 - `GET /api/friends/requests/outgoing` — Lấy danh sách lời mời kết bạn do người dùng hiện tại đã gửi đi.
 - `POST /api/friends/requests` — Gửi lời mời kết bạn đến một người dùng qua `TargetUserId`.

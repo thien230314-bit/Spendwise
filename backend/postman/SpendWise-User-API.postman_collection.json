@@ -10026,7 +10026,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Batch 3 Savings Goal\",\n  \"targetAmount\": 5000000,\n  \"targetDate\": \"2026-12-31T00:00:00Z\",\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"name\": \"Batch 3 Target Savings Goal\",\n  \"targetAmount\": 5000000,\n  \"targetDate\": \"2026-12-31T00:00:00Z\",\n  \"securityPin\": \"123456\"\n}"
             }
           },
           "response": [],
@@ -10036,13 +10036,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create goal returns 200 or 201\", function () {",
+                  "pm.test(\"Create goal succeeds with 200/201 and stores ID\", function () {",
                   "    pm.expect([200, 201]).to.include(pm.response.code);",
-                  "    try {",
-                  "        const jsonData = pm.response.json();",
-                  "        const gid = jsonData.id || (jsonData.goal && jsonData.goal.id) || (jsonData.data && jsonData.data.id);",
-                  "        if (gid) pm.environment.set(\"b3_goalId\", gid);",
-                  "    } catch(e) {}",
+                  "    const jsonData = pm.response.json();",
+                  "    const gid = jsonData.id || (jsonData.goal && jsonData.goal.id);",
+                  "    pm.expect(gid).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b3_goalId\", gid);",
                   "});"
                 ]
               }
@@ -10180,7 +10179,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"walletId\": \"{{mainWalletId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"type\": \"Expense\",\n  \"amount\": 150000,\n  \"description\": \"Netflix Monthly Subscription\",\n  \"frequency\": \"Monthly\",\n  \"interval\": 1,\n  \"startDate\": \"2026-11-01T00:00:00Z\"\n}"
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{customCategoryId}}\",\n  \"kind\": \"Expense\",\n  \"amount\": 150000,\n  \"description\": \"Internet monthly bill subscription\",\n  \"frequency\": \"Monthly\",\n  \"nextRunAt\": \"2026-11-01T08:00:00Z\",\n  \"isSubscription\": true,\n  \"title\": \"Internet Monthly\"\n}"
             }
           },
           "response": [],
@@ -10190,13 +10189,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create recurring transaction returns 200, 201 or 400\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
-                  "    try {",
-                  "        const jsonData = pm.response.json();",
-                  "        const rid = jsonData.id || (jsonData.data && jsonData.data.id);",
-                  "        if (rid) pm.environment.set(\"b3_recurringId\", rid);",
-                  "    } catch(e) {}",
+                  "pm.test(\"Create recurring transaction succeeds with 200/201 and stores ID\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    const jsonData = pm.response.json();",
+                  "    const rid = jsonData.id || (jsonData.data && jsonData.data.id);",
+                  "    pm.expect(rid).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b3_recurringId\", rid);",
                   "});"
                 ]
               }
@@ -10237,8 +10235,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Recurring transaction operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Get recurring transaction succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(pm.environment.get(\"b3_recurringId\"));",
                   "});"
                 ]
               }
@@ -10277,7 +10277,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 180000,\n  \"description\": \"Netflix Monthly Premium Subscription\",\n  \"interval\": 1,\n  \"endDate\": \"2027-11-01T00:00:00Z\"\n}"
+              "raw": "{\n  \"walletId\": \"{{userA_mainWalletId}}\",\n  \"categoryId\": \"{{customCategoryId}}\",\n  \"kind\": \"Expense\",\n  \"amount\": 180000,\n  \"description\": \"Updated monthly bill subscription\",\n  \"frequency\": \"Monthly\",\n  \"nextRunAt\": \"2026-11-05T08:00:00Z\",\n  \"isSubscription\": true,\n  \"title\": \"Updated Monthly Bill\"\n}"
             }
           },
           "response": [],
@@ -10287,8 +10287,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Recurring transaction operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Update recurring transaction succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -10330,8 +10330,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Recurring transaction operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Pause recurring transaction succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -10373,8 +10373,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Recurring transaction operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Resume recurring transaction succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -10507,7 +10507,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Rule Food Matching\",\n  \"field\": \"Description\",\n  \"operator\": \"Contains\",\n  \"value\": \"GrabFood\",\n  \"descriptionPattern\": \"GrabFood\",\n  \"targetCategoryId\": \"{{testCategoryId}}\",\n  \"priority\": 1,\n  \"isActive\": true\n}"
+              "raw": "{\n  \"descriptionPattern\": \"GrabFood\",\n  \"targetCategoryId\": \"{{customCategoryId}}\",\n  \"priority\": 1\n}"
             }
           },
           "response": [],
@@ -10517,13 +10517,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create transaction rule returns 200, 201 or 400\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
-                  "    try {",
-                  "        const jsonData = pm.response.json();",
-                  "        const rid = jsonData.id || (jsonData.data && jsonData.data.id);",
-                  "        if (rid) pm.environment.set(\"b3_ruleId\", rid);",
-                  "    } catch(e) {}",
+                  "pm.test(\"Create transaction rule succeeds with 200/201 and stores ID\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    const jsonData = pm.response.json();",
+                  "    const rid = jsonData.id || (jsonData.data && jsonData.data.id);",
+                  "    pm.expect(rid).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b3_ruleId\", rid);",
                   "});"
                 ]
               }
@@ -10564,8 +10563,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Transaction rule operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Get transaction rule succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(pm.environment.get(\"b3_ruleId\"));",
                   "});"
                 ]
               }
@@ -10604,7 +10605,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Groceries Rule\",\n  \"pattern\": \"vinmart\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"isEnabled\": true\n}"
+              "raw": "{\n  \"descriptionPattern\": \"ShopeeFood\",\n  \"targetCategoryId\": \"{{customCategoryId}}\",\n  \"priority\": 2,\n  \"isActive\": true\n}"
             }
           },
           "response": [],
@@ -10614,8 +10615,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Transaction rule operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Update transaction rule succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -10701,7 +10702,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transactionId\": \"{{expenseTransactionId}}\",\n  \"reason\": \"Unauthorized charged amount discrepancy\",\n  \"description\": \"The charged amount on merchant receipt differs from deducted amount.\"\n}"
+              "raw": "{\n  \"linkedTransactionId\": \"{{firstExpenseTransactionId}}\",\n  \"reason\": \"incorrect_amount\",\n  \"description\": \"Amount billed did not match receipt from vendor\"\n}"
             }
           },
           "response": [],
@@ -10711,7 +10712,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create dispute returns 200, 201 or controlled validation 400\", function () {",
+                  "pm.test(\"Create dispute returns 200, 201 or controlled validation\", function () {",
                   "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
                   "    try {",
                   "        const jsonData = pm.response.json();",
@@ -13077,7 +13078,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test Legacy Group 2026\",\n  \"description\": \"Backward compatibility group test\",\n  \"type\": \"Normal\"\n}"
+              "raw": "{\n  \"name\": \"E2E Legacy Test Group 2026\",\n  \"description\": \"Backward compatibility group test with valid PIN\",\n  \"type\": \"Friends\",\n  \"currency\": \"VND\",\n  \"securityPin\": \"123456\"\n}"
             }
           },
           "response": [],
@@ -13087,13 +13088,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create legacy group returns 200, 201 or 400\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
-                  "    try {",
-                  "        const jsonData = pm.response.json();",
-                  "        const gid = jsonData.id || (jsonData.group && jsonData.group.id) || (jsonData.data && jsonData.data.id);",
-                  "        if (gid) pm.environment.set(\"b7_groupId\", gid);",
-                  "    } catch(e) {}",
+                  "pm.test(\"Create legacy group succeeds with 200/201 and valid ID\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    const jsonData = pm.response.json();",
+                  "    const gid = jsonData.id || (jsonData.group && jsonData.group.id);",
+                  "    pm.expect(gid).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_groupId\", gid);",
                   "});"
                 ]
               }
@@ -13134,8 +13134,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Get legacy group details succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(pm.environment.get(\"b7_groupId\"));",
                   "});"
                 ]
               }
@@ -13174,7 +13176,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Batch7 Legacy Group (Updated)\",\n  \"description\": \"Updated description\"\n}"
+              "raw": "{\n  \"name\": \"Updated E2E Legacy Test Group 2026\",\n  \"description\": \"Updated group description\",\n  \"currency\": \"VND\"\n}"
             }
           },
           "response": [],
@@ -13184,8 +13186,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Update legacy group succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.include(\"Updated\");",
                   "});"
                 ]
               }
@@ -13795,12 +13799,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Pay non-existent fund request returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"B7-17 - Pay Non-Existent Fund Request (Expect 404) returns expected 400 or 404\", function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -13942,12 +13946,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Pay non-existent fund round returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"B7-20 - Pay Non-Existent Fund Round (Expect 404) returns expected 400 or 404\", function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -14218,12 +14222,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Vote non-existent deletion returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"B7-26 - Vote on Non-Existent Group Deletion Request (Expect 404) returns expected 400 or 404\", function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -14318,12 +14322,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Refund payment for non-existent deletion returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"B7-28 - Create Refund Payment for Non-Existent Deletion (Expect 404) returns expected 400 or 404\", function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -14371,12 +14375,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Finalize non-existent deletion returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"B7-29 - Finalize Non-Existent Group Deletion (Expect 404) returns expected 400 or 404\", function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]

@@ -602,7 +602,8 @@ Chi tiết kiểm kê toàn diện từng endpoint, tham số request/response, 
   2. `POST /api/users/me/email/confirm`: Người dùng nhập email mới và mã OTP đã nhận. Backend xác thực OTP: nếu sai hoặc hết hạn trả về lỗi 400; nếu đúng, thực hiện cập nhật nguyên tử đồng thời `Email` và `NormalizedEmail` sang giá trị mới, xóa sạch `PendingNewEmail` và đánh dấu OTP đã được tiêu thụ (chống tái sử dụng OTP).
 
 ### 3. Khám phá & Tìm kiếm Bạn bè Công khai (Friend Discovery)
-- **Endpoint:** `GET /api/friends/discover?searchTerm=...&page=...&pageSize=...` (yêu cầu xác thực User).
+- **Endpoint:** `GET /api/friends/discover?query=...&page=...&pageSize=...` (yêu cầu xác thực User).
+- **Lưu ý Contract:** Query param tìm kiếm là `query`, không phải `searchTerm`. Giới hạn Rate Limit độc lập `userDiscovery` (30 requests/phút).
 - **Rate Limit riêng biệt:** Áp dụng ASP.NET Core Rate Limiting policy `userDiscovery` giới hạn tối đa **30 requests/phút** theo từng User ID đã xác thực để ngăn chặn hành vi cào quét dữ liệu người dùng (scraping). Trả về mã lỗi HTTP 429 khi vượt quá giới hạn.
 - **Phòng chống tràn số (Overflow Protection):** Ràng buộc tham số `page` tối đa không vượt quá `100,000`. Phép tính bỏ qua bản ghi `Skip = (page - 1) * pageSize` sử dụng số nguyên có kiểm tra giới hạn để ngăn chặn lỗi số học overflow.
 - **Bảo mật danh tính & Chống rò rỉ thông tin cá nhân (Privacy Leak Prevention):**

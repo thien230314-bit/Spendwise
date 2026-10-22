@@ -99,12 +99,15 @@ Qua quá trình gửi HTTP requests thực tế đến toàn bộ các Controlle
 ### 4.1. Chuẩn HTTP Status Code & Tính Nhất Quán
 1. **HTTP 204 vs HTTP 200:**
    - **Xóa / Đóng tài nguyên:** Các thao tác như `DELETE /api/wallets/{id}` (đóng ví), `DELETE /api/budgets/{id}` (xóa ngân sách), `DELETE /api/auth/sessions/{id}` (hủy session), `POST /api/auth/logout` (đăng xuất) trả về **HTTP 204 NoContent**. Đây là chuẩn RESTful rất tốt.
-   - **Cấp quyền / Đổi PIN:** Endpoint `PUT /api/v1/funds/{id}/members/{userId}/spending-permission` và `POST /api/auth/pin/verify` (khi kiểm tra hợp lệ) trả về **HTTP 204 NoContent**. Frontend cần xử lý status 204 (không cố gọi `.json()` trên response body rỗng).
+   - **Cấp quyền / Đổi PIN / Xác thực PIN nghiệp vụ:** Endpoint `PUT /api/v1/funds/{id}/members/{userId}/spending-permission` và `POST /api/security-pin/verify` (xác thực mã PIN của phiên đăng nhập) trả về **HTTP 204 NoContent**. Frontend cần xử lý status 204 (không cố gọi `.json()` trên response body rỗng).
+   - **PIN Login (Đăng nhập 2 bước):** Ngược lại với xác thực PIN nội bộ, endpoint `POST /api/auth/pin/verify` (`CompleteSecurityPinLoginRequest`) là bước 2 của đăng nhập và trả về **HTTP 200 OK** kèm theo `AuthResponse` (`accessToken`, `refreshToken`, `user`).
 2. **HTTP 201 vs HTTP 200 khi Tạo mới:**
    - Các API tạo ví cá nhân (`POST /api/wallets`), ghi nhận thu/chi (`POST /api/transactions/income`, `POST /api/transactions/expense`), chuyển tiền (`POST /api/wallets/transfers`), tạo ngân sách (`POST /api/budgets`) trả về **HTTP 201 Created**.
    - Tuy nhiên, API tạo quỹ nhóm (`POST /api/v1/funds`), tạo mục tiêu (`POST /api/goals`), tạo đề xuất chi tiêu quỹ (`POST /api/v1/funds/{id}/requests`) lại trả về **HTTP 200 OK**. Mặc dù không vi phạm nghiêm trọng, việc thống nhất chuẩn 201 Created cho tất cả hành động tạo mới tài nguyên sẽ nhất quán hơn.
-3. **HTTP 202 Accepted cho Tác vụ Nền:**
-   - Endpoint `POST /api/auth/password/forgot` trả về **HTTP 202 Accepted**. Điều này hoàn toàn chính xác theo chuẩn REST vì email đặt lại mật khẩu được đưa vào hàng đợi Outbox gửi ngầm, không block request của client.
+
+3. **HTTP 202 Accepted cho Tác vụ Nền & Contract Quên mật khẩu / Xác vận đổi Email:**
+   - Endpoint quên mật khẩu chuẩn trong Controller là `POST /api/auth/forgot-password` (không phải `/api/auth/password/forgot`), trả về **HTTP 202 Accepted** kèm JSON rỗng. Email đặt lại mật khẩu được đưa vào hàng đợi Outbox gửi ngầm, không block request của client.
+   - Endpoint xác nhận đổi Email `POST /api/users/me/email/confirm`: Payload chuẩn là `ConfirmChangeEmailRequest(string Otp)` (chỉ gồm `{"otp": "..."}`). Địa chỉ email mới đã được lưu trong phiên thay đổi email trước đó, không truyền lại `newEmail` trong payload này.
 
 ### 4.2. Bất Biến Nghiệp Vụ Nghiêm Ngặt (Domain Invariants)
 1. **Bắt buộc đính kèm bằng chứng tài chính (Evidence Attachment):**
@@ -180,147 +183,147 @@ Các tệp Postman Collection và Environment đã được tạo chuẩn hóa, 
 
 | # | Method | Endpoint URL | Tên Kịch Bản Kiểm Thử | Dữ Liệu Đầu Vào Mẫu | Expected Status | Actual Status | Kết Quả | Ghi Chú |
 | :---: | :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |
-| 1 | `GET` | `/` | 01 - Preflight & Health Check | `(none)` | `200` | `200` | **PASS** | OK |
-| 2 | `POST` | `/` | 02 - Register User A (Valid) | `{   "fullName": "Nguyen Van A",   "em...` | `200` | `200` | **PASS** | OK |
-| 3 | `POST` | `/` | 03 - Register User A Duplicate (Negative Check) | `{   "fullName": "Nguyen Van A Duplica...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
-| 4 | `POST` | `/` | 04 - Resend Verification OTP User A | `{   "email": "userA_hm4nye9@spendwise...` | `200/429` | `429` | **PASS** | Rate limit / cooldown |
-| 5 | `POST` | `/` | 05 - Verify Registration Email User A | `{   "email": "userA_hm4nye9@spendwise...` | `200` | `200` | **PASS** | OK |
-| 6 | `POST` | `/` | 06 - Setup Security PIN User A | `{   "challengeToken": "j/vrPQm6i2ab0K...` | `200` | `200` | **PASS** | OK |
-| 7 | `POST` | `/` | 07 - Register User B | `{   "fullName": "Tran Thi B",   "emai...` | `200` | `200` | **PASS** | OK |
-| 8 | `POST` | `/` | 08 - Verify Registration Email User B | `{   "email": "userB_hm4nye9@spendwise...` | `200` | `200` | **PASS** | OK |
-| 9 | `POST` | `/` | 09 - Setup Security PIN User B | `{   "challengeToken": "14sNfn7mnnf3Dv...` | `200` | `200` | **PASS** | OK |
-| 10 | `POST` | `/` | 10 - Refresh Access Token User A | `{   "refreshToken": "5IyXe26AwNanIezw...` | `200` | `200` | **PASS** | OK |
-| 11 | `POST` | `/` | 11 - Register Unverified User (for Inactive Check) | `{   "fullName": "Unverified User",   ...` | `200` | `200` | **PASS** | OK |
-| 12 | `POST` | `/` | 12 - Login with Unverified User (Negative Check) | `{   "identifier": "unverified_hm4nye9...` | `403` | `403` | **PASS** | Negative auth/perm check |
-| 13 | `POST` | `/` | 13 - Login with Wrong Password (Negative Check) | `{   "identifier": "userA_hm4nye9@spen...` | `400/401` | `401` | **PASS** | Negative auth/perm check |
-| 14 | `POST` | `/` | 14 - Verify Security PIN Valid | `{   "pin": "123456" }` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 15 | `POST` | `/` | 15 - Verify Security PIN Invalid (Negative Check) | `{   "pin": "999999" }` | `400/401` | `401` | **PASS** | Negative auth/perm check |
-| 16 | `PUT` | `/` | 16 - Change Security PIN User A | `{   "currentPin": "123456",   "newPin...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 17 | `PUT` | `/` | 17 - Revert Security PIN User A | `{   "currentPin": "654321",   "newPin...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 18 | `POST` | `/` | 18 - Forgot Password User A | `{   "identifier": "userA_hm4nye9@spen...` | `200/202` | `202` | **PASS** | Accepted (async background mail) |
-| 19 | `POST` | `/` | 19 - Reset Password User A | `{   "identifier": "userA_hm4nye9@spen...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 20 | `POST` | `/` | 20 - Re-login User A after Reset Password | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
-| 21 | `POST` | `/` | 21 - Complete PIN Login User A | `{   "challengeToken": "jfj+vu7/vfQXIe...` | `200` | `200` | **PASS** | OK |
-| 22 | `GET` | `/` | 22 - List Active User Sessions | `(none)` | `200` | `200` | **PASS** | OK |
-| 23 | `DELETE` | `/` | 23 - Revoke Single Session | `(none)` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 24 | `POST` | `/` | 24 - Refresh Token after Single Session Revoke (Re-establish Session) | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
-| 25 | `POST` | `/` | 25 - Complete PIN Login for User A | `{   "challengeToken": "muWexoEJs6DaeD...` | `200` | `200` | **PASS** | OK |
-| 26 | `GET` | `/` | 26 - Security PIN Status Check | `(none)` | `200` | `200` | **PASS** | OK |
-| 27 | `GET` | `/` | 01 - Get Current User Profile (User A) | `(none)` | `200` | `200` | **PASS** | OK |
-| 28 | `POST` | `/` | 02 - Upload User Avatar (User A) | `(none)` | `200` | `200` | **PASS** | OK |
-| 29 | `PUT` | `/` | 03 - Update User Preferences | `{   "preferredLanguage": "vi-VN",   "...` | `200` | `200` | **PASS** | OK |
-| 30 | `GET` | `/` | 04 - Search User B by Contact (Email) | `(none)` | `200` | `200` | **PASS** | OK |
-| 31 | `GET` | `/` | 05 - Search User B by SpendId | `(none)` | `200` | `200` | **PASS** | OK |
-| 32 | `GET` | `/` | 06 - Discover Users by Name with Pagination | `(none)` | `200` | `200` | **PASS** | OK |
-| 33 | `POST` | `/` | 07 - Send Friend Request (User A to User B) | `{   "contact": "userB_hm4nye9@spendwi...` | `200/201` | `200` | **PASS** | OK |
-| 34 | `POST` | `/` | 08 - Send Friend Request Duplicate (Idempotency Check) | `{   "contact": "userB_hm4nye9@spendwi...` | `200/400/409` | `200` | **PASS** | OK |
-| 35 | `GET` | `/` | 09 - User A Checks Outgoing Requests | `(none)` | `200` | `200` | **PASS** | OK |
-| 36 | `GET` | `/` | 10 - User B Checks Incoming Requests | `(none)` | `200` | `200` | **PASS** | OK |
-| 37 | `POST` | `/` | 11 - User B Accepts Friend Request | `(none)` | `200` | `200` | **PASS** | OK |
-| 38 | `GET` | `/` | 12 - User A Lists Friends | `(none)` | `200` | `200` | **PASS** | OK |
-| 39 | `GET` | `/` | 13 - User B Lists Friends | `(none)` | `200` | `200` | **PASS** | OK |
-| 40 | `PATCH` | `/` | 14 - Update Friend Preference (User A sets Favorite) | `{   "alias": "Ban Than Tran B",   "is...` | `200` | `200` | **PASS** | OK |
-| 41 | `GET` | `/` | 01 - List Default Wallets for User A | `(none)` | `200` | `200` | **PASS** | OK |
-| 42 | `GET` | `/` | 02 - Get System Categories (Income & Expense) | `(none)` | `200` | `200` | **PASS** | OK |
-| 43 | `POST` | `/` | 02b - Upload Evidence for Income Posting | `(none)` | `200/201` | `201` | **PASS** | Created tài nguyên mới |
-| 44 | `POST` | `/` | 03 - Fund Main Wallet via Income Posting (10,000,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 45 | `POST` | `/` | 04 - Create Savings Wallet User A | `{   "name": "Heo tiet kiem",   "type"...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 46 | `POST` | `/` | 05 - Create Emergency Wallet User A | `{   "name": "Quy khan cap",   "type":...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 47 | `POST` | `/` | 06 - Check Wallet Limit (Try Creating 4th Wallet) | `{   "name": "Vi thu 4 bi gioi han",  ...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
-| 48 | `GET` | `/` | 07 - Get Main Wallet Details | `(none)` | `200` | `200` | **PASS** | OK |
-| 49 | `PUT` | `/` | 08 - Update Savings Wallet Name | `{   "name": "Tiet kiem mua nha",   "t...` | `200` | `200` | **PASS** | OK |
-| 50 | `POST` | `/` | 09 - Create Custom Category | `{   "name": "Ca phe & An sang",   "ki...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 51 | `POST` | `/` | 09b - Upload Evidence for Expense Transaction | `(none)` | `200/201` | `201` | **PASS** | Created tài nguyên mới |
-| 52 | `POST` | `/` | 10 - Record Expense Transaction (45,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 53 | `POST` | `/` | 11 - Internal Transfer Between Wallets (3,000,000 VND) | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 54 | `GET` | `/` | 12 - Check Balances After Expense and Transfer | `(none)` | `200` | `200` | **PASS** | OK |
-| 55 | `GET` | `/` | 13 - List Transactions with Query Filters | `(none)` | `200` | `200` | **PASS** | OK |
-| 56 | `GET` | `/` | 14 - Get Transaction Details | `(none)` | `200` | `200` | **PASS** | OK |
-| 57 | `PATCH` | `/` | 15 - Update Transaction Description | `{   "description": "Highlands Coffee ...` | `200` | `200` | **PASS** | OK |
-| 58 | `DELETE` | `/` | 16 - Close Emergency Wallet | `(none)` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 59 | `POST` | `/` | 00 - Fund User B Main Wallet (P2P Transfer 2,000,000 VND) | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 60 | `GET` | `/` | 00b - Get User B Main Wallet | `(none)` | `200` | `200` | **PASS** | OK |
-| 61 | `POST` | `/` | 01 - Create Fixed Fund (User A) | `{   "name": "Quy Du Lich Da Lat",   "...` | `200/201` | `200` | **PASS** | OK |
-| 62 | `GET` | `/` | 02 - Get Fixed Fund Details | `(none)` | `200` | `200` | **PASS** | OK |
-| 63 | `POST` | `/` | 03 - Invite User B to Fixed Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
-| 64 | `POST` | `/` | 04 - User B Accepts Fixed Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
-| 65 | `GET` | `/` | 05 - List Fixed Fund Members | `(none)` | `200` | `200` | **PASS** | OK |
-| 66 | `POST` | `/` | 06 - Confirm Obligations (Target: 2,000,000 VND) | `{   "targetVnd": 2000000,   "security...` | `200` | `200` | **PASS** | OK |
-| 67 | `POST` | `/` | 07 - User A Contributes 1,000,000 VND to Fixed Fund | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
-| 68 | `POST` | `/` | 08 - User B Contributes 1,000,000 VND to Fixed Fund | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
-| 69 | `GET` | `/` | 09 - List Fixed Fund Contributions | `(none)` | `200` | `200` | **PASS** | OK |
-| 70 | `PUT` | `/` | 10 - Grant Spending Permission to User B | `{   "enabled": true,   "securityPin":...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 71 | `GET` | `/` | 11 - Check Fixed Fund Activities | `(none)` | `200` | `200` | **PASS** | OK |
-| 72 | `GET` | `/` | 12 - Check Fixed Fund Financial Overview | `(none)` | `200` | `200` | **PASS** | OK |
-| 73 | `POST` | `/` | 01 - Create Free Fund (User A) | `{   "name": "Quy An Nhau Cuoi Tuan", ...` | `200/201` | `200` | **PASS** | OK |
-| 74 | `POST` | `/` | 02 - Invite User B to Free Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
-| 75 | `POST` | `/` | 03 - User B Accepts Free Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
-| 76 | `POST` | `/` | 04 - User A Contributes 500,000 VND to Free Fund | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
-| 77 | `POST` | `/` | 05 - User B Contributes 300,000 VND to Free Fund | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
-| 78 | `GET` | `/` | 06 - Track Free Fund Finance | `(none)` | `200` | `200` | **PASS** | OK |
-| 79 | `POST` | `/` | 07 - User B Creates Free Fund Expense Request | `{   "kind": "Expense",   "amountVnd":...` | `200` | `200` | **PASS** | OK |
-| 80 | `GET` | `/` | 08 - Refund Preview for User B | `(none)` | `200` | `200` | **PASS** | OK |
-| 81 | `POST` | `/` | 09 - User B Leaves Free Fund | `{   "securityPin": "123456",   "idemp...` | `200` | `200` | **PASS** | OK |
-| 82 | `GET` | `/` | 10 - Verify Remaining Members in Free Fund | `(none)` | `200` | `200` | **PASS** | OK |
-| 83 | `POST` | `/` | 01 - Create Monthly Budget User A | `{   "categoryId": "9a8e4648-8073-484f...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 84 | `GET` | `/` | 02 - List Monthly Budgets | `(none)` | `200` | `200` | **PASS** | OK |
-| 85 | `PUT` | `/` | 03 - Update Monthly Budget Limit | `{   "limitAmount": 1500000,   "alerts...` | `200` | `200` | **PASS** | OK |
-| 86 | `DELETE` | `/` | 04 - Delete Monthly Budget | `{   "securityPin": "123456" }` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 87 | `POST` | `/` | 05 - Create Savings Goal (MacBook M4) | `{   "name": "Mua MacBook M4",   "targ...` | `200` | `200` | **PASS** | OK |
-| 88 | `POST` | `/` | 06 - Deposit to Savings Goal (2,000,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
-| 89 | `GET` | `/` | 07 - Get Goal Details and Verify Progress | `(none)` | `200` | `200` | **PASS** | OK |
-| 90 | `POST` | `/` | 08 - Withdraw from Savings Goal (500,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
-| 91 | `POST` | `/` | 09 - Create Recurring Transaction (Monthly Internet) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200/201` | `200` | **PASS** | OK |
-| 92 | `GET` | `/` | 10 - List Recurring Transactions | `(none)` | `200` | `200` | **PASS** | OK |
-| 93 | `POST` | `/` | 11 - Create Transaction Rule | `{   "descriptionPattern": "GrabFood*"...` | `200/201` | `200` | **PASS** | OK |
-| 94 | `GET` | `/` | 12 - List Transaction Rules | `(none)` | `200` | `200` | **PASS** | OK |
-| 95 | `POST` | `/` | 01 - Create AI Conversation | `{   "title": "Tu van tiet kiem hang t...` | `200` | `200` | **PASS** | OK |
-| 96 | `GET` | `/` | 02 - List AI Conversations | `(none)` | `200` | `200` | **PASS** | OK |
-| 97 | `POST` | `/` | 03 - Ask AI Financial Advisor (Chat) - Fallback Safe | `{   "conversationId": "88788a03-15dd-...` | `200/503` | `503` | **PASS** | AI provider safe fallback |
-| 98 | `GET` | `/` | 01 - Find Bank Transfer Recipient by Phone | `(none)` | `200/404/409` | `409` | **PASS** | Business conflict / invariant guard |
-| 99 | `POST` | `/` | 02 - Create Bank Direct Transfer Instruction | `{   "bankCode": "VCB",   "accountNumb...` | `201/400` | `400` | **PASS** | OK |
-| 100 | `GET` | `/` | 03 - Bank Direct Transfer History | `(none)` | `200` | `200` | **PASS** | OK |
-| 101 | `POST` | `/` | 04 - SePay Webhook Invariant (Controlled Check) | `{   "gateway": "SePay Sandbox",   "tr...` | `200/400/401/404` | `404` | **PASS** | OK |
-| 102 | `GET` | `/` | 01 - List Notifications for User A | `(none)` | `200` | `200` | **PASS** | OK |
-| 103 | `POST` | `/` | 02 - Mark All Notifications Read | `(none)` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 104 | `GET` | `/` | 03 - Search Notifications | `(none)` | `200` | `200` | **PASS** | OK |
-| 105 | `POST` | `/` | 04 - Create Support Case | `{   "category": "General",   "priorit...` | `200/201` | `200` | **PASS** | OK |
-| 106 | `GET` | `/` | 05 - List Support Cases | `(none)` | `200` | `200` | **PASS** | OK |
-| 107 | `GET` | `/` | 06 - Get Support Case Details | `(none)` | `200` | `200` | **PASS** | OK |
-| 108 | `POST` | `/` | 07 - Reply to Support Case Message | `{   "message": "Synthetic receipt pro...` | `200` | `200` | **PASS** | OK |
-| 109 | `GET` | `/` | 08 - List Financial Disputes | `(none)` | `200` | `200` | **PASS** | OK |
-| 110 | `GET` | `/` | Flow A01 - Pre-check Profile Avatar | `(none)` | `200` | `200` | **PASS** | OK |
-| 111 | `POST` | `/` | Flow A02 - Upload Real Avatar Image | `(none)` | `200` | `200` | **PASS** | OK |
-| 112 | `GET` | `/` | Flow A03 - Check Profile Immediately Has New Avatar | `(none)` | `200` | `200` | **PASS** | OK |
-| 113 | `POST` | `/` | Flow A04 - Logout User A | `{   "refreshToken": "KtzuqfFsS/bAnSaL...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 114 | `POST` | `/` | Flow A05 - Re-login User A | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
-| 115 | `POST` | `/` | Flow A06 - Complete PIN Login for Re-login | `{   "challengeToken": "GQibhYpHiUQEZk...` | `200` | `200` | **PASS** | OK |
-| 116 | `GET` | `/` | Flow A07 - Check Profile After Fresh Login Retains Avatar | `(none)` | `200` | `200` | **PASS** | OK |
-| 117 | `POST` | `/` | Flow B01 - Request Email Change to New Email | `{   "newEmail": "userA_new_hm4nye9@sp...` | `200` | `200` | **PASS** | OK |
-| 118 | `POST` | `/` | Flow B02 - Confirm Email Change with OTP | `{   "newEmail": "userA_new_hm4nye9@sp...` | `200` | `200` | **PASS** | OK |
-| 119 | `POST` | `/` | Flow B03 - Logout After Email Change | `{   "refreshToken": "OGv6Yq1FQR5SnSDc...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 120 | `POST` | `/` | Flow B04 - Login with New Email (Expected: Success) | `{   "identifier": "userA_new_hm4nye9@...` | `200` | `200` | **PASS** | OK |
-| 121 | `POST` | `/` | Flow B05 - Complete PIN Verification with New Email | `{   "challengeToken": "kGsIwe8dHTAm7k...` | `200` | `200` | **PASS** | OK |
-| 122 | `POST` | `/` | Flow B06 - Login with Old Email (Expected: 401 / Denied) | `{   "identifier": "userA_hm4nye9@spen...` | `401` | `401` | **PASS** | Negative auth/perm check |
-| 123 | `GET` | `/` | Flow C01 - User A Searches User B by Contact | `(none)` | `200` | `200` | **PASS** | OK |
-| 124 | `POST` | `/` | Flow C02 - User A Checks Friend Request Status to User B | `{   "contact": "userB_hm4nye9@spendwi...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
-| 125 | `GET` | `/` | Flow C03 - User A Checks Friend List (Has User B) | `(none)` | `200` | `200` | **PASS** | OK |
-| 126 | `GET` | `/` | Flow C04 - User B Checks Friend List (Has User A) | `(none)` | `200` | `200` | **PASS** | OK |
-| 127 | `POST` | `/` | Flow D01 - User A Creates Fixed Fund (1,000,000 VND) | `{   "name": "Quy Flow D Team",   "kin...` | `200` | `200` | **PASS** | OK |
-| 128 | `POST` | `/` | Flow D02 - Invite User B to Fixed Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
-| 129 | `POST` | `/` | Flow D03 - User B Accepts Fixed Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
-| 130 | `POST` | `/` | Flow D04 - Confirm Obligations (Target: 1,000,000 VND) | `{   "targetVnd": 1000000,   "security...` | `200` | `200` | **PASS** | OK |
-| 131 | `POST` | `/` | Flow D05 - User A Contributes 500,000 VND | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
-| 132 | `POST` | `/` | Flow D06 - User B Contributes 500,000 VND | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
-| 133 | `GET` | `/` | Flow D07 - Check Fund Finance (Total 1,000,000 VND) | `(none)` | `200` | `200` | **PASS** | OK |
-| 134 | `PUT` | `/` | Flow D08 - Grant User B Spending Permission | `{   "enabled": true,   "securityPin":...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
-| 135 | `GET` | `/` | Flow D09 - Check Activity Log for Spending Permission Event | `(none)` | `200` | `200` | **PASS** | OK |
-| 136 | `GET` | `/` | Flow E01 - Identify Main and Savings Wallets for Flow E | `(none)` | `200` | `200` | **PASS** | OK |
-| 137 | `POST` | `/` | Flow E02 - Transfer 300,000 VND from Main to Savings Wallet | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 138 | `GET` | `/` | Flow E03 - Check Savings Wallet Balance Increased by 300,000 VND | `(none)` | `200` | `200` | **PASS** | OK |
-| 139 | `GET` | `/` | Flow E04 - Check Linked Transactions List | `(none)` | `200` | `200` | **PASS** | OK |
-| 140 | `GET` | `/` | Flow F01 - Get Expense Category for Budgeting | `(none)` | `200` | `200` | **PASS** | OK |
-| 141 | `POST` | `/` | Flow F02 - Create Budget (2,000,000 VND limit) | `{   "categoryId": "10000000-0000-0000...` | `201` | `201` | **PASS** | Created tài nguyên mới |
-| 142 | `GET` | `/` | Flow F03 - Check Budget Status (Spent: 0, Remaining: 2,000,000 VND) | `(none)` | `200` | `200` | **PASS** | OK |
-| 143 | `PUT` | `/` | Flow F04 - Update Budget Limit to 3,000,000 VND | `{   "limitAmount": 3000000,   "alerts...` | `200` | `200` | **PASS** | OK |
-| 144 | `DELETE` | `/` | Flow F05 - Clean Up Budget via Delete | `{   "securityPin": "123456" }` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 1 | `GET` | `/health` | 01 - Preflight & Health Check | `(none)` | `200` | `200` | **PASS** | OK |
+| 2 | `POST` | `/api/auth/register` | 02 - Register User A (Valid) | `{   "fullName": "Nguyen Van A",   "em...` | `200` | `200` | **PASS** | OK |
+| 3 | `POST` | `/api/auth/register` | 03 - Register User A Duplicate (Negative Check) | `{   "fullName": "Nguyen Van A Duplica...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
+| 4 | `POST` | `/api/auth/email-verification/resend` | 04 - Resend Verification OTP User A | `{   "email": "userA_hm4nye9@spendwise...` | `200/429` | `429` | **PASS** | Rate limit / cooldown |
+| 5 | `POST` | `/api/auth/email-verification/verify` | 05 - Verify Registration Email User A | `{   "email": "userA_hm4nye9@spendwise...` | `200` | `200` | **PASS** | OK |
+| 6 | `POST` | `/api/auth/pin/setup` | 06 - Setup Security PIN User A | `{   "challengeToken": "j/vrPQm6i2ab0K...` | `200` | `200` | **PASS** | OK |
+| 7 | `POST` | `/api/auth/register` | 07 - Register User B | `{   "fullName": "Tran Thi B",   "emai...` | `200` | `200` | **PASS** | OK |
+| 8 | `POST` | `/api/auth/email-verification/verify` | 08 - Verify Registration Email User B | `{   "email": "userB_hm4nye9@spendwise...` | `200` | `200` | **PASS** | OK |
+| 9 | `POST` | `/api/auth/pin/setup` | 09 - Setup Security PIN User B | `{   "challengeToken": "14sNfn7mnnf3Dv...` | `200` | `200` | **PASS** | OK |
+| 10 | `POST` | `/api/auth/refresh` | 10 - Refresh Access Token User A | `{   "refreshToken": "5IyXe26AwNanIezw...` | `200` | `200` | **PASS** | OK |
+| 11 | `POST` | `/api/auth/register` | 11 - Register Unverified User (for Inactive Check) | `{   "fullName": "Unverified User",   ...` | `200` | `200` | **PASS** | OK |
+| 12 | `POST` | `/api/auth/login` | 12 - Login with Unverified User (Negative Check) | `{   "identifier": "unverified_hm4nye9...` | `403` | `403` | **PASS** | Negative auth/perm check |
+| 13 | `POST` | `/api/auth/login` | 13 - Login with Wrong Password (Negative Check) | `{   "identifier": "userA_hm4nye9@spen...` | `400/401` | `401` | **PASS** | Negative auth/perm check |
+| 14 | `POST` | `/api/security-pin/verify` | 14 - Verify Security PIN Valid | `{   "pin": "123456" }` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 15 | `POST` | `/api/security-pin/verify` | 15 - Verify Security PIN Invalid (Negative Check) | `{   "pin": "999999" }` | `400/401` | `401` | **PASS** | Negative auth/perm check |
+| 16 | `PUT` | `/api/security-pin` | 16 - Change Security PIN User A | `{   "currentPin": "123456",   "newPin...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 17 | `PUT` | `/api/security-pin` | 17 - Revert Security PIN User A | `{   "currentPin": "654321",   "newPin...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 18 | `POST` | `/api/auth/forgot-password` | 18 - Forgot Password User A | `{   "identifier": "userA_hm4nye9@spen...` | `200/202` | `202` | **PASS** | Accepted (async background mail) |
+| 19 | `POST` | `/api/auth/reset-password` | 19 - Reset Password User A | `{   "identifier": "userA_hm4nye9@spen...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 20 | `POST` | `/api/auth/login` | 20 - Re-login User A after Reset Password | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
+| 21 | `POST` | `/api/auth/pin/verify` | 21 - Complete PIN Login User A | `{   "challengeToken": "jfj+vu7/vfQXIe...` | `200` | `200` | **PASS** | OK |
+| 22 | `GET` | `/api/auth/sessions` | 22 - List Active User Sessions | `(none)` | `200` | `200` | **PASS** | OK |
+| 23 | `DELETE` | `/api/auth/sessions/{{userA_sessionId}}` | 23 - Revoke Single Session | `(none)` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 24 | `POST` | `/api/auth/login` | 24 - Refresh Token after Single Session Revoke (Re-establish Session) | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
+| 25 | `POST` | `/api/auth/pin/verify` | 25 - Complete PIN Login for User A | `{   "challengeToken": "muWexoEJs6DaeD...` | `200` | `200` | **PASS** | OK |
+| 26 | `GET` | `/api/security-pin/status` | 26 - Security PIN Status Check | `(none)` | `200` | `200` | **PASS** | OK |
+| 27 | `GET` | `/api/users/me` | 01 - Get Current User Profile (User A) | `(none)` | `200` | `200` | **PASS** | OK |
+| 28 | `POST` | `/api/users/me/avatar` | 02 - Upload User Avatar (User A) | `(none)` | `200` | `200` | **PASS** | OK |
+| 29 | `PUT` | `/api/users/me/preferences` | 03 - Update User Preferences | `{   "preferredLanguage": "vi-VN",   "...` | `200` | `200` | **PASS** | OK |
+| 30 | `GET` | `/api/friends/search?contact={{userB_email}}` | 04 - Search User B by Contact (Email) | `(none)` | `200` | `200` | **PASS** | OK |
+| 31 | `GET` | `/api/friends/search?contact={{userB_spendId}}` | 05 - Search User B by SpendId | `(none)` | `200` | `200` | **PASS** | OK |
+| 32 | `GET` | `/api/friends/discover?query=Tran&page=1&pageSize=10` | 06 - Discover Users by Name with Pagination | `(none)` | `200` | `200` | **PASS** | OK |
+| 33 | `POST` | `/api/friends/requests` | 07 - Send Friend Request (User A to User B) | `{   "contact": "userB_hm4nye9@spendwi...` | `200/201` | `200` | **PASS** | OK |
+| 34 | `POST` | `/api/friends/requests` | 08 - Send Friend Request Duplicate (Idempotency Check) | `{   "contact": "userB_hm4nye9@spendwi...` | `200/400/409` | `200` | **PASS** | OK |
+| 35 | `GET` | `/api/friends/requests/outgoing` | 09 - User A Checks Outgoing Requests | `(none)` | `200` | `200` | **PASS** | OK |
+| 36 | `GET` | `/api/friends/requests/incoming` | 10 - User B Checks Incoming Requests | `(none)` | `200` | `200` | **PASS** | OK |
+| 37 | `POST` | `/api/friends/requests/{{incomingRequestId}}/accept` | 11 - User B Accepts Friend Request | `(none)` | `200` | `200` | **PASS** | OK |
+| 38 | `GET` | `/api/friends` | 12 - User A Lists Friends | `(none)` | `200` | `200` | **PASS** | OK |
+| 39 | `GET` | `/api/friends` | 13 - User B Lists Friends | `(none)` | `200` | `200` | **PASS** | OK |
+| 40 | `PATCH` | `/api/friends/{{userB_id}}/preference` | 14 - Update Friend Preference (User A sets Favorite) | `{   "alias": "Ban Than Tran B",   "is...` | `200` | `200` | **PASS** | OK |
+| 41 | `GET` | `/api/wallets` | 01 - List Default Wallets for User A | `(none)` | `200` | `200` | **PASS** | OK |
+| 42 | `GET` | `/api/categories` | 02 - Get System Categories (Income & Expense) | `(none)` | `200` | `200` | **PASS** | OK |
+| 43 | `POST` | `/api/evidence` | 02b - Upload Evidence for Income Posting | `(none)` | `200/201` | `201` | **PASS** | Created tài nguyên mới |
+| 44 | `POST` | `/api/transactions/income` | 03 - Fund Main Wallet via Income Posting (10,000,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 45 | `POST` | `/api/wallets` | 04 - Create Savings Wallet User A | `{   "name": "Heo tiet kiem",   "type"...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 46 | `POST` | `/api/wallets` | 05 - Create Emergency Wallet User A | `{   "name": "Quy khan cap",   "type":...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 47 | `POST` | `/api/wallets` | 06 - Check Wallet Limit (Try Creating 4th Wallet) | `{   "name": "Vi thu 4 bi gioi han",  ...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
+| 48 | `GET` | `/api/wallets/{{userA_mainWalletId}}` | 07 - Get Main Wallet Details | `(none)` | `200` | `200` | **PASS** | OK |
+| 49 | `PUT` | `/api/wallets/{{userA_savingsWalletId}}` | 08 - Update Savings Wallet Name | `{   "name": "Tiet kiem mua nha",   "t...` | `200` | `200` | **PASS** | OK |
+| 50 | `POST` | `/api/categories` | 09 - Create Custom Category | `{   "name": "Ca phe & An sang",   "ki...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 51 | `POST` | `/api/evidence` | 09b - Upload Evidence for Expense Transaction | `(none)` | `200/201` | `201` | **PASS** | Created tài nguyên mới |
+| 52 | `POST` | `/api/transactions/expense` | 10 - Record Expense Transaction (45,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 53 | `POST` | `/api/transfers/internal` | 11 - Internal Transfer Between Wallets (3,000,000 VND) | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 54 | `GET` | `/api/wallets` | 12 - Check Balances After Expense and Transfer | `(none)` | `200` | `200` | **PASS** | OK |
+| 55 | `GET` | `/api/transactions?page=1&pageSize=10` | 13 - List Transactions with Query Filters | `(none)` | `200` | `200` | **PASS** | OK |
+| 56 | `GET` | `/api/transactions/{{expenseTxId}}` | 14 - Get Transaction Details | `(none)` | `200` | `200` | **PASS** | OK |
+| 57 | `PATCH` | `/api/transactions/{{expenseTxId}}` | 15 - Update Transaction Description | `{   "description": "Highlands Coffee ...` | `200` | `200` | **PASS** | OK |
+| 58 | `DELETE` | `/api/wallets/{{userA_emergencyWalletId}}` | 16 - Close Emergency Wallet | `(none)` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 59 | `POST` | `/api/transfers/p2p` | 00 - Fund User B Main Wallet (P2P Transfer 2,000,000 VND) | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 60 | `GET` | `/api/wallets` | 00b - Get User B Main Wallet | `(none)` | `200` | `200` | **PASS** | OK |
+| 61 | `POST` | `/api/v1/funds` | 01 - Create Fixed Fund (User A) | `{   "name": "Quy Du Lich Da Lat",   "...` | `200/201` | `200` | **PASS** | OK |
+| 62 | `GET` | `/api/v1/funds/{{fixedFundId}}` | 02 - Get Fixed Fund Details | `(none)` | `200` | `200` | **PASS** | OK |
+| 63 | `POST` | `/api/v1/funds/{{fixedFundId}}/invitations` | 03 - Invite User B to Fixed Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
+| 64 | `POST` | `/api/v1/funds/invitations/{{fundInvitationId}}/accept` | 04 - User B Accepts Fixed Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
+| 65 | `GET` | `/api/v1/funds/{{fixedFundId}}/members` | 05 - List Fixed Fund Members | `(none)` | `200` | `200` | **PASS** | OK |
+| 66 | `POST` | `/api/v1/funds/{{fixedFundId}}/obligations/confirm` | 06 - Confirm Obligations (Target: 2,000,000 VND) | `{   "targetVnd": 2000000,   "security...` | `200` | `200` | **PASS** | OK |
+| 67 | `POST` | `/api/v1/funds/{{fixedFundId}}/contributions` | 07 - User A Contributes 1,000,000 VND to Fixed Fund | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
+| 68 | `POST` | `/api/v1/funds/{{fixedFundId}}/contributions` | 08 - User B Contributes 1,000,000 VND to Fixed Fund | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
+| 69 | `GET` | `/api/v1/funds/{{fixedFundId}}/contributions` | 09 - List Fixed Fund Contributions | `(none)` | `200` | `200` | **PASS** | OK |
+| 70 | `PUT` | `/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission` | 10 - Grant Spending Permission to User B | `{   "enabled": true,   "securityPin":...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 71 | `GET` | `/api/v1/funds/{{fixedFundId}}/activities` | 11 - Check Fixed Fund Activities | `(none)` | `200` | `200` | **PASS** | OK |
+| 72 | `GET` | `/api/v1/funds/{{fixedFundId}}/finance` | 12 - Check Fixed Fund Financial Overview | `(none)` | `200` | `200` | **PASS** | OK |
+| 73 | `POST` | `/api/v1/funds` | 01 - Create Free Fund (User A) | `{   "name": "Quy An Nhau Cuoi Tuan", ...` | `200/201` | `200` | **PASS** | OK |
+| 74 | `POST` | `/api/v1/funds/{{freeFundId}}/invitations` | 02 - Invite User B to Free Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
+| 75 | `POST` | `/api/v1/funds/invitations/{{freeInvitationId}}/accept` | 03 - User B Accepts Free Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
+| 76 | `POST` | `/api/v1/funds/{{freeFundId}}/contributions` | 04 - User A Contributes 500,000 VND to Free Fund | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
+| 77 | `POST` | `/api/v1/funds/{{freeFundId}}/contributions` | 05 - User B Contributes 300,000 VND to Free Fund | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
+| 78 | `GET` | `/api/v1/funds/{{freeFundId}}/finance` | 06 - Track Free Fund Finance | `(none)` | `200` | `200` | **PASS** | OK |
+| 79 | `POST` | `/api/v1/funds/{{freeFundId}}/requests` | 07 - User B Creates Free Fund Expense Request | `{   "kind": "Expense",   "amountVnd":...` | `200` | `200` | **PASS** | OK |
+| 80 | `GET` | `/api/v1/funds/{{freeFundId}}/refund-preview?memberUserId={{userB_id}}` | 08 - Refund Preview for User B | `(none)` | `200` | `200` | **PASS** | OK |
+| 81 | `POST` | `/api/v1/funds/{{freeFundId}}/leave` | 09 - User B Leaves Free Fund | `{   "securityPin": "123456",   "idemp...` | `200` | `200` | **PASS** | OK |
+| 82 | `GET` | `/api/v1/funds/{{freeFundId}}/members` | 10 - Verify Remaining Members in Free Fund | `(none)` | `200` | `200` | **PASS** | OK |
+| 83 | `POST` | `/api/budgets` | 01 - Create Monthly Budget User A | `{   "categoryId": "9a8e4648-8073-484f...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 84 | `GET` | `/api/budgets?year=2026&month=10` | 02 - List Monthly Budgets | `(none)` | `200` | `200` | **PASS** | OK |
+| 85 | `PUT` | `/api/budgets/{{budgetId}}` | 03 - Update Monthly Budget Limit | `{   "limitAmount": 1500000,   "alerts...` | `200` | `200` | **PASS** | OK |
+| 86 | `DELETE` | `/api/budgets/{{budgetId}}` | 04 - Delete Monthly Budget | `{   "securityPin": "123456" }` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 87 | `POST` | `/api/goals` | 05 - Create Savings Goal (MacBook M4) | `{   "name": "Mua MacBook M4",   "targ...` | `200` | `200` | **PASS** | OK |
+| 88 | `POST` | `/api/goals/{{goalId}}/contributions` | 06 - Deposit to Savings Goal (2,000,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
+| 89 | `GET` | `/api/goals/{{goalId}}` | 07 - Get Goal Details and Verify Progress | `(none)` | `200` | `200` | **PASS** | OK |
+| 90 | `POST` | `/api/goals/{{goalId}}/withdrawals` | 08 - Withdraw from Savings Goal (500,000 VND) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
+| 91 | `POST` | `/api/recurring-transactions` | 09 - Create Recurring Transaction (Monthly Internet) | `{   "walletId": "063f0702-44c3-43cf-9...` | `200/201` | `200` | **PASS** | OK |
+| 92 | `GET` | `/api/recurring-transactions` | 10 - List Recurring Transactions | `(none)` | `200` | `200` | **PASS** | OK |
+| 93 | `POST` | `/api/transaction-rules` | 11 - Create Transaction Rule | `{   "descriptionPattern": "GrabFood*"...` | `200/201` | `200` | **PASS** | OK |
+| 94 | `GET` | `/api/transaction-rules` | 12 - List Transaction Rules | `(none)` | `200` | `200` | **PASS** | OK |
+| 95 | `POST` | `/api/ai/conversations` | 01 - Create AI Conversation | `{   "title": "Tu van tiet kiem hang t...` | `200` | `200` | **PASS** | OK |
+| 96 | `GET` | `/api/ai/conversations` | 02 - List AI Conversations | `(none)` | `200` | `200` | **PASS** | OK |
+| 97 | `POST` | `/api/ai/chat` | 03 - Ask AI Financial Advisor (Chat) - Fallback Safe | `{   "conversationId": "88788a03-15dd-...` | `200/503` | `503` | **PASS** | AI provider safe fallback |
+| 98 | `GET` | `/api/transfers/recipients?phone={{userB_phone}}` | 01 - Find Bank Transfer Recipient by Phone | `(none)` | `200/404/409` | `409` | **PASS** | Business conflict / invariant guard |
+| 99 | `POST` | `/api/transfers` | 02 - Create Bank Direct Transfer Instruction | `{   "bankCode": "VCB",   "accountNumb...` | `201/400` | `400` | **PASS** | OK |
+| 100 | `GET` | `/api/transfers` | 03 - Bank Direct Transfer History | `(none)` | `200` | `200` | **PASS** | OK |
+| 101 | `POST` | `/api/banking/sepay/webhook` | 04 - SePay Webhook Invariant (Controlled Check) | `{   "gateway": "SePay Sandbox",   "tr...` | `200/400/401/404` | `404` | **PASS** | OK |
+| 102 | `GET` | `/api/notifications` | 01 - List Notifications for User A | `(none)` | `200` | `200` | **PASS** | OK |
+| 103 | `POST` | `/api/notifications/read-all` | 02 - Mark All Notifications Read | `(none)` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 104 | `GET` | `/api/notifications/search?page=1&pageSize=10` | 03 - Search Notifications | `(none)` | `200` | `200` | **PASS** | OK |
+| 105 | `POST` | `/api/cases/support` | 04 - Create Support Case | `{   "category": "General",   "priorit...` | `200/201` | `200` | **PASS** | OK |
+| 106 | `GET` | `/api/cases/support` | 05 - List Support Cases | `(none)` | `200` | `200` | **PASS** | OK |
+| 107 | `GET` | `/api/cases/support/{{supportCaseId}}` | 06 - Get Support Case Details | `(none)` | `200` | `200` | **PASS** | OK |
+| 108 | `POST` | `/api/cases/support/{{supportCaseId}}/messages` | 07 - Reply to Support Case Message | `{   "message": "Synthetic receipt pro...` | `200` | `200` | **PASS** | OK |
+| 109 | `GET` | `/api/cases/disputes` | 08 - List Financial Disputes | `(none)` | `200` | `200` | **PASS** | OK |
+| 110 | `GET` | `/api/users/me` | Flow A01 - Pre-check Profile Avatar | `(none)` | `200` | `200` | **PASS** | OK |
+| 111 | `POST` | `/api/users/me/avatar` | Flow A02 - Upload Real Avatar Image | `(none)` | `200` | `200` | **PASS** | OK |
+| 112 | `GET` | `/api/users/me` | Flow A03 - Check Profile Immediately Has New Avatar | `(none)` | `200` | `200` | **PASS** | OK |
+| 113 | `POST` | `/api/auth/logout` | Flow A04 - Logout User A | `{   "refreshToken": "KtzuqfFsS/bAnSaL...` | `200/204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 114 | `POST` | `/api/auth/login` | Flow A05 - Re-login User A | `{   "identifier": "userA_hm4nye9@spen...` | `200` | `200` | **PASS** | OK |
+| 115 | `POST` | `/api/auth/pin/verify` | Flow A06 - Complete PIN Login for Re-login | `{   "challengeToken": "GQibhYpHiUQEZk...` | `200` | `200` | **PASS** | OK |
+| 116 | `GET` | `/api/users/me` | Flow A07 - Check Profile After Fresh Login Retains Avatar | `(none)` | `200` | `200` | **PASS** | OK |
+| 117 | `POST` | `/api/users/me/email/request` | Flow B01 - Request Email Change to New Email | `{   "newEmail": "userA_new_hm4nye9@sp...` | `200` | `200` | **PASS** | OK |
+| 118 | `POST` | `/api/users/me/email/confirm` | Flow B02 - Confirm Email Change with OTP | `{   "newEmail": "userA_new_hm4nye9@sp...` | `200` | `200` | **PASS** | OK |
+| 119 | `POST` | `/api/auth/logout` | Flow B03 - Logout After Email Change | `{   "refreshToken": "OGv6Yq1FQR5SnSDc...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 120 | `POST` | `/api/auth/login` | Flow B04 - Login with New Email (Expected: Success) | `{   "identifier": "userA_new_hm4nye9@...` | `200` | `200` | **PASS** | OK |
+| 121 | `POST` | `/api/auth/pin/verify` | Flow B05 - Complete PIN Verification with New Email | `{   "challengeToken": "kGsIwe8dHTAm7k...` | `200` | `200` | **PASS** | OK |
+| 122 | `POST` | `/api/auth/login` | Flow B06 - Login with Old Email (Expected: 401 / Denied) | `{   "identifier": "userA_hm4nye9@spen...` | `401` | `401` | **PASS** | Negative auth/perm check |
+| 123 | `GET` | `/api/friends/search?contact={{userB_email}}` | Flow C01 - User A Searches User B by Contact | `(none)` | `200` | `200` | **PASS** | OK |
+| 124 | `POST` | `/api/friends/requests` | Flow C02 - User A Checks Friend Request Status to User B | `{   "contact": "userB_hm4nye9@spendwi...` | `409` | `409` | **PASS** | Business conflict / invariant guard |
+| 125 | `GET` | `/api/friends` | Flow C03 - User A Checks Friend List (Has User B) | `(none)` | `200` | `200` | **PASS** | OK |
+| 126 | `GET` | `/api/friends` | Flow C04 - User B Checks Friend List (Has User A) | `(none)` | `200` | `200` | **PASS** | OK |
+| 127 | `POST` | `/api/v1/funds` | Flow D01 - User A Creates Fixed Fund (1,000,000 VND) | `{   "name": "Quy Flow D Team",   "kin...` | `200` | `200` | **PASS** | OK |
+| 128 | `POST` | `/api/v1/funds/{{flowD_fundId}}/invitations` | Flow D02 - Invite User B to Fixed Fund | `{   "userId": "05f548e7-d2c1-4421-aa4...` | `200` | `200` | **PASS** | OK |
+| 129 | `POST` | `/api/v1/funds/invitations/{{flowD_inviteId}}/accept` | Flow D03 - User B Accepts Fixed Fund Invitation | `(none)` | `200` | `200` | **PASS** | OK |
+| 130 | `POST` | `/api/v1/funds/{{flowD_fundId}}/obligations/confirm` | Flow D04 - Confirm Obligations (Target: 1,000,000 VND) | `{   "targetVnd": 1000000,   "security...` | `200` | `200` | **PASS** | OK |
+| 131 | `POST` | `/api/v1/funds/{{flowD_fundId}}/contributions` | Flow D05 - User A Contributes 500,000 VND | `{   "walletId": "063f0702-44c3-43cf-9...` | `200` | `200` | **PASS** | OK |
+| 132 | `POST` | `/api/v1/funds/{{flowD_fundId}}/contributions` | Flow D06 - User B Contributes 500,000 VND | `{   "walletId": "f6ce8510-1552-4353-b...` | `200` | `200` | **PASS** | OK |
+| 133 | `GET` | `/api/v1/funds/{{flowD_fundId}}/finance` | Flow D07 - Check Fund Finance (Total 1,000,000 VND) | `(none)` | `200` | `200` | **PASS** | OK |
+| 134 | `PUT` | `/api/v1/funds/{{flowD_fundId}}/members/{{userB_id}}/spending-permission` | Flow D08 - Grant User B Spending Permission | `{   "enabled": true,   "securityPin":...` | `204` | `204` | **PASS** | NoContent chuẩn RFC |
+| 135 | `GET` | `/api/v1/funds/{{flowD_fundId}}/activities` | Flow D09 - Check Activity Log for Spending Permission Event | `(none)` | `200` | `200` | **PASS** | OK |
+| 136 | `GET` | `/api/wallets` | Flow E01 - Identify Main and Savings Wallets for Flow E | `(none)` | `200` | `200` | **PASS** | OK |
+| 137 | `POST` | `/api/transfers/internal` | Flow E02 - Transfer 300,000 VND from Main to Savings Wallet | `{   "sourceWalletId": "063f0702-44c3-...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 138 | `GET` | `/api/wallets/{{flowE_wallet2Id}}` | Flow E03 - Check Savings Wallet Balance Increased by 300,000 VND | `(none)` | `200` | `200` | **PASS** | OK |
+| 139 | `GET` | `/api/transactions?walletId={{flowE_wallet2Id}}&page=1&pageSize=10` | Flow E04 - Check Linked Transactions List | `(none)` | `200` | `200` | **PASS** | OK |
+| 140 | `GET` | `/api/categories` | Flow F01 - Get Expense Category for Budgeting | `(none)` | `200` | `200` | **PASS** | OK |
+| 141 | `POST` | `/api/budgets` | Flow F02 - Create Budget (2,000,000 VND limit) | `{   "categoryId": "10000000-0000-0000...` | `201` | `201` | **PASS** | Created tài nguyên mới |
+| 142 | `GET` | `/api/budgets/{{flowF_budgetId}}` | Flow F03 - Check Budget Status (Spent: 0, Remaining: 2,000,000 VND) | `(none)` | `200` | `200` | **PASS** | OK |
+| 143 | `PUT` | `/api/budgets/{{flowF_budgetId}}` | Flow F04 - Update Budget Limit to 3,000,000 VND | `{   "limitAmount": 3000000,   "alerts...` | `200` | `200` | **PASS** | OK |
+| 144 | `DELETE` | `/api/budgets/{{flowF_budgetId}}` | Flow F05 - Clean Up Budget via Delete | `{   "securityPin": "123456" }` | `204` | `204` | **PASS** | NoContent chuẩn RFC |

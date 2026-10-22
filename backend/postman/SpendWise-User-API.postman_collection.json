@@ -5764,7 +5764,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"newEmail\": \"{{new_email_a}}\",\n  \"otp\": \"{{static_otp}}\"\n}",
+              "raw": "{\n  \"otp\": \"{{static_otp}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

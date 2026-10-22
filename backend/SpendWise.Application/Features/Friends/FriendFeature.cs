@@ -305,9 +305,9 @@ public sealed class DiscoverUsersQueryHandler(ISpendWiseDbContext db)
             throw new AppException("invalid_input", "Search query must be between 2 and 80 characters.");
         }
 
-        if (query.Page < 1 || query.PageSize < 1 || query.PageSize > 50)
+        if (query.Page < 1 || query.Page > 100_000 || query.PageSize < 1 || query.PageSize > 50)
         {
-            throw new AppException("invalid_pagination", "Page must be at least 1 and pageSize must be between 1 and 50.");
+            throw new AppException("invalid_pagination", "Page must be between 1 and 100,000 and pageSize must be between 1 and 50.");
         }
 
         if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == query.UserId && u.Status == UserStatus.Active

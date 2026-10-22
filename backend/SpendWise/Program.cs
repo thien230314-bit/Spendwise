@@ -242,6 +242,7 @@ builder.Services.AddRateLimiter(options =>
     var emailPermitLimit = builder.Configuration.GetValue("RateLimiting:EmailVerificationPermitLimit", 10);
     var financialPermitLimit = builder.Configuration.GetValue("RateLimiting:FinancialPermitLimit", 30);
     var aiPermitLimit = builder.Configuration.GetValue("RateLimiting:AiPermitLimit", 15);
+    var userDiscoveryPermitLimit = builder.Configuration.GetValue("RateLimiting:UserDiscoveryPermitLimit", 30);
     options.AddPolicy(
         "auth",
         context => RateLimitPartition.GetFixedWindowLimiter(
@@ -282,6 +283,18 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = aiPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.AddPolicy(
+        "userDiscovery",
+        context => RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = userDiscoveryPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

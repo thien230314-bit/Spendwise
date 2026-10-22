@@ -1,128 +1,161 @@
 # SPENDWISE USER FRONTEND API ALIGNMENT REPORT
 
-> **Status:** APPROVED & VERIFIED  
-> **Target Frontend:** Google AI Studio / SpendWise Frontend Preview  
-> **Backend Baseline:** .NET 10 / ASP.NET Core / Entity Framework Core / SQL Server  
-> **Safety Constraints:** Zero SQL01 access, No EF Core DB schema migrations, Zero secret leakage, No fake claims of real-time subscriptions without infrastructure.
+> **Status:** REVIEWED & ACCURATELY ALIGNED  
+> **Target Frontend:** Google AI Studio / SpendWise Frontend Integration  
+> **Backend Baseline:** ASP.NET Core 10, EF Core, SQL Server  
+> **Database Isolation Guard:** Tested exclusively on isolated SQLite in-memory fixtures. ZERO access or modification to SQL01 / `SpendWiseDb`. No EF Core migrations added.  
+> **Backend Verification Baseline:** `04aefeca3a525ecb22977d550b8d40a0c444ffac` + rate limiting & HTTP validation hardening.
 
 ---
 
 ## 1. Domain Alignment Matrix (12 Domains)
 
-This matrix maps user interface capabilities evaluated against existing Backend APIs.
+This matrix compares the user frontend capabilities directly against the actual ASP.NET Core controllers, routes, DTOs, and handlers in `backend/SpendWise/Controllers/`.
 
-| # | Domain | UI Capability / Intent | Backend Status | Applicable Endpoint & Contract |
-|---|--------|------------------------|----------------|--------------------------------|
-| 1 | **Auth & Registration** | Register, Login, Refresh token, PIN setup, Lockout | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/auth/register`<br>`POST /api/auth/login`<br>`POST /api/auth/refresh`<br>`POST /api/auth/pin/setup`<br>`POST /api/auth/pin/verify` |
-| 2 | **Profile & Preferences** | Get Profile, Change Password, Change Avatar, Change Email | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/users/profile`<br>`POST /api/users/change-password`<br>`POST /api/users/avatar` (multipart file upload)<br>`POST /api/users/change-email/request`<br>`POST /api/users/change-email/confirm` |
-| 3 | **Personal Wallets** | Create Wallet, List Wallets, Update Wallet, Archive Wallet | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/wallets`<br>`POST /api/wallets`<br>`GET /api/wallets/{id}`<br>`PUT /api/wallets/{id}` |
-| 4 | **Transactions & Ledger** | Create Transaction, List Transactions with pagination/filters, Get Summary | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/transactions`<br>`POST /api/transactions`<br>`GET /api/transactions/{id}`<br>`DELETE /api/transactions/{id}` |
-| 5 | **Categories & Budgets** | Category list, Create Custom Category, Set Budget, Budget Progress | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/categories`<br>`POST /api/categories`<br>`GET /api/budgets`<br>`POST /api/budgets` |
-| 6 | **Social Friends & Discovery** | Search contact (exact SpendId/phone), List friends, Send/Accept/Reject requests, Set Nickname/Favorite, Discover users by name | `BACKEND_CHANGE_REQUIRED` (Now Implemented & Verified) | `GET /api/friends`<br>`GET /api/friends/search?query=...`<br>`GET /api/friends/discover?query=...&page=1&pageSize=20`<br>`POST /api/friends/request`<br>`POST /api/friends/requests/{id}/accept`<br>`PATCH /api/friends/{friendUserId}/preference` |
-| 7 | **Shared Funds (V1)** | Create Fund, List Funds, Member list, Invite Friend, Accept/Reject, Fund Finance & Statements | `BACKEND_CHANGE_REQUIRED` (Now Implemented & Verified) | `GET /api/v1/funds`<br>`POST /api/v1/funds`<br>`GET /api/v1/funds/{id}/members` (now returning `fullName` and `avatarUrl`)<br>`POST /api/v1/funds/{id}/invitations`<br>`POST /api/v1/funds/invitations/{id}/accept` |
-| 8 | **Fund Election & Voting** | Create Election, Cast Vote, Close Election | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/v1/funds/{id}/elections`<br>`POST /api/v1/funds/{id}/elections`<br>`POST /api/v1/funds/elections/{electionId}/vote` |
-| 9 | **Notifications & Alerts** | List Notifications, Mark as read, Unread count | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/notifications`<br>`POST /api/notifications/{id}/read`<br>`POST /api/notifications/read-all` |
-| 10 | **Analytics & Reports** | Cashflow summary, Expense breakdown by category, Monthly reports | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/analytics/cashflow`<br>`GET /api/analytics/category-breakdown` |
-| 11 | **Payment / SePay Topup** | Create deposit request, Check status, Webhook ingestion | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/payments/sepay/checkout`<br>`GET /api/payments/{id}/status`<br>`POST /api/payments/sepay/webhook` (HMAC-verified) |
-| 12 | **Support & Feedback** | Submit ticket, List user tickets, Send ticket message | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/support/tickets`<br>`POST /api/support/tickets`<br>`POST /api/support/tickets/{id}/messages` |
+| # | Domain | UI Capability / Intent | Backend Status | Exact Controller Route & Method | Requirements & Payload / Notes |
+|---|--------|------------------------|----------------|---------------------------------|--------------------------------|
+| 1 | **Auth, Session & Security PIN** | Register, Login, Refresh token, PIN setup, PIN verify, Password change | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/auth/register`<br>`POST /api/auth/login`<br>`POST /api/auth/refresh`<br>`POST /api/auth/logout`<br>`POST /api/auth/pin/setup`<br>`POST /api/auth/pin/verify`<br>`POST /api/auth/change-password` | Bearer Token for protected endpoints.<br>Password change requires `{ "currentPassword": "...", "newPassword": "..." }`.<br>Rate limit: `auth` (10 req/min). |
+| 2 | **Profile & Preferences** | Get Profile, Upload Avatar, Request Email Change, Confirm Email Change, Preferences | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/users/me`<br>`POST /api/users/me/avatar`<br>`POST /api/users/me/email/request`<br>`POST /api/users/me/email/confirm`<br>`PUT /api/users/me/preferences` | `avatar`: `multipart/form-data`, file key `file`, max 5 MB (PNG/JPEG/WEBP).<br>`email/request`: `{ "newEmail": "..." }`<br>`email/confirm`: `{ "newEmail": "...", "token": "..." }`<br>Rate limit: `emailVerification` on email change. |
+| 3 | **Personal Wallets** | List Wallets, Create Wallet, Get Wallet Details, Update Wallet, Delete/Archive | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/wallets`<br>`POST /api/wallets`<br>`GET /api/wallets/{id:guid}`<br>`PUT /api/wallets/{id:guid}`<br>`DELETE /api/wallets/{id:guid}` | Create/Update: `CreateWalletRequest` / `UpdateWalletRequest` (`Name`, `Currency`, `InitialBalance`, etc.).<br>Financial mutations require active User. |
+| 4 | **Transactions & Ledger** | List Transactions, Get Transaction, Record Income, Record Expense, Multi-wallet Expense, Update | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/transactions`<br>`GET /api/transactions/{id:guid}`<br>`POST /api/transactions/income`<br>`POST /api/transactions/expense`<br>`POST /api/transactions/expense/multi-wallet`<br>`PATCH /api/transactions/{id:guid}` | List supports query filters (`WalletId`, `CategoryId`, `From`, `To`, `Page`, `PageSize`).<br>Mutations rate limited by `financial` (30 req/min). |
+| 5 | **Categories, Budgets & Goals** | List Categories, Create Category, Budget CRUD, Goal CRUD & Contributions | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/categories`<br>`POST /api/categories`<br>`GET /api/budgets`<br>`POST /api/budgets`<br>`GET /api/goals`<br>`POST /api/goals`<br>`POST /api/goals/{id:guid}/contributions`<br>`POST /api/goals/{id:guid}/withdrawals` | Categories allow filtering by `kind` (`Income`/`Expense`).<br>Budgets defined on `CategoryId` and amount with period (`Month`/`Year`). |
+| 6 | **Social Friends & User Discovery** | Search contact (exact lookup), Discover users by name, List friends, Send/Cancel/Accept friend request, Update preference | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` (Enhanced in B1/B2) | `GET /api/friends`<br>`GET /api/friends/search?contact={contact}&kind={kind}`<br>`GET /api/friends/discover?query={query}&page={page}&pageSize={pageSize}`<br>`GET /api/friends/requests/incoming`<br>`GET /api/friends/requests/outgoing`<br>`POST /api/friends/requests`<br>`DELETE /api/friends/requests/{requestId:guid}`<br>`POST /api/friends/requests/{requestId:guid}/accept`<br>`PATCH /api/friends/{friendUserId:guid}/preference` | `discover` has dedicated `userDiscovery` rate limiter (30 req/min).<br>Exact search takes `?contact=` (NOT `?query=`).<br>Send request takes `{ "contact": "...", "message": "..." }`.<br>Preference takes `{ "nickname": "...", "isFavorite": true/false }`. |
+| 7 | **Shared Funds (V1)** | Create Fund, List Funds, Fund Members, Invite Friend, Accept/Decline Invite, Contributions, Activities | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` (Enhanced in B1) | `GET /api/v1/funds`<br>`POST /api/v1/funds`<br>`GET /api/v1/funds/{id:guid}`<br>`GET /api/v1/funds/{id:guid}/members`<br>`POST /api/v1/funds/{id:guid}/invitations`<br>`GET /api/v1/funds/invitations`<br>`POST /api/v1/funds/invitations/{id:guid}/accept`<br>`POST /api/v1/funds/{id:guid}/contributions`<br>`GET /api/v1/funds/{id:guid}/finance` | `V1MemberDto` now projects `fullName`, `avatarUrl`, and `displayName`.<br>Fund creation requires `Kind` (`Fixed` or `Free`), Target (for Fixed), and `SecurityPin`. |
+| 8 | **Fund Elections & Governance** | Create Election, Nominate Candidate, Cast Ballot, Advance Election, Accept/Reject Election | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/v1/funds/{id:guid}/elections`<br>`GET /api/v1/funds/elections/{id:guid}`<br>`POST /api/v1/funds/elections/{id:guid}/candidates`<br>`POST /api/v1/funds/elections/{id:guid}/ballots`<br>`POST /api/v1/funds/elections/{id:guid}/advance`<br>`POST /api/v1/funds/elections/{id:guid}/accept` | Democratic governance engine for funds.<br>Enforces fund membership and quorum. |
+| 9 | **Notifications & Alerts** | List Notifications, Mark as Read, Mark All Read, Search, Preferences | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/notifications`<br>`POST /api/notifications/{id:guid}/read`<br>`POST /api/notifications/read-all`<br>`GET /api/notifications/preferences`<br>`PUT /api/notifications/preferences` | Supports paginated notification inbox and preference toggles. |
+| 10 | **Dashboard & Overview** | Dashboard summary, Balances, Cashflow, Category Breakdown, Attention Items | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/dashboard` | Route is `GET /api/dashboard` (NOT `/api/analytics/*`).<br>Returns `DashboardDto` containing `TotalBalance`, `TotalWalletsBalance`, `IncomeThisMonth`, `ExpenseThisMonth`, `BudgetRemaining`, `CategoryDistribution`, `SixMonthCashFlow`, `AttentionItems`. |
+| 11 | **Payment / Bank Hub Integration** | User Bank Connections, SePay Server-to-Server Webhook / IPN, Sandbox Topup | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` (User) / `INSUFFICIENT_EVIDENCE` (Live real provider checkout) | User: `GET /api/bank-connections`<br>`POST /api/bank-connections/link`<br>`POST /api/bank-connections/test-mode/wallet-top-ups`<br>Webhook: `POST /api/integrations/sepay/bankhub/events`<br>`POST /api/integrations/sepay/bankhub/ipn` | User bank linking and sandbox simulated top-up exist.<br>Direct interactive checkout redirect endpoint (`POST /api/payments/sepay/checkout`) is NOT verified/implemented in Backend; real bank-hub ingestion uses server-to-server webhook/IPN secret validation. |
+| 12 | **Support & User Disputes** | Create Support Case, List User Cases, Get Case Detail, Reply to Case | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/cases/support`<br>`GET /api/cases/support`<br>`GET /api/cases/support/{id:guid}`<br>`POST /api/cases/support/{id:guid}/messages`<br>`POST /api/cases/support/{id:guid}/messages/multipart` | Controller is `CasesController` mapped to route `api/cases` (NOT `/api/support/tickets`).<br>Disputes for transactions: `POST /api/cases/disputes`. |
 
 ---
 
-## 2. Specific Backend API Enhancements Implemented
+## 2. API Contract Specifications for B1 & B2
 
 ### 2.1 User Discovery Endpoint (`GET /api/friends/discover`)
 
 - **Route:** `GET /api/friends/discover?query={term}&page={page}&pageSize={pageSize}`
 - **Authentication:** Required (`Bearer <JWT>`)
+- **Rate Limit Policy:** `userDiscovery` (30 requests / minute per authenticated user). Exceeding the rate limit yields `HTTP 429 Too Many Requests`.
 - **Query Parameters:**
-  - `query`: string (min 2, max 80 chars; trimmed). Matches substrings of `FullName`.
-  - `page`: integer (default: `1`, min: `1`).
+  - `query`: string (min 2, max 80 characters, trimmed). Searches substrings of `FullName`.
+  - `page`: integer (default: `1`, min: `1`, max: `100,000`). Prevents integer overflow on LINQ `Skip()`.
   - `pageSize`: integer (default: `20`, min: `1`, max: `50`).
 - **Response Model:** `PagedResult<UserDiscoveryDto>`
   ```json
   {
     "items": [
       {
-        "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "fullName": "Nguyen Van A",
-        "avatarUrl": "https://storage.spendwise.local/avatars/user-a.webp",
-        "spendId": "SPW902184",
+        "userId": "b41cfbe1-4b19-48ce-88f5-93108c4ea78e",
+        "fullName": "Alice InWonderland",
+        "avatarUrl": "/avatars/a7e3...webp",
+        "spendId": "SPW902184123",
         "relationshipState": "FRIENDS"
       }
     ],
     "page": 1,
     "pageSize": 20,
-    "totalCount": 1,
-    "totalPages": 1
+    "totalCount": 1
   }
   ```
-- **Privacy & Security Constraints:**
-  - **No Email / Phone Exposure:** Only public identity fields (`UserId`, `FullName`, `AvatarUrl`, `SpendId`, `RelationshipState`) are returned. Stranger emails, phone numbers, balances, and security settings are strictly excluded.
-  - **Self Exclusion:** The querying user is never returned in search results.
-  - **Account Status Guard:** Only active non-operator users are visible (`IsActive == true` and `NormalizedEmail` not belonging to admin/operator internal accounts).
-  - **Relationship States:** Batched lookup returns one of:
-    - `"FRIENDS"`: Active friendship exists.
-    - `"REQUEST_SENT"`: An open friend request was sent by the caller to this user.
-    - `"REQUEST_RECEIVED"`: An open friend request from this user is waiting for caller's action.
-    - `"NONE"`: No active relationship or pending request.
-  - **Zero N+1 Query:** Relationship states are computed using batched SQL queries on the paged batch of user IDs.
+  *(Note: `PagedResult<T>` has exactly 4 fields: `items`, `page`, `pageSize`, `totalCount`)*.
 
-### 2.2 Friend & Social Contact DTO Avatar Enrichment
+- **Privacy & Security Enforcement:**
+  - **Exclusion of Self:** Querying user is never returned.
+  - **Account Status Filter:** Only active ordinary users (`UserStatus.Active` and `SystemRole.User`) are returned; internal operator and suspended accounts are excluded.
+  - **Zero Exposure of Private Data:** Stranger email addresses, phone numbers, balances, and security settings are NOT included in `UserDiscoveryDto`.
+  - **Private Nickname Integrity:** `FriendPreference.Nickname` is only visible to the user who set it. Search only queries the canonical `FullName`.
+  - **Zero N+1 Query:** Relationship states (`"NONE"`, `"REQUEST_SENT"`, `"REQUEST_RECEIVED"`, `"FRIENDS"`) are resolved in batched queries for the current page slice.
 
-Existing endpoints were updated to return `avatarUrl` without breaking contract compatibility:
-1. `FriendContactDto`: Added `string? AvatarUrl = null`
-   - Populated in `GET /api/friends/search?query=...`
-2. `FriendRequestDto`: Added `string? AvatarUrl = null`
-   - Populated in `GET /api/friends/requests/incoming` and `GET /api/friends/requests/outgoing`
-3. `FriendDto`: Added `string? AvatarUrl = null`
-   - Populated in `GET /api/friends` and `PATCH /api/friends/{friendUserId}/preference`
+### 2.2 Exact Contact Search (`GET /api/friends/search`)
 
-### 2.3 Shared Fund Member DTO (`V1MemberDto`) Enrichment
+- **Route:** `GET /api/friends/search?contact={contact}&kind={kind}`
+- **Note:** Parameter name is `contact` (NOT `query`).
+- **Kind:** Optional (`"spendId"` or `"phone"`).
+- **Response Model:** `FriendContactDto`
+  ```json
+  {
+    "userId": "b41cfbe1-4b19-48ce-88f5-93108c4ea78e",
+    "fullName": "Alice InWonderland",
+    "spendId": "SPW902184123",
+    "phone": null,
+    "state": "FRIENDS",
+    "avatarUrl": "/avatars/a7e3...webp"
+  }
+  ```
+  *Stranger phone numbers are hidden unless already `FRIENDS`.*
 
-- **Route:** `GET /api/v1/funds/{id}/members`
-- **Fields Added:** `string FullName = ""` and `string? AvatarUrl = null`.
-- **Computed Property:** `DisplayName => FullName` for client convenience.
-- **SQL Projection:** Implemented with a single SQL query joining `V1FundMemberships` and `Users`, ensuring zero N+1 queries.
+### 2.3 Friends List (`GET /api/friends`)
+
+- **Route:** `GET /api/friends`
+- **Response Model:** `IReadOnlyList<FriendDto>`
+  ```json
+  [
+    {
+      "userId": "b41cfbe1-4b19-48ce-88f5-93108c4ea78e",
+      "fullName": "Alice InWonderland",
+      "spendId": "SPW902184123",
+      "phone": "0912345678",
+      "nickname": "Alice bestie",
+      "isFavorite": true,
+      "acceptedAt": "2026-10-22T04:45:00Z",
+      "avatarUrl": "/avatars/a7e3...webp",
+      "commonGroups": []
+    }
+  ]
+  ```
+
+### 2.4 Fund Members (`GET /api/v1/funds/{id:guid}/members`)
+
+- **Route:** `GET /api/v1/funds/{id:guid}/members`
+- **Response Model:** `IReadOnlyList<V1MemberDto>`
+  ```json
+  [
+    {
+      "userId": "b41cfbe1-4b19-48ce-88f5-93108c4ea78e",
+      "seat": 1,
+      "canSpend": true,
+      "joinedAt": "2026-10-22T04:45:00Z",
+      "leftAt": null,
+      "fullName": "Alice InWonderland",
+      "avatarUrl": "/avatars/a7e3...webp",
+      "displayName": "Alice InWonderland"
+    }
+  ]
+  ```
+  *Executed via a single SQL query join between `V1FundMemberships` and `Users` (Zero N+1).*
 
 ---
 
-## 3. Important Implementation & Protocol Notes for Frontend Integration
+## 3. Important Implementation & Protocol Rules for Frontend
 
-### 3.1 Avatar Freshness Semantics
-- **Rule:** `NEXT AUTHORIZED REFETCH, NOT REALTIME`.
-- Backend does not maintain persistent bidirectional WebSocket/SignalR connections for profile avatar changes.
-- When User A uploads a new avatar:
-  - User A's avatar is immediately committed to SQL Server.
-  - User B will observe User A's new avatar upon their next authorized request/refetch (`GET /api/friends`, `GET /api/v1/funds/{id}/members`, etc.).
-  - Cache headers on static avatar URLs should incorporate timestamps or asset hashes if HTTP caching is enabled on the CDN.
-
-### 3.2 Accent-Insensitive Search Statement
-- **Notice:** `ACCENT-INSENSITIVE SEARCH: NOT SUPPORTED / NOT VERIFIED`.
-- SQL Server default database collation is `SQL_Latin1_General_CP1_CI_AS` (Case-Insensitive, Accent-Sensitive).
-- Queries using EF Core `.Contains()` or `EF.Functions.Like()` are case-insensitive (`a` matches `A`), but accent-sensitive (`a` does NOT match `á`, `à`, `ạ`).
-- Frontend clients should prompt users to input exact diacritics or standard Latin text as registered.
-
-### 3.3 Relationship Nickname Boundary
-- `FriendPreference.Nickname` is strictly private to the user who set it.
-- Global discovery (`GET /api/friends/discover`) and contact search (`GET /api/friends/search`) always query the user's canonical legal/account `FullName`, never exposing private nicknames to other users.
+1. **Avatar Freshness Semantics:**
+   - **`NEXT AUTHORIZED REFETCH, NOT REALTIME`**.
+   - The backend does not maintain WebSocket avatar push subscriptions.
+   - When User A uploads a new avatar via `POST /api/users/me/avatar`, it is instantly persisted to the database.
+   - User B will see User A's updated avatar upon the next authorized GET request (`/api/friends`, `/api/v1/funds/{id}/members`, `/api/friends/search`, etc.).
+2. **Vietnamese Diacritics & Collation:**
+   - **`ACCENT-INSENSITIVE SEARCH: NOT SUPPORTED / NOT VERIFIED`**.
+   - Database collation is Case-Insensitive, Accent-Sensitive (`SQL_Latin1_General_CP1_CI_AS`).
+   - `a` matches `A`, but does NOT match `á`, `à`, `ạ`. Frontend must display instructions for users to input search queries with appropriate diacritics.
+3. **Dispute & Support Ticketing:**
+   - The route prefix is `/api/cases` (specifically `POST /api/cases/support` and `POST /api/cases/disputes`), NOT `/api/support/tickets`.
+4. **Dashboard & Analytics:**
+   - User overview data is aggregated at `GET /api/dashboard`. There is no `/api/analytics/*` endpoint in the backend.
 
 ---
 
 ## 4. Verification & Automated Test Evidence
 
-The contract alignment is covered by 6 dedicated integration tests in `backend/tests/SpendWise.Tests/UserContractAlignmentTests.cs`:
+All tests pass on an isolated SQLite database test fixture (`SpendWiseApiFactory` / `TargetedCorrectnessFixture`). Zero connection to `SQL01`.
 
-| Test Name | Verification Focus | Status |
-|-----------|--------------------|:------:|
-| `TestA_Friend_Avatar_Freshness_On_Refetch` | Verifies that friend avatar updates are reflected immediately on subsequent `GetFriendsQuery` refetch. | **PASS** |
-| `TestB_Fund_Members_Projection_Includes_FullName_And_AvatarUrl` | Verifies that `GET /api/v1/funds/{id}/members` returns `FullName`, `AvatarUrl`, and `DisplayName` without N+1 overhead. | **PASS** |
-| `TestC_Nickname_Remains_Private_To_Owner_And_Does_Not_Leak_To_Global_Search` | Verifies nickname is visible to owner but discover search only queries canonical `FullName`. | **PASS** |
-| `TestD_Discover_Users_Excludes_Self_And_Inactives_And_Returns_Correct_RelationshipStates` | Verifies self-exclusion, inactive user exclusion, pagination, and accurate `NONE`, `REQUEST_SENT`, `REQUEST_RECEIVED`, `FRIENDS` states. | **PASS** |
-| `TestE_Discover_Users_Input_Validation` | Verifies query length boundaries (< 2 or > 80 chars) and page size boundaries throw validation errors. | **PASS** |
-| `TestF_Backward_Compatibility_Existing_Search_And_Requests_Intact` | Verifies exact `GET /api/friends/search` by phone and SpendId continues to work with avatar included. | **PASS** |
-
-Regression suites verified:
-- `SpendWise.Tests.V1FundMembershipTests`: 16/16 **PASS**
-- `SpendWise.Tests (Avatar)`: 15/15 **PASS**
-- `SpendWise.Tests (Friend)`: 22/22 **PASS** (1 manual target test skipped/refused as required by test isolation rules)
-- Full API build: **0 Warnings, 0 Errors**.
+| Test Class / Suite | Test Case | Status | Evidence |
+|--------------------|-----------|:------:|----------|
+| `UserContractAlignmentTests` | `TestA_Friend_Avatar_Freshness_On_Refetch` | **PASS** | Handler-level: friend avatar updates reflect on next fetch |
+| `UserContractAlignmentTests` | `TestB_Fund_Members_Projection_Includes_FullName_And_AvatarUrl` | **PASS** | `V1MemberDto` single-SQL join projection |
+| `UserContractAlignmentTests` | `TestC_Nickname_Remains_Private_To_Owner_And_Does_Not_Leak_To_Global_Search` | **PASS** | Nicknames remain private; discovery searches canonical `FullName` |
+| `UserContractAlignmentTests` | `TestD_Discover_Users_Excludes_Self_And_Inactives_And_Returns_Correct_RelationshipStates` | **PASS** | Self exclusion, inactive user exclusion, pagination overflow check |
+| `UserContractAlignmentTests` | `TestE_User_Discovery_Accurately_Reflects_All_Four_Relationship_States` | **PASS** | Accurately tests `NONE`, `FRIENDS`, `REQUEST_SENT`, `REQUEST_RECEIVED` |
+| `UserContractAlignmentTests` | `TestF_Backward_Compatibility_Existing_Search_And_Requests_Intact` | **PASS** | Exact contact search `?contact=` remains backwards-compatible |
+| `UserContractAlignmentTests` | `TestG_Http_EndToEnd_AvatarUpload_FriendRefetch_FundMembers_Discovery_And_RateLimit` | **PASS** | **Full HTTP API Pipeline**: Real multipart avatar upload, friend refetch, fund members, user discovery, and **HTTP 429 rate limit verification** |
+| `RateLimitPolicyTests` | `FinancialMutations_HaveFinancialPolicy` | **PASS** | Rate limit policies intact |
+| `RateLimitPolicyTests` | `ReadOnlyNavigation_DoesNotUseFinancialPolicy` | **PASS** | Read-only endpoints not blocked |

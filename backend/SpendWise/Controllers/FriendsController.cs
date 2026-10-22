@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Friends;
 using SpendWise.Application.Finance;
@@ -18,6 +19,7 @@ public sealed class FriendsController(IMediator mediator, ICurrentUser currentUs
         mediator.Send(new SearchFriendContactQuery(UserId(), contact, kind), ct);
 
     [HttpGet("discover")]
+    [EnableRateLimiting("userDiscovery")]
     public Task<PagedResult<UserDiscoveryDto>> Discover(
         [FromQuery] string query,
         CancellationToken ct,

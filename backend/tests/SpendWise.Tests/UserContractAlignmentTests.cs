@@ -1,11 +1,19 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Features.Friends;
+using SpendWise.Application.Features.Users;
 using SpendWise.Application.Features.V1Groups;
+using SpendWise.Application.Finance;
+using SpendWise.Application.Identity;
 using SpendWise.Application.Social;
 using SpendWise.Domain.Identity;
 using SpendWise.Domain.Social;
 using SpendWise.Domain.V1Groups;
+using SpendWise.Infrastructure.Persistence;
 using Xunit;
 
 namespace SpendWise.Tests;
@@ -213,6 +221,9 @@ public sealed class UserContractAlignmentTests
         var restrictedUser = await f.AddUserAsync("Developer Restricted", status: UserStatus.Restricted);
         var inactiveSearch = await handler.Handle(new DiscoverUsersQuery(caller.Id, "Developer"), default);
         Assert.DoesNotContain(inactiveSearch.Items, item => item.UserId == lockedUser.Id || item.UserId == suspendedUser.Id || item.UserId == restrictedUser.Id);
+
+        // Kiểm tra page quá lớn (vượt 100_000) bị chặn an toàn
+        await Assert.ThrowsAsync<AppException>(() => handler.Handle(new DiscoverUsersQuery(caller.Id, "Developer", Page: 100_001), default));
     }
 
     [Fact]
@@ -308,5 +319,175 @@ public sealed class UserContractAlignmentTests
         var inc = Assert.Single(incoming);
         Assert.Equal(caller.Id, inc.UserId);
         Assert.Equal("/avatars/caller.png", inc.AvatarUrl);
+    }
+
+    private static readonly byte[] ValidPngBytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D];
+
+    private static User CreateHttpUser(string fullName)
+    {
+        var id = Guid.NewGuid();
+        var unique = id.ToString("N");
+        return new User
+        {
+            Id = id,
+            FullName = fullName,
+            Email = $"{unique}@spendwise.local",
+            NormalizedEmail = $"{unique.ToUpperInvariant()}@SPENDWISE.LOCAL",
+            SpendId = unique[..12],
+            NormalizedSpendId = unique[..12].ToUpperInvariant(),
+            PasswordHash = "TestHashPassword123",
+            SecurityPinHash = "TestPinHash123",
+            EmailVerifiedAt = DateTime.UtcNow,
+            SystemRole = SystemRole.User,
+            Status = UserStatus.Active,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    private static void AuthenticateClient(HttpClient client, SpendWiseApiFactory factory, User user)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+        var session = new UserSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow,
+            IpAddress = "127.0.0.1",
+            UserAgent = "TestAgent"
+        };
+        db.UserSessions.Add(session);
+        db.SaveChanges();
+
+        var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+        var token = tokenService.CreateAccessToken(user, session.Id).Token;
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    [Fact]
+    public async Task TestG_Http_EndToEnd_AvatarUpload_FriendRefetch_FundMembers_Discovery_And_RateLimit()
+    {
+        // Sử dụng SpendWiseApiFactory với in-memory SQLite biệt lập, không đụng SQL01
+        using var factory = new SpendWiseApiFactory(new Dictionary<string, string?>
+        {
+            ["RateLimiting:UserDiscoveryPermitLimit"] = "3" // Giới hạn 3 req/phút để kiểm tra HTTP 429
+        });
+        using var clientA = factory.CreateHttpsClient();
+        using var clientB = factory.CreateHttpsClient();
+
+        User userA, userB;
+        V1Fund fund;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            userA = CreateHttpUser("Alice InWonderland");
+            userB = CreateHttpUser("Bob Builder");
+            db.Users.AddRange(userA, userB);
+
+            // Tạo quan hệ bạn bè
+            var lower = userA.Id.CompareTo(userB.Id) < 0 ? userA.Id : userB.Id;
+            var higher = lower == userA.Id ? userB.Id : userA.Id;
+            var req = new FriendRequest
+            {
+                RequesterUserId = userA.Id,
+                AddresseeUserId = userB.Id,
+                LowerUserId = lower,
+                HigherUserId = higher,
+                Status = FriendRequestStatus.Accepted,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.FriendRequests.Add(req);
+            var friendship = new Friendship
+            {
+                LowerUserId = lower,
+                HigherUserId = higher,
+                AcceptedRequest = req,
+                AcceptedAt = DateTime.UtcNow
+            };
+            db.Friendships.Add(friendship);
+            db.FriendPreferences.AddRange(
+                new FriendPreference { FriendshipId = friendship.Id, UserId = userA.Id },
+                new FriendPreference { FriendshipId = friendship.Id, UserId = userB.Id }
+            );
+
+            // Tạo V1 Fund có cả User A (Owner) và User B (Member)
+            fund = new V1Fund("Shared Savings", "SPW000999", V1FundKind.Fixed, userA.Id, 5_000_000);
+            db.V1Funds.Add(fund);
+            db.V1FundMemberships.AddRange(
+                new V1FundMembership { FundId = fund.Id, UserId = userA.Id, Seat = 1, JoinedAt = DateTime.UtcNow },
+                new V1FundMembership { FundId = fund.Id, UserId = userB.Id, Seat = 2, JoinedAt = DateTime.UtcNow }
+            );
+
+            await db.SaveChangesAsync();
+        }
+
+        AuthenticateClient(clientA, factory, userA);
+        AuthenticateClient(clientB, factory, userB);
+
+        // 1. User A upload Avatar qua HTTP API thật: POST /api/users/me/avatar
+        using var avatarContent = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(ValidPngBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        avatarContent.Add(fileContent, "file", "avatar.png");
+
+        var uploadRes = await clientA.PostAsync("/api/users/me/avatar", avatarContent);
+        Assert.Equal(HttpStatusCode.OK, uploadRes.StatusCode);
+        var profile = await uploadRes.Content.ReadFromJsonAsync<UserProfile>();
+        Assert.NotNull(profile?.AvatarUrl);
+        Assert.StartsWith("/avatars/", profile.AvatarUrl);
+
+        // 2. User B gọi GET /api/friends thấy AvatarUrl mới của User A
+        var friendsRes = await clientB.GetAsync("/api/friends");
+        Assert.Equal(HttpStatusCode.OK, friendsRes.StatusCode);
+        var friends = await friendsRes.Content.ReadFromJsonAsync<List<FriendDto>>();
+        Assert.NotNull(friends);
+        var friendA = Assert.Single(friends, f => f.UserId == userA.Id);
+        Assert.Equal(profile.AvatarUrl, friendA.AvatarUrl);
+
+        // 3. User B gọi GET /api/v1/funds/{id}/members thấy FullName và AvatarUrl của User A
+        var membersRes = await clientB.GetAsync($"/api/v1/funds/{fund.Id}/members");
+        Assert.Equal(HttpStatusCode.OK, membersRes.StatusCode);
+        var members = await membersRes.Content.ReadFromJsonAsync<List<V1MemberDto>>();
+        Assert.NotNull(members);
+        var memberA = Assert.Single(members, m => m.UserId == userA.Id);
+        Assert.Equal("Alice InWonderland", memberA.FullName);
+        Assert.Equal(profile.AvatarUrl, memberA.AvatarUrl);
+        Assert.Equal("Alice InWonderland", memberA.DisplayName);
+
+        // 4. Exact lookup cũ: GET /api/friends/search?contact=... vẫn chạy và có AvatarUrl
+        var searchRes = await clientB.GetAsync($"/api/friends/search?contact={userA.SpendId}&kind=spendId");
+        Assert.Equal(HttpStatusCode.OK, searchRes.StatusCode);
+        var contact = await searchRes.Content.ReadFromJsonAsync<FriendContactDto>();
+        Assert.NotNull(contact);
+        Assert.Equal(userA.Id, contact.UserId);
+        Assert.Equal(profile.AvatarUrl, contact.AvatarUrl);
+
+        // 5. User Discovery: GET /api/friends/discover?query=Alice
+        var discoverRes = await clientB.GetAsync("/api/friends/discover?query=Alice");
+        Assert.Equal(HttpStatusCode.OK, discoverRes.StatusCode);
+        var paged = await discoverRes.Content.ReadFromJsonAsync<PagedResult<UserDiscoveryDto>>();
+        Assert.NotNull(paged);
+        Assert.Equal(1, paged.TotalCount);
+        var discoveredA = Assert.Single(paged.Items);
+        Assert.Equal(userA.Id, discoveredA.UserId);
+        Assert.Equal("Alice InWonderland", discoveredA.FullName);
+        Assert.Equal(profile.AvatarUrl, discoveredA.AvatarUrl);
+        Assert.Equal("FRIENDS", discoveredA.RelationshipState);
+
+        // 6. Rate Limit trên GET /api/friends/discover: Cho phép 3 request, request thứ 4 phải trả HTTP 429
+        // Ta đã gọi 1 lần ở bước 5. Gọi thêm 2 lần (tổng 3) -> OK
+        var req2 = await clientB.GetAsync("/api/friends/discover?query=Alice");
+        Assert.Equal(HttpStatusCode.OK, req2.StatusCode);
+        var req3 = await clientB.GetAsync("/api/friends/discover?query=Alice");
+        Assert.Equal(HttpStatusCode.OK, req3.StatusCode);
+
+        // Lần thứ 4 -> 429 TooManyRequests
+        var req4 = await clientB.GetAsync("/api/friends/discover?query=Alice");
+        Assert.Equal(HttpStatusCode.TooManyRequests, req4.StatusCode);
+
+        // 7. Xác nhận các API khác của Friends không bị chặn bởi rate limit của discover
+        var listFriendsAgain = await clientB.GetAsync("/api/friends");
+        Assert.Equal(HttpStatusCode.OK, listFriendsAgain.StatusCode);
     }
 }

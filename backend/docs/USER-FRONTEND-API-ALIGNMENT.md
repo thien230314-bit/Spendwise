@@ -15,7 +15,7 @@ This matrix compares the user frontend capabilities directly against the actual 
 | # | Domain | UI Capability / Intent | Backend Status | Exact Controller Route & Method | Requirements & Payload / Notes |
 |---|--------|------------------------|----------------|---------------------------------|--------------------------------|
 | 1 | **Auth, Session & Security PIN** | Register, Login, Refresh token, PIN setup, PIN verify, Password change | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `POST /api/auth/register`<br>`POST /api/auth/login`<br>`POST /api/auth/refresh`<br>`POST /api/auth/logout`<br>`POST /api/auth/pin/setup`<br>`POST /api/auth/pin/verify`<br>`POST /api/auth/change-password` | Bearer Token for protected endpoints.<br>Password change requires `{ "currentPassword": "...", "newPassword": "..." }`.<br>Rate limit: `auth` (10 req/min). |
-| 2 | **Profile & Preferences** | Get Profile, Upload Avatar, Request Email Change, Confirm Email Change, Preferences | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/users/me`<br>`POST /api/users/me/avatar`<br>`POST /api/users/me/email/request`<br>`POST /api/users/me/email/confirm`<br>`PUT /api/users/me/preferences` | `avatar`: `multipart/form-data`, file key `file`, max 5 MB (PNG/JPEG/WEBP).<br>`email/request`: `{ "newEmail": "..." }`<br>`email/confirm`: `{ "newEmail": "...", "token": "..." }`<br>Rate limit: `emailVerification` on email change. |
+| 2 | **Profile & Preferences** | Get Profile, Upload Avatar, Request Email Change, Confirm Email Change, Preferences | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/users/me`<br>`POST /api/users/me/avatar`<br>`POST /api/users/me/email/request`<br>`POST /api/users/me/email/confirm`<br>`PUT /api/users/me/preferences` | `avatar`: `multipart/form-data`, file key `file`, max 5 MB (PNG/JPEG/WEBP).<br>`email/request`: `{ "newEmail": "..." }`<br>`email/confirm`: `{ "otp": "..." }`<br>Rate limit: `emailVerification` on email change. |
 | 3 | **Personal Wallets** | List Wallets, Create Wallet, Get Wallet Details, Update Wallet, Delete/Archive | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/wallets`<br>`POST /api/wallets`<br>`GET /api/wallets/{id:guid}`<br>`PUT /api/wallets/{id:guid}`<br>`DELETE /api/wallets/{id:guid}` | Create/Update: `CreateWalletRequest` / `UpdateWalletRequest` (`Name`, `Currency`, `InitialBalance`, etc.).<br>Financial mutations require active User. |
 | 4 | **Transactions & Ledger** | List Transactions, Get Transaction, Record Income, Record Expense, Multi-wallet Expense, Update | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/transactions`<br>`GET /api/transactions/{id:guid}`<br>`POST /api/transactions/income`<br>`POST /api/transactions/expense`<br>`POST /api/transactions/expense/multi-wallet`<br>`PATCH /api/transactions/{id:guid}` | List supports query filters (`WalletId`, `CategoryId`, `From`, `To`, `Page`, `PageSize`).<br>Mutations rate limited by `financial` (30 req/min). |
 | 5 | **Categories, Budgets & Goals** | List Categories, Create Category, Budget CRUD, Goal CRUD & Contributions | `BACKEND_EXISTS_FRONTEND_ALIGNMENT` | `GET /api/categories`<br>`POST /api/categories`<br>`GET /api/budgets`<br>`POST /api/budgets`<br>`GET /api/goals`<br>`POST /api/goals`<br>`POST /api/goals/{id:guid}/contributions`<br>`POST /api/goals/{id:guid}/withdrawals` | Categories allow filtering by `kind` (`Income`/`Expense`).<br>Budgets defined on `CategoryId` and amount with period (`Month`/`Year`). |
@@ -70,7 +70,11 @@ This matrix compares the user frontend capabilities directly against the actual 
 
 - **Route:** `GET /api/friends/search?contact={contact}&kind={kind}`
 - **Note:** Parameter name is `contact` (NOT `query`).
-- **Kind:** Optional (`"spendId"` or `"phone"`).
+- **Kind Options:** `null` hoặc `"auto"`, `"email"`, `"phone"`, `"spendId"`.
+  - Mặc định `"auto"` sẽ tự nhận diện định dạng số điện thoại chuẩn hóa, email hoặc mã SpendID.
+- **Privacy & Security Matrix:**
+  - Nếu tìm bằng `kind="spendId"`: Phone number luôn trả về `null` trừ khi hai bên đã có trạng thái `FRIENDS` (`state == "FRIENDS"`).
+  - Nếu người dùng chủ động tìm bằng chính `phone` (hoặc `kind="phone"` / `auto` với số điện thoại đã biết): Backend xác nhận và trả về đúng số điện thoại khớp với đầu vào tìm kiếm.
 - **Response Model:** `FriendContactDto`
   ```json
   {
@@ -82,7 +86,6 @@ This matrix compares the user frontend capabilities directly against the actual 
     "avatarUrl": "/avatars/a7e3...webp"
   }
   ```
-  *Stranger phone numbers are hidden unless already `FRIENDS`.*
 
 ### 2.3 Friends List (`GET /api/friends`)
 
@@ -97,7 +100,7 @@ This matrix compares the user frontend capabilities directly against the actual 
       "phone": "0912345678",
       "nickname": "Alice bestie",
       "isFavorite": true,
-      "acceptedAt": "2026-10-22T04:45:00Z",
+      "friendsSince": "2026-10-22T04:45:00Z",
       "avatarUrl": "/avatars/a7e3...webp",
       "commonGroups": []
     }
@@ -113,16 +116,16 @@ This matrix compares the user frontend capabilities directly against the actual 
     {
       "userId": "b41cfbe1-4b19-48ce-88f5-93108c4ea78e",
       "seat": 1,
+      "isOwner": true,
       "canSpend": true,
       "joinedAt": "2026-10-22T04:45:00Z",
-      "leftAt": null,
       "fullName": "Alice InWonderland",
       "avatarUrl": "/avatars/a7e3...webp",
       "displayName": "Alice InWonderland"
     }
   ]
   ```
-  *Executed via a single SQL query join between `V1FundMemberships` and `Users` (Zero N+1).*
+  *Executed via a single SQL query join between `V1FundMemberships` và `Users` (Zero N+1).*
 
 ---
 

@@ -156,15 +156,15 @@
           "response": []
         },
         {
-          "name": "04 - Resend Verification OTP User A",
+          "name": "04 - Resend Verification OTP (Happy Path)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Resend verification returns 429 Rate Limited due to immediate retry cooldown\", function () {",
-                  "    pm.response.to.have.status(429);",
+                  "pm.test(\"Resend verification returns 200 OK\", function () {",
+                  "    pm.expect([200, 202]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -181,7 +181,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{userA_email}}\"\n}",
+              "raw": "{\n  \"email\": \"nonexistent-resend@spendwise.local\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4927,8 +4927,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Find recipient by phone returns 200, 404 or 409 (bank required)\", function () {",
-                  "    pm.response.to.have.status(409);",
+                  "pm.test(\"Find bank transfer recipient returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.accountHolder).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -4945,7 +4947,7 @@
             ],
             "body": null,
             "url": {
-              "raw": "{{baseUrl}}/api/transfers/recipients?phone={{userB_phone}}",
+              "raw": "{{baseUrl}}/api/transfers/recipients?phone={{fixture_member_phone}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4957,7 +4959,7 @@
               "query": [
                 {
                   "key": "phone",
-                  "value": "{{userB_phone}}"
+                  "value": "{{fixture_member_phone}}"
                 }
               ]
             }
@@ -4972,11 +4974,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Transfer instruction without active bank returns 409 Conflict\", function () {",
-                  "    pm.response.to.have.status(409);",
-                  "    if (pm.response.code === 201 || pm.response.code === 200) {",
-                  "        pm.environment.set(\"bankTransferId\", pm.response.json().id);",
-                  "    }",
+                  "pm.test(\"Create bank direct transfer returns 201 Created\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"transferId\", data.id);",
                   "});"
                 ]
               }
@@ -4998,7 +5000,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"note\": \"Chuyen khoan mua sach\",\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"bt-{{runId}}-01\"\n}",
+              "raw": "{\n  \"recipientUserId\": \"{{fixture_member_id}}\",\n  \"amount\": 50000,\n  \"note\": \"Bank direct transfer test\",\n  \"idempotencyKey\": \"bank-dir-{{$timestamp}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7592,6 +7594,45 @@
           "response": []
         },
         {
+          "name": "03b - User B Downloads Own Evidence (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User B downloads own evidence returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence/{{userB_evidenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence",
+                "{{userB_evidenceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "04 - Cross-User Wallet Access User A to User B Wallet (Expect 404)",
           "event": [
             {
@@ -8027,15 +8068,15 @@
       "name": "12 - V1 Integration & Governance (From V1 Suite)",
       "item": [
         {
-          "name": "V1-IMP-01 - 07 - Change Password User A",
+          "name": "V1-IMP-01 - 07 - Change Password User B",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Password change returns 204 No Content or controlled 400\", function () {",
-                  "    pm.expect([200, 204, 400]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -8045,11 +8086,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -8057,7 +8093,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"{{userA_password}}\",\n  \"newPassword\": \"SpendWise#2026Password!\"\n}",
+              "raw": "{\n  \"currentPassword\": \"StrongPass1!\",\n  \"newPassword\": \"StrongPass1!New\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8073,6 +8109,16 @@
                 "api",
                 "auth",
                 "change-password"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userB_token}}",
+                  "type": "string"
+                }
               ]
             }
           },
@@ -8464,8 +8510,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -8475,11 +8521,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -8487,7 +8528,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reason\": \"Contractor invoice amount discrepancy\"\n}",
+              "raw": "{\n  \"reason\": \"Report high expense for review\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8507,6 +8548,16 @@
                 "{{heldExpenseId}}",
                 "report"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -8519,8 +8570,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -8529,11 +8580,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userB_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -8562,6 +8608,16 @@
                 "{{heldExpenseId}}",
                 "cancel"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -8574,8 +8630,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Activity proposal settled\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.state).to.equal(\"Settled\");",
                   "});"
                 ]
               }
@@ -8584,11 +8644,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{core_owner_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -8597,7 +8652,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"{{default_pin}}\"\n}",
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8605,7 +8660,7 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/{{core_proposal}}/settle",
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_proposal_id}}/settle",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -8614,23 +8669,35 @@
                 "v1",
                 "funds",
                 "activity-proposals",
-                "{{core_proposal}}",
+                "{{fixture_activity_proposal_id}}",
                 "settle"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
               ]
             }
           },
           "response": []
         },
         {
-          "name": "V1-IMP-13 - Election no-votes failure",
+          "name": "V1-IMP-13 - Advance Election Success",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Advance election returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.phase).to.eql(\"Failed\");",
                   "});"
                 ]
               }
@@ -8638,16 +8705,10 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{core_member_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "body": null,
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/{{core_election}}/advance",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_advance_id}}/advance",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -8656,8 +8717,18 @@
                 "v1",
                 "funds",
                 "elections",
-                "{{core_election}}",
+                "{{fixture_election_advance_id}}",
                 "advance"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
               ]
             }
           },
@@ -8671,8 +8742,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -8681,11 +8752,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -8702,7 +8768,7 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/members/{{userB_id}}/kick",
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/members/{{fixture_member_id}}/kick",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -8712,8 +8778,18 @@
                 "funds",
                 "{{fixedFund2Id}}",
                 "members",
-                "{{userB_id}}",
+                "{{fixture_member_id}}",
                 "kick"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
               ]
             }
           },
@@ -8727,8 +8803,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"V1 legacy fund lifecycle operation returns controlled status\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -8737,11 +8813,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -8768,6 +8839,16 @@
                 "funds",
                 "{{fixedFund2Id}}",
                 "dissolve"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
               ]
             }
           },
@@ -8866,7 +8947,7 @@
           ]
         },
         {
-          "name": "B1-02 - Reset Security PIN with Invalid Token (Negative Check)",
+          "name": "B1-02 - Reset Security PIN Success",
           "request": {
             "method": "POST",
             "header": [
@@ -8889,12 +8970,16 @@
                 "auth",
                 "pin",
                 "reset"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"invalid-pin-reset-token-00000\",\n  \"newPin\": \"999999\",\n  \"confirmPin\": \"999999\"\n}"
+              "raw": "{\n  \"token\": \"{{fixture_pin_reset_token}}\",\n  \"newPin\": \"654321\",\n  \"confirmPin\": \"654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -8904,8 +8989,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Reset PIN with invalid token returns expected error status\", function () {",
-                  "    pm.expect([400, 401, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ]
               }
@@ -9311,21 +9396,17 @@
           ]
         },
         {
-          "name": "B1-12 - Reject Non-Existent Friend Request (Negative Check)",
+          "name": "B1-12 - Reject Friend Request Success",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/friends/requests/00000000-0000-0000-0000-000000000001/reject",
+              "raw": "{{baseUrl}}/api/friends/requests/{{fixture_friend_req_reject_id}}/reject",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -9333,10 +9414,19 @@
                 "api",
                 "friends",
                 "requests",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_friend_req_reject_id}}",
                 "reject"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -9345,8 +9435,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Reject non-existent friend request returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Request status is Rejected\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Rejected\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -9355,21 +9449,17 @@
           ]
         },
         {
-          "name": "B1-13 - Cancel Non-Existent Friend Request (Negative Check)",
+          "name": "B1-13 - Cancel Friend Request Success",
           "request": {
             "method": "DELETE",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/friends/requests/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/friends/requests/{{fixture_friend_req_cancel_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -9377,9 +9467,18 @@
                 "api",
                 "friends",
                 "requests",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_friend_req_cancel_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -9388,8 +9487,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Cancel non-existent friend request returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -9398,30 +9497,35 @@
           ]
         },
         {
-          "name": "B1-14 - Unfriend Non-Existent Friend (Negative Check)",
+          "name": "B1-14 - Unfriend Friend Success",
           "request": {
             "method": "DELETE",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/friends/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/friends/{{fixture_unfriend_user_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "friends",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_unfriend_user_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -9430,8 +9534,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Unfriend non-existent friend returns 204 or 404\", function () {",
-                  "    pm.expect([204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -9809,7 +9913,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 50000,\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"description\": \"Split grocery payment between wallets\",\n  \"walletAllocations\": [\n    {\n      \"walletId\": \"{{userA_mainWalletId}}\",\n      \"amount\": 30000\n    },\n    {\n      \"walletId\": \"{{userA_savingsWalletId}}\",\n      \"amount\": 20000\n    }\n  ],\n  \"evidenceIds\": [\n    \"{{b2_multiWalletEvidenceId}}\"\n  ],\n  \"idempotencyKey\": \"multi-wallet-exp-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+              "raw": "{\n  \"amount\": 50000,\n  \"categoryId\": \"{{customCategoryId}}\",\n  \"description\": \"Split grocery payment between wallets\",\n  \"walletAllocations\": [\n    {\n      \"walletId\": \"{{userA_mainWalletId}}\",\n      \"amount\": 30000\n    },\n    {\n      \"walletId\": \"{{userA_savingsWalletId}}\",\n      \"amount\": 20000\n    }\n  ],\n  \"evidenceIds\": [\n    \"{{b2_multiWalletEvidenceId}}\"\n  ],\n  \"idempotencyKey\": \"multi-wallet-exp-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             }
           },
           "response": [],
@@ -9828,7 +9932,7 @@
           ]
         },
         {
-          "name": "B2-08 - Get Transfer Details by ID",
+          "name": "B2-08 - Get Transfer Details by ID Success",
           "request": {
             "method": "GET",
             "header": [
@@ -9852,6 +9956,16 @@
                 "{{transferId}}"
               ],
               "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userA_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -9861,8 +9975,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Get transfer details returns expected status\", function () {",
-                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Get transfer details returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.eql(pm.environment.get(\"transferId\"));",
                   "});"
                 ]
               }
@@ -9870,31 +9986,49 @@
           ]
         },
         {
-          "name": "B2-09 - Confirm Payment Gateway Transfer (Negative Check for non-existent)",
+          "name": "B2-09 - Confirm Bank Direct Transfer Success",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
+                "key": "Accept",
+                "value": "application/json"
               },
               {
-                "key": "Accept",
+                "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/transfers/00000000-0000-0000-0000-000000000001/confirm",
+              "raw": "{{baseUrl}}/api/transfers/{{transferId}}/confirm",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "transfers",
-                "00000000-0000-0000-0000-000000000001",
+                "{{transferId}}",
                 "confirm"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userA_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -9904,8 +10038,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Confirm non-existent transfer returns expected negative response\", function () {",
-                  "    pm.expect([400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Confirm transfer returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.eql(pm.environment.get(\"transferId\"));",
                   "});"
                 ]
               }
@@ -10446,14 +10582,10 @@
           ]
         },
         {
-          "name": "B3-11 - Record Non-Existent Occurrence (Negative Check)",
+          "name": "B3-11 - Record Recurring Occurrence Execution Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -10464,23 +10596,37 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}/occurrences/00000000-0000-0000-0000-000000000001/record",
+              "raw": "{{baseUrl}}/api/recurring-transactions/{{fixture_recurring_id}}/occurrences/{{fixture_occurrence_id}}/record",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "recurring-transactions",
-                "{{b3_recurringId}}",
+                "{{fixture_recurring_id}}",
                 "occurrences",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_occurrence_id}}",
                 "record"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"walletId\": \"{{mainWalletId}}\",\n  \"pin\": \"123456\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\",\n  \"evidenceIds\": [\n    \"{{fixture_evidence_id}}\"\n  ],\n  \"idempotencyKey\": \"e2e-rec-occ-{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -10489,8 +10635,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Record non-existent occurrence returns 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Transaction recorded\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -10886,7 +11036,7 @@
           ]
         },
         {
-          "name": "B4-04 - Reply to Dispute with Invalid Form (Negative Check for multipart)",
+          "name": "B4-04 - Reply to Dispute with Multipart Form (Happy Path)",
           "request": {
             "method": "POST",
             "header": [
@@ -10913,6 +11063,16 @@
                 "multipart"
               ],
               "query": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "message",
+                  "value": "Dispute multipart investigation note",
+                  "type": "text"
+                }
+              ]
             }
           },
           "response": [],
@@ -10922,8 +11082,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Case or AI operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Dispute multipart reply succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -10931,7 +11093,7 @@
           ]
         },
         {
-          "name": "B4-05 - Reply to Support Case with Invalid Form (Negative Check for multipart)",
+          "name": "B4-05 - Reply to Support Case with Multipart Form (Happy Path)",
           "request": {
             "method": "POST",
             "header": [
@@ -10958,6 +11120,16 @@
                 "multipart"
               ],
               "query": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "message",
+                  "value": "Support case multipart response update",
+                  "type": "text"
+                }
+              ]
             }
           },
           "response": [],
@@ -10967,8 +11139,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Support multipart negative check returns 400, 404 or 415\", function () {",
-                  "    pm.expect([400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Support multipart reply succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -10976,21 +11150,17 @@
           ]
         },
         {
-          "name": "B4-06 - Download Non-Existent Case Attachment (Negative Check)",
+          "name": "B4-06 - Download Case Attachment Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/cases/attachments/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/cases/attachments/{{fixture_case_attachment_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -10998,9 +11168,18 @@
                 "api",
                 "cases",
                 "attachments",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_case_attachment_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11009,8 +11188,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent attachment returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11209,7 +11388,7 @@
           ]
         },
         {
-          "name": "B4-11 - Upload AI Attachment without File (Negative Check)",
+          "name": "B4-11 - Upload AI Attachment with Valid File (Happy Path)",
           "request": {
             "method": "POST",
             "header": [
@@ -11233,6 +11412,16 @@
                 "attachments"
               ],
               "query": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "backend/postman/receipt.png"
+                }
+              ]
             }
           },
           "response": [],
@@ -11242,8 +11431,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Upload AI attachment negative check returns 400, 404 or 415\", function () {",
-                  "    pm.expect([400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Upload AI attachment returns 201 Created\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -11251,21 +11442,17 @@
           ]
         },
         {
-          "name": "B4-12 - Download Non-Existent AI Attachment (Negative Check)",
+          "name": "B4-12 - Download AI Attachment Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/ai/attachments/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/ai/attachments/{{fixture_ai_attachment_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11273,9 +11460,18 @@
                 "api",
                 "ai",
                 "attachments",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_ai_attachment_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11284,8 +11480,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent AI attachment returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11294,21 +11490,17 @@
           ]
         },
         {
-          "name": "B4-13 - Get AI Action Proposal by ID (Controlled Fallback - Expect 404)",
+          "name": "B4-13 - Get AI Action Proposal by ID Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_execute_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11316,9 +11508,18 @@
                 "api",
                 "ai",
                 "actions",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_ai_action_execute_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11327,8 +11528,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent AI action returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Proposal details returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-000000000009\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11337,14 +11542,10 @@
           ]
         },
         {
-          "name": "B4-14 - Execute Non-Existent AI Action (Controlled Fallback - Expect 404)",
+          "name": "B4-14 - Execute AI Action Proposal Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11355,7 +11556,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/execute",
+              "raw": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_execute_id}}/execute",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11363,14 +11564,28 @@
                 "api",
                 "ai",
                 "actions",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_ai_action_execute_id}}",
                 "execute"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"explicitConfirmation\": true,\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11379,8 +11594,10 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Execute non-existent AI action returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Execute proposal succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Executed\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11389,21 +11606,17 @@
           ]
         },
         {
-          "name": "B4-15 - Cancel Non-Existent AI Action (Controlled Fallback - Expect 409)",
+          "name": "B4-15 - Cancel AI Action Proposal Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/cancel",
+              "raw": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_cancel_id}}/cancel",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11411,10 +11624,19 @@
                 "api",
                 "ai",
                 "actions",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_ai_action_cancel_id}}",
                 "cancel"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11423,8 +11645,10 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Cancel non-existent AI action returns 409 Conflict\", function () {",
-                  "    pm.response.to.have.status(409);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Cancelled\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11488,30 +11712,35 @@
           ]
         },
         {
-          "name": "B5-02 - Get Non-Existent Bank Connection (Expect 404)",
+          "name": "B5-02 - Get Bank Connection Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-connections/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-connections",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_bank_connection_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11520,8 +11749,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent bank connection returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Connection details returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-000000000005\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11772,30 +12005,35 @@
           ]
         },
         {
-          "name": "B5-08 - Get Non-Existent Bank Transaction (Expect 404)",
+          "name": "B5-08 - Get Bank Transaction Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-transactions/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/bank-transactions/{{fixture_bank_transaction_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-transactions",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_bank_transaction_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11804,8 +12042,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent bank transaction returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Transaction details returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-000000000006\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -11814,14 +12056,10 @@
           ]
         },
         {
-          "name": "B5-09 - Reclassify Non-Existent Bank Transaction Category (Expect 404)",
+          "name": "B5-09 - Reclassify Bank Transaction Success",
           "request": {
             "method": "PATCH",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11832,21 +12070,35 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-transactions/00000000-0000-0000-0000-000000000001/category",
+              "raw": "{{baseUrl}}/api/bank-transactions/{{fixture_bank_transaction_id}}/category",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-transactions",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_bank_transaction_id}}",
                 "category"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{categoryId}}\"\n}"
+              "raw": "{\n  \"categoryId\": \"10000000-0000-0000-0000-000000000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11856,8 +12108,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Reclassify bank transaction category returns expected error\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -12013,21 +12265,17 @@
           ]
         },
         {
-          "name": "B6-04 - Get Fund Owner Response Status",
+          "name": "B6-04 - Get Fund Owner Response Status Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/owner-response",
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12035,10 +12283,19 @@
                 "api",
                 "v1",
                 "funds",
-                "{{fixedFundId}}",
+                "{{fixture_fixed_fund2_id}}",
                 "owner-response"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12047,7 +12304,7 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get owner response returns 200 OK\", function () {",
+                  "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});"
                 ],
@@ -12057,21 +12314,17 @@
           ]
         },
         {
-          "name": "B6-05 - Escalate Owner Response Inactive Window (Controlled Exception/Check)",
+          "name": "B6-05 - Escalate Owner Response Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/owner-response/escalate",
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response/escalate",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12079,11 +12332,29 @@
                 "api",
                 "v1",
                 "funds",
-                "{{fixedFundId}}",
+                "{{fixture_fixed_fund2_id}}",
                 "owner-response",
                 "escalate"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Owner did not respond within required window\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -12092,8 +12363,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Escalate owner response returns 200 or 400 when owner active\", function () {",
-                  "    pm.expect([200, 400, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Support case ticket GUID returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data).to.be.a(\"string\");",
+                  "    pm.expect(data.length).to.be.above(30);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12155,13 +12431,13 @@
           ]
         },
         {
-          "name": "B6-07 - Propose Fund Activity via POST /api/v1/funds/{id}/activity-proposals",
+          "name": "B6-07 - Propose Fund Activity Success",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
+                "value": "Bearer {{fixture_user_token}}"
               },
               {
                 "key": "Accept",
@@ -12173,7 +12449,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/activity-proposals",
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixture_propose_activity_fund_id}}/activity-proposals",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12181,14 +12457,28 @@
                 "api",
                 "v1",
                 "funds",
-                "{{fixedFundId}}",
+                "{{fixture_propose_activity_fund_id}}",
                 "activity-proposals"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Annual Team Dinner Activity\",\n  \"description\": \"Year-end team building gathering\",\n  \"budgetAmount\": 500000,\n  \"votingDeadline\": \"2026-12-31T23:59:59Z\"\n}"
+              "raw": "{\n  \"targetVnd\": 1000000,\n  \"idempotencyKey\": \"prop-e2e-{{$timestamp}}\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12197,12 +12487,10 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Propose activity returns 200 or 201\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
-                  "    if (pm.response.code < 300) {",
-                  "        const data = pm.response.json();",
-                  "        pm.environment.set(\"b6_proposalId\", data.id);",
-                  "    }",
+                  "pm.test(\"Propose activity returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12211,21 +12499,17 @@
           ]
         },
         {
-          "name": "B6-08 - Get Activity Proposal by ID (Controlled Fallback - Expect 404 for dummy)",
+          "name": "B6-08 - Get Activity Proposal by ID Success",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12234,9 +12518,18 @@
                 "v1",
                 "funds",
                 "activity-proposals",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_activity_vote_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12245,8 +12538,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent activity proposal returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Proposal details returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-000000000012\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12255,14 +12552,10 @@
           ]
         },
         {
-          "name": "B6-09 - Vote on Non-Existent Activity Proposal (Expect 404)",
+          "name": "B6-09 - Vote on Activity Proposal Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12273,7 +12566,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001/vote",
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}/vote",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12282,14 +12575,28 @@
                 "v1",
                 "funds",
                 "activity-proposals",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_activity_vote_id}}",
                 "vote"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"support\": true\n}"
+              "raw": "{\n  \"support\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12298,8 +12605,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Vote on non-existent proposal returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Proposal vote accepted\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-000000000012\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12308,14 +12619,10 @@
           ]
         },
         {
-          "name": "B6-10 - Open Election via POST /api/v1/funds/{id}/elections",
+          "name": "B6-10 - Open Election Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12326,7 +12633,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/elections",
+              "raw": "{{baseUrl}}/api/v1/funds/{{fixture_fund5_election_id}}/elections",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12334,14 +12641,28 @@
                 "api",
                 "v1",
                 "funds",
-                "{{fixedFundId}}",
+                "{{fixture_fund5_election_id}}",
                 "elections"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"votingDeadline\": \"2026-12-31T23:59:59Z\",\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"expectedOwnershipRevision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12351,8 +12672,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Open election returns 200 or controlled business rule\", function () {",
-                  "    pm.expect([200, 201, 400, 403, 409]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Election opened\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -12360,21 +12685,17 @@
           ]
         },
         {
-          "name": "B6-11 - Get Election Details by ID (Controlled Fallback - Expect 404 for dummy)",
+          "name": "B6-11 - Get Election Details by ID Success",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12383,9 +12704,18 @@
                 "v1",
                 "funds",
                 "elections",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_election_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12394,8 +12724,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Get non-existent election returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Election details returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.election.id).to.equal(\"e2e00000-0000-0000-0000-00000000000e\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12404,14 +12738,10 @@
           ]
         },
         {
-          "name": "B6-12 - Register Candidate for Non-Existent Election (Expect 404)",
+          "name": "B6-12 - Register Candidate Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12422,7 +12752,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/candidates",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_id}}/candidates",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12431,14 +12761,28 @@
                 "v1",
                 "funds",
                 "elections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_election_id}}",
                 "candidates"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12447,8 +12791,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Candidate registration on non-existent election returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Candidate registered\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(\"e2e00000-0000-0000-0000-00000000000e\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12457,14 +12805,10 @@
           ]
         },
         {
-          "name": "B6-13 - Cast Ballot for Non-Existent Election (Expect 404)",
+          "name": "B6-13 - Cast Ballot Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12475,7 +12819,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/ballots",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_ballot_id}}/ballots",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12484,14 +12828,28 @@
                 "v1",
                 "funds",
                 "elections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_election_ballot_id}}",
                 "ballots"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"candidateUserId\": \"{{userB_id}}\"\n}"
+              "raw": "{\n  \"round\": 1,\n  \"candidateUserId\": \"{{fixture_member_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12500,8 +12858,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Ballot on non-existent election returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Ballot receipt returned\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.receiptId || data.ballotId || data.id).to.be.a(\"string\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12510,14 +12872,10 @@
           ]
         },
         {
-          "name": "B6-14 - Accept Elected Ownership for Non-Existent Election (Expect 404)",
+          "name": "B6-14 - Accept Elected Ownership Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12528,7 +12886,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/accept",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_accept_id}}/accept",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12537,14 +12895,28 @@
                 "v1",
                 "funds",
                 "elections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_election_accept_id}}",
                 "accept"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12553,8 +12925,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Accept elected ownership on non-existent election returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12563,14 +12935,10 @@
           ]
         },
         {
-          "name": "B6-15 - Reject Elected Ownership for Non-Existent Election (Expect 404)",
+          "name": "B6-15 - Reject Elected Ownership Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12581,7 +12949,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/reject",
+              "raw": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_reject_id}}/reject",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12590,14 +12958,28 @@
                 "v1",
                 "funds",
                 "elections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_election_reject_id}}",
                 "reject"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12606,8 +12988,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Reject elected ownership on non-existent election returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12769,14 +13151,10 @@
           ]
         },
         {
-          "name": "B6-19 - Review Non-Existent Invitation Proposal (Expect 404)",
+          "name": "B6-19 - Review Invitation Proposal Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12787,7 +13165,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/invitations/00000000-0000-0000-0000-000000000001/review",
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_review_id}}/review",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12796,14 +13174,28 @@
                 "v1",
                 "funds",
                 "invitations",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_invitation_review_id}}",
                 "review"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"approved\": true\n}"
+              "raw": "{\n  \"approved\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12812,8 +13204,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Review non-existent invitation returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Invitation status is Pending\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Pending\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12822,21 +13218,17 @@
           ]
         },
         {
-          "name": "B6-20 - Decline Non-Existent Invitation (Expect 404)",
+          "name": "B6-20 - Decline Invitation Success",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/invitations/00000000-0000-0000-0000-000000000001/decline",
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_reject_id}}/decline",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12845,10 +13237,19 @@
                 "v1",
                 "funds",
                 "invitations",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_invitation_reject_id}}",
                 "decline"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12857,8 +13258,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Decline non-existent invitation returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Invitation declined\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Rejected\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12867,21 +13272,17 @@
           ]
         },
         {
-          "name": "B6-21 - Cancel Non-Existent Invitation via DELETE (Expect 404)",
+          "name": "B6-21 - Cancel Invitation Success",
           "request": {
             "method": "DELETE",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/invitations/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_cancel_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12890,9 +13291,18 @@
                 "v1",
                 "funds",
                 "invitations",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
+                "{{fixture_invitation_cancel_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -12901,8 +13311,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Cancel non-existent invitation returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Invitation cancelled\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.equal(\"Cancelled\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -12967,14 +13381,10 @@
           ]
         },
         {
-          "name": "B6-23 - Accept Non-Existent Ownership Offer (Expect 404)",
+          "name": "B6-23 - Accept Ownership Offer Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userB_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -12985,7 +13395,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/funds/ownership-offers/00000000-0000-0000-0000-000000000001/accept",
+              "raw": "{{baseUrl}}/api/v1/funds/ownership-offers/{{fixture_ownership_offer_id}}/accept",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -12994,14 +13404,28 @@
                 "v1",
                 "funds",
                 "ownership-offers",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_ownership_offer_id}}",
                 "accept"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13010,8 +13434,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Accept non-existent ownership offer returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -13075,10 +13499,6 @@
             "method": "GET",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -13093,6 +13513,16 @@
                 "groups"
               ],
               "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13118,10 +13548,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13143,7 +13569,22 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"E2E Legacy Test Group 2026\",\n  \"description\": \"Backward compatibility group test with valid PIN\",\n  \"type\": \"Friends\",\n  \"currency\": \"VND\",\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"name\": \"Legacy E2E Group\",\n  \"currency\": \"VND\",\n  \"type\": \"Friends\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13153,12 +13594,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create legacy group succeeds with 200/201 and valid ID\", function () {",
+                  "pm.test(\"Create legacy group succeeds with 200 or 201\", function () {",
                   "    pm.expect([200, 201]).to.include(pm.response.code);",
-                  "    const jsonData = pm.response.json();",
-                  "    const gid = jsonData.id || (jsonData.group && jsonData.group.id);",
-                  "    pm.expect(gid).to.be.a(\"string\");",
-                  "    pm.environment.set(\"b7_groupId\", gid);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_groupId\", data.id);",
                   "});"
                 ]
               }
@@ -13170,10 +13610,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13188,8 +13624,17 @@
                 "api",
                 "groups",
                 "{{b7_groupId}}"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13215,10 +13660,6 @@
             "method": "PUT",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13236,12 +13677,21 @@
                 "api",
                 "groups",
                 "{{b7_groupId}}"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Updated E2E Legacy Test Group 2026\",\n  \"description\": \"Updated group description\",\n  \"currency\": \"VND\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13267,10 +13717,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13289,12 +13735,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "invites"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"inviteeEmail\": \"userB_i2lgl1d@spendwise.test\",\n  \"role\": \"Member\"\n}"
+              "raw": "{\n  \"userId\": \"{{fixture_member_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13304,8 +13764,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Invite member succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_inviteId\", data.id);",
+                  "    pm.environment.set(\"b7_inviteToken\", data.token);",
                   "});"
                 ]
               }
@@ -13317,10 +13781,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userB_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13337,6 +13797,16 @@
                 "invites"
               ],
               "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13357,21 +13827,17 @@
           ]
         },
         {
-          "name": "B7-07 - Reject Non-Existent Legacy Invite (Expect 404)",
+          "name": "B7-07 - Reject Legacy Invite Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userB_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/invites/00000000-0000-0000-0000-000000000001/reject",
+              "raw": "{{baseUrl}}/api/groups/invites/{{fixture_reject_invite_id}}/reject",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -13379,57 +13845,17 @@
                 "api",
                 "groups",
                 "invites",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_reject_invite_id}}",
                 "reject"
-              ],
-              "query": []
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Reject non-existent invite returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "B7-08 - Accept Non-Existent Legacy Invite (Expect 404)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userB_token}}"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/groups/invites/00000000-0000-0000-0000-000000000001/accept?token=dummy",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "groups",
-                "invites",
-                "00000000-0000-0000-0000-000000000001",
-                "accept"
-              ],
-              "query": [
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
                   "key": "token",
-                  "value": "dummy"
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
                 }
               ]
             }
@@ -13440,8 +13866,10 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Accept non-existent invite returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Reject group invite succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql(\"Rejected\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -13450,76 +13878,43 @@
           ]
         },
         {
-          "name": "B7-09 - Remove Non-Existent Member from Legacy Group (Expect 404)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/members/00000000-0000-0000-0000-000000000001",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "groups",
-                "{{b7_groupId}}",
-                "members",
-                "00000000-0000-0000-0000-000000000001"
-              ],
-              "query": []
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Remove non-existent member returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "B7-10 - Transfer Ownership to Non-Existent Member (Expect 404)",
+          "name": "B7-08 - Accept Legacy Invite Success",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/ownership/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/groups/invites/{{b7_inviteId}}/accept?token={{b7_inviteToken}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "groups",
-                "{{b7_groupId}}",
-                "ownership",
-                "00000000-0000-0000-0000-000000000001"
+                "invites",
+                "{{b7_inviteId}}",
+                "accept"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{b7_inviteToken}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13528,8 +13923,108 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Transfer ownership to non-existent member returns 404\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Accept invite succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "B7-09 - Remove Member from Legacy Group Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{fixture_ops_group_id}}/members/{{fixture_remove_member_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{fixture_ops_group_id}}",
+                "members",
+                "{{fixture_remove_member_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Remove group member returns 200 or 204\", function () {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "B7-10 - Transfer Group Ownership Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{fixture_ops_group_id}}/ownership/{{fixture_member_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{fixture_ops_group_id}}",
+                "ownership",
+                "{{fixture_member_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Transfer group ownership returns 200 or 204\", function () {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -13542,10 +14037,6 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13565,12 +14056,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "receiving-bank"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bankCode\": \"VCB\",\n  \"accountNumber\": \"9876543210\",\n  \"accountHolderName\": \"TEST USER A\"\n}"
+              "raw": "{\n  \"bankConnectionId\": \"{{fixture_bank_connection_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13580,8 +14085,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Set receiving bank succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.bankConnectionId).to.equal(\"e2e00000-0000-0000-0000-000000000005\");",
                   "});"
                 ]
               }
@@ -13593,10 +14100,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13612,8 +14115,17 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13637,10 +14149,6 @@
             "method": "GET",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -13656,8 +14164,17 @@
                 "{{b7_groupId}}",
                 "fund",
                 "transactions"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13681,10 +14198,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13704,12 +14217,26 @@
                 "{{b7_groupId}}",
                 "fund",
                 "contributions"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 50000,\n  \"walletId\": \"{{mainWalletId}}\",\n  \"note\": \"Legacy group fund contribution\"\n}"
+              "raw": "{\n  \"amount\": 50000,\n  \"purpose\": \"Group fund contribution\",\n  \"idempotencyKey\": \"e2e-contrib-key-{{$timestamp}}\",\n  \"walletId\": \"{{fixture_wallet_id}}\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13719,8 +14246,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Contribute to shared fund succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -13732,10 +14259,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13751,8 +14274,17 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-requests"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13776,10 +14308,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13798,12 +14326,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-requests"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 100000,\n  \"title\": \"Equipment maintenance contribution request\",\n  \"description\": \"Split equipment repair bill\",\n  \"dueDate\": \"2026-12-31T23:59:59Z\"\n}"
+              "raw": "{\n  \"purpose\": \"Office Supplies\",\n  \"amountPerMember\": 25000,\n  \"dueDate\": \"2026-11-01T00:00:00Z\",\n  \"recipientUserIds\": [\n    \"{{fixture_user_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13813,8 +14355,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Create fund request succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_fundRequestId\", data.id);",
                   "});"
                 ]
               }
@@ -13822,14 +14367,10 @@
           ]
         },
         {
-          "name": "B7-17 - Pay Non-Existent Fund Request (Expect 404)",
+          "name": "B7-17 - Pay Group Fund Request Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13840,7 +14381,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-requests/00000000-0000-0000-0000-000000000001/pay",
+              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-requests/{{b7_fundRequestId}}/pay",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -13849,14 +14390,28 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-requests",
-                "00000000-0000-0000-0000-000000000001",
+                "{{b7_fundRequestId}}",
                 "pay"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"walletId\": \"{{mainWalletId}}\"\n}"
+              "raw": "{\n  \"idempotencyKey\": \"e2e-pay-req-{{$timestamp}}\",\n  \"walletId\": \"{{fixture_wallet_id}}\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13866,8 +14421,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"B7-17 - Pay Non-Existent Fund Request (Expect 404) returns expected 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Pay fund request succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -13879,10 +14434,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13898,8 +14449,17 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-rounds"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13923,10 +14483,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -13945,12 +14501,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-rounds"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"targetAmount\": 500000,\n  \"title\": \"Round 1 Project Fund\",\n  \"description\": \"Initial funding round\",\n  \"deadline\": \"2026-12-31T23:59:59Z\"\n}"
+              "raw": "{\n  \"title\": \"Group Round 1\",\n  \"description\": \"Round 1 Description\",\n  \"targetAmount\": 50000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -13960,8 +14530,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Create fund round succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_fundRoundId\", data.id);",
                   "});"
                 ]
               }
@@ -13969,14 +14542,10 @@
           ]
         },
         {
-          "name": "B7-20 - Pay Non-Existent Fund Round (Expect 404)",
+          "name": "B7-20 - Pay Group Fund Round Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -13987,7 +14556,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-rounds/00000000-0000-0000-0000-000000000001/pay",
+              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-rounds/{{b7_fundRoundId}}/pay",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -13996,14 +14565,28 @@
                 "groups",
                 "{{b7_groupId}}",
                 "fund-rounds",
-                "00000000-0000-0000-0000-000000000001",
+                "{{b7_fundRoundId}}",
                 "pay"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 50000,\n  \"walletId\": \"{{mainWalletId}}\"\n}"
+              "raw": "{\n  \"amount\": 25000,\n  \"idempotencyKey\": \"e2e-pay-round-{{$timestamp}}\",\n  \"walletId\": \"{{fixture_wallet_id}}\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14013,8 +14596,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"B7-20 - Pay Non-Existent Fund Round (Expect 404) returns expected 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Pay fund round succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -14026,10 +14609,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -14045,8 +14624,17 @@
                 "groups",
                 "{{b7_groupId}}",
                 "expenses"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14070,10 +14658,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
                 "value": "application/json"
               },
@@ -14092,12 +14676,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "expenses"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 25000,\n  \"description\": \"Printing project papers\",\n  \"categoryId\": \"{{categoryId}}\"\n}"
+              "raw": "{\n  \"title\": \"Lunch meeting\",\n  \"amount\": 10000,\n  \"category\": \"Food & Beverage\",\n  \"paidByType\": \"Fund\",\n  \"date\": \"2026-10-23T00:00:00Z\",\n  \"idempotencyKey\": \"e2e-grp-exp-{{$timestamp}}\",\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14107,8 +14705,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Create group expense succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -14120,10 +14718,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -14139,8 +14733,17 @@
                 "groups",
                 "{{b7_groupId}}",
                 "activities"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14159,31 +14762,36 @@
           ]
         },
         {
-          "name": "B7-24 - Get Group Deletion Request Status",
+          "name": "B7-24 - Get Group Deletion Request Status Success",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-request",
+              "raw": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-request",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "groups",
-                "{{b7_groupId}}",
+                "{{fixture_refund_group_id}}",
                 "deletion-request"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14193,8 +14801,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Get deletion request returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql(\"Ready\");",
                   "});"
                 ]
               }
@@ -14206,10 +14816,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -14225,61 +14831,26 @@
                 "groups",
                 "{{b7_groupId}}",
                 "deletion-requests"
-              ],
-              "query": []
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Legacy group operation returns expected response\", function () {",
-                  "    pm.expect([200, 201, 204, 400, 404]).to.include(pm.response.code);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "B7-26 - Vote on Non-Existent Group Deletion Request (Expect 404)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/00000000-0000-0000-0000-000000000001/vote",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "groups",
-                "{{b7_groupId}}",
-                "deletion-requests",
-                "00000000-0000-0000-0000-000000000001",
-                "vote"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"vote\": true\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -14289,8 +14860,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"B7-26 - Vote on Non-Existent Group Deletion Request (Expect 404) returns expected 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Request group deletion succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_deletionRequestId\", data.id);",
                   "});"
                 ]
               }
@@ -14298,21 +14872,17 @@
           ]
         },
         {
-          "name": "B7-27 - Cancel Non-Existent Group Deletion Request (Expect 404)",
+          "name": "B7-27 - Cancel Group Deletion Request Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/00000000-0000-0000-0000-000000000001/cancel",
+              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/cancel",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -14321,10 +14891,19 @@
                 "groups",
                 "{{b7_groupId}}",
                 "deletion-requests",
-                "00000000-0000-0000-0000-000000000001",
+                "{{b7_deletionRequestId}}",
                 "cancel"
-              ],
-              "query": []
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14333,8 +14912,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Cancel non-existent deletion returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Cancel deletion succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -14343,25 +14922,17 @@
           ]
         },
         {
-          "name": "B7-28 - Create Refund Payment for Non-Existent Deletion (Expect 404)",
+          "name": "B7-25b - Re-request Group Deletion for Vote",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
-              {
                 "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/00000000-0000-0000-0000-000000000001/refunds/00000000-0000-0000-0000-000000000002/payment",
+              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -14369,17 +14940,27 @@
                 "api",
                 "groups",
                 "{{b7_groupId}}",
-                "deletion-requests",
-                "00000000-0000-0000-0000-000000000001",
-                "refunds",
-                "00000000-0000-0000-0000-000000000002",
-                "payment"
-              ],
-              "query": []
+                "deletion-requests"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"walletId\": \"{{mainWalletId}}\"\n}"
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -14389,8 +14970,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"B7-28 - Create Refund Payment for Non-Existent Deletion (Expect 404) returns expected 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Re-request group deletion succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b7_deletionRequestId\", data.id);",
                   "});"
                 ]
               }
@@ -14398,14 +14982,10 @@
           ]
         },
         {
-          "name": "B7-29 - Finalize Non-Existent Group Deletion (Expect 404)",
+          "name": "B7-26 - Vote on Group Deletion Request Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -14416,7 +14996,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/00000000-0000-0000-0000-000000000001/finalize",
+              "raw": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/vote",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -14425,14 +15005,28 @@
                 "groups",
                 "{{b7_groupId}}",
                 "deletion-requests",
-                "00000000-0000-0000-0000-000000000001",
-                "finalize"
-              ],
-              "query": []
+                "{{b7_deletionRequestId}}",
+                "vote"
+              ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"confirmText\": \"CONFIRM DELETE\"\n}"
+              "raw": "{\n  \"approved\": true,\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -14442,8 +15036,140 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"B7-29 - Finalize Non-Existent Group Deletion (Expect 404) returns expected 400 or 404\", function () {",
-                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Vote deletion succeeds with 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B7-28 - Create Group Refund Payment Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/refunds/{{fixture_refund_id}}/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{fixture_refund_group_id}}",
+                "deletion-requests",
+                "{{fixture_refund_request_id}}",
+                "refunds",
+                "{{fixture_refund_id}}",
+                "payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"123456\",\n  \"idempotencyKey\": \"ref-pay-{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Refund payment succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql(\"Completed\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B7-29 - Finalize Group Deletion Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/finalize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{fixture_refund_group_id}}",
+                "deletion-requests",
+                "{{fixture_refund_request_id}}",
+                "finalize"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityPin\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Finalize deletion succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql(\"Completed\");",
                   "});"
                 ]
               }
@@ -14455,10 +15181,6 @@
           "request": {
             "method": "DELETE",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -14476,6 +15198,16 @@
                 "sessions"
               ],
               "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_member_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],

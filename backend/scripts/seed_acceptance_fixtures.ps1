@@ -14,405 +14,373 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Hard Preflight Parameter Validation
+$normalizedServer = if ($Server) { $Server.Trim() } else { "" }
+$normalizedDb = if ($Database) { $Database.Trim() } else { "" }
+
+if ($normalizedServer -match '(?i)SQL01' -or $normalizedServer -match '(?i)\bPROD\b' -or $normalizedServer -notmatch '(?i)SQLEXPRESS02') {
+    Write-Error "SAFETY ABORT: Target server '$normalizedServer' is prohibited. Acceptance test fixtures are strictly restricted to SQLEXPRESS02."
+    exit 1
+}
+
+if ($normalizedDb -ne "SpendWise_E2E_G4") {
+    Write-Error "SAFETY ABORT: Target database '$normalizedDb' is prohibited. Acceptance test fixtures are strictly restricted to 'SpendWise_E2E_G4'."
+    exit 1
+}
+
 Write-Host "Seeding database fixtures for SpendWise acceptance test suite on $Server / $Database..."
 
 $connStr = "Server=$Server;Database=$Database;Integrated Security=True;TrustServerCertificate=True;"
 
-
-
 Add-Type -AssemblyName System.Data
 
-
-
 $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
-
-
-
 $conn.Open()
 
+# Server-Side Environment Verification Query
+$verifyCmd = $conn.CreateCommand()
+$verifyCmd.CommandText = "SELECT DB_NAME() AS CurrentDb, @@SERVERNAME AS ServerName, CAST(SERVERPROPERTY('InstanceName') AS NVARCHAR(100)) AS InstanceName;"
+$reader = $verifyCmd.ExecuteReader()
+if ($reader.Read()) {
+    $currentDb = $reader["CurrentDb"].ToString()
+    $serverName = $reader["ServerName"].ToString()
+    $instanceName = if ($reader["InstanceName"] -ne [DBNull]::Value) { $reader["InstanceName"].ToString() } else { "" }
+    $reader.Close()
+    
+    if ($currentDb -ne "SpendWise_E2E_G4") {
+        $conn.Close()
+        Write-Error "SAFETY ABORT: Connected database is '$currentDb', expected 'SpendWise_E2E_G4'. Aborting execution."
+        exit 1
+    }
+    if ($serverName -match '(?i)SQL01|PROD' -or ($instanceName -ne "" -and $instanceName -notmatch '(?i)SQLEXPRESS02')) {
+        $conn.Close()
+        Write-Error "SAFETY ABORT: Connected server '$serverName' ($instanceName) is prohibited. Aborting execution."
+        exit 1
+    }
+} else {
+    $reader.Close()
+    $conn.Close()
+    Write-Error "SAFETY ABORT: Failed to verify database environment metadata. Aborting execution."
+    exit 1
+}
 
-
-
-
-
-
-# Clean up existing test fixture rows in correct foreign key order
-
-
-
+# Clean up existing test fixture rows in strictly scoped foreign key order
 $cleanupCmd = $conn.CreateCommand()
-
-
-
 $cleanupCmd.CommandText = @"
-
-
-
 SET QUOTED_IDENTIFIER ON;
-
-
-
 SET ANSI_NULLS ON;
 
+-- ==============================================================================
+-- SCOPED FIXTURE CLEANUP SCRIPT FOR SPENDWISE ACCEPTANCE TESTS
+-- Strictly scoped to fixture IDs. Never deletes non-fixture rows.
+-- ==============================================================================
+
+-- 1. Temporary tables to collect strictly fixture-owned entities
+IF OBJECT_ID('tempdb..#FixtureUserIds') IS NOT NULL DROP TABLE #FixtureUserIds;
+CREATE TABLE #FixtureUserIds (UserId UNIQUEIDENTIFIER PRIMARY KEY);
+
+IF OBJECT_ID('tempdb..#FixtureFundIds') IS NOT NULL DROP TABLE #FixtureFundIds;
+CREATE TABLE #FixtureFundIds (FundId UNIQUEIDENTIFIER PRIMARY KEY);
+
+IF OBJECT_ID('tempdb..#FixtureGroupIds') IS NOT NULL DROP TABLE #FixtureGroupIds;
+CREATE TABLE #FixtureGroupIds (GroupId UNIQUEIDENTIFIER PRIMARY KEY);
+
+IF OBJECT_ID('tempdb..#FixtureCaseIds') IS NOT NULL DROP TABLE #FixtureCaseIds;
+CREATE TABLE #FixtureCaseIds (CaseId UNIQUEIDENTIFIER PRIMARY KEY);
+
+IF OBJECT_ID('tempdb..#FixtureLedgerAccountIds') IS NOT NULL DROP TABLE #FixtureLedgerAccountIds;
+CREATE TABLE #FixtureLedgerAccountIds (LedgerAccountId UNIQUEIDENTIFIER PRIMARY KEY);
+
+-- Populate Fixture User IDs
+INSERT INTO #FixtureUserIds (UserId)
+SELECT Id FROM Users WHERE Id IN (
+    'E2E00000-0000-0000-0000-000000000001',
+    'E2E00000-0000-0000-0000-000000000002',
+    'E2E00000-0000-0000-0000-00000000000D'
+) OR Email IN (
+    'fixture_user@spendwise.test',
+    'fixture_peer@spendwise.test',
+    'fixture_member@spendwise.test'
+);
+
+-- Populate Fixture Fund IDs
+INSERT INTO #FixtureFundIds (FundId)
+SELECT Id FROM V1Funds WHERE Id IN (
+    'E2E00000-0000-0000-0000-00000000000C',
+    'E2E00000-0000-0000-0000-00000000001C',
+    'E2E00000-0000-0000-0000-00000000002C',
+    'E2E00000-0000-0000-0000-00000000003C',
+    'E2E00000-0000-0000-0000-00000000004C',
+    'E2E00000-0000-0000-0000-00000000005C',
+    'E2E00000-0000-0000-0000-00000000006C',
+    'E2E00000-0000-0000-0000-00000000007C',
+    'E2E00000-0000-0000-0000-00000000008C',
+    'E2E00000-0000-0000-0000-00000000009C',
+    'E2E00000-0000-0000-0000-0000000000AC'
+) OR Code IN ('FIX01','FIX02','FIX03','FIX04','FIX05','FIX06','FIX07','FIX08','FIX09','FIX10','FIX11');
+
+-- Populate Fixture Group IDs
+INSERT INTO #FixtureGroupIds (GroupId)
+SELECT Id FROM Groups WHERE Id IN (
+    'E2E00000-0000-0000-0000-000000000087',
+    'E2E00000-0000-0000-0000-000000000089',
+    'E2E00000-0000-0000-0000-00000000008A'
+) OR Name IN ('E2E Acceptance Group', 'Ops Test Group', 'Refund Test Group');
+
+-- Populate Fixture Support Case IDs
+INSERT INTO #FixtureCaseIds (CaseId)
+SELECT Id FROM SupportCases WHERE Id IN (
+    'E2E00000-0000-0000-0000-000000000007',
+    'E2E00000-0000-0000-0000-000000000091'
+) OR TicketNumber IN ('TICK-E2E-0007', 'TICK-E2E-0091');
+
+-- Populate Fixture Ledger Account IDs
+INSERT INTO #FixtureLedgerAccountIds (LedgerAccountId)
+SELECT Id FROM LedgerAccounts WHERE Id IN (
+    'E2E00000-0000-0000-0000-000000000004',
+    'E2E00000-0000-0000-0000-000000000024',
+    'E2E00000-0000-0000-0000-000000000014',
+    'E2E00000-0000-0000-0000-00000000006C',
+    'E2E00000-0000-0000-0000-00000000007C',
+    'E2E00000-0000-0000-0000-00000000009B',
+    'E2E00000-0000-0000-0000-00000000008E',
+    'E2E00000-0000-0000-0000-00000000002A',
+    'E2E00000-0000-0000-0000-00000000003A',
+    'E2E00000-0000-0000-0000-0000000000CB'
+) OR Code IN ('E2E_MAIN_01', 'E2E_MAIN_02', 'E2E_MAIN_MEMBER', 'FUND_07_TREASURY', 'FUND_08_TREASURY', 'FUND_10_TREASURY', 'REFUND_GRP_TREASURY', 'GRP_TREASURY_01', 'GRP_TREASURY_02', 'FUND_11_TREASURY');
+
+-- ==============================================================================
+-- 2. FK-ORDERED SCOPED DELETION
+-- ==============================================================================
+
+-- Election Ballots / Candidates / Voters / Elections
+IF OBJECT_ID('V1ElectionBallots', 'U') IS NOT NULL
+    DELETE eb FROM V1ElectionBallots eb
+    INNER JOIN V1Elections e ON eb.ElectionId = e.Id
+    WHERE e.FundId IN (SELECT FundId FROM #FixtureFundIds);
+
+IF OBJECT_ID('V1ElectionCandidates', 'U') IS NOT NULL
+    DELETE ec FROM V1ElectionCandidates ec
+    INNER JOIN V1Elections e ON ec.ElectionId = e.Id
+    WHERE e.FundId IN (SELECT FundId FROM #FixtureFundIds);
+
+IF OBJECT_ID('V1ElectionVoters', 'U') IS NOT NULL
+    DELETE ev FROM V1ElectionVoters ev
+    INNER JOIN V1Elections e ON ev.ElectionId = e.Id
+    WHERE e.FundId IN (SELECT FundId FROM #FixtureFundIds);
+
+IF OBJECT_ID('V1Elections', 'U') IS NOT NULL
+    DELETE FROM V1Elections WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+-- Activity Proposals / Voters
+IF OBJECT_ID('V1ActivityVoters', 'U') IS NOT NULL
+    DELETE av FROM V1ActivityVoters av
+    INNER JOIN V1ActivityProposals ap ON av.ProposalId = ap.Id
+    WHERE ap.FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+IF OBJECT_ID('V1ActivityProposals', 'U') IS NOT NULL
+    DELETE FROM V1ActivityProposals WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+-- V1 Fund Sub-entities
+IF OBJECT_ID('V1FundActivities', 'U') IS NOT NULL
+    DELETE FROM V1FundActivities WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+IF OBJECT_ID('V1FundObligations', 'U') IS NOT NULL
+    DELETE FROM V1FundObligations WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+IF OBJECT_ID('V1FundTreasuries', 'U') IS NOT NULL
+    DELETE FROM V1FundTreasuries WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
--- Election tables
+IF OBJECT_ID('V1FundContributions', 'U') IS NOT NULL
+    DELETE FROM V1FundContributions WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+IF OBJECT_ID('V1FundInvitations', 'U') IS NOT NULL
+    DELETE FROM V1FundInvitations WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
+IF OBJECT_ID('V1FundRequests', 'U') IS NOT NULL
+    DELETE FROM V1FundRequests WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
-IF OBJECT_ID('V1ElectionBallots', 'U') IS NOT NULL DELETE FROM V1ElectionBallots;
+IF OBJECT_ID('V1OwnershipOffers', 'U') IS NOT NULL
+    DELETE FROM V1OwnershipOffers WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
-
-
-IF OBJECT_ID('V1ElectionCandidates', 'U') IS NOT NULL DELETE FROM V1ElectionCandidates;
-
-
-
-IF OBJECT_ID('V1ElectionVoters', 'U') IS NOT NULL DELETE FROM V1ElectionVoters;
-
-
-
-IF OBJECT_ID('V1Elections', 'U') IS NOT NULL DELETE FROM V1Elections;
-
-
-
-
-
-
-
--- Activity Proposals
-
-
-
-IF OBJECT_ID('V1ActivityVoters', 'U') IS NOT NULL DELETE FROM V1ActivityVoters;
-
-
-
-IF OBJECT_ID('V1ActivityProposals', 'U') IS NOT NULL DELETE FROM V1ActivityProposals;
-
-
-
-
-
-
-
--- Fund tables
-
-
-
-IF OBJECT_ID('V1FundActivities', 'U') IS NOT NULL DELETE FROM V1FundActivities;
-
-
-
-IF OBJECT_ID('V1FundObligations', 'U') IS NOT NULL DELETE FROM V1FundObligations;
-
-
-
-IF OBJECT_ID('V1FundTreasuries', 'U') IS NOT NULL DELETE FROM V1FundTreasuries;
-
-
-
-IF OBJECT_ID('V1FundContributions', 'U') IS NOT NULL DELETE FROM V1FundContributions;
-
-
-
-IF OBJECT_ID('V1FundInvitations', 'U') IS NOT NULL DELETE FROM V1FundInvitations;
-
-
-
-IF OBJECT_ID('V1FundRequests', 'U') IS NOT NULL DELETE FROM V1FundRequests;
-
-
-
-IF OBJECT_ID('V1OwnershipOffers', 'U') IS NOT NULL DELETE FROM V1OwnershipOffers;
-
-
-
-IF OBJECT_ID('V1FundMemberships', 'U') IS NOT NULL DELETE FROM V1FundMemberships;
-
-
+IF OBJECT_ID('V1FundMemberships', 'U') IS NOT NULL
+    DELETE FROM V1FundMemberships WHERE FundId IN (SELECT FundId FROM #FixtureFundIds);
 
 IF OBJECT_ID('V1Funds', 'U') IS NOT NULL
-
-
-
 BEGIN
-
-
-
-    UPDATE V1Funds SET OwnerResponseCaseId = NULL;
-
-
-
-    DELETE FROM V1Funds;
-
-
-
+    UPDATE V1Funds SET OwnerResponseCaseId = NULL WHERE Id IN (SELECT FundId FROM #FixtureFundIds);
+    DELETE FROM V1Funds WHERE Id IN (SELECT FundId FROM #FixtureFundIds);
 END
 
+-- Legacy Group Sub-entities
+IF OBJECT_ID('BankDirectPayments', 'U') IS NOT NULL
+    DELETE FROM BankDirectPayments WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupFundShares', 'U') IS NOT NULL
+    DELETE FROM GroupFundShares WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupReceivingBanks', 'U') IS NOT NULL
+    DELETE FROM GroupReceivingBanks WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('FundTransactions', 'U') IS NOT NULL
+    DELETE FROM FundTransactions WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('FundRequestRecipients', 'U') IS NOT NULL
+    DELETE frr FROM FundRequestRecipients frr
+    INNER JOIN FundRequests fr ON frr.FundRequestId = fr.Id
+    WHERE fr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('FundRequests', 'U') IS NOT NULL
+    DELETE FROM FundRequests WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
--- Legacy Group deletion & operations
+IF OBJECT_ID('GroupRefunds', 'U') IS NOT NULL
+    DELETE gr FROM GroupRefunds gr
+    INNER JOIN GroupDeletionRequests gdr ON gr.GroupDeletionRequestId = gdr.Id
+    WHERE gdr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupDeletionRefunds', 'U') IS NOT NULL
+    DELETE gdrf FROM GroupDeletionRefunds gdrf
+    INNER JOIN GroupDeletionRequests gdr ON gdrf.GroupDeletionRequestId = gdr.Id
+    WHERE gdr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupDeletionVotes', 'U') IS NOT NULL
+    DELETE gdv FROM GroupDeletionVotes gdv
+    INNER JOIN GroupDeletionRequests gdr ON gdv.GroupDeletionRequestId = gdr.Id
+    WHERE gdr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
-IF OBJECT_ID('BankDirectPayments', 'U') IS NOT NULL DELETE FROM BankDirectPayments;
+IF OBJECT_ID('GroupDeletionRequests', 'U') IS NOT NULL
+    DELETE FROM GroupDeletionRequests WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupExpenseShareAllocations', 'U') IS NOT NULL
+    DELETE gesa FROM GroupExpenseShareAllocations gesa
+    INNER JOIN GroupExpenses ge ON gesa.GroupExpenseId = ge.Id
+    WHERE ge.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupExpenses', 'U') IS NOT NULL
+    DELETE FROM GroupExpenses WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
-IF OBJECT_ID('GroupFundShares', 'U') IS NOT NULL DELETE FROM GroupFundShares;
+IF OBJECT_ID('GroupFundRoundMembers', 'U') IS NOT NULL
+    DELETE gfrm FROM GroupFundRoundMembers gfrm
+    INNER JOIN GroupFundRounds gfr ON gfrm.GroupFundRoundId = gfr.Id
+    WHERE gfr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupFundRounds', 'U') IS NOT NULL
+    DELETE FROM GroupFundRounds WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupFundRequestRecipients', 'U') IS NOT NULL
+    DELETE gfrr FROM GroupFundRequestRecipients gfrr
+    INNER JOIN GroupFundRequests gfr ON gfrr.GroupFundRequestId = gfr.Id
+    WHERE gfr.GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
-IF OBJECT_ID('GroupReceivingBanks', 'U') IS NOT NULL DELETE FROM GroupReceivingBanks;
+IF OBJECT_ID('GroupFundRequests', 'U') IS NOT NULL
+    DELETE FROM GroupFundRequests WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupContributions', 'U') IS NOT NULL
+    DELETE FROM GroupContributions WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('SharedFunds', 'U') IS NOT NULL
+    DELETE FROM SharedFunds WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
-IF OBJECT_ID('FundTransactions', 'U') IS NOT NULL DELETE FROM FundTransactions;
+IF OBJECT_ID('GroupInvites', 'U') IS NOT NULL
+    DELETE FROM GroupInvites WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupActivities', 'U') IS NOT NULL
+    DELETE FROM GroupActivities WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
+IF OBJECT_ID('GroupMembers', 'U') IS NOT NULL
+    DELETE FROM GroupMembers WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
 
-IF OBJECT_ID('FundRequestRecipients', 'U') IS NOT NULL DELETE FROM FundRequestRecipients;
-
-
-
-IF OBJECT_ID('FundRequests', 'U') IS NOT NULL DELETE FROM FundRequests;
-
-
-
-IF OBJECT_ID('GroupRefunds', 'U') IS NOT NULL DELETE FROM GroupRefunds;
-
-
-
-IF OBJECT_ID('GroupDeletionRefunds', 'U') IS NOT NULL DELETE FROM GroupDeletionRefunds;
-
-
-
-IF OBJECT_ID('GroupDeletionVotes', 'U') IS NOT NULL DELETE FROM GroupDeletionVotes;
-
-
-
-IF OBJECT_ID('GroupDeletionRequests', 'U') IS NOT NULL DELETE FROM GroupDeletionRequests;
-
-
-
-IF OBJECT_ID('GroupExpenseShareAllocations', 'U') IS NOT NULL DELETE FROM GroupExpenseShareAllocations;
-
-
-
-IF OBJECT_ID('GroupExpenses', 'U') IS NOT NULL DELETE FROM GroupExpenses;
-
-
-
-IF OBJECT_ID('GroupFundRoundMembers', 'U') IS NOT NULL DELETE FROM GroupFundRoundMembers;
-
-
-
-IF OBJECT_ID('GroupFundRounds', 'U') IS NOT NULL DELETE FROM GroupFundRounds;
-
-
-
-IF OBJECT_ID('GroupFundRequestRecipients', 'U') IS NOT NULL DELETE FROM GroupFundRequestRecipients;
-
-
-
-IF OBJECT_ID('GroupFundRequests', 'U') IS NOT NULL DELETE FROM GroupFundRequests;
-
-
-
-IF OBJECT_ID('GroupContributions', 'U') IS NOT NULL DELETE FROM GroupContributions;
-
-
-
-IF OBJECT_ID('SharedFunds', 'U') IS NOT NULL DELETE FROM SharedFunds;
-
-
-
-IF OBJECT_ID('GroupInvites', 'U') IS NOT NULL DELETE FROM GroupInvites;
-
-
-
-IF OBJECT_ID('GroupActivities', 'U') IS NOT NULL DELETE FROM GroupActivities;
-
-
-
-IF OBJECT_ID('GroupMembers', 'U') IS NOT NULL DELETE FROM GroupMembers;
-
-
-
-IF OBJECT_ID('Groups', 'U') IS NOT NULL DELETE FROM Groups;
-
-
-
-
-
-
+IF OBJECT_ID('Groups', 'U') IS NOT NULL
+    DELETE FROM Groups WHERE Id IN (SELECT GroupId FROM #FixtureGroupIds);
 
 -- Social / Friends
+IF OBJECT_ID('Friendships', 'U') IS NOT NULL
+    DELETE FROM Friendships WHERE LowerUserId IN (SELECT UserId FROM #FixtureUserIds) OR HigherUserId IN (SELECT UserId FROM #FixtureUserIds);
 
-
-
-IF OBJECT_ID('Friendships', 'U') IS NOT NULL DELETE FROM Friendships;
-
-
-
-IF OBJECT_ID('FriendRequests', 'U') IS NOT NULL DELETE FROM FriendRequests;
-
-
-
-
-
-
+IF OBJECT_ID('FriendRequests', 'U') IS NOT NULL
+    DELETE FROM FriendRequests WHERE RequesterUserId IN (SELECT UserId FROM #FixtureUserIds) OR AddresseeUserId IN (SELECT UserId FROM #FixtureUserIds);
 
 -- Planning & Recurring
+IF OBJECT_ID('RecurringOccurrences', 'U') IS NOT NULL
+    DELETE ro FROM RecurringOccurrences ro
+    INNER JOIN RecurringTransactions rt ON ro.RecurringTransactionId = rt.Id
+    WHERE rt.OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('RecurringTransactions', 'U') IS NOT NULL
+    DELETE FROM RecurringTransactions WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('TransactionRules', 'U') IS NOT NULL
+    DELETE FROM TransactionRules WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('RecurringOccurrences', 'U') IS NOT NULL DELETE FROM RecurringOccurrences;
+-- Support Cases
+IF OBJECT_ID('SupportCaseMessages', 'U') IS NOT NULL
+    DELETE FROM SupportCaseMessages WHERE CaseId IN (SELECT CaseId FROM #FixtureCaseIds);
 
+IF OBJECT_ID('CaseAttachments', 'U') IS NOT NULL
+    DELETE FROM CaseAttachments WHERE CaseOwnerUserId IN (SELECT UserId FROM #FixtureUserIds) OR Id IN ('E2E00000-0000-0000-0000-000000000008', 'E2E00000-0000-0000-0000-000000000093');
 
+IF OBJECT_ID('CaseHistories', 'U') IS NOT NULL
+    DELETE FROM CaseHistories WHERE CaseId IN (SELECT CaseId FROM #FixtureCaseIds) OR ActorId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('RecurringTransactions', 'U') IS NOT NULL DELETE FROM RecurringTransactions;
-
-
-
-IF OBJECT_ID('TransactionRules', 'U') IS NOT NULL DELETE FROM TransactionRules;
-
-
-
-
-
-
-
--- Support & Disputes
-
-
-
-IF OBJECT_ID('SupportCaseMessages', 'U') IS NOT NULL DELETE FROM SupportCaseMessages;
-
-
-
-IF OBJECT_ID('CaseHistories', 'U') IS NOT NULL DELETE FROM CaseHistories;
-
-
-
-IF OBJECT_ID('CaseAttachments', 'U') IS NOT NULL DELETE FROM CaseAttachments;
-
-
-
-IF OBJECT_ID('SupportCases', 'U') IS NOT NULL DELETE FROM SupportCases;
-
-
-
-
-
-
+IF OBJECT_ID('SupportCases', 'U') IS NOT NULL
+    DELETE FROM SupportCases WHERE Id IN (SELECT CaseId FROM #FixtureCaseIds) OR LinkedUserId IN (SELECT UserId FROM #FixtureUserIds);
 
 -- AI & Attachments
+IF OBJECT_ID('AiActionProposals', 'U') IS NOT NULL
+    DELETE FROM AiActionProposals WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('AiAttachments', 'U') IS NOT NULL
+    DELETE FROM AiAttachments WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('AiMessages', 'U') IS NOT NULL
+    DELETE aim FROM AiMessages aim
+    INNER JOIN AiConversations aic ON aim.AiConversationId = aic.Id
+    WHERE aic.UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('AiActionProposals', 'U') IS NOT NULL DELETE FROM AiActionProposals;
+IF OBJECT_ID('AiConversations', 'U') IS NOT NULL
+    DELETE FROM AiConversations WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-
-
-IF OBJECT_ID('AiAttachments', 'U') IS NOT NULL DELETE FROM AiAttachments;
-
-
-
-IF OBJECT_ID('AiMessages', 'U') IS NOT NULL DELETE FROM AiMessages;
-
-
-
-IF OBJECT_ID('AiConversations', 'U') IS NOT NULL DELETE FROM AiConversations;
-
-
-
-IF OBJECT_ID('EvidenceAttachments', 'U') IS NOT NULL DELETE FROM EvidenceAttachments;
-
-
-
-
-
-
+IF OBJECT_ID('EvidenceAttachments', 'U') IS NOT NULL
+    DELETE FROM EvidenceAttachments WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
 -- Open Banking
+IF OBJECT_ID('WalletTopUps', 'U') IS NOT NULL
+    DELETE FROM WalletTopUps WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('BankLinkSessions', 'U') IS NOT NULL
+    DELETE FROM BankLinkSessions WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('BankTransactions', 'U') IS NOT NULL
+    DELETE FROM BankTransactions WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('WalletTopUps', 'U') IS NOT NULL DELETE FROM WalletTopUps;
+IF OBJECT_ID('BankConnections', 'U') IS NOT NULL
+    DELETE FROM BankConnections WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('BankLinkSessions', 'U') IS NOT NULL DELETE FROM BankLinkSessions;
+-- Security Tokens & Sessions
+IF OBJECT_ID('SecurityPinResetTokens', 'U') IS NOT NULL
+    DELETE FROM SecurityPinResetTokens WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('BankTransactions', 'U') IS NOT NULL DELETE FROM BankTransactions;
+IF OBJECT_ID('EmailVerificationTokens', 'U') IS NOT NULL
+    DELETE FROM EmailVerificationTokens WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('RefreshTokens', 'U') IS NOT NULL
+    DELETE FROM RefreshTokens WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('UserSessions', 'U') IS NOT NULL
+    DELETE FROM UserSessions WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
 
-IF OBJECT_ID('BankConnections', 'U') IS NOT NULL DELETE FROM BankConnections;
+-- Ledger Entries, Accounts, Financial Transactions, Wallets
+IF OBJECT_ID('FinancialTransactions', 'U') IS NOT NULL
+    DELETE FROM FinancialTransactions WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 
+IF OBJECT_ID('LedgerEntries', 'U') IS NOT NULL
+    DELETE FROM LedgerEntries WHERE LedgerAccountId IN (SELECT LedgerAccountId FROM #FixtureLedgerAccountIds);
 
+IF OBJECT_ID('LedgerAccounts', 'U') IS NOT NULL
+    DELETE FROM LedgerAccounts WHERE Id IN (SELECT LedgerAccountId FROM #FixtureLedgerAccountIds);
 
-
-
-
-
--- Security tokens & sessions
-
-
-
-IF OBJECT_ID('SecurityPinResetTokens', 'U') IS NOT NULL DELETE FROM SecurityPinResetTokens;
-
-
-
-IF OBJECT_ID('EmailVerificationTokens', 'U') IS NOT NULL DELETE FROM EmailVerificationTokens;
-
-
-
-IF OBJECT_ID('RefreshTokens', 'U') IS NOT NULL DELETE FROM RefreshTokens;
-
-
-
-IF OBJECT_ID('UserSessions', 'U') IS NOT NULL DELETE FROM UserSessions;
-
-INSERT INTO UserSessions (Id, UserId, DeviceName, DeviceIdentifier, IpAddress, UserAgent, LastSeenAt, RevokedAt, CreatedAt, UpdatedAt)
-VALUES 
-    ('96F998FE-81F8-432F-B80E-CC0B380AF034', 'E2E00000-0000-0000-0000-000000000001', 'TestRunner', 'device-fixture-user', '127.0.0.1', 'Newman', GETUTCDATE(), NULL, GETUTCDATE(), GETUTCDATE()),
-    ('D4B0BFE0-0BA7-4F6F-A1FB-F305D8F60859', 'E2E00000-0000-0000-0000-00000000000D', 'TestRunner', 'device-fixture-member', '127.0.0.1', 'Newman', GETUTCDATE(), NULL, GETUTCDATE(), GETUTCDATE());
-
-
-
-
-
-
-
--- Clear Wallets and Accounts for fixture users to reset fresh
-
-
-
-IF OBJECT_ID('FinancialTransactions', 'U') IS NOT NULL DELETE FROM FinancialTransactions WHERE OwnerUserId IN ('E2E00000-0000-0000-0000-000000000001', 'E2E00000-0000-0000-0000-00000000000D', 'E2E00000-0000-0000-0000-000000000002');
-
-
-
-IF OBJECT_ID('LedgerEntries', 'U') IS NOT NULL DELETE FROM LedgerEntries WHERE LedgerAccountId IN ('E2E00000-0000-0000-0000-000000000004', 'E2E00000-0000-0000-0000-000000000024', 'E2E00000-0000-0000-0000-000000000014', 'E2E00000-0000-0000-0000-00000000006C', 'E2E00000-0000-0000-0000-00000000007C', 'E2E00000-0000-0000-0000-00000000009B', 'E2E00000-0000-0000-0000-00000000008E', 'E2E00000-0000-0000-0000-00000000002A', 'E2E00000-0000-0000-0000-00000000003A');
-
-
-
-IF OBJECT_ID('LedgerAccounts', 'U') IS NOT NULL DELETE FROM LedgerAccounts WHERE Id IN ('E2E00000-0000-0000-0000-000000000004', 'E2E00000-0000-0000-0000-000000000024', 'E2E00000-0000-0000-0000-000000000014', 'E2E00000-0000-0000-0000-00000000006C', 'E2E00000-0000-0000-0000-00000000007C', 'E2E00000-0000-0000-0000-00000000009B', 'E2E00000-0000-0000-0000-00000000008E', 'E2E00000-0000-0000-0000-00000000002A', 'E2E00000-0000-0000-0000-00000000003A');
-
-
-
-IF OBJECT_ID('Wallets', 'U') IS NOT NULL DELETE FROM Wallets WHERE Id IN ('E2E00000-0000-0000-0000-000000000003', 'E2E00000-0000-0000-0000-000000000023', 'E2E00000-0000-0000-0000-000000000013');
-
-
-
+IF OBJECT_ID('Wallets', 'U') IS NOT NULL
+    DELETE FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 "@
 
 

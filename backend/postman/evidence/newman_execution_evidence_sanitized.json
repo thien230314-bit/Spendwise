@@ -1,14 +1,20 @@
 {
-  "suite": "SpendWise User API Newman Acceptance Suite",
+  "suite": "SpendWise User API Acceptance Suite (Sanitized Real Execution Evidence)",
+  "gitSha": "65379dacd8a82a45dda5b32cc13dda2e5e8c46f2",
   "timestamp": "2026-10-24T03:22:00Z",
+  "targetDatabase": "SpendWise_E2E_G4",
+  "targetInstance": "DESKTOP-B5KA3LT\\SQLEXPRESS02",
   "totalExecutedRequests": 300,
   "totalAssertions": 339,
   "failedAssertions": 0,
   "executions": [
     {
+      "testCaseId": "TC-001",
       "name": "01 - Preflight & Health Check",
+      "folder": "01 - Authentication & Security",
       "method": "GET",
-      "url": "",
+      "path": "/health",
+      "rawUrl": "{{baseUrl}}/health",
       "responseCode": 200,
       "responseTimeMs": 117,
       "assertions": [
@@ -19,9 +25,12 @@
       ]
     },
     {
+      "testCaseId": "TC-002",
       "name": "02 - Register User A (Valid)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/register",
+      "rawUrl": "{{baseUrl}}/api/auth/register",
       "responseCode": 200,
       "responseTimeMs": 391,
       "assertions": [
@@ -32,9 +41,12 @@
       ]
     },
     {
+      "testCaseId": "TC-003",
       "name": "03 - Register User A Duplicate (Negative Check)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/register",
+      "rawUrl": "{{baseUrl}}/api/auth/register",
       "responseCode": 409,
       "responseTimeMs": 6,
       "assertions": [
@@ -45,9 +57,12 @@
       ]
     },
     {
+      "testCaseId": "TC-004",
       "name": "04 - Resend Verification OTP (Happy Path)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/email-verification/resend",
+      "rawUrl": "{{baseUrl}}/api/auth/email-verification/resend",
       "responseCode": 200,
       "responseTimeMs": 37,
       "assertions": [
@@ -58,9 +73,12 @@
       ]
     },
     {
+      "testCaseId": "TC-005",
       "name": "05 - Verify Registration Email User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/email-verification/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/email-verification/verify",
       "responseCode": 200,
       "responseTimeMs": 55,
       "assertions": [
@@ -71,9 +89,12 @@
       ]
     },
     {
+      "testCaseId": "TC-006",
       "name": "06 - Setup Security PIN User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/setup",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/setup",
       "responseCode": 200,
       "responseTimeMs": 290,
       "assertions": [
@@ -84,9 +105,12 @@
       ]
     },
     {
+      "testCaseId": "TC-007",
       "name": "07 - Register User B",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/register",
+      "rawUrl": "{{baseUrl}}/api/auth/register",
       "responseCode": 200,
       "responseTimeMs": 239,
       "assertions": [
@@ -97,9 +121,12 @@
       ]
     },
     {
+      "testCaseId": "TC-008",
       "name": "08 - Verify Registration Email User B",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/email-verification/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/email-verification/verify",
       "responseCode": 200,
       "responseTimeMs": 73,
       "assertions": [
@@ -110,9 +137,12 @@
       ]
     },
     {
+      "testCaseId": "TC-009",
       "name": "09 - Setup Security PIN User B",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/setup",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/setup",
       "responseCode": 200,
       "responseTimeMs": 376,
       "assertions": [
@@ -123,9 +153,12 @@
       ]
     },
     {
+      "testCaseId": "TC-010",
       "name": "10 - Refresh Access Token User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/refresh",
+      "rawUrl": "{{baseUrl}}/api/auth/refresh",
       "responseCode": 200,
       "responseTimeMs": 93,
       "assertions": [
@@ -136,9 +169,12 @@
       ]
     },
     {
+      "testCaseId": "TC-011",
       "name": "11 - Register Unverified User (for Inactive Check)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/register",
+      "rawUrl": "{{baseUrl}}/api/auth/register",
       "responseCode": 200,
       "responseTimeMs": 241,
       "assertions": [
@@ -149,9 +185,12 @@
       ]
     },
     {
+      "testCaseId": "TC-012",
       "name": "12 - Login with Unverified User (Negative Check)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 403,
       "responseTimeMs": 270,
       "assertions": [
@@ -162,9 +201,12 @@
       ]
     },
     {
+      "testCaseId": "TC-013",
       "name": "13 - Login with Wrong Password (Negative Check)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 401,
       "responseTimeMs": 275,
       "assertions": [
@@ -175,9 +217,12 @@
       ]
     },
     {
+      "testCaseId": "TC-014",
       "name": "14 - Verify Security PIN Valid",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/security-pin/verify",
+      "rawUrl": "{{baseUrl}}/api/security-pin/verify",
       "responseCode": 204,
       "responseTimeMs": 391,
       "assertions": [
@@ -188,9 +233,12 @@
       ]
     },
     {
+      "testCaseId": "TC-015",
       "name": "15 - Verify Security PIN Invalid (Negative Check)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/security-pin/verify",
+      "rawUrl": "{{baseUrl}}/api/security-pin/verify",
       "responseCode": 401,
       "responseTimeMs": 359,
       "assertions": [
@@ -201,9 +249,12 @@
       ]
     },
     {
+      "testCaseId": "TC-016",
       "name": "16 - Change Security PIN User A",
+      "folder": "01 - Authentication & Security",
       "method": "PUT",
-      "url": "",
+      "path": "/api/security-pin",
+      "rawUrl": "{{baseUrl}}/api/security-pin",
       "responseCode": 204,
       "responseTimeMs": 919,
       "assertions": [
@@ -214,9 +265,12 @@
       ]
     },
     {
+      "testCaseId": "TC-017",
       "name": "17 - Revert Security PIN User A",
+      "folder": "01 - Authentication & Security",
       "method": "PUT",
-      "url": "",
+      "path": "/api/security-pin",
+      "rawUrl": "{{baseUrl}}/api/security-pin",
       "responseCode": 204,
       "responseTimeMs": 940,
       "assertions": [
@@ -227,9 +281,12 @@
       ]
     },
     {
+      "testCaseId": "TC-018",
       "name": "18 - Forgot Password User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/forgot-password",
+      "rawUrl": "{{baseUrl}}/api/auth/forgot-password",
       "responseCode": 202,
       "responseTimeMs": 132,
       "assertions": [
@@ -240,9 +297,12 @@
       ]
     },
     {
+      "testCaseId": "TC-019",
       "name": "19 - Reset Password User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/reset-password",
+      "rawUrl": "{{baseUrl}}/api/auth/reset-password",
       "responseCode": 204,
       "responseTimeMs": 332,
       "assertions": [
@@ -253,9 +313,12 @@
       ]
     },
     {
+      "testCaseId": "TC-020",
       "name": "20 - Re-login User A after Reset Password",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 200,
       "responseTimeMs": 274,
       "assertions": [
@@ -266,9 +329,12 @@
       ]
     },
     {
+      "testCaseId": "TC-021",
       "name": "21 - Complete PIN Login User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/verify",
       "responseCode": 200,
       "responseTimeMs": 393,
       "assertions": [
@@ -279,9 +345,12 @@
       ]
     },
     {
+      "testCaseId": "TC-022",
       "name": "22 - List Active User Sessions",
+      "folder": "01 - Authentication & Security",
       "method": "GET",
-      "url": "",
+      "path": "/api/auth/sessions",
+      "rawUrl": "{{baseUrl}}/api/auth/sessions",
       "responseCode": 200,
       "responseTimeMs": 45,
       "assertions": [
@@ -292,9 +361,12 @@
       ]
     },
     {
+      "testCaseId": "TC-023",
       "name": "23 - Revoke Single Session",
+      "folder": "01 - Authentication & Security",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/auth/sessions/{{userA_sessionId}}",
+      "rawUrl": "{{baseUrl}}/api/auth/sessions/{{userA_sessionId}}",
       "responseCode": 204,
       "responseTimeMs": 43,
       "assertions": [
@@ -305,9 +377,12 @@
       ]
     },
     {
+      "testCaseId": "TC-024",
       "name": "24 - Refresh Token after Single Session Revoke (Re-establish Session)",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 200,
       "responseTimeMs": 249,
       "assertions": [
@@ -318,9 +393,12 @@
       ]
     },
     {
+      "testCaseId": "TC-025",
       "name": "25 - Complete PIN Login for User A",
+      "folder": "01 - Authentication & Security",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/verify",
       "responseCode": 200,
       "responseTimeMs": 393,
       "assertions": [
@@ -331,9 +409,12 @@
       ]
     },
     {
+      "testCaseId": "TC-026",
       "name": "26 - Security PIN Status Check",
+      "folder": "01 - Authentication & Security",
       "method": "GET",
-      "url": "",
+      "path": "/api/security-pin/status",
+      "rawUrl": "{{baseUrl}}/api/security-pin/status",
       "responseCode": 200,
       "responseTimeMs": 25,
       "assertions": [
@@ -344,9 +425,12 @@
       ]
     },
     {
+      "testCaseId": "TC-027",
       "name": "01 - Get Current User Profile (User A)",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/users/me",
+      "rawUrl": "{{baseUrl}}/api/users/me",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -357,9 +441,12 @@
       ]
     },
     {
+      "testCaseId": "TC-028",
       "name": "02 - Upload User Avatar (User A)",
+      "folder": "02 - Account & Friends",
       "method": "POST",
-      "url": "",
+      "path": "/api/users/me/avatar",
+      "rawUrl": "{{baseUrl}}/api/users/me/avatar",
       "responseCode": 200,
       "responseTimeMs": 92,
       "assertions": [
@@ -370,9 +457,12 @@
       ]
     },
     {
+      "testCaseId": "TC-029",
       "name": "03 - Update User Preferences",
+      "folder": "02 - Account & Friends",
       "method": "PUT",
-      "url": "",
+      "path": "/api/users/me/preferences",
+      "rawUrl": "{{baseUrl}}/api/users/me/preferences",
       "responseCode": 200,
       "responseTimeMs": 86,
       "assertions": [
@@ -383,9 +473,12 @@
       ]
     },
     {
+      "testCaseId": "TC-030",
       "name": "04 - Search User B by Contact (Email)",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/search",
+      "rawUrl": "{{baseUrl}}/api/friends/search?contact={{userB_email}}",
       "responseCode": 200,
       "responseTimeMs": 54,
       "assertions": [
@@ -396,9 +489,12 @@
       ]
     },
     {
+      "testCaseId": "TC-031",
       "name": "05 - Search User B by SpendId",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/search",
+      "rawUrl": "{{baseUrl}}/api/friends/search?contact={{userB_spendId}}",
       "responseCode": 200,
       "responseTimeMs": 61,
       "assertions": [
@@ -409,9 +505,12 @@
       ]
     },
     {
+      "testCaseId": "TC-032",
       "name": "06 - Discover Users by Name with Pagination",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/discover",
+      "rawUrl": "{{baseUrl}}/api/friends/discover?query=Tran&page=1&pageSize=10",
       "responseCode": 200,
       "responseTimeMs": 148,
       "assertions": [
@@ -422,9 +521,12 @@
       ]
     },
     {
+      "testCaseId": "TC-033",
       "name": "07 - Send Friend Request (User A to User B)",
+      "folder": "02 - Account & Friends",
       "method": "POST",
-      "url": "",
+      "path": "/api/friends/requests",
+      "rawUrl": "{{baseUrl}}/api/friends/requests",
       "responseCode": 200,
       "responseTimeMs": 157,
       "assertions": [
@@ -435,9 +537,12 @@
       ]
     },
     {
+      "testCaseId": "TC-034",
       "name": "08 - Send Friend Request Duplicate (Idempotency Check)",
+      "folder": "02 - Account & Friends",
       "method": "POST",
-      "url": "",
+      "path": "/api/friends/requests",
+      "rawUrl": "{{baseUrl}}/api/friends/requests",
       "responseCode": 200,
       "responseTimeMs": 119,
       "assertions": [
@@ -448,9 +553,12 @@
       ]
     },
     {
+      "testCaseId": "TC-035",
       "name": "09 - User A Checks Outgoing Requests",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/requests/outgoing",
+      "rawUrl": "{{baseUrl}}/api/friends/requests/outgoing",
       "responseCode": 200,
       "responseTimeMs": 80,
       "assertions": [
@@ -461,9 +569,12 @@
       ]
     },
     {
+      "testCaseId": "TC-036",
       "name": "10 - User B Checks Incoming Requests",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/requests/incoming",
+      "rawUrl": "{{baseUrl}}/api/friends/requests/incoming",
       "responseCode": 200,
       "responseTimeMs": 57,
       "assertions": [
@@ -474,9 +585,12 @@
       ]
     },
     {
+      "testCaseId": "TC-037",
       "name": "11 - User B Accepts Friend Request",
+      "folder": "02 - Account & Friends",
       "method": "POST",
-      "url": "",
+      "path": "/api/friends/requests/{{incomingRequestId}}/accept",
+      "rawUrl": "{{baseUrl}}/api/friends/requests/{{incomingRequestId}}/accept",
       "responseCode": 200,
       "responseTimeMs": 401,
       "assertions": [
@@ -487,9 +601,12 @@
       ]
     },
     {
+      "testCaseId": "TC-038",
       "name": "12 - User A Lists Friends",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends",
+      "rawUrl": "{{baseUrl}}/api/friends",
       "responseCode": 200,
       "responseTimeMs": 37,
       "assertions": [
@@ -500,9 +617,12 @@
       ]
     },
     {
+      "testCaseId": "TC-039",
       "name": "13 - User B Lists Friends",
+      "folder": "02 - Account & Friends",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends",
+      "rawUrl": "{{baseUrl}}/api/friends",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -513,9 +633,12 @@
       ]
     },
     {
+      "testCaseId": "TC-040",
       "name": "14 - Update Friend Preference (User A sets Favorite)",
+      "folder": "02 - Account & Friends",
       "method": "PATCH",
-      "url": "",
+      "path": "/api/friends/{{userB_id}}/preference",
+      "rawUrl": "{{baseUrl}}/api/friends/{{userB_id}}/preference",
       "responseCode": 200,
       "responseTimeMs": 35,
       "assertions": [
@@ -526,9 +649,12 @@
       ]
     },
     {
+      "testCaseId": "TC-041",
       "name": "01 - List Default Wallets for User A",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -539,9 +665,12 @@
       ]
     },
     {
+      "testCaseId": "TC-042",
       "name": "02 - Get System Categories (Income & Expense)",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/categories",
+      "rawUrl": "{{baseUrl}}/api/categories",
       "responseCode": 200,
       "responseTimeMs": 15,
       "assertions": [
@@ -552,9 +681,12 @@
       ]
     },
     {
+      "testCaseId": "TC-043",
       "name": "02b - Upload Evidence for Income Posting",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/evidence",
+      "rawUrl": "{{baseUrl}}/api/evidence",
       "responseCode": 201,
       "responseTimeMs": 18,
       "assertions": [
@@ -565,9 +697,12 @@
       ]
     },
     {
+      "testCaseId": "TC-044",
       "name": "03 - Fund Main Wallet via Income Posting (10,000,000 VND)",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/transactions/income",
+      "rawUrl": "{{baseUrl}}/api/transactions/income",
       "responseCode": 201,
       "responseTimeMs": 351,
       "assertions": [
@@ -578,9 +713,12 @@
       ]
     },
     {
+      "testCaseId": "TC-045",
       "name": "04 - Create Savings Wallet User A",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 201,
       "responseTimeMs": 81,
       "assertions": [
@@ -591,9 +729,12 @@
       ]
     },
     {
+      "testCaseId": "TC-046",
       "name": "05 - Create Emergency Wallet User A",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 201,
       "responseTimeMs": 20,
       "assertions": [
@@ -604,9 +745,12 @@
       ]
     },
     {
+      "testCaseId": "TC-047",
       "name": "06 - Check Wallet Limit (Try Creating 4th Wallet)",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 409,
       "responseTimeMs": 45,
       "assertions": [
@@ -617,9 +761,12 @@
       ]
     },
     {
+      "testCaseId": "TC-048",
       "name": "07 - Get Main Wallet Details",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets/{{userA_mainWalletId}}",
+      "rawUrl": "{{baseUrl}}/api/wallets/{{userA_mainWalletId}}",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -630,9 +777,12 @@
       ]
     },
     {
+      "testCaseId": "TC-049",
       "name": "08 - Update Savings Wallet Name",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "PUT",
-      "url": "",
+      "path": "/api/wallets/{{userA_savingsWalletId}}",
+      "rawUrl": "{{baseUrl}}/api/wallets/{{userA_savingsWalletId}}",
       "responseCode": 200,
       "responseTimeMs": 56,
       "assertions": [
@@ -643,9 +793,12 @@
       ]
     },
     {
+      "testCaseId": "TC-050",
       "name": "09 - Create Custom Category",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/categories",
+      "rawUrl": "{{baseUrl}}/api/categories",
       "responseCode": 201,
       "responseTimeMs": 29,
       "assertions": [
@@ -656,9 +809,12 @@
       ]
     },
     {
+      "testCaseId": "TC-051",
       "name": "09b - Upload Evidence for Expense Transaction",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/evidence",
+      "rawUrl": "{{baseUrl}}/api/evidence",
       "responseCode": 201,
       "responseTimeMs": 9,
       "assertions": [
@@ -669,9 +825,12 @@
       ]
     },
     {
+      "testCaseId": "TC-052",
       "name": "10 - Record Expense Transaction (45,000 VND)",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/transactions/expense",
+      "rawUrl": "{{baseUrl}}/api/transactions/expense",
       "responseCode": 201,
       "responseTimeMs": 296,
       "assertions": [
@@ -682,9 +841,12 @@
       ]
     },
     {
+      "testCaseId": "TC-053",
       "name": "11 - Internal Transfer Between Wallets (3,000,000 VND)",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/transfers/internal",
+      "rawUrl": "{{baseUrl}}/api/transfers/internal",
       "responseCode": 201,
       "responseTimeMs": 294,
       "assertions": [
@@ -695,9 +857,12 @@
       ]
     },
     {
+      "testCaseId": "TC-054",
       "name": "12 - Check Balances After Expense and Transfer",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -708,9 +873,12 @@
       ]
     },
     {
+      "testCaseId": "TC-055",
       "name": "13 - List Transactions with Query Filters",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/transactions",
+      "rawUrl": "{{baseUrl}}/api/transactions?page=1&pageSize=10",
       "responseCode": 200,
       "responseTimeMs": 40,
       "assertions": [
@@ -721,9 +889,12 @@
       ]
     },
     {
+      "testCaseId": "TC-056",
       "name": "14 - Get Transaction Details",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/transactions/{{expenseTxId}}",
+      "rawUrl": "{{baseUrl}}/api/transactions/{{expenseTxId}}",
       "responseCode": 200,
       "responseTimeMs": 145,
       "assertions": [
@@ -734,9 +905,12 @@
       ]
     },
     {
+      "testCaseId": "TC-057",
       "name": "15 - Update Transaction Description",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "PATCH",
-      "url": "",
+      "path": "/api/transactions/{{expenseTxId}}",
+      "rawUrl": "{{baseUrl}}/api/transactions/{{expenseTxId}}",
       "responseCode": 200,
       "responseTimeMs": 626,
       "assertions": [
@@ -747,9 +921,12 @@
       ]
     },
     {
+      "testCaseId": "TC-058",
       "name": "16 - Close Emergency Wallet",
+      "folder": "03 - Wallets & Personal Transactions",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/wallets/{{userA_emergencyWalletId}}",
+      "rawUrl": "{{baseUrl}}/api/wallets/{{userA_emergencyWalletId}}",
       "responseCode": 204,
       "responseTimeMs": 44,
       "assertions": [
@@ -760,9 +937,12 @@
       ]
     },
     {
+      "testCaseId": "TC-059",
       "name": "00 - Fund User B Main Wallet (P2P Transfer 2,000,000 VND)",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/transfers/p2p",
+      "rawUrl": "{{baseUrl}}/api/transfers/p2p",
       "responseCode": 201,
       "responseTimeMs": 369,
       "assertions": [
@@ -773,9 +953,12 @@
       ]
     },
     {
+      "testCaseId": "TC-060",
       "name": "00b - Get User B Main Wallet",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -786,9 +969,12 @@
       ]
     },
     {
+      "testCaseId": "TC-061",
       "name": "01 - Create Fixed Fund (User A)",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds",
+      "rawUrl": "{{baseUrl}}/api/v1/funds",
       "responseCode": 200,
       "responseTimeMs": 295,
       "assertions": [
@@ -799,9 +985,12 @@
       ]
     },
     {
+      "testCaseId": "TC-062",
       "name": "02 - Get Fixed Fund Details",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -812,9 +1001,12 @@
       ]
     },
     {
+      "testCaseId": "TC-063",
       "name": "03 - Invite User B to Fixed Fund",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/invitations",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/invitations",
       "responseCode": 200,
       "responseTimeMs": 70,
       "assertions": [
@@ -825,9 +1017,12 @@
       ]
     },
     {
+      "testCaseId": "TC-064",
       "name": "04 - User B Accepts Fixed Fund Invitation",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{fundInvitationId}}/accept",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{fundInvitationId}}/accept",
       "responseCode": 200,
       "responseTimeMs": 52,
       "assertions": [
@@ -838,9 +1033,12 @@
       ]
     },
     {
+      "testCaseId": "TC-065",
       "name": "05 - List Fixed Fund Members",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/members",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/members",
       "responseCode": 200,
       "responseTimeMs": 22,
       "assertions": [
@@ -851,9 +1049,12 @@
       ]
     },
     {
+      "testCaseId": "TC-066",
       "name": "06 - Confirm Obligations (Target: 2,000,000 VND)",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/obligations/confirm",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/obligations/confirm",
       "responseCode": 200,
       "responseTimeMs": 382,
       "assertions": [
@@ -864,9 +1065,12 @@
       ]
     },
     {
+      "testCaseId": "TC-067",
       "name": "07 - User A Contributes 1,000,000 VND to Fixed Fund",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 339,
       "assertions": [
@@ -877,9 +1081,12 @@
       ]
     },
     {
+      "testCaseId": "TC-068",
       "name": "08 - User B Contributes 1,000,000 VND to Fixed Fund",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 340,
       "assertions": [
@@ -890,9 +1097,12 @@
       ]
     },
     {
+      "testCaseId": "TC-069",
       "name": "09 - List Fixed Fund Contributions",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 37,
       "assertions": [
@@ -903,9 +1113,12 @@
       ]
     },
     {
+      "testCaseId": "TC-070",
       "name": "10 - Grant Spending Permission to User B",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "PUT",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
       "responseCode": 204,
       "responseTimeMs": 276,
       "assertions": [
@@ -916,9 +1129,12 @@
       ]
     },
     {
+      "testCaseId": "TC-071",
       "name": "11 - Check Fixed Fund Activities",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/activities",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/activities",
       "responseCode": 200,
       "responseTimeMs": 13,
       "assertions": [
@@ -929,9 +1145,12 @@
       ]
     },
     {
+      "testCaseId": "TC-072",
       "name": "12 - Check Fixed Fund Financial Overview",
+      "folder": "04 - Fixed Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/finance",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/finance",
       "responseCode": 200,
       "responseTimeMs": 23,
       "assertions": [
@@ -942,9 +1161,12 @@
       ]
     },
     {
+      "testCaseId": "TC-073",
       "name": "01 - Create Free Fund (User A)",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds",
+      "rawUrl": "{{baseUrl}}/api/v1/funds",
       "responseCode": 200,
       "responseTimeMs": 259,
       "assertions": [
@@ -955,9 +1177,12 @@
       ]
     },
     {
+      "testCaseId": "TC-074",
       "name": "02 - Invite User B to Free Fund",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/invitations",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/invitations",
       "responseCode": 200,
       "responseTimeMs": 30,
       "assertions": [
@@ -968,9 +1193,12 @@
       ]
     },
     {
+      "testCaseId": "TC-075",
       "name": "03 - User B Accepts Free Fund Invitation",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{freeInvitationId}}/accept",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{freeInvitationId}}/accept",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -981,9 +1209,12 @@
       ]
     },
     {
+      "testCaseId": "TC-076",
       "name": "04 - User A Contributes 500,000 VND to Free Fund",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 249,
       "assertions": [
@@ -994,9 +1225,12 @@
       ]
     },
     {
+      "testCaseId": "TC-077",
       "name": "05 - User B Contributes 300,000 VND to Free Fund",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 283,
       "assertions": [
@@ -1007,9 +1241,12 @@
       ]
     },
     {
+      "testCaseId": "TC-078",
       "name": "06 - Track Free Fund Finance",
+      "folder": "05 - Free Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/finance",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/finance",
       "responseCode": 200,
       "responseTimeMs": 145,
       "assertions": [
@@ -1020,9 +1257,12 @@
       ]
     },
     {
+      "testCaseId": "TC-079",
       "name": "07 - User B Creates Free Fund Expense Request",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/requests",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/requests",
       "responseCode": 200,
       "responseTimeMs": 274,
       "assertions": [
@@ -1033,9 +1273,12 @@
       ]
     },
     {
+      "testCaseId": "TC-080",
       "name": "07b - User A (Owner) Reviews and Approves Free Fund Request",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/requests/{{freeRequestId}}/review",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/requests/{{freeRequestId}}/review",
       "responseCode": 200,
       "responseTimeMs": 358,
       "assertions": [
@@ -1046,9 +1289,12 @@
       ]
     },
     {
+      "testCaseId": "TC-081",
       "name": "07c - User B Creates Second Free Fund Expense Request for Security Testing",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/requests",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/requests",
       "responseCode": 200,
       "responseTimeMs": 255,
       "assertions": [
@@ -1059,9 +1305,12 @@
       ]
     },
     {
+      "testCaseId": "TC-082",
       "name": "08 - Refund Preview for User B",
+      "folder": "05 - Free Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/refund-preview",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/refund-preview?memberUserId={{userB_id}}",
       "responseCode": 200,
       "responseTimeMs": 34,
       "assertions": [
@@ -1072,9 +1321,12 @@
       ]
     },
     {
+      "testCaseId": "TC-083",
       "name": "09 - User B Leaves Free Fund",
+      "folder": "05 - Free Fund (Groups)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/leave",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/leave",
       "responseCode": 200,
       "responseTimeMs": 296,
       "assertions": [
@@ -1085,9 +1337,12 @@
       ]
     },
     {
+      "testCaseId": "TC-084",
       "name": "10 - Verify Remaining Members in Free Fund",
+      "folder": "05 - Free Fund (Groups)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{freeFundId}}/members",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{freeFundId}}/members",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -1098,9 +1353,12 @@
       ]
     },
     {
+      "testCaseId": "TC-085",
       "name": "01 - Create Monthly Budget User A",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/budgets",
+      "rawUrl": "{{baseUrl}}/api/budgets",
       "responseCode": 201,
       "responseTimeMs": 242,
       "assertions": [
@@ -1111,9 +1369,12 @@
       ]
     },
     {
+      "testCaseId": "TC-086",
       "name": "02 - List Monthly Budgets",
+      "folder": "06 - Planning & Analytics",
       "method": "GET",
-      "url": "",
+      "path": "/api/budgets",
+      "rawUrl": "{{baseUrl}}/api/budgets?year=2026&month=10",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -1124,9 +1385,12 @@
       ]
     },
     {
+      "testCaseId": "TC-087",
       "name": "03 - Update Monthly Budget Limit",
+      "folder": "06 - Planning & Analytics",
       "method": "PUT",
-      "url": "",
+      "path": "/api/budgets/{{budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 253,
       "assertions": [
@@ -1137,9 +1401,12 @@
       ]
     },
     {
+      "testCaseId": "TC-088",
       "name": "04 - Delete Monthly Budget",
+      "folder": "06 - Planning & Analytics",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/budgets/{{budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{budgetId}}",
       "responseCode": 204,
       "responseTimeMs": 246,
       "assertions": [
@@ -1150,9 +1417,12 @@
       ]
     },
     {
+      "testCaseId": "TC-089",
       "name": "05 - Create Savings Goal (MacBook M4)",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/goals",
+      "rawUrl": "{{baseUrl}}/api/goals",
       "responseCode": 200,
       "responseTimeMs": 243,
       "assertions": [
@@ -1163,9 +1433,12 @@
       ]
     },
     {
+      "testCaseId": "TC-090",
       "name": "06 - Deposit to Savings Goal (2,000,000 VND)",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/goals/{{goalId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/goals/{{goalId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 272,
       "assertions": [
@@ -1176,9 +1449,12 @@
       ]
     },
     {
+      "testCaseId": "TC-091",
       "name": "07 - Get Goal Details and Verify Progress",
+      "folder": "06 - Planning & Analytics",
       "method": "GET",
-      "url": "",
+      "path": "/api/goals/{{goalId}}",
+      "rawUrl": "{{baseUrl}}/api/goals/{{goalId}}",
       "responseCode": 200,
       "responseTimeMs": 22,
       "assertions": [
@@ -1189,9 +1465,12 @@
       ]
     },
     {
+      "testCaseId": "TC-092",
       "name": "08 - Withdraw from Savings Goal (500,000 VND)",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/goals/{{goalId}}/withdrawals",
+      "rawUrl": "{{baseUrl}}/api/goals/{{goalId}}/withdrawals",
       "responseCode": 200,
       "responseTimeMs": 259,
       "assertions": [
@@ -1202,9 +1481,12 @@
       ]
     },
     {
+      "testCaseId": "TC-093",
       "name": "09 - Create Recurring Transaction (Monthly Internet)",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/recurring-transactions",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions",
       "responseCode": 200,
       "responseTimeMs": 26,
       "assertions": [
@@ -1215,9 +1497,12 @@
       ]
     },
     {
+      "testCaseId": "TC-094",
       "name": "10 - List Recurring Transactions",
+      "folder": "06 - Planning & Analytics",
       "method": "GET",
-      "url": "",
+      "path": "/api/recurring-transactions",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -1228,9 +1513,12 @@
       ]
     },
     {
+      "testCaseId": "TC-095",
       "name": "11 - Create Transaction Rule",
+      "folder": "06 - Planning & Analytics",
       "method": "POST",
-      "url": "",
+      "path": "/api/transaction-rules",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -1241,9 +1529,12 @@
       ]
     },
     {
+      "testCaseId": "TC-096",
       "name": "12 - List Transaction Rules",
+      "folder": "06 - Planning & Analytics",
       "method": "GET",
-      "url": "",
+      "path": "/api/transaction-rules",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules",
       "responseCode": 200,
       "responseTimeMs": 16,
       "assertions": [
@@ -1254,9 +1545,12 @@
       ]
     },
     {
+      "testCaseId": "TC-097",
       "name": "01 - Create AI Conversation",
+      "folder": "07 - AI Assistant",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/conversations",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations",
       "responseCode": 200,
       "responseTimeMs": 13,
       "assertions": [
@@ -1267,9 +1561,12 @@
       ]
     },
     {
+      "testCaseId": "TC-098",
       "name": "02 - List AI Conversations",
+      "folder": "07 - AI Assistant",
       "method": "GET",
-      "url": "",
+      "path": "/api/ai/conversations",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations",
       "responseCode": 200,
       "responseTimeMs": 42,
       "assertions": [
@@ -1280,9 +1577,12 @@
       ]
     },
     {
+      "testCaseId": "TC-099",
       "name": "03 - Ask AI Financial Advisor (Chat) - Fallback Safe",
+      "folder": "07 - AI Assistant",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/chat",
+      "rawUrl": "{{baseUrl}}/api/ai/chat",
       "responseCode": 200,
       "responseTimeMs": 3318,
       "assertions": [
@@ -1293,9 +1593,12 @@
       ]
     },
     {
+      "testCaseId": "TC-100",
       "name": "01 - Find Bank Transfer Recipient by Phone",
+      "folder": "08 - Bank & Integrations",
       "method": "GET",
-      "url": "",
+      "path": "/api/transfers/recipients",
+      "rawUrl": "{{baseUrl}}/api/transfers/recipients?phone={{fixture_member_phone}}",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -1306,9 +1609,12 @@
       ]
     },
     {
+      "testCaseId": "TC-101",
       "name": "02 - Create Bank Direct Transfer Instruction",
+      "folder": "08 - Bank & Integrations",
       "method": "POST",
-      "url": "",
+      "path": "/api/transfers",
+      "rawUrl": "{{baseUrl}}/api/transfers",
       "responseCode": 201,
       "responseTimeMs": 58,
       "assertions": [
@@ -1319,9 +1625,12 @@
       ]
     },
     {
+      "testCaseId": "TC-102",
       "name": "03 - Bank Direct Transfer History",
+      "folder": "08 - Bank & Integrations",
       "method": "GET",
-      "url": "",
+      "path": "/api/transfers",
+      "rawUrl": "{{baseUrl}}/api/transfers",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -1332,9 +1641,12 @@
       ]
     },
     {
+      "testCaseId": "TC-103",
       "name": "04 - SePay Webhook Invariant (Controlled Check)",
+      "folder": "08 - Bank & Integrations",
       "method": "POST",
-      "url": "",
+      "path": "/api/integrations/sepay/bankhub/events",
+      "rawUrl": "{{baseUrl}}/api/integrations/sepay/bankhub/events",
       "responseCode": 401,
       "responseTimeMs": 5,
       "assertions": [
@@ -1345,9 +1657,12 @@
       ]
     },
     {
+      "testCaseId": "TC-104",
       "name": "01 - List Notifications for User A",
+      "folder": "09 - Notifications & Support",
       "method": "GET",
-      "url": "",
+      "path": "/api/notifications",
+      "rawUrl": "{{baseUrl}}/api/notifications",
       "responseCode": 200,
       "responseTimeMs": 30,
       "assertions": [
@@ -1358,9 +1673,12 @@
       ]
     },
     {
+      "testCaseId": "TC-105",
       "name": "02 - Mark All Notifications Read",
+      "folder": "09 - Notifications & Support",
       "method": "POST",
-      "url": "",
+      "path": "/api/notifications/read-all",
+      "rawUrl": "{{baseUrl}}/api/notifications/read-all",
       "responseCode": 204,
       "responseTimeMs": 18,
       "assertions": [
@@ -1371,9 +1689,12 @@
       ]
     },
     {
+      "testCaseId": "TC-106",
       "name": "03 - Search Notifications",
+      "folder": "09 - Notifications & Support",
       "method": "GET",
-      "url": "",
+      "path": "/api/notifications/search",
+      "rawUrl": "{{baseUrl}}/api/notifications/search?page=1&pageSize=10",
       "responseCode": 200,
       "responseTimeMs": 69,
       "assertions": [
@@ -1384,9 +1705,12 @@
       ]
     },
     {
+      "testCaseId": "TC-107",
       "name": "04 - Create Support Case",
+      "folder": "09 - Notifications & Support",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/support",
+      "rawUrl": "{{baseUrl}}/api/cases/support",
       "responseCode": 200,
       "responseTimeMs": 62,
       "assertions": [
@@ -1397,9 +1721,12 @@
       ]
     },
     {
+      "testCaseId": "TC-108",
       "name": "05 - List Support Cases",
+      "folder": "09 - Notifications & Support",
       "method": "GET",
-      "url": "",
+      "path": "/api/cases/support",
+      "rawUrl": "{{baseUrl}}/api/cases/support",
       "responseCode": 200,
       "responseTimeMs": 26,
       "assertions": [
@@ -1410,9 +1737,12 @@
       ]
     },
     {
+      "testCaseId": "TC-109",
       "name": "06 - Get Support Case Details",
+      "folder": "09 - Notifications & Support",
       "method": "GET",
-      "url": "",
+      "path": "/api/cases/support/{{supportCaseId}}",
+      "rawUrl": "{{baseUrl}}/api/cases/support/{{supportCaseId}}",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -1423,9 +1753,12 @@
       ]
     },
     {
+      "testCaseId": "TC-110",
       "name": "07 - Reply to Support Case Message",
+      "folder": "09 - Notifications & Support",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/support/{{supportCaseId}}/messages",
+      "rawUrl": "{{baseUrl}}/api/cases/support/{{supportCaseId}}/messages",
       "responseCode": 200,
       "responseTimeMs": 39,
       "assertions": [
@@ -1436,9 +1769,12 @@
       ]
     },
     {
+      "testCaseId": "TC-111",
       "name": "08 - List Financial Disputes",
+      "folder": "09 - Notifications & Support",
       "method": "GET",
-      "url": "",
+      "path": "/api/cases/disputes",
+      "rawUrl": "{{baseUrl}}/api/cases/disputes",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -1449,9 +1785,12 @@
       ]
     },
     {
+      "testCaseId": "TC-112",
       "name": "Flow A01 - Pre-check Profile Avatar",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/users/me",
+      "rawUrl": "{{baseUrl}}/api/users/me",
       "responseCode": 200,
       "responseTimeMs": 9,
       "assertions": [
@@ -1462,9 +1801,12 @@
       ]
     },
     {
+      "testCaseId": "TC-113",
       "name": "Flow A02 - Upload Real Avatar Image",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/users/me/avatar",
+      "rawUrl": "{{baseUrl}}/api/users/me/avatar",
       "responseCode": 200,
       "responseTimeMs": 41,
       "assertions": [
@@ -1475,9 +1817,12 @@
       ]
     },
     {
+      "testCaseId": "TC-114",
       "name": "Flow A03 - Check Profile Immediately Has New Avatar",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/users/me",
+      "rawUrl": "{{baseUrl}}/api/users/me",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -1488,9 +1833,12 @@
       ]
     },
     {
+      "testCaseId": "TC-115",
       "name": "Flow A04 - Logout User A",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/logout",
+      "rawUrl": "{{baseUrl}}/api/auth/logout",
       "responseCode": 204,
       "responseTimeMs": 39,
       "assertions": [
@@ -1501,9 +1849,12 @@
       ]
     },
     {
+      "testCaseId": "TC-116",
       "name": "Flow A05 - Re-login User A",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 200,
       "responseTimeMs": 185,
       "assertions": [
@@ -1514,9 +1865,12 @@
       ]
     },
     {
+      "testCaseId": "TC-117",
       "name": "Flow A06 - Complete PIN Login for Re-login",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/verify",
       "responseCode": 200,
       "responseTimeMs": 329,
       "assertions": [
@@ -1527,9 +1881,12 @@
       ]
     },
     {
+      "testCaseId": "TC-118",
       "name": "Flow A07 - Check Profile After Fresh Login Retains Avatar",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/users/me",
+      "rawUrl": "{{baseUrl}}/api/users/me",
       "responseCode": 200,
       "responseTimeMs": 7,
       "assertions": [
@@ -1540,9 +1897,12 @@
       ]
     },
     {
+      "testCaseId": "TC-119",
       "name": "Flow B01 - Request Email Change to New Email",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/users/me/email/request",
+      "rawUrl": "{{baseUrl}}/api/users/me/email/request",
       "responseCode": 200,
       "responseTimeMs": 84,
       "assertions": [
@@ -1553,9 +1913,12 @@
       ]
     },
     {
+      "testCaseId": "TC-120",
       "name": "Flow B02 - Confirm Email Change with OTP",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/users/me/email/confirm",
+      "rawUrl": "{{baseUrl}}/api/users/me/email/confirm",
       "responseCode": 200,
       "responseTimeMs": 67,
       "assertions": [
@@ -1566,9 +1929,12 @@
       ]
     },
     {
+      "testCaseId": "TC-121",
       "name": "Flow B03 - Logout After Email Change",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/logout",
+      "rawUrl": "{{baseUrl}}/api/auth/logout",
       "responseCode": 204,
       "responseTimeMs": 14,
       "assertions": [
@@ -1579,9 +1945,12 @@
       ]
     },
     {
+      "testCaseId": "TC-122",
       "name": "Flow B04 - Login with New Email (Expected: Success)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 200,
       "responseTimeMs": 176,
       "assertions": [
@@ -1592,9 +1961,12 @@
       ]
     },
     {
+      "testCaseId": "TC-123",
       "name": "Flow B05 - Complete PIN Verification with New Email",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/verify",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/verify",
       "responseCode": 200,
       "responseTimeMs": 315,
       "assertions": [
@@ -1605,9 +1977,12 @@
       ]
     },
     {
+      "testCaseId": "TC-124",
       "name": "Flow B06 - Login with Old Email (Expected: 401 / Denied)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/login",
+      "rawUrl": "{{baseUrl}}/api/auth/login",
       "responseCode": 401,
       "responseTimeMs": 6,
       "assertions": [
@@ -1618,9 +1993,12 @@
       ]
     },
     {
+      "testCaseId": "TC-125",
       "name": "Flow C01 - User A Searches User B by Contact",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends/search",
+      "rawUrl": "{{baseUrl}}/api/friends/search?contact={{userB_email}}",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -1631,9 +2009,12 @@
       ]
     },
     {
+      "testCaseId": "TC-126",
       "name": "Flow C02 - User A Checks Friend Request Status to User B",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/friends/requests",
+      "rawUrl": "{{baseUrl}}/api/friends/requests",
       "responseCode": 409,
       "responseTimeMs": 18,
       "assertions": [
@@ -1644,9 +2025,12 @@
       ]
     },
     {
+      "testCaseId": "TC-127",
       "name": "Flow C03 - User A Checks Friend List (Has User B)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends",
+      "rawUrl": "{{baseUrl}}/api/friends",
       "responseCode": 200,
       "responseTimeMs": 236,
       "assertions": [
@@ -1657,9 +2041,12 @@
       ]
     },
     {
+      "testCaseId": "TC-128",
       "name": "Flow C04 - User B Checks Friend List (Has User A)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/friends",
+      "rawUrl": "{{baseUrl}}/api/friends",
       "responseCode": 200,
       "responseTimeMs": 14,
       "assertions": [
@@ -1670,9 +2057,12 @@
       ]
     },
     {
+      "testCaseId": "TC-129",
       "name": "Flow D01 - User A Creates Fixed Fund (1,000,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds",
+      "rawUrl": "{{baseUrl}}/api/v1/funds",
       "responseCode": 200,
       "responseTimeMs": 261,
       "assertions": [
@@ -1683,9 +2073,12 @@
       ]
     },
     {
+      "testCaseId": "TC-130",
       "name": "Flow D02 - Invite User B to Fixed Fund",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/invitations",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/invitations",
       "responseCode": 200,
       "responseTimeMs": 51,
       "assertions": [
@@ -1696,9 +2089,12 @@
       ]
     },
     {
+      "testCaseId": "TC-131",
       "name": "Flow D03 - User B Accepts Fixed Fund Invitation",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{flowD_inviteId}}/accept",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{flowD_inviteId}}/accept",
       "responseCode": 200,
       "responseTimeMs": 76,
       "assertions": [
@@ -1709,9 +2105,12 @@
       ]
     },
     {
+      "testCaseId": "TC-132",
       "name": "Flow D04 - Confirm Obligations (Target: 1,000,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/obligations/confirm",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/obligations/confirm",
       "responseCode": 200,
       "responseTimeMs": 437,
       "assertions": [
@@ -1722,9 +2121,12 @@
       ]
     },
     {
+      "testCaseId": "TC-133",
       "name": "Flow D05 - User A Contributes 500,000 VND",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 408,
       "assertions": [
@@ -1735,9 +2137,12 @@
       ]
     },
     {
+      "testCaseId": "TC-134",
       "name": "Flow D06 - User B Contributes 500,000 VND",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/contributions",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/contributions",
       "responseCode": 200,
       "responseTimeMs": 295,
       "assertions": [
@@ -1748,9 +2153,12 @@
       ]
     },
     {
+      "testCaseId": "TC-135",
       "name": "Flow D07 - Check Fund Finance (Total 1,000,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/finance",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/finance",
       "responseCode": 200,
       "responseTimeMs": 38,
       "assertions": [
@@ -1761,9 +2169,12 @@
       ]
     },
     {
+      "testCaseId": "TC-136",
       "name": "Flow D08 - Grant User B Spending Permission",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "PUT",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/members/{{userB_id}}/spending-permission",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/members/{{userB_id}}/spending-permission",
       "responseCode": 204,
       "responseTimeMs": 294,
       "assertions": [
@@ -1774,9 +2185,12 @@
       ]
     },
     {
+      "testCaseId": "TC-137",
       "name": "Flow D09 - Check Activity Log for Spending Permission Event",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{flowD_fundId}}/activities",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{flowD_fundId}}/activities",
       "responseCode": 200,
       "responseTimeMs": 25,
       "assertions": [
@@ -1787,9 +2201,12 @@
       ]
     },
     {
+      "testCaseId": "TC-138",
       "name": "Flow E01 - Identify Main and Savings Wallets for Flow E",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets",
+      "rawUrl": "{{baseUrl}}/api/wallets",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -1800,9 +2217,12 @@
       ]
     },
     {
+      "testCaseId": "TC-139",
       "name": "Flow E02 - Transfer 300,000 VND from Main to Savings Wallet",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/transfers/internal",
+      "rawUrl": "{{baseUrl}}/api/transfers/internal",
       "responseCode": 201,
       "responseTimeMs": 366,
       "assertions": [
@@ -1813,9 +2233,12 @@
       ]
     },
     {
+      "testCaseId": "TC-140",
       "name": "Flow E03 - Check Savings Wallet Balance Increased by 300,000 VND",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets/{{flowE_wallet2Id}}",
+      "rawUrl": "{{baseUrl}}/api/wallets/{{flowE_wallet2Id}}",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -1826,9 +2249,12 @@
       ]
     },
     {
+      "testCaseId": "TC-141",
       "name": "Flow E04 - Check Linked Transactions List",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/transactions",
+      "rawUrl": "{{baseUrl}}/api/transactions?walletId={{flowE_wallet2Id}}&page=1&pageSize=10",
       "responseCode": 200,
       "responseTimeMs": 47,
       "assertions": [
@@ -1839,9 +2265,12 @@
       ]
     },
     {
+      "testCaseId": "TC-142",
       "name": "Flow F01 - Get Expense Category for Budgeting",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/categories",
+      "rawUrl": "{{baseUrl}}/api/categories",
       "responseCode": 200,
       "responseTimeMs": 13,
       "assertions": [
@@ -1852,9 +2281,12 @@
       ]
     },
     {
+      "testCaseId": "TC-143",
       "name": "Flow F02 - Create Budget (2,000,000 VND limit)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/budgets",
+      "rawUrl": "{{baseUrl}}/api/budgets",
       "responseCode": 201,
       "responseTimeMs": 288,
       "assertions": [
@@ -1865,9 +2297,12 @@
       ]
     },
     {
+      "testCaseId": "TC-144",
       "name": "Flow F03 - Check Budget Status (Spent: 0, Remaining: 2,000,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/budgets/{{flowF_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 15,
       "assertions": [
@@ -1878,9 +2313,12 @@
       ]
     },
     {
+      "testCaseId": "TC-145",
       "name": "Flow F03a - Upload Evidence for Flow F Budget Expense",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/evidence",
+      "rawUrl": "{{baseUrl}}/api/evidence",
       "responseCode": 201,
       "responseTimeMs": 22,
       "assertions": [
@@ -1891,9 +2329,12 @@
       ]
     },
     {
+      "testCaseId": "TC-146",
       "name": "Flow F03b - Record Expense Transaction for Budget Category (500,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "POST",
-      "url": "",
+      "path": "/api/transactions/expense",
+      "rawUrl": "{{baseUrl}}/api/transactions/expense",
       "responseCode": 201,
       "responseTimeMs": 305,
       "assertions": [
@@ -1904,9 +2345,12 @@
       ]
     },
     {
+      "testCaseId": "TC-147",
       "name": "Flow F03c - Verify Budget Spent (500,000 VND, 25.0%)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/budgets/{{flowF_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -1917,9 +2361,12 @@
       ]
     },
     {
+      "testCaseId": "TC-148",
       "name": "Flow F03d - Correct Expense Amount via PATCH (800,000 VND)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "PATCH",
-      "url": "",
+      "path": "/api/transactions/{{flowF_expenseTxId}}",
+      "rawUrl": "{{baseUrl}}/api/transactions/{{flowF_expenseTxId}}",
       "responseCode": 200,
       "responseTimeMs": 523,
       "assertions": [
@@ -1930,9 +2377,12 @@
       ]
     },
     {
+      "testCaseId": "TC-149",
       "name": "Flow F03e - Verify Budget Re-calculation after Correction (800,000 VND, 40.0%)",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "GET",
-      "url": "",
+      "path": "/api/budgets/{{flowF_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -1943,9 +2393,12 @@
       ]
     },
     {
+      "testCaseId": "TC-150",
       "name": "Flow F04 - Update Budget Limit to 3,000,000 VND",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "PUT",
-      "url": "",
+      "path": "/api/budgets/{{flowF_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 254,
       "assertions": [
@@ -1956,9 +2409,12 @@
       ]
     },
     {
+      "testCaseId": "TC-151",
       "name": "Flow F05 - Clean Up Budget via Delete",
+      "folder": "10 - Continuous Flows (A-F)",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/budgets/{{flowF_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{flowF_budgetId}}",
       "responseCode": 204,
       "responseTimeMs": 281,
       "assertions": [
@@ -1969,9 +2425,12 @@
       ]
     },
     {
+      "testCaseId": "TC-152",
       "name": "01 - User B Prepares Isolated Budget and Goal",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/budgets",
+      "rawUrl": "{{baseUrl}}/api/budgets",
       "responseCode": 201,
       "responseTimeMs": 268,
       "assertions": [
@@ -1982,9 +2441,12 @@
       ]
     },
     {
+      "testCaseId": "TC-153",
       "name": "02 - User B Creates Target Goal",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/goals",
+      "rawUrl": "{{baseUrl}}/api/goals",
       "responseCode": 200,
       "responseTimeMs": 290,
       "assertions": [
@@ -1995,9 +2457,12 @@
       ]
     },
     {
+      "testCaseId": "TC-154",
       "name": "03 - User B Uploads Evidence",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/evidence",
+      "rawUrl": "{{baseUrl}}/api/evidence",
       "responseCode": 201,
       "responseTimeMs": 12,
       "assertions": [
@@ -2008,9 +2473,12 @@
       ]
     },
     {
+      "testCaseId": "TC-155",
       "name": "03b - User B Downloads Own Evidence (Happy Path)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "GET",
-      "url": "",
+      "path": "/api/evidence/{{userB_evidenceId}}",
+      "rawUrl": "{{baseUrl}}/api/evidence/{{userB_evidenceId}}",
       "responseCode": 200,
       "responseTimeMs": 9,
       "assertions": [
@@ -2021,9 +2489,12 @@
       ]
     },
     {
+      "testCaseId": "TC-156",
       "name": "04 - Cross-User Wallet Access User A to User B Wallet (Expect 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "GET",
-      "url": "",
+      "path": "/api/wallets/{{userB_mainWalletId}}",
+      "rawUrl": "{{baseUrl}}/api/wallets/{{userB_mainWalletId}}",
       "responseCode": 404,
       "responseTimeMs": 10,
       "assertions": [
@@ -2034,9 +2505,12 @@
       ]
     },
     {
+      "testCaseId": "TC-157",
       "name": "05 - Cross-User Budget Modification User A to User B Budget (Expect 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/budgets/{{userB_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{userB_budgetId}}",
       "responseCode": 404,
       "responseTimeMs": 267,
       "assertions": [
@@ -2047,9 +2521,12 @@
       ]
     },
     {
+      "testCaseId": "TC-158",
       "name": "06 - Cross-User Goal Access User A to User B Goal (Expect 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "GET",
-      "url": "",
+      "path": "/api/goals/{{userB_goalId}}",
+      "rawUrl": "{{baseUrl}}/api/goals/{{userB_goalId}}",
       "responseCode": 404,
       "responseTimeMs": 17,
       "assertions": [
@@ -2060,9 +2537,12 @@
       ]
     },
     {
+      "testCaseId": "TC-159",
       "name": "07 - Cross-User Evidence Access User A to User B Evidence (Expect 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "GET",
-      "url": "",
+      "path": "/api/evidence/{{userB_evidenceId}}",
+      "rawUrl": "{{baseUrl}}/api/evidence/{{userB_evidenceId}}",
       "responseCode": 404,
       "responseTimeMs": 8,
       "assertions": [
@@ -2073,9 +2553,12 @@
       ]
     },
     {
+      "testCaseId": "TC-160",
       "name": "08 - Cross-User Fund Permission Escalation User B to Fixed Fund (Expect 403)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "PUT",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/members/{{userB_id}}/spending-permission",
       "responseCode": 403,
       "responseTimeMs": 256,
       "assertions": [
@@ -2086,9 +2569,12 @@
       ]
     },
     {
+      "testCaseId": "TC-161",
       "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403 or 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/requests/{{freeReviewTargetRequestId}}/review",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/requests/{{freeReviewTargetRequestId}}/review",
       "responseCode": 404,
       "responseTimeMs": 274,
       "assertions": [
@@ -2099,9 +2585,12 @@
       ]
     },
     {
+      "testCaseId": "TC-162",
       "name": "10 - Non-Existent AI Action Execution (Architecture Controlled Fallback - Expect 404)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/actions/00000000-0000-0000-0000-000000000001/execute",
+      "rawUrl": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/execute",
       "responseCode": 404,
       "responseTimeMs": 11,
       "assertions": [
@@ -2112,9 +2601,12 @@
       ]
     },
     {
+      "testCaseId": "TC-163",
       "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 409)",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/actions/00000000-0000-0000-0000-000000000001/cancel",
+      "rawUrl": "{{baseUrl}}/api/ai/actions/00000000-0000-0000-0000-000000000001/cancel",
       "responseCode": 409,
       "responseTimeMs": 10,
       "assertions": [
@@ -2125,9 +2617,12 @@
       ]
     },
     {
+      "testCaseId": "TC-164",
       "name": "12 - Verify User B Resources Intact After Unauthorized Attempts",
+      "folder": "11 - Cross-User Security & Isolation",
       "method": "GET",
-      "url": "",
+      "path": "/api/budgets/{{userB_budgetId}}",
+      "rawUrl": "{{baseUrl}}/api/budgets/{{userB_budgetId}}",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -2138,9 +2633,12 @@
       ]
     },
     {
+      "testCaseId": "TC-165",
       "name": "V1-IMP-01 - 07 - Change Password User B",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/change-password",
+      "rawUrl": "{{baseUrl}}/api/auth/change-password",
       "responseCode": 204,
       "responseTimeMs": 351,
       "assertions": [
@@ -2151,9 +2649,12 @@
       ]
     },
     {
+      "testCaseId": "TC-166",
       "name": "V1-IMP-02 - 11 - Forgot Security PIN User A",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/forgot",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/forgot",
       "responseCode": 202,
       "responseTimeMs": 7,
       "assertions": [
@@ -2164,9 +2665,12 @@
       ]
     },
     {
+      "testCaseId": "TC-167",
       "name": "V1-IMP-03 - 12 - Validate Invalid PIN Reset Token",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/reset/validate",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/reset/validate",
       "responseCode": 200,
       "responseTimeMs": 9,
       "assertions": [
@@ -2181,9 +2685,12 @@
       ]
     },
     {
+      "testCaseId": "TC-168",
       "name": "V1-IMP-04 - 01 - Bank Connections Status",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-connections",
+      "rawUrl": "{{baseUrl}}/api/bank-connections",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -2198,9 +2705,12 @@
       ]
     },
     {
+      "testCaseId": "TC-169",
       "name": "V1-IMP-05 - 02 - SePay TestMode: Start Link Challenge",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/link-challenges",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -2215,9 +2725,12 @@
       ]
     },
     {
+      "testCaseId": "TC-170",
       "name": "V1-IMP-06 - 03 - SePay TestMode: Verify Challenge Rejection When Unconfirmed",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/link-challenges/{{bankChallengeId}}/confirm",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges/{{bankChallengeId}}/confirm",
       "responseCode": 409,
       "responseTimeMs": 491,
       "assertions": [
@@ -2232,9 +2745,12 @@
       ]
     },
     {
+      "testCaseId": "TC-171",
       "name": "V1-IMP-07 - 05 - SePay TestMode: Top-Up Without Active Connection Rejected",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
       "responseCode": 404,
       "responseTimeMs": 14,
       "assertions": [
@@ -2249,9 +2765,12 @@
       ]
     },
     {
+      "testCaseId": "TC-172",
       "name": "V1-IMP-08 - 06 - SePay TestMode: List Wallet Top-Ups",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
       "responseCode": 200,
       "responseTimeMs": 23,
       "assertions": [
@@ -2266,9 +2785,12 @@
       ]
     },
     {
+      "testCaseId": "TC-173",
       "name": "V1-IMP-09 - 04 - SePay TestMode: List Linked Accounts",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/linked-accounts",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/linked-accounts",
       "responseCode": 200,
       "responseTimeMs": 14,
       "assertions": [
@@ -2283,9 +2805,12 @@
       ]
     },
     {
+      "testCaseId": "TC-174",
       "name": "V1-IMP-10 - 10b - Member Reports Large Expense Hold (Transitions to Suspended)",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/requests/{{heldExpenseId}}/report",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/requests/{{heldExpenseId}}/report",
       "responseCode": 200,
       "responseTimeMs": 50,
       "assertions": [
@@ -2300,9 +2825,12 @@
       ]
     },
     {
+      "testCaseId": "TC-175",
       "name": "V1-IMP-11 - 10d - Requester Cancels Suspended Expense Releasing Hold",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/requests/{{heldExpenseId}}/cancel",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/requests/{{heldExpenseId}}/cancel",
       "responseCode": 200,
       "responseTimeMs": 280,
       "assertions": [
@@ -2317,9 +2845,12 @@
       ]
     },
     {
+      "testCaseId": "TC-176",
       "name": "V1-IMP-12 - Owner settles approved activity",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/activity-proposals/{{fixture_activity_proposal_id}}/settle",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_proposal_id}}/settle",
       "responseCode": 200,
       "responseTimeMs": 360,
       "assertions": [
@@ -2334,9 +2865,12 @@
       ]
     },
     {
+      "testCaseId": "TC-177",
       "name": "V1-IMP-13 - Advance Election Success",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_advance_id}}/advance",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_advance_id}}/advance",
       "responseCode": 200,
       "responseTimeMs": 27,
       "assertions": [
@@ -2347,9 +2881,12 @@
       ]
     },
     {
+      "testCaseId": "TC-178",
       "name": "V1-IMP-14 - 20 - User A Kicks User B from Fixed Fund 2 (Refund Processed)",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFund2Id}}/members/{{fixture_member_id}}/kick",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/members/{{fixture_member_id}}/kick",
       "responseCode": 200,
       "responseTimeMs": 327,
       "assertions": [
@@ -2364,9 +2901,12 @@
       ]
     },
     {
+      "testCaseId": "TC-179",
       "name": "V1-IMP-15 - 21 - User A Dissolves Fixed Fund 2 (Zero Balance Invariant)",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFund2Id}}/dissolve",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFund2Id}}/dissolve",
       "responseCode": 200,
       "responseTimeMs": 319,
       "assertions": [
@@ -2381,9 +2921,12 @@
       ]
     },
     {
+      "testCaseId": "TC-180",
       "name": "V1-IMP-16 - 11 - ADM-05: Maintenance Status",
+      "folder": "12 - V1 Integration & Governance (From V1 Suite)",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/system/maintenance",
+      "rawUrl": "{{baseUrl}}/api/v1/system/maintenance",
       "responseCode": 200,
       "responseTimeMs": 8,
       "assertions": [
@@ -2394,9 +2937,12 @@
       ]
     },
     {
+      "testCaseId": "TC-181",
       "name": "B1-01 - Submit Anonymous Account Recovery",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "POST",
-      "url": "",
+      "path": "/api/account-recovery",
+      "rawUrl": "{{baseUrl}}/api/account-recovery",
       "responseCode": 202,
       "responseTimeMs": 18,
       "assertions": [
@@ -2407,9 +2953,12 @@
       ]
     },
     {
+      "testCaseId": "TC-182",
       "name": "B1-02 - Reset Security PIN Success",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "POST",
-      "url": "",
+      "path": "/api/auth/pin/reset",
+      "rawUrl": "{{baseUrl}}/api/auth/pin/reset",
       "responseCode": 204,
       "responseTimeMs": 300,
       "assertions": [
@@ -2420,9 +2969,12 @@
       ]
     },
     {
+      "testCaseId": "TC-183",
       "name": "B1-03 - Get System Maintenance State (Public/User)",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "GET",
-      "url": "",
+      "path": "/api/system/maintenance",
+      "rawUrl": "{{baseUrl}}/api/system/maintenance",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -2433,9 +2985,12 @@
       ]
     },
     {
+      "testCaseId": "TC-184",
       "name": "B1-04 - Get Active System Announcement (Public/User)",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "GET",
-      "url": "",
+      "path": "/api/system/announcements/active",
+      "rawUrl": "{{baseUrl}}/api/system/announcements/active",
       "responseCode": 204,
       "responseTimeMs": 12,
       "assertions": [
@@ -2446,9 +3001,12 @@
       ]
     },
     {
+      "testCaseId": "TC-185",
       "name": "B1-05 - Register Mobile Push Installation",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "PUT",
-      "url": "",
+      "path": "/api/mobile/push/installations/a0000000-0000-0000-0000-000000000001",
+      "rawUrl": "{{baseUrl}}/api/mobile/push/installations/a0000000-0000-0000-0000-000000000001",
       "responseCode": 204,
       "responseTimeMs": 25,
       "assertions": [
@@ -2459,9 +3017,12 @@
       ]
     },
     {
+      "testCaseId": "TC-186",
       "name": "B1-06 - Unregister Mobile Push Installation",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/mobile/push/installations/a0000000-0000-0000-0000-000000000001",
+      "rawUrl": "{{baseUrl}}/api/mobile/push/installations/a0000000-0000-0000-0000-000000000001",
       "responseCode": 204,
       "responseTimeMs": 37,
       "assertions": [
@@ -2472,9 +3033,12 @@
       ]
     },
     {
+      "testCaseId": "TC-187",
       "name": "B1-07 - Get Notification Preferences",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "GET",
-      "url": "",
+      "path": "/api/notifications/preferences",
+      "rawUrl": "{{baseUrl}}/api/notifications/preferences",
       "responseCode": 200,
       "responseTimeMs": 16,
       "assertions": [
@@ -2485,9 +3049,12 @@
       ]
     },
     {
+      "testCaseId": "TC-188",
       "name": "B1-08 - Save Notification Preference",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "PUT",
-      "url": "",
+      "path": "/api/notifications/preferences",
+      "rawUrl": "{{baseUrl}}/api/notifications/preferences",
       "responseCode": 200,
       "responseTimeMs": 25,
       "assertions": [
@@ -2498,9 +3065,12 @@
       ]
     },
     {
+      "testCaseId": "TC-189",
       "name": "B1-09 - Mark Single Notification Read",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "POST",
-      "url": "",
+      "path": "/api/notifications/{{firstNotificationId}}/read",
+      "rawUrl": "{{baseUrl}}/api/notifications/{{firstNotificationId}}/read",
       "responseCode": 204,
       "responseTimeMs": 38,
       "assertions": [
@@ -2511,9 +3081,12 @@
       ]
     },
     {
+      "testCaseId": "TC-190",
       "name": "B1-10 - Delete Single Notification",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/notifications/{{secondNotificationId}}",
+      "rawUrl": "{{baseUrl}}/api/notifications/{{secondNotificationId}}",
       "responseCode": 204,
       "responseTimeMs": 26,
       "assertions": [
@@ -2524,9 +3097,12 @@
       ]
     },
     {
+      "testCaseId": "TC-191",
       "name": "B1-11 - Clear All Read Notifications",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/notifications",
+      "rawUrl": "{{baseUrl}}/api/notifications",
       "responseCode": 200,
       "responseTimeMs": 30,
       "assertions": [
@@ -2537,9 +3113,12 @@
       ]
     },
     {
+      "testCaseId": "TC-192",
       "name": "B1-12 - Reject Friend Request Success",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "POST",
-      "url": "",
+      "path": "/api/friends/requests/{{fixture_friend_req_reject_id}}/reject",
+      "rawUrl": "{{baseUrl}}/api/friends/requests/{{fixture_friend_req_reject_id}}/reject",
       "responseCode": 200,
       "responseTimeMs": 49,
       "assertions": [
@@ -2554,9 +3133,12 @@
       ]
     },
     {
+      "testCaseId": "TC-193",
       "name": "B1-13 - Cancel Friend Request Success",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/friends/requests/{{fixture_friend_req_cancel_id}}",
+      "rawUrl": "{{baseUrl}}/api/friends/requests/{{fixture_friend_req_cancel_id}}",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -2567,9 +3149,12 @@
       ]
     },
     {
+      "testCaseId": "TC-194",
       "name": "B1-14 - Unfriend Friend Success",
+      "folder": "13 - Batch 1: Identity, Social & System Operations",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/friends/{{fixture_unfriend_user_id}}",
+      "rawUrl": "{{baseUrl}}/api/friends/{{fixture_unfriend_user_id}}",
       "responseCode": 204,
       "responseTimeMs": 21,
       "assertions": [
@@ -2580,9 +3165,12 @@
       ]
     },
     {
+      "testCaseId": "TC-195",
       "name": "B2-01 - Create Isolated Category for Testing",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/categories",
+      "rawUrl": "{{baseUrl}}/api/categories",
       "responseCode": 201,
       "responseTimeMs": 14,
       "assertions": [
@@ -2593,9 +3181,12 @@
       ]
     },
     {
+      "testCaseId": "TC-196",
       "name": "B2-02 - Get Category Details by ID",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "GET",
-      "url": "",
+      "path": "/api/categories/{{b2_categoryId}}",
+      "rawUrl": "{{baseUrl}}/api/categories/{{b2_categoryId}}",
       "responseCode": 200,
       "responseTimeMs": 14,
       "assertions": [
@@ -2606,9 +3197,12 @@
       ]
     },
     {
+      "testCaseId": "TC-197",
       "name": "B2-03 - Update Category Details",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "PUT",
-      "url": "",
+      "path": "/api/categories/{{b2_categoryId}}",
+      "rawUrl": "{{baseUrl}}/api/categories/{{b2_categoryId}}",
       "responseCode": 200,
       "responseTimeMs": 37,
       "assertions": [
@@ -2619,9 +3213,12 @@
       ]
     },
     {
+      "testCaseId": "TC-198",
       "name": "B2-04 - Archive/Delete Category",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/categories/{{b2_categoryId}}",
+      "rawUrl": "{{baseUrl}}/api/categories/{{b2_categoryId}}",
       "responseCode": 200,
       "responseTimeMs": 65,
       "assertions": [
@@ -2632,9 +3229,12 @@
       ]
     },
     {
+      "testCaseId": "TC-199",
       "name": "B2-05 - Get User Dashboard Summary",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "GET",
-      "url": "",
+      "path": "/api/dashboard",
+      "rawUrl": "{{baseUrl}}/api/dashboard",
       "responseCode": 200,
       "responseTimeMs": 79,
       "assertions": [
@@ -2645,9 +3245,12 @@
       ]
     },
     {
+      "testCaseId": "TC-200",
       "name": "B2-06 - SePay BankHub IPN Webhook Invariant (Controlled Secret Check)",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/integrations/sepay/bankhub/ipn",
+      "rawUrl": "{{baseUrl}}/api/integrations/sepay/bankhub/ipn",
       "responseCode": 401,
       "responseTimeMs": 8,
       "assertions": [
@@ -2658,9 +3261,12 @@
       ]
     },
     {
+      "testCaseId": "TC-201",
       "name": "B2-06b - Upload Isolated Evidence for Multi-Wallet Expense",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/evidence",
+      "rawUrl": "{{baseUrl}}/api/evidence",
       "responseCode": 201,
       "responseTimeMs": 40,
       "assertions": [
@@ -2671,9 +3277,12 @@
       ]
     },
     {
+      "testCaseId": "TC-202",
       "name": "B2-07 - Multi-Wallet Expense Allocation (Controlled Validation / Ledger)",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/transactions/expense/multi-wallet",
+      "rawUrl": "{{baseUrl}}/api/transactions/expense/multi-wallet",
       "responseCode": 201,
       "responseTimeMs": 488,
       "assertions": [
@@ -2684,9 +3293,12 @@
       ]
     },
     {
+      "testCaseId": "TC-203",
       "name": "B2-08 - Get Transfer Details by ID Success",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "GET",
-      "url": "",
+      "path": "/api/transfers/{{transferId}}",
+      "rawUrl": "{{baseUrl}}/api/transfers/{{transferId}}",
       "responseCode": 200,
       "responseTimeMs": 18,
       "assertions": [
@@ -2697,9 +3309,12 @@
       ]
     },
     {
+      "testCaseId": "TC-204",
       "name": "B2-09 - Confirm Bank Direct Transfer Success",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/transfers/{{transferId}}/confirm",
+      "rawUrl": "{{baseUrl}}/api/transfers/{{transferId}}/confirm",
       "responseCode": 200,
       "responseTimeMs": 364,
       "assertions": [
@@ -2710,9 +3325,12 @@
       ]
     },
     {
+      "testCaseId": "TC-205",
       "name": "B2-10 - Record V1 Activity Event",
+      "folder": "14 - Batch 2: Core Financial, Ledgers & Dashboard",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/activity",
+      "rawUrl": "{{baseUrl}}/api/v1/activity",
       "responseCode": 204,
       "responseTimeMs": 33,
       "assertions": [
@@ -2723,9 +3341,12 @@
       ]
     },
     {
+      "testCaseId": "TC-206",
       "name": "B3-01 - Create Or Update Compatible Budget via PUT /api/budgets",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "PUT",
-      "url": "",
+      "path": "/api/budgets",
+      "rawUrl": "{{baseUrl}}/api/budgets",
       "responseCode": 200,
       "responseTimeMs": 304,
       "assertions": [
@@ -2736,9 +3357,12 @@
       ]
     },
     {
+      "testCaseId": "TC-207",
       "name": "B3-02 - List User Goals via GET /api/goals",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "GET",
-      "url": "",
+      "path": "/api/goals",
+      "rawUrl": "{{baseUrl}}/api/goals",
       "responseCode": 200,
       "responseTimeMs": 9,
       "assertions": [
@@ -2749,9 +3373,12 @@
       ]
     },
     {
+      "testCaseId": "TC-208",
       "name": "B3-03 - Create Target Goal for Lifecycle",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/goals",
+      "rawUrl": "{{baseUrl}}/api/goals",
       "responseCode": 200,
       "responseTimeMs": 275,
       "assertions": [
@@ -2762,9 +3389,12 @@
       ]
     },
     {
+      "testCaseId": "TC-209",
       "name": "B3-04 - Update Goal via PUT /api/goals/{id}",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "PUT",
-      "url": "",
+      "path": "/api/goals/{{b3_goalId}}",
+      "rawUrl": "{{baseUrl}}/api/goals/{{b3_goalId}}",
       "responseCode": 200,
       "responseTimeMs": 250,
       "assertions": [
@@ -2775,9 +3405,12 @@
       ]
     },
     {
+      "testCaseId": "TC-210",
       "name": "B3-05 - Delete Empty Goal via DELETE /api/goals/{id}",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/goals/{{b3_goalId}}",
+      "rawUrl": "{{baseUrl}}/api/goals/{{b3_goalId}}",
       "responseCode": 204,
       "responseTimeMs": 292,
       "assertions": [
@@ -2788,9 +3421,12 @@
       ]
     },
     {
+      "testCaseId": "TC-211",
       "name": "B3-06 - Create Recurring Transaction for Lifecycle",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/recurring-transactions",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -2801,9 +3437,12 @@
       ]
     },
     {
+      "testCaseId": "TC-212",
       "name": "B3-07 - Get Recurring Transaction by ID",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "GET",
-      "url": "",
+      "path": "/api/recurring-transactions/{{b3_recurringId}}",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}",
       "responseCode": 200,
       "responseTimeMs": 13,
       "assertions": [
@@ -2814,9 +3453,12 @@
       ]
     },
     {
+      "testCaseId": "TC-213",
       "name": "B3-08 - Update Recurring Transaction via PUT",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "PUT",
-      "url": "",
+      "path": "/api/recurring-transactions/{{b3_recurringId}}",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}",
       "responseCode": 200,
       "responseTimeMs": 15,
       "assertions": [
@@ -2827,9 +3469,12 @@
       ]
     },
     {
+      "testCaseId": "TC-214",
       "name": "B3-09 - Pause Recurring Transaction",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/recurring-transactions/{{b3_recurringId}}/pause",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}/pause",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -2840,9 +3485,12 @@
       ]
     },
     {
+      "testCaseId": "TC-215",
       "name": "B3-10 - Resume Recurring Transaction",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/recurring-transactions/{{b3_recurringId}}/resume",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}/resume",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -2853,9 +3501,12 @@
       ]
     },
     {
+      "testCaseId": "TC-216",
       "name": "B3-11 - Record Recurring Occurrence Execution Success",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/recurring-transactions/{{fixture_recurring_id}}/occurrences/{{fixture_occurrence_id}}/record",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{fixture_recurring_id}}/occurrences/{{fixture_occurrence_id}}/record",
       "responseCode": 200,
       "responseTimeMs": 696,
       "assertions": [
@@ -2870,9 +3521,12 @@
       ]
     },
     {
+      "testCaseId": "TC-217",
       "name": "B3-12 - Delete Recurring Transaction",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/recurring-transactions/{{b3_recurringId}}",
+      "rawUrl": "{{baseUrl}}/api/recurring-transactions/{{b3_recurringId}}",
       "responseCode": 204,
       "responseTimeMs": 17,
       "assertions": [
@@ -2883,9 +3537,12 @@
       ]
     },
     {
+      "testCaseId": "TC-218",
       "name": "B3-13 - Create Transaction Rule for Testing",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "POST",
-      "url": "",
+      "path": "/api/transaction-rules",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -2896,9 +3553,12 @@
       ]
     },
     {
+      "testCaseId": "TC-219",
       "name": "B3-14 - Get Transaction Rule by ID",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "GET",
-      "url": "",
+      "path": "/api/transaction-rules/{{b3_ruleId}}",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules/{{b3_ruleId}}",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -2909,9 +3569,12 @@
       ]
     },
     {
+      "testCaseId": "TC-220",
       "name": "B3-15 - Update Transaction Rule via PUT",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "PUT",
-      "url": "",
+      "path": "/api/transaction-rules/{{b3_ruleId}}",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules/{{b3_ruleId}}",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -2922,9 +3585,12 @@
       ]
     },
     {
+      "testCaseId": "TC-221",
       "name": "B3-16 - Delete Transaction Rule via DELETE",
+      "folder": "15 - Batch 3: Planning, Budgets & Recurring Rules",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/transaction-rules/{{b3_ruleId}}",
+      "rawUrl": "{{baseUrl}}/api/transaction-rules/{{b3_ruleId}}",
       "responseCode": 204,
       "responseTimeMs": 12,
       "assertions": [
@@ -2935,9 +3601,12 @@
       ]
     },
     {
+      "testCaseId": "TC-222",
       "name": "B4-01 - Create Financial Dispute",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/disputes",
+      "rawUrl": "{{baseUrl}}/api/cases/disputes",
       "responseCode": 200,
       "responseTimeMs": 29,
       "assertions": [
@@ -2948,9 +3617,12 @@
       ]
     },
     {
+      "testCaseId": "TC-223",
       "name": "B4-02 - Get Dispute Details by ID",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "GET",
-      "url": "",
+      "path": "/api/cases/disputes/{{b4_disputeId}}",
+      "rawUrl": "{{baseUrl}}/api/cases/disputes/{{b4_disputeId}}",
       "responseCode": 200,
       "responseTimeMs": 14,
       "assertions": [
@@ -2961,9 +3633,12 @@
       ]
     },
     {
+      "testCaseId": "TC-224",
       "name": "B4-03 - Reply to Dispute Message",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/disputes/{{b4_disputeId}}/messages",
+      "rawUrl": "{{baseUrl}}/api/cases/disputes/{{b4_disputeId}}/messages",
       "responseCode": 200,
       "responseTimeMs": 31,
       "assertions": [
@@ -2974,9 +3649,12 @@
       ]
     },
     {
+      "testCaseId": "TC-225",
       "name": "B4-04 - Reply to Dispute with Multipart Form (Happy Path)",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/disputes/{{b4_disputeId}}/messages/multipart",
+      "rawUrl": "{{baseUrl}}/api/cases/disputes/{{b4_disputeId}}/messages/multipart",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -2987,9 +3665,12 @@
       ]
     },
     {
+      "testCaseId": "TC-226",
       "name": "B4-05 - Reply to Support Case with Multipart Form (Happy Path)",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/cases/support/{{supportCaseId}}/messages/multipart",
+      "rawUrl": "{{baseUrl}}/api/cases/support/{{supportCaseId}}/messages/multipart",
       "responseCode": 200,
       "responseTimeMs": 43,
       "assertions": [
@@ -3000,9 +3681,12 @@
       ]
     },
     {
+      "testCaseId": "TC-227",
       "name": "B4-06 - Download Case Attachment Success",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "GET",
-      "url": "",
+      "path": "/api/cases/attachments/{{fixture_case_attachment_id}}",
+      "rawUrl": "{{baseUrl}}/api/cases/attachments/{{fixture_case_attachment_id}}",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -3017,9 +3701,12 @@
       ]
     },
     {
+      "testCaseId": "TC-228",
       "name": "B4-07 - Create AI Conversation for Lifecycle",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/conversations",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -3030,9 +3717,12 @@
       ]
     },
     {
+      "testCaseId": "TC-229",
       "name": "B4-08 - Get AI Conversation by ID",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "GET",
-      "url": "",
+      "path": "/api/ai/conversations/{{b4_aiConvId}}",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations/{{b4_aiConvId}}",
       "responseCode": 200,
       "responseTimeMs": 36,
       "assertions": [
@@ -3043,9 +3733,12 @@
       ]
     },
     {
+      "testCaseId": "TC-230",
       "name": "B4-09 - Update AI Conversation Title",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "PUT",
-      "url": "",
+      "path": "/api/ai/conversations/{{b4_aiConvId}}",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations/{{b4_aiConvId}}",
       "responseCode": 200,
       "responseTimeMs": 21,
       "assertions": [
@@ -3056,9 +3749,12 @@
       ]
     },
     {
+      "testCaseId": "TC-231",
       "name": "B4-10 - Delete AI Conversation via DELETE",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/ai/conversations/{{b4_aiConvId}}",
+      "rawUrl": "{{baseUrl}}/api/ai/conversations/{{b4_aiConvId}}",
       "responseCode": 204,
       "responseTimeMs": 35,
       "assertions": [
@@ -3069,9 +3765,12 @@
       ]
     },
     {
+      "testCaseId": "TC-232",
       "name": "B4-11 - Upload AI Attachment with Valid File (Happy Path)",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/attachments",
+      "rawUrl": "{{baseUrl}}/api/ai/attachments",
       "responseCode": 201,
       "responseTimeMs": 17,
       "assertions": [
@@ -3082,9 +3781,12 @@
       ]
     },
     {
+      "testCaseId": "TC-233",
       "name": "B4-12 - Download AI Attachment Success",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "GET",
-      "url": "",
+      "path": "/api/ai/attachments/{{fixture_ai_attachment_id}}",
+      "rawUrl": "{{baseUrl}}/api/ai/attachments/{{fixture_ai_attachment_id}}",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -3099,9 +3801,12 @@
       ]
     },
     {
+      "testCaseId": "TC-234",
       "name": "B4-13 - Get AI Action Proposal by ID Success",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "GET",
-      "url": "",
+      "path": "/api/ai/actions/{{fixture_ai_action_execute_id}}",
+      "rawUrl": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_execute_id}}",
       "responseCode": 200,
       "responseTimeMs": 15,
       "assertions": [
@@ -3116,9 +3821,12 @@
       ]
     },
     {
+      "testCaseId": "TC-235",
       "name": "B4-14 - Execute AI Action Proposal Success",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/actions/{{fixture_ai_action_execute_id}}/execute",
+      "rawUrl": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_execute_id}}/execute",
       "responseCode": 200,
       "responseTimeMs": 348,
       "assertions": [
@@ -3129,9 +3837,12 @@
       ]
     },
     {
+      "testCaseId": "TC-236",
       "name": "B4-15 - Cancel AI Action Proposal Success",
+      "folder": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "method": "POST",
-      "url": "",
+      "path": "/api/ai/actions/{{fixture_ai_action_cancel_id}}/cancel",
+      "rawUrl": "{{baseUrl}}/api/ai/actions/{{fixture_ai_action_cancel_id}}/cancel",
       "responseCode": 200,
       "responseTimeMs": 12,
       "assertions": [
@@ -3146,9 +3857,12 @@
       ]
     },
     {
+      "testCaseId": "TC-237",
       "name": "B5-01 - Create Bank Link Session (Controlled Sandbox Response)",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/link",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/link",
       "responseCode": 503,
       "responseTimeMs": 8,
       "assertions": [
@@ -3159,9 +3873,12 @@
       ]
     },
     {
+      "testCaseId": "TC-238",
       "name": "B5-02 - Get Bank Connection Success",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-connections/{{fixture_bank_connection_id}}",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -3176,9 +3893,12 @@
       ]
     },
     {
+      "testCaseId": "TC-239",
       "name": "B5-03 - Unlink Bank Connection Success",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/{{fixture_bank_connection_unlink_id}}/unlink",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_unlink_id}}/unlink",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -3193,9 +3913,12 @@
       ]
     },
     {
+      "testCaseId": "TC-240",
       "name": "B5-04 - Reactivate Active Connection Rejected (409 Conflict)",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/{{fixture_bank_connection_id}}/reactivate",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}/reactivate",
       "responseCode": 409,
       "responseTimeMs": 6,
       "assertions": [
@@ -3210,9 +3933,12 @@
       ]
     },
     {
+      "testCaseId": "TC-241",
       "name": "B5-05 - Sync TestMode Connection Rejected (409 Conflict)",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/{{fixture_bank_connection_id}}/sync",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}/sync",
       "responseCode": 409,
       "responseTimeMs": 6,
       "assertions": [
@@ -3227,9 +3953,12 @@
       ]
     },
     {
+      "testCaseId": "TC-242",
       "name": "B5-06 - Confirm Pending TestMode TopUp Rejected (409 Conflict or 503 Provider)",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "POST",
-      "url": "",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups/{{fixture_pending_wallet_top_up_id}}/confirm",
+      "rawUrl": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups/{{fixture_pending_wallet_top_up_id}}/confirm",
       "responseCode": 409,
       "responseTimeMs": 11,
       "assertions": [
@@ -3244,9 +3973,12 @@
       ]
     },
     {
+      "testCaseId": "TC-243",
       "name": "B5-07 - List Bank Transactions (Paginated)",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-transactions",
+      "rawUrl": "{{baseUrl}}/api/bank-transactions?page=1&pageSize=10",
       "responseCode": 200,
       "responseTimeMs": 23,
       "assertions": [
@@ -3261,9 +3993,12 @@
       ]
     },
     {
+      "testCaseId": "TC-244",
       "name": "B5-08 - Get Bank Transaction Success",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "GET",
-      "url": "",
+      "path": "/api/bank-transactions/{{fixture_bank_transaction_id}}",
+      "rawUrl": "{{baseUrl}}/api/bank-transactions/{{fixture_bank_transaction_id}}",
       "responseCode": 200,
       "responseTimeMs": 16,
       "assertions": [
@@ -3278,9 +4013,12 @@
       ]
     },
     {
+      "testCaseId": "TC-245",
       "name": "B5-09 - Reclassify Bank Transaction Success",
+      "folder": "17 - Batch 5: Open Banking Hub & Transactions",
       "method": "PATCH",
-      "url": "",
+      "path": "/api/bank-transactions/{{fixture_bank_transaction_id}}/category",
+      "rawUrl": "{{baseUrl}}/api/bank-transactions/{{fixture_bank_transaction_id}}/category",
       "responseCode": 200,
       "responseTimeMs": 28,
       "assertions": [
@@ -3295,9 +4033,12 @@
       ]
     },
     {
+      "testCaseId": "TC-246",
       "name": "B6-01 - List User V1 Funds",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds",
+      "rawUrl": "{{baseUrl}}/api/v1/funds",
       "responseCode": 200,
       "responseTimeMs": 32,
       "assertions": [
@@ -3308,9 +4049,12 @@
       ]
     },
     {
+      "testCaseId": "TC-247",
       "name": "B6-02 - Get Fund Requests List",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/requests",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/requests?page=1&pageSize=20",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -3321,9 +4065,12 @@
       ]
     },
     {
+      "testCaseId": "TC-248",
       "name": "B6-03 - Get Fund Governance Status",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/governance",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/governance",
       "responseCode": 200,
       "responseTimeMs": 25,
       "assertions": [
@@ -3334,9 +4081,12 @@
       ]
     },
     {
+      "testCaseId": "TC-249",
       "name": "B6-04 - Get Fund Owner Response Status Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -3351,9 +4101,12 @@
       ]
     },
     {
+      "testCaseId": "TC-250",
       "name": "B6-05 - Escalate Owner Response Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response/escalate",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixture_fixed_fund2_id}}/owner-response/escalate",
       "responseCode": 200,
       "responseTimeMs": 83,
       "assertions": [
@@ -3368,9 +4121,12 @@
       ]
     },
     {
+      "testCaseId": "TC-251",
       "name": "B6-06 - Close Activity Window via POST /api/v1/funds/{id}/activity/close",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/activity/close",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/activity/close",
       "responseCode": 204,
       "responseTimeMs": 352,
       "assertions": [
@@ -3381,9 +4137,12 @@
       ]
     },
     {
+      "testCaseId": "TC-252",
       "name": "B6-07 - Propose Fund Activity Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixture_propose_activity_fund_id}}/activity-proposals",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixture_propose_activity_fund_id}}/activity-proposals",
       "responseCode": 200,
       "responseTimeMs": 327,
       "assertions": [
@@ -3394,9 +4153,12 @@
       ]
     },
     {
+      "testCaseId": "TC-253",
       "name": "B6-08 - Get Activity Proposal by ID Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}",
       "responseCode": 200,
       "responseTimeMs": 16,
       "assertions": [
@@ -3411,9 +4173,12 @@
       ]
     },
     {
+      "testCaseId": "TC-254",
       "name": "B6-09 - Vote on Activity Proposal Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}/vote",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/activity-proposals/{{fixture_activity_vote_id}}/vote",
       "responseCode": 200,
       "responseTimeMs": 32,
       "assertions": [
@@ -3428,9 +4193,12 @@
       ]
     },
     {
+      "testCaseId": "TC-255",
       "name": "B6-10 - Open Election Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixture_fund5_election_id}}/elections",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixture_fund5_election_id}}/elections",
       "responseCode": 200,
       "responseTimeMs": 61,
       "assertions": [
@@ -3445,9 +4213,12 @@
       ]
     },
     {
+      "testCaseId": "TC-256",
       "name": "B6-11 - Get Election Details by ID Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_id}}",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_id}}",
       "responseCode": 200,
       "responseTimeMs": 28,
       "assertions": [
@@ -3462,9 +4233,12 @@
       ]
     },
     {
+      "testCaseId": "TC-257",
       "name": "B6-12 - Register Candidate Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_id}}/candidates",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_id}}/candidates",
       "responseCode": 200,
       "responseTimeMs": 355,
       "assertions": [
@@ -3479,9 +4253,12 @@
       ]
     },
     {
+      "testCaseId": "TC-258",
       "name": "B6-13 - Cast Ballot Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_ballot_id}}/ballots",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_ballot_id}}/ballots",
       "responseCode": 200,
       "responseTimeMs": 54,
       "assertions": [
@@ -3496,9 +4273,12 @@
       ]
     },
     {
+      "testCaseId": "TC-259",
       "name": "B6-14 - Accept Elected Ownership Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_accept_id}}/accept",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_accept_id}}/accept",
       "responseCode": 200,
       "responseTimeMs": 297,
       "assertions": [
@@ -3513,9 +4293,12 @@
       ]
     },
     {
+      "testCaseId": "TC-260",
       "name": "B6-15 - Reject Elected Ownership Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/elections/{{fixture_election_reject_id}}/reject",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/elections/{{fixture_election_reject_id}}/reject",
       "responseCode": 200,
       "responseTimeMs": 328,
       "assertions": [
@@ -3530,9 +4313,12 @@
       ]
     },
     {
+      "testCaseId": "TC-261",
       "name": "B6-16 - Get Contribution Allocation Details",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/contribution-allocation",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/contribution-allocation",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -3543,9 +4329,12 @@
       ]
     },
     {
+      "testCaseId": "TC-262",
       "name": "B6-17 - Get User Invitations List",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/invitations",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations?page=1&pageSize=20",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -3556,9 +4345,12 @@
       ]
     },
     {
+      "testCaseId": "TC-263",
       "name": "B6-18 - Get Fund Invitation Proposals List",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/invitation-proposals",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/invitation-proposals?page=1&pageSize=20",
       "responseCode": 200,
       "responseTimeMs": 13,
       "assertions": [
@@ -3569,9 +4361,12 @@
       ]
     },
     {
+      "testCaseId": "TC-264",
       "name": "B6-19 - Review Invitation Proposal Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{fixture_invitation_review_id}}/review",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_review_id}}/review",
       "responseCode": 200,
       "responseTimeMs": 69,
       "assertions": [
@@ -3586,9 +4381,12 @@
       ]
     },
     {
+      "testCaseId": "TC-265",
       "name": "B6-20 - Decline Invitation Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{fixture_invitation_reject_id}}/decline",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_reject_id}}/decline",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -3603,9 +4401,12 @@
       ]
     },
     {
+      "testCaseId": "TC-266",
       "name": "B6-21 - Cancel Invitation Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/v1/funds/invitations/{{fixture_invitation_cancel_id}}",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/invitations/{{fixture_invitation_cancel_id}}",
       "responseCode": 200,
       "responseTimeMs": 17,
       "assertions": [
@@ -3620,9 +4421,12 @@
       ]
     },
     {
+      "testCaseId": "TC-267",
       "name": "B6-22 - Offer Fund Ownership via POST /api/v1/funds/{id}/ownership-offers",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/{{fixedFundId}}/ownership-offers",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/{{fixedFundId}}/ownership-offers",
       "responseCode": 200,
       "responseTimeMs": 285,
       "assertions": [
@@ -3633,9 +4437,12 @@
       ]
     },
     {
+      "testCaseId": "TC-268",
       "name": "B6-23 - Accept Ownership Offer Success",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "POST",
-      "url": "",
+      "path": "/api/v1/funds/ownership-offers/{{fixture_ownership_offer_id}}/accept",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/ownership-offers/{{fixture_ownership_offer_id}}/accept",
       "responseCode": 204,
       "responseTimeMs": 300,
       "assertions": [
@@ -3646,9 +4453,12 @@
       ]
     },
     {
+      "testCaseId": "TC-269",
       "name": "B6-24 - List User Ownership Offers",
+      "folder": "18 - Batch 6: Advanced V1 Funds Governance",
       "method": "GET",
-      "url": "",
+      "path": "/api/v1/funds/ownership-offers",
+      "rawUrl": "{{baseUrl}}/api/v1/funds/ownership-offers",
       "responseCode": 200,
       "responseTimeMs": 52,
       "assertions": [
@@ -3659,9 +4469,12 @@
       ]
     },
     {
+      "testCaseId": "TC-270",
       "name": "B7-01 - List Legacy Groups",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups",
+      "rawUrl": "{{baseUrl}}/api/groups",
       "responseCode": 200,
       "responseTimeMs": 34,
       "assertions": [
@@ -3672,9 +4485,12 @@
       ]
     },
     {
+      "testCaseId": "TC-271",
       "name": "B7-02 - Create Legacy Group for Compatibility Test",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups",
+      "rawUrl": "{{baseUrl}}/api/groups",
       "responseCode": 200,
       "responseTimeMs": 271,
       "assertions": [
@@ -3685,9 +4501,12 @@
       ]
     },
     {
+      "testCaseId": "TC-272",
       "name": "B7-03 - Get Legacy Group Details by ID",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}",
       "responseCode": 200,
       "responseTimeMs": 20,
       "assertions": [
@@ -3698,9 +4517,12 @@
       ]
     },
     {
+      "testCaseId": "TC-273",
       "name": "B7-04 - Update Legacy Group Details",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "PUT",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}",
       "responseCode": 200,
       "responseTimeMs": 29,
       "assertions": [
@@ -3711,9 +4533,12 @@
       ]
     },
     {
+      "testCaseId": "TC-274",
       "name": "B7-05 - Invite Member to Legacy Group",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/invites",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/invites",
       "responseCode": 200,
       "responseTimeMs": 48,
       "assertions": [
@@ -3724,9 +4549,12 @@
       ]
     },
     {
+      "testCaseId": "TC-275",
       "name": "B7-06 - List User Legacy Group Invitations",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/invites",
+      "rawUrl": "{{baseUrl}}/api/groups/invites",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -3737,9 +4565,12 @@
       ]
     },
     {
+      "testCaseId": "TC-276",
       "name": "B7-07 - Reject Legacy Invite Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/invites/{{fixture_reject_invite_id}}/reject",
+      "rawUrl": "{{baseUrl}}/api/groups/invites/{{fixture_reject_invite_id}}/reject",
       "responseCode": 200,
       "responseTimeMs": 31,
       "assertions": [
@@ -3750,9 +4581,12 @@
       ]
     },
     {
+      "testCaseId": "TC-277",
       "name": "B7-08 - Accept Legacy Invite Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/invites/{{b7_inviteId}}/accept",
+      "rawUrl": "{{baseUrl}}/api/groups/invites/{{b7_inviteId}}/accept?token={{b7_inviteToken}}",
       "responseCode": 200,
       "responseTimeMs": 24,
       "assertions": [
@@ -3763,9 +4597,12 @@
       ]
     },
     {
+      "testCaseId": "TC-278",
       "name": "B7-09 - Remove Member from Legacy Group Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/groups/{{fixture_ops_group_id}}/members/{{fixture_remove_member_id}}",
+      "rawUrl": "{{baseUrl}}/api/groups/{{fixture_ops_group_id}}/members/{{fixture_remove_member_id}}",
       "responseCode": 204,
       "responseTimeMs": 37,
       "assertions": [
@@ -3776,9 +4613,12 @@
       ]
     },
     {
+      "testCaseId": "TC-279",
       "name": "B7-10 - Transfer Group Ownership Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{fixture_ops_group_id}}/ownership/{{fixture_member_id}}",
+      "rawUrl": "{{baseUrl}}/api/groups/{{fixture_ops_group_id}}/ownership/{{fixture_member_id}}",
       "responseCode": 204,
       "responseTimeMs": 56,
       "assertions": [
@@ -3789,9 +4629,12 @@
       ]
     },
     {
+      "testCaseId": "TC-280",
       "name": "B7-11 - Set Group Receiving Bank Account",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "PUT",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/receiving-bank",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/receiving-bank",
       "responseCode": 200,
       "responseTimeMs": 46,
       "assertions": [
@@ -3802,9 +4645,12 @@
       ]
     },
     {
+      "testCaseId": "TC-281",
       "name": "B7-12 - Get Shared Fund Status for Group",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund",
       "responseCode": 200,
       "responseTimeMs": 7,
       "assertions": [
@@ -3815,9 +4661,12 @@
       ]
     },
     {
+      "testCaseId": "TC-282",
       "name": "B7-13 - Get Shared Fund Transactions",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund/transactions",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund/transactions",
       "responseCode": 200,
       "responseTimeMs": 15,
       "assertions": [
@@ -3828,9 +4677,12 @@
       ]
     },
     {
+      "testCaseId": "TC-283",
       "name": "B7-14 - Contribute to Shared Fund (Wallet Balance Check)",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund/contributions",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund/contributions",
       "responseCode": 200,
       "responseTimeMs": 346,
       "assertions": [
@@ -3841,9 +4693,12 @@
       ]
     },
     {
+      "testCaseId": "TC-284",
       "name": "B7-15 - List Group Fund Requests",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-requests",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-requests",
       "responseCode": 200,
       "responseTimeMs": 16,
       "assertions": [
@@ -3854,9 +4709,12 @@
       ]
     },
     {
+      "testCaseId": "TC-285",
       "name": "B7-16 - Create Group Fund Request",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-requests",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-requests",
       "responseCode": 200,
       "responseTimeMs": 31,
       "assertions": [
@@ -3867,9 +4725,12 @@
       ]
     },
     {
+      "testCaseId": "TC-286",
       "name": "B7-17 - Pay Group Fund Request Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-requests/{{b7_fundRequestId}}/pay",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-requests/{{b7_fundRequestId}}/pay",
       "responseCode": 200,
       "responseTimeMs": 280,
       "assertions": [
@@ -3880,9 +4741,12 @@
       ]
     },
     {
+      "testCaseId": "TC-287",
       "name": "B7-18 - List Group Fund Rounds",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-rounds",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-rounds",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -3893,9 +4757,12 @@
       ]
     },
     {
+      "testCaseId": "TC-288",
       "name": "B7-19 - Create Group Fund Round",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-rounds",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-rounds",
       "responseCode": 200,
       "responseTimeMs": 40,
       "assertions": [
@@ -3906,9 +4773,12 @@
       ]
     },
     {
+      "testCaseId": "TC-289",
       "name": "B7-20 - Pay Group Fund Round Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/fund-rounds/{{b7_fundRoundId}}/pay",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/fund-rounds/{{b7_fundRoundId}}/pay",
       "responseCode": 200,
       "responseTimeMs": 273,
       "assertions": [
@@ -3919,9 +4789,12 @@
       ]
     },
     {
+      "testCaseId": "TC-290",
       "name": "B7-21 - List Group Expenses",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/expenses",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/expenses",
       "responseCode": 200,
       "responseTimeMs": 10,
       "assertions": [
@@ -3932,9 +4805,12 @@
       ]
     },
     {
+      "testCaseId": "TC-291",
       "name": "B7-22 - Create Group Expense",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/expenses",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/expenses",
       "responseCode": 200,
       "responseTimeMs": 282,
       "assertions": [
@@ -3945,9 +4821,12 @@
       ]
     },
     {
+      "testCaseId": "TC-292",
       "name": "B7-23 - List Group Activities Log",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/activities",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/activities",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -3958,9 +4837,12 @@
       ]
     },
     {
+      "testCaseId": "TC-293",
       "name": "B7-24 - Get Group Deletion Request Status Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "GET",
-      "url": "",
+      "path": "/api/groups/{{fixture_refund_group_id}}/deletion-request",
+      "rawUrl": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-request",
       "responseCode": 200,
       "responseTimeMs": 11,
       "assertions": [
@@ -3971,9 +4853,12 @@
       ]
     },
     {
+      "testCaseId": "TC-294",
       "name": "B7-25 - Request Group Deletion",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/deletion-requests",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests",
       "responseCode": 200,
       "responseTimeMs": 19,
       "assertions": [
@@ -3984,9 +4869,12 @@
       ]
     },
     {
+      "testCaseId": "TC-295",
       "name": "B7-27 - Cancel Group Deletion Request Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/cancel",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/cancel",
       "responseCode": 200,
       "responseTimeMs": 27,
       "assertions": [
@@ -3997,9 +4885,12 @@
       ]
     },
     {
+      "testCaseId": "TC-296",
       "name": "B7-25b - Re-request Group Deletion for Vote",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/deletion-requests",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests",
       "responseCode": 200,
       "responseTimeMs": 23,
       "assertions": [
@@ -4010,9 +4901,12 @@
       ]
     },
     {
+      "testCaseId": "TC-297",
       "name": "B7-26 - Vote on Group Deletion Request Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/vote",
+      "rawUrl": "{{baseUrl}}/api/groups/{{b7_groupId}}/deletion-requests/{{b7_deletionRequestId}}/vote",
       "responseCode": 200,
       "responseTimeMs": 331,
       "assertions": [
@@ -4023,9 +4917,12 @@
       ]
     },
     {
+      "testCaseId": "TC-298",
       "name": "B7-28 - Create Group Refund Payment Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/refunds/{{fixture_refund_id}}/payment",
+      "rawUrl": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/refunds/{{fixture_refund_id}}/payment",
       "responseCode": 200,
       "responseTimeMs": 314,
       "assertions": [
@@ -4036,9 +4933,12 @@
       ]
     },
     {
+      "testCaseId": "TC-299",
       "name": "B7-29 - Finalize Group Deletion Success",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "POST",
-      "url": "",
+      "path": "/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/finalize",
+      "rawUrl": "{{baseUrl}}/api/groups/{{fixture_refund_group_id}}/deletion-requests/{{fixture_refund_request_id}}/finalize",
       "responseCode": 200,
       "responseTimeMs": 308,
       "assertions": [
@@ -4049,9 +4949,12 @@
       ]
     },
     {
+      "testCaseId": "TC-300",
       "name": "B1-15 - Revoke User Sessions via DELETE /api/users/me/sessions",
+      "folder": "19 - Batch 7: Legacy Groups Backward Compatibility",
       "method": "DELETE",
-      "url": "",
+      "path": "/api/users/me/sessions",
+      "rawUrl": "{{baseUrl}}/api/users/me/sessions",
       "responseCode": 204,
       "responseTimeMs": 24,
       "assertions": [

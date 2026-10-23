@@ -80,21 +80,23 @@ Cung cấp toàn bộ luồng đăng ký tài khoản, gửi và xác thực mã
 - `POST /api/users/me/email/request` — Yêu cầu đổi Email tài khoản, kiểm tra chống trùng lặp và gửi mã OTP về email mới.
 - `POST /api/users/me/email/confirm` — Xác nhận OTP để hoàn tất đổi Email nguyên tử (cập nhật đồng bộ `Email` và `NormalizedEmail`).
 - `DELETE /api/users/me/sessions` — Đăng xuất và thu hồi tất cả các phiên đăng nhập khác của người dùng.
-- `GET /api/pin/status` — Kiểm tra trạng thái đã cài đặt mã PIN hay chưa.
-- `POST /api/pin/verify` — Xác thực mã PIN tài khoản.
-- `PUT /api/pin` — Cập nhật mã PIN mới khi cung cấp mã PIN cũ.
+- `GET /api/security-pin/status` — Kiểm tra trạng thái đã cài đặt mã PIN hay chưa (`SecurityPinStatusDto`).
+- `POST /api/security-pin/verify` — Xác thực mã PIN tài khoản (trả về 204 No Content khi hợp lệ).
+- `PUT /api/security-pin` — Cập nhật mã PIN mới khi cung cấp mã PIN cũ (trả về 204 No Content khi hoàn tất).
 - `POST /api/account-recovery` — Gửi yêu cầu khôi phục tài khoản bị khóa/mất thiết bị.
 - `PUT /api/mobile/push/{installationId}` — Đăng ký thiết bị nhận thông báo Expo Push Token.
 - `DELETE /api/mobile/push/{installationId}` — Hủy đăng ký thiết bị nhận thông báo push.
 
 #### 4. Dữ liệu Đầu vào & Đầu ra (DTOs)
-- `RegisterRequest`: `{ email, spendId, fullName, password }` -> `AuthResponse`: `{ accessToken, refreshToken, expiresAt, user: UserDto }`
-- `VerifyEmailRequest`: `{ email, code }` -> `ResultDto`
-- `LoginRequest`: `{ identifier, password }` -> `AuthResponse`
-- `UpdatePreferencesRequest`: `{ preferredTheme, preferredLanguage, defaultCurrency }` -> `UserProfileDto`
-- `UploadAvatarRequest`: `IFormFile File` -> `UserProfileDto` (`avatarUrl: "/avatars/<userId>_<timestamp>.jpg"`)
-- `RequestChangeEmailRequest`: `{ newEmail }` -> `ResultDto`
-- `ConfirmChangeEmailRequest`: `{ newEmail, otp }` -> `UserProfileDto`
+- `RegisterRequest`: `{ email, spendId, fullName, password }` -> `EmailVerificationPendingResponse`: `{ message, email, verificationPending: true }`
+- `VerifyEmailRequest`: `{ email, code }` -> `LoginChallengeResponse`: `{ challengeToken, requiresSecurityPinSetup, requiresSecurityPinVerification }`
+- `LoginRequest`: `{ identifier, password }` -> `LoginChallengeResponse`: `{ challengeToken, requiresSecurityPinSetup, requiresSecurityPinVerification }`
+- `SetupSecurityPinRequest`: `{ challengeToken, pin }` -> `AuthResponse`: `{ accessToken, refreshToken, expiresAt, user: UserProfile }`
+- `CompleteSecurityPinLoginRequest`: `{ challengeToken, pin }` -> `AuthResponse`: `{ accessToken, refreshToken, expiresAt, user: UserProfile }`
+- `UpdatePreferencesRequest`: `{ preferredTheme, preferredLanguage, defaultCurrency }` -> `UserProfile`
+- `UploadAvatarRequest`: `IFormFile File` -> `UserProfile` (`avatarUrl: "/avatars/<userId>_<timestamp>.jpg"`)
+- `RequestChangeEmailRequest`: `{ newEmail }` -> `EmailVerificationPendingResponse`: `{ message, email, verificationPending: true }`
+- `ConfirmChangeEmailRequest`: `{ newEmail, code }` -> `UserProfile`
 
 #### 5. Ràng buộc & Validation
 - **Mật khẩu:** Tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số, 1 ký tự đặc biệt.
@@ -402,24 +404,24 @@ Cung cấp trợ lý AI tương tác tự nhiên với người dùng về tình
 - Cung cấp luồng nạp tiền vào ví cá nhân trong môi trường Test Mode (`test-mode/wallet-top-ups`) phục vụ kiểm thử và nghiệm thu nội bộ.
 - Xử lý Webhook và IPN từ cổng SePay: Xác thực chữ ký webhook, kiểm tra chống lặp giao dịch (Idempotency), chỉ ghi nhận cộng tiền ví khi giao dịch thành công 100% với đúng mã tham chiếu và số tiền chính xác (All-Or-Nothing policy).
 
-#### 2. Danh sách Endpoints
-- `POST /api/bank-connections/link` — Bắt đầu luồng liên kết tài khoản ngân hàng.
-- `GET /api/bank-connections` — Lấy danh sách các tài khoản ngân hàng đã liên kết của người dùng.
-- `GET /api/bank-connections/{id}` — Lấy chi tiết một liên kết ngân hàng.
-- `POST /api/bank-connections/{id}/unlink` — Hủy liên kết tài khoản ngân hàng.
-- `POST /api/bank-connections/{id}/reactivate` — Kích hoạt lại liên kết ngân hàng.
-- `POST /api/bank-connections/{id}/sync` — Đồng bộ dữ liệu từ ngân hàng.
-- `POST /api/bank-connections/test-mode/link-challenges` — Tạo yêu cầu liên kết thử nghiệm trong Test Mode.
-- `POST /api/bank-connections/test-mode/link-challenges/{challengeId}/confirm` — Xác nhận liên kết thử nghiệm.
-- `POST /api/bank-connections/test-mode/wallet-top-ups` — Tạo yêu cầu nạp tiền vào ví từ tài khoản ngân hàng Test Mode.
-- `POST /api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` — Xác nhận hoàn tất nạp tiền vào ví (cộng số dư ví và ghi sổ cái).
-- `GET /api/bank-connections/test-mode/linked-accounts` — Xem danh sách tài khoản liên kết Test Mode.
-- `GET /api/bank-connections/test-mode/wallet-top-ups` — Xem lịch sử nạp tiền Test Mode.
-- `GET /api/bank-transactions` — Lấy danh sách giao dịch ngân hàng đã ghi nhận.
-- `GET /api/bank-transactions/{id}` — Lấy chi tiết một giao dịch ngân hàng.
-- `PATCH /api/bank-transactions/{id}/category` — Gán nhãn phân loại danh mục cho giao dịch ngân hàng.
-- `POST /api/bank-integrations/sepay/events` — Webhook nhận sự kiện giao dịch từ SePay.
-- `POST /api/bank-integrations/sepay/ipn` — Instant Payment Notification từ SePay với bảo mật chữ ký điện tử.
+#### 2. Danh sách Endpoints & Ranh giới Nghiệm thu (External Deferred Audit)
+- `POST /api/bank-connections/link` — Bắt đầu luồng liên kết tài khoản ngân hàng (*EXTERNAL_LIVE_DEFERRED*: yêu cầu gọi SePay hosted gateway live).
+- `GET /api/bank-connections` — Lấy danh sách các tài khoản ngân hàng đã liên kết của người dùng (`SUCCESS_VERIFIED`).
+- `GET /api/bank-connections/{id}` — Lấy chi tiết một liên kết ngân hàng (`SUCCESS_VERIFIED`).
+- `POST /api/bank-connections/{id}/unlink` — Hủy liên kết tài khoản ngân hàng (`SUCCESS_VERIFIED` — kiểm thử thành công trên kết nối testmode `e2e00000-0000-0000-0000-000000000025`).
+- `POST /api/bank-connections/{id}/reactivate` — Kích hoạt lại liên kết ngân hàng (*EXTERNAL_LIVE_DEFERRED*: luồng happy-path phụ thuộc live gateway token; nghiệp vụ nội bộ đã kiểm thử chặn 409 `bank_connection_not_inactive` khi kết nối đang active tại test B5-04).
+- `POST /api/bank-connections/{id}/sync` — Đồng bộ dữ liệu từ ngân hàng (*EXTERNAL_LIVE_DEFERRED*: luồng happy-path gọi live sandbox polling; nghiệp vụ nội bộ đã kiểm thử chặn 409 `bank_sync_not_supported` tại test B5-05).
+- `POST /api/bank-connections/test-mode/link-challenges` — Tạo yêu cầu liên kết thử nghiệm trong Test Mode (`SUCCESS_VERIFIED` — chạy 100% in-process local mà không cần provider).
+- `POST /api/bank-connections/test-mode/link-challenges/{challengeId}/confirm` — Xác nhận liên kết thử nghiệm (*EXTERNAL_LIVE_DEFERRED*: gọi trực tiếp `ISePayTestModeAccountReader` tới `https://userapi-sandbox.sepay.vn/v2/` cần remote sandbox API token).
+- `POST /api/bank-connections/test-mode/wallet-top-ups` — Tạo yêu cầu nạp tiền vào ví từ tài khoản ngân hàng Test Mode (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API; nghiệp vụ nội bộ đã kiểm thử từ chối kết nối unlinked 404 `bank_connection_not_found`).
+- `POST /api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` — Xác nhận hoàn tất nạp tiền vào ví (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API xác thực giao dịch chuyển khoản).
+- `GET /api/bank-connections/test-mode/linked-accounts` — Xem danh sách tài khoản liên kết Test Mode (`SUCCESS_VERIFIED`).
+- `GET /api/bank-connections/test-mode/wallet-top-ups` — Xem lịch sử nạp tiền Test Mode (`SUCCESS_VERIFIED`).
+- `GET /api/bank-transactions` — Lấy danh sách giao dịch ngân hàng đã ghi nhận (`SUCCESS_VERIFIED`).
+- `GET /api/bank-transactions/{id}` — Lấy chi tiết một giao dịch ngân hàng (`SUCCESS_VERIFIED`).
+- `PATCH /api/bank-transactions/{id}/category` — Gán nhãn phân loại danh mục cho giao dịch ngân hàng (`SUCCESS_VERIFIED`).
+- `POST /api/bank-integrations/sepay/events` — Webhook nhận sự kiện giao dịch từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
+- `POST /api/bank-integrations/sepay/ipn` — Instant Payment Notification từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
 
 ---
 

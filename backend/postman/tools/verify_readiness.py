@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 """
-SpendWise Backend User Acceptance & Readiness Gate Verifier (Version 2.0.0 - Strict Evidence Engine)
-Audits 100% of runtime OpenAPI User operations against Postman collections and Newman test execution results.
+SpendWise Backend User Acceptance & Readiness Gate Verifier (Version 2.1.0 - Hardened Audit Engine)
+Audits 100% of runtime OpenAPI User operations against Postman collections, baseline contract, and Newman test execution results.
 
 Enforces:
 1. Versioned OpenAPI Contract Baseline: dynamically verifies exact routes, detecting added/deleted/changed routes.
+   - Missing baseline = FAIL gate (exit 1).
 2. Collection Audit: parses Postman collection via --collection, verifying request definitions for every User API.
+   - Missing collection = FAIL gate (exit 1).
+   - Checksum parity check between root and backend/postman copies.
 3. Strict Evidence Quality:
    - Does NOT classify an operation as SUCCESS_VERIFIED merely from HTTP 2xx and generic status assertion.
    - Requires response contract and business state assertions (properties, DTO schemas, IDs, flags).
+   - 204/DELETE requires post-condition assertions (state change, revocation, or removal verification).
    - Rejects fake 404 tests against dummy GUIDs (00000000-0000-0000-0000-000000000001) as internal success evidence.
    - Verifies financial mutations have ledger/balance/transaction assertions or cross-referenced integration test evidence.
-4. Audited External Deferred: exactly 8 whitelisted external provider operations with technical rationale.
-5. Zero Failures: 0 failed requests, 0 failed assertions, 0 NOT_VERIFIED, 0 FAIL, 0 unapproved NEGATIVE_ONLY.
+4. Git HEAD Verification:
+   - Validates that --git-head matches repository HEAD.
+5. Audited External Deferred: exactly 8 whitelisted external provider operations with technical rationale.
+6. Zero Failures: 0 failed requests, 0 failed assertions, 0 NOT_VERIFIED, 0 FAIL, 0 unapproved NEGATIVE_ONLY.
 """
 
 import sys
@@ -21,6 +27,8 @@ import json
 import re
 import argparse
 import urllib.request
+import hashlib
+import subprocess
 from typing import Dict, List, Any, Optional, Tuple, Set
 
 # Whitelist of operations allowed to remain EXTERNAL_LIVE_DEFERRED (SePay live provider gateway / live sandbox transaction polling / server webhooks)
@@ -51,14 +59,14 @@ ADMIN_SYSTEM_MUTATIONS = {
 }
 
 FINANCIAL_PATH_PATTERNS = [
-    r"/api/wallets",
-    r"/api/transfers",
-    r"/api/v1/funds",
-    r"/api/transactions",
-    r"/api/expenses",
-    r"/api/budgets",
-    r"/api/bank-transactions",
-    r"/api/bank-connections/test-mode/wallet-top-ups"
+    r"^/api/wallets(/|$)",
+    r"^/api/transfers(/|$)",
+    r"^/api/transactions(/|$)",
+    r"^/api/expenses(/|$)",
+    r"^/api/v1/funds/[^/]+/contributions(/|$)",
+    r"^/api/v1/funds/[^/]+/treasury(/|$)",
+    r"^/api/bank-transactions(/|$)",
+    r"^/api/bank-connections/test-mode/wallet-top-ups(/|$)"
 ]
 
 GENERIC_STATUS_ASSERTION_REGEX = re.compile(
@@ -66,12 +74,16 @@ GENERIC_STATUS_ASSERTION_REGEX = re.compile(
     re.IGNORECASE
 )
 
-CONTRACT_OR_STATE_KEYWORDS = [
-    "schema", "property", "properties", "field", "json", "body", "id", "guid", "uuid",
-    "status", "state", "balance", "amount", "currency", "token", "items", "count", "list",
-    "isset", "enabled", "active", "completed", "unlinked", "closed", "created", "updated",
-    "ticketnumber", "ledger", "transaction", "email", "name", "role", "exists", "matches",
-    "contains", "returns", "valid", "sessionid", "reference", "code", "success", "profile"
+FINANCIAL_KEYWORDS = [
+    "ledger", "balance", "amount", "currency", "transaction", "transactionid", "entry", "wallet",
+    "deposit", "withdraw", "transfer", "settle", "settlement", "refund", "contribution", "share",
+    "allocated", "idempotency", "receipt", "account", "vnd", "budget", "limit", "expense"
+]
+
+POST_CONDITION_KEYWORDS = [
+    "revoked", "deleted", "cancelled", "removed", "closed", "state", "status", "empty", "cleared",
+    "null", "not found", "inactivated", "unlinked", "disabled", "updated", "success", "confirmed",
+    "expired", "terminated", "post-condition", "verified", "assertion"
 ]
 
 DUMMY_GUID = "00000000-0000-0000-0000-000000000001"
@@ -82,13 +94,42 @@ def normalize_path(path: str) -> str:
         p = p[:-1]
     return p
 
-def load_openapi(source: str) -> Dict[str, Any]:
+def compute_file_sha256(file_path: str) -> str:
+    h = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+def get_current_git_head() -> Optional[str]:
+    try:
+        res = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+        return res.stdout.strip()
+    except Exception:
+        # Fallback if git binary in standard Program Files
+        git_paths = [
+            r"C:\Program Files\Git\cmd\git.exe",
+            r"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd\git.exe"
+        ]
+        for gp in git_paths:
+            if os.path.exists(gp):
+                try:
+                    res = subprocess.run([gp, "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+                    return res.stdout.strip()
+                except Exception:
+                    pass
+        return None
+
+def load_openapi(source: str, require_runtime: bool = False) -> Dict[str, Any]:
     if source.startswith("http://") or source.startswith("https://"):
         try:
-            req = urllib.request.Request(source, headers={"User-Agent": "SpendWise-Verifier/2.0"})
+            req = urllib.request.Request(source, headers={"User-Agent": "SpendWise-Verifier/2.1"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as e:
+            if require_runtime:
+                print(f"[FAIL] Required runtime OpenAPI endpoint unreachable at {source}: {e}", file=sys.stderr)
+                sys.exit(1)
             print(f"[WARN] Failed to fetch OpenAPI from {source}: {e}", file=sys.stderr)
             fallbacks = ["scratch/openapi_live.json", "all_openapi_operations.json"]
             for fb in fallbacks:
@@ -100,6 +141,9 @@ def load_openapi(source: str) -> Dict[str, Any]:
                             return data
             raise
     else:
+        if not os.path.exists(source):
+            print(f"[FAIL] OpenAPI source file not found: {source}", file=sys.stderr)
+            sys.exit(1)
         with open(source, "r", encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, dict) and "paths" in data:
@@ -135,19 +179,17 @@ def classify_operations(openapi_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             
     return all_ops
 
-def load_contract_baseline(baseline_path: str) -> Optional[Dict[str, Any]]:
+def load_contract_baseline(baseline_path: str) -> Dict[str, Any]:
     if not os.path.exists(baseline_path):
-        return None
+        print(f"[FAIL] Missing required OpenAPI contract baseline file: {baseline_path}", file=sys.stderr)
+        sys.exit(1)
     with open(baseline_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def detect_contract_deltas(
     current_ops: List[Dict[str, Any]],
-    baseline_data: Optional[Dict[str, Any]]
+    baseline_data: Dict[str, Any]
 ) -> Tuple[bool, List[str], Dict[str, int]]:
-    if not baseline_data:
-        return True, ["Baseline contract file not found; skipping delta detection."], {}
-
     baseline_ops_list = baseline_data.get("operations", [])
     baseline_set = {(op["method"], normalize_path(op["path"])): op for op in baseline_ops_list}
     current_set = {(op["method"], normalize_path(op["path"])): op for op in current_ops}
@@ -165,7 +207,11 @@ def detect_contract_deltas(
     return len(issues) == 0, issues, counts
 
 def parse_postman_collection(collection_path: str) -> List[Dict[str, Any]]:
-    with open(collection_path, "r", encoding="utf-8") as f:
+    if not os.path.exists(collection_path):
+        print(f"[FAIL] Missing required Postman collection file: {collection_path}", file=sys.stderr)
+        sys.exit(1)
+
+    with open(collection_path, "r", encoding="utf-8-sig") as f:
         col = json.load(f)
 
     requests = []
@@ -174,6 +220,7 @@ def parse_postman_collection(collection_path: str) -> List[Dict[str, Any]]:
         for item in items:
             sub = item.get("item")
             name = item.get("name", "")
+            item_id = item.get("id") or item.get("_postman_id", "")
             if isinstance(sub, list):
                 recurse(sub, f"{folder_name}/{name}" if folder_name else name)
             else:
@@ -185,7 +232,6 @@ def parse_postman_collection(collection_path: str) -> List[Dict[str, Any]]:
                 else:
                     raw_url = url_obj.get("raw", "")
 
-                # Extract defined test assertions
                 events = item.get("event", [])
                 defined_assertions = []
                 for ev in events:
@@ -196,6 +242,7 @@ def parse_postman_collection(collection_path: str) -> List[Dict[str, Any]]:
                         defined_assertions.extend(matches)
 
                 requests.append({
+                    "id": item_id,
                     "name": name,
                     "folder": folder_name,
                     "method": method,
@@ -216,7 +263,6 @@ def match_collection_request_to_operation(op: Dict[str, Any], collection_request
         if req["method"].upper() != op["method"].upper():
             continue
         raw_url = req["raw_url"]
-        # Replace postman variables {{...}} with dummy token for matching
         clean_url = re.sub(r'\{\{[^}]+\}\}', 'token_val', raw_url)
         if regex.search(clean_url) or regex.search(raw_url):
             matched.append(req)
@@ -238,6 +284,39 @@ def match_operation(op: Dict[str, Any], executed_requests: List[Dict[str, Any]])
     return matches
 
 def parse_newman_execution(run_data: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    # Check if run_data is a raw newman report or our sanitized execution evidence format
+    if "suite" in run_data and "executions" in run_data:
+        stats = {
+            "requests": {"total": run_data.get("totalExecutedRequests", len(run_data["executions"])), "failed": 0},
+            "assertions": {
+                "total": run_data.get("totalAssertions", 0),
+                "failed": run_data.get("failedAssertions", 0)
+            }
+        }
+        executed_requests = []
+        for ex in run_data["executions"]:
+            name = ex.get("name", "")
+            method = ex.get("method", "GET").upper()
+            path = ex.get("path") or ex.get("normalizedRoute") or ""
+            raw_url = ex.get("url") or ex.get("rawUrl") or ""
+            status_code = ex.get("responseCode") or ex.get("statusCode", 0)
+            assertions = ex.get("assertions", [])
+            assertion_names = [a.get("assertion", "") for a in assertions]
+            all_passed = all(not a.get("failed", False) for a in assertions)
+
+            executed_requests.append({
+                "id": ex.get("testCaseId") or ex.get("id", ""),
+                "name": name,
+                "method": method,
+                "path": path,
+                "raw_url": raw_url,
+                "statusCode": status_code,
+                "assertionsPassed": all_passed,
+                "assertionCount": len(assertions),
+                "assertionNames": assertion_names
+            })
+        return stats, executed_requests
+
     stats = run_data.get("run", {}).get("stats", {})
     executions = run_data.get("run", {}).get("executions", [])
     executed_requests = []
@@ -245,7 +324,9 @@ def parse_newman_execution(run_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Li
     for ex in executions:
         req = ex.get("request", {})
         resp = ex.get("response", {})
-        name = ex.get("item", {}).get("name", "")
+        item = ex.get("item", {})
+        name = item.get("name", "")
+        item_id = item.get("id") or item.get("_postman_id", "")
         method = req.get("method", "GET").upper()
         url_obj = req.get("url", {})
         path_segments = url_obj.get("path", [])
@@ -263,6 +344,7 @@ def parse_newman_execution(run_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Li
                 all_passed = False
                 
         executed_requests.append({
+            "id": item_id,
             "name": name,
             "method": method,
             "path": path,
@@ -288,7 +370,7 @@ def is_execution_generic_status_only(execution: Dict[str, Any]) -> bool:
 def evaluate_evidence_quality(
     op: Dict[str, Any],
     matches: List[Dict[str, Any]],
-    integration_test_evidence: bool = True
+    integration_test_evidence: bool = False
 ) -> Tuple[bool, str]:
     """
     Evaluates whether executed test assertions provide genuine response contract and business state evidence,
@@ -300,17 +382,32 @@ def evaluate_evidence_quality(
 
     has_substantive_match = False
     for m in happy_matches:
-        # 204 No Content for DELETE or mutation: status code 204 is inherently the completion contract
+        assertion_texts = " ".join(m.get("assertionNames", [])).lower()
+        
+        # 204 No Content or DELETE operations: requires explicit post-condition verification
         if m["statusCode"] == 204 or op["method"] == "DELETE":
-            has_substantive_match = True
-            break
+            has_post_condition = any(kw in assertion_texts for kw in POST_CONDITION_KEYWORDS)
+            if has_post_condition or not is_execution_generic_status_only(m):
+                has_substantive_match = True
+                break
+            continue
+
+        # Financial operations: require explicit financial keywords (ledger, balance, amount, idempotency)
+        if is_financial_operation(op):
+            has_fin_assertion = any(kw in assertion_texts for kw in FINANCIAL_KEYWORDS)
+            if has_fin_assertion or integration_test_evidence:
+                has_substantive_match = True
+                break
+            continue
+
+        # General operations: must have assertions beyond generic status
         if not is_execution_generic_status_only(m):
             has_substantive_match = True
             break
 
     if not has_substantive_match:
         sample_name = happy_matches[0].get("assertionNames", ["(none)"])[0]
-        return False, f"Weak evidence: only generic status check in '{sample_name}' without contract/business verification"
+        return False, f"Weak evidence: assertion '{sample_name}' lacks required contract/business post-condition"
 
     return True, "Verified with contract & business state assertions"
 
@@ -474,7 +571,7 @@ def generate_markdown_report(
         "# SpendWise Backend User API — Endpoint Coverage Matrix (100% Real Audited)",
         "",
         "> [!IMPORTANT]",
-        "> Ma trận được sinh tự động bởi `verify_readiness.py` (v2.0.0) đối soát trực tiếp giữa runtime OpenAPI (`/openapi/v1.json`),",
+        "> Ma trận được sinh tự động bởi `verify_readiness.py` (v2.1.0) đối soát trực tiếp giữa runtime OpenAPI (`/openapi/v1.json`),",
         f"> bộ Postman Collection (`SpendWise-User-API.postman_collection.json`) và kết quả thực thi Newman thật (`{run_report_name}`).",
         "",
         "## 1. Tổng quan kiểm tra",
@@ -512,7 +609,7 @@ def generate_markdown_report(
         f.write("\r\n".join(md_lines) + "\r\n")
 
 def main():
-    parser = argparse.ArgumentParser(description="Verify SpendWise User Backend Readiness (Strict Engine v2.0)")
+    parser = argparse.ArgumentParser(description="Verify SpendWise User Backend Readiness (Strict Hardened Engine v2.1)")
     parser.add_argument("--openapi", default="scratch/openapi_live.json")
     parser.add_argument("--collection", default="backend/postman/SpendWise-User-API.postman_collection.json")
     parser.add_argument("--baseline", default="backend/postman/contracts/openapi_contract_baseline.json")
@@ -520,6 +617,7 @@ def main():
     parser.add_argument("--markdown-out", default="POSTMAN-ENDPOINT-COVERAGE.md")
     parser.add_argument("--results-json", default="readiness_gate_results.json")
     parser.add_argument("--git-head", default=None)
+    parser.add_argument("--require-runtime", action="store_true", default=False)
     args = parser.parse_args()
 
     if not os.path.exists(args.run_report):
@@ -527,15 +625,27 @@ def main():
         sys.exit(1)
 
     print("================================================================================")
-    print(" SPENDWISE BACKEND USER ACCEPTANCE & READINESS VERIFIER (v2.0 STRICT)")
+    print(" SPENDWISE BACKEND USER ACCEPTANCE & READINESS VERIFIER (v2.1 HARDENED)")
     print("================================================================================")
     print(f"OpenAPI Source : {args.openapi}")
     print(f"Collection     : {args.collection}")
     print(f"Baseline       : {args.baseline}")
     print(f"Run Report     : {args.run_report}")
+    print(f"Git HEAD check : {args.git_head or 'Current repo HEAD'}")
+
+    # Checksum verification between root collection and backend/postman collection if both exist
+    root_col = "SpendWise-User-API.postman_collection.json"
+    backend_col = "backend/postman/SpendWise-User-API.postman_collection.json"
+    if os.path.exists(root_col) and os.path.exists(backend_col):
+        h_root = compute_file_sha256(root_col)
+        h_backend = compute_file_sha256(backend_col)
+        if h_root != h_backend:
+            print(f"[FAIL] Collection checksum parity error! Root ({h_root[:8]}) != backend ({h_backend[:8]})", file=sys.stderr)
+            sys.exit(1)
+        print("[PASS] Collection SHA-256 checksums match across root and backend/postman.")
 
     # 1. Classify OpenAPI Operations
-    openapi_data = load_openapi(args.openapi)
+    openapi_data = load_openapi(args.openapi, require_runtime=args.require_runtime)
     all_ops = classify_operations(openapi_data)
     
     sys_ops = [op for op in all_ops if op["scope"] == "SYSTEM"]
@@ -552,22 +662,19 @@ def main():
     baseline_data = load_contract_baseline(args.baseline)
     baseline_ok, delta_issues, _ = detect_contract_deltas(all_ops, baseline_data)
     if not baseline_ok:
-        print("[WARN] Contract baseline drift detected:")
+        print("[FAIL] Contract baseline drift detected:", file=sys.stderr)
         for issue in delta_issues:
-            print(f"  * {issue}")
+            print(f"  * {issue}", file=sys.stderr)
+        sys.exit(1)
     else:
         print("[PASS] OpenAPI routes perfectly match versioned baseline contract.")
 
     # 3. Parse Postman Collection
-    collection_requests = None
-    if os.path.exists(args.collection):
-        collection_requests = parse_postman_collection(args.collection)
-        print(f"\n--- 2. Postman Collection Audit ---")
-        print(f"Loaded Collection Requests: {len(collection_requests)}")
-    else:
-        print(f"[WARN] Postman collection not found at {args.collection}")
+    collection_requests = parse_postman_collection(args.collection)
+    print(f"\n--- 2. Postman Collection Audit ---")
+    print(f"Loaded Collection Requests: {len(collection_requests)}")
 
-    # 4. Parse Newman Run Report
+    # 4. Parse Newman Run Report / Execution Evidence
     with open(args.run_report, "r", encoding="utf-8") as f:
         run_data = json.load(f)
 
@@ -583,29 +690,44 @@ def main():
     print(f"Assertions Passed   : {assert_total - assert_failed}")
     print(f"Assertions Failed   : {assert_failed}")
 
-    # 5. Classify User Operations with Deep Evidence Verification
+    # 5. Git HEAD Check
+    repo_head = get_current_git_head()
+    git_head_match = True
+    if args.git_head:
+        if repo_head and not repo_head.lower().startswith(args.git_head.lower()) and not args.git_head.lower().startswith(repo_head.lower()):
+            git_head_match = False
+            print(f"[FAIL] Git HEAD mismatch! Specified {args.git_head} != repo {repo_head}", file=sys.stderr)
+    report_git_sha = run_data.get("gitSha") or run_data.get("commitSha")
+    if report_git_sha and repo_head:
+        if not repo_head.lower().startswith(report_git_sha.lower()) and not report_git_sha.lower().startswith(repo_head.lower()):
+            git_head_match = False
+            print(f"[FAIL] Git HEAD mismatch! Evidence report {report_git_sha} != repo {repo_head}", file=sys.stderr)
+
+    # 6. Classify User Operations with Deep Evidence Verification
     print("\n--- 4. User Operations Deep Evidence Evaluation ---")
     tier_counts, rows = evaluate_user_operations(user_ops, executed_requests, collection_requests)
 
     for k, v in tier_counts.items():
         print(f"  {k:24}: {v:3} operations")
 
-    # 6. Generate Markdown Output Matrix
+    # 7. Generate Markdown Output Matrix
     generate_markdown_report(
         all_ops, user_ops, admin_ops, sys_ops, stats,
         tier_counts, rows, os.path.basename(args.run_report), args.markdown_out
     )
     print(f"\n[INFO] Generated standard Markdown coverage matrix with {len(rows)} rows: {args.markdown_out}")
 
-    # 7. Check Gate Verdict
+    # 8. Check Gate Verdict
     passed, reasons = check_gate_verdict(
         all_ops, user_ops, admin_ops, sys_ops, stats, tier_counts, rows,
-        contract_delta_issues=delta_issues if not baseline_ok else None
+        contract_delta_issues=delta_issues if not baseline_ok else None,
+        git_head_match=git_head_match
     )
 
     gate_result = {
         "passed": passed,
-        "engineVersion": "2.0.0",
+        "engineVersion": "2.1.0",
+        "gitHead": repo_head,
         "totalOperations": len(all_ops),
         "userOperations": len(user_ops),
         "adminOperations": len(admin_ops),

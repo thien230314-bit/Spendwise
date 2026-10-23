@@ -1,0 +1,4065 @@
+{
+  "suite": "SpendWise User API Newman Acceptance Suite",
+  "timestamp": "2026-10-24T03:22:00Z",
+  "totalExecutedRequests": 300,
+  "totalAssertions": 339,
+  "failedAssertions": 0,
+  "executions": [
+    {
+      "name": "01 - Preflight & Health Check",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 117,
+      "assertions": [
+        {
+          "assertion": "Status code is 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Register User A (Valid)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 391,
+      "assertions": [
+        {
+          "assertion": "Registration returns 200 with EMAIL_VERIFICATION_REQUIRED",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Register User A Duplicate (Negative Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 6,
+      "assertions": [
+        {
+          "assertion": "Duplicate registration returns 409 Conflict",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Resend Verification OTP (Happy Path)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "Resend verification returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - Verify Registration Email User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 55,
+      "assertions": [
+        {
+          "assertion": "Email verification returns 200 and challengeToken",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Setup Security PIN User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 290,
+      "assertions": [
+        {
+          "assertion": "PIN setup returns 200 and auth tokens",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Register User B",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 239,
+      "assertions": [
+        {
+          "assertion": "Registration User B returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Verify Registration Email User B",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 73,
+      "assertions": [
+        {
+          "assertion": "User B verification returns challengeToken",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - Setup Security PIN User B",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 376,
+      "assertions": [
+        {
+          "assertion": "User B PIN setup returns auth tokens",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - Refresh Access Token User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 93,
+      "assertions": [
+        {
+          "assertion": "Token refresh returns 200 and new access token",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - Register Unverified User (for Inactive Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 241,
+      "assertions": [
+        {
+          "assertion": "Unverified registration succeeds",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - Login with Unverified User (Negative Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 403,
+      "responseTimeMs": 270,
+      "assertions": [
+        {
+          "assertion": "Unverified user login returns 403 Forbidden",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "13 - Login with Wrong Password (Negative Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 401,
+      "responseTimeMs": 275,
+      "assertions": [
+        {
+          "assertion": "Wrong password returns 400 or 401",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "14 - Verify Security PIN Valid",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 391,
+      "assertions": [
+        {
+          "assertion": "Valid PIN verify returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "15 - Verify Security PIN Invalid (Negative Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 401,
+      "responseTimeMs": 359,
+      "assertions": [
+        {
+          "assertion": "Invalid PIN verify returns 400 or 401",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "16 - Change Security PIN User A",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 919,
+      "assertions": [
+        {
+          "assertion": "Change PIN returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "17 - Revert Security PIN User A",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 940,
+      "assertions": [
+        {
+          "assertion": "Revert PIN returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "18 - Forgot Password User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 202,
+      "responseTimeMs": 132,
+      "assertions": [
+        {
+          "assertion": "Forgot password returns 200 or 202 Accepted",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "19 - Reset Password User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 332,
+      "assertions": [
+        {
+          "assertion": "Reset password returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "20 - Re-login User A after Reset Password",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 274,
+      "assertions": [
+        {
+          "assertion": "Login gives challenge token",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "21 - Complete PIN Login User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 393,
+      "assertions": [
+        {
+          "assertion": "PIN login gives fresh active tokens",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "22 - List Active User Sessions",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 45,
+      "assertions": [
+        {
+          "assertion": "List sessions returns 200 and active session array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "23 - Revoke Single Session",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 43,
+      "assertions": [
+        {
+          "assertion": "Revoke session returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "24 - Refresh Token after Single Session Revoke (Re-establish Session)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 249,
+      "assertions": [
+        {
+          "assertion": "Login re-establishes challenge",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "25 - Complete PIN Login for User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 393,
+      "assertions": [
+        {
+          "assertion": "PIN login completes and stores permanent userA_token",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "26 - Security PIN Status Check",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 25,
+      "assertions": [
+        {
+          "assertion": "PIN status returns isSet = true",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Get Current User Profile (User A)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Get profile returns 200 and user info",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Upload User Avatar (User A)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 92,
+      "assertions": [
+        {
+          "assertion": "Upload avatar returns 200 and updated avatarUrl",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Update User Preferences",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 86,
+      "assertions": [
+        {
+          "assertion": "Preferences update returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Search User B by Contact (Email)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 54,
+      "assertions": [
+        {
+          "assertion": "Search User B returns 200 and matches User B ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - Search User B by SpendId",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 61,
+      "assertions": [
+        {
+          "assertion": "Search User B by SpendId returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Discover Users by Name with Pagination",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 148,
+      "assertions": [
+        {
+          "assertion": "Discover users returns 200 with paginated array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Send Friend Request (User A to User B)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 157,
+      "assertions": [
+        {
+          "assertion": "Send friend request returns 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Send Friend Request Duplicate (Idempotency Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 119,
+      "assertions": [
+        {
+          "assertion": "Duplicate friend request returns 200, 400 or 409",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - User A Checks Outgoing Requests",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 80,
+      "assertions": [
+        {
+          "assertion": "Outgoing requests contains request to User B",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - User B Checks Incoming Requests",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 57,
+      "assertions": [
+        {
+          "assertion": "Incoming requests contains request from User A",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - User B Accepts Friend Request",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 401,
+      "assertions": [
+        {
+          "assertion": "Accept friend request returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - User A Lists Friends",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "User A friend list contains User B",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "13 - User B Lists Friends",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "User B friend list contains User A",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "14 - Update Friend Preference (User A sets Favorite)",
+      "method": "PATCH",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 35,
+      "assertions": [
+        {
+          "assertion": "Update friend preference returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - List Default Wallets for User A",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "List wallets returns 200 and finds Main wallet",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Get System Categories (Income & Expense)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 15,
+      "assertions": [
+        {
+          "assertion": "Get categories returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02b - Upload Evidence for Income Posting",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 18,
+      "assertions": [
+        {
+          "assertion": "Evidence upload returns 200/201 and ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Fund Main Wallet via Income Posting (10,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 351,
+      "assertions": [
+        {
+          "assertion": "Income returns 201 Created and transaction ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Create Savings Wallet User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 81,
+      "assertions": [
+        {
+          "assertion": "Create Savings Wallet returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - Create Emergency Wallet User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Create Emergency Wallet returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Check Wallet Limit (Try Creating 4th Wallet)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 45,
+      "assertions": [
+        {
+          "assertion": "Exceeding 3 personal wallets returns 409 Conflict",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Get Main Wallet Details",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Get wallet details returns 200 and balance 10,000,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Update Savings Wallet Name",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 56,
+      "assertions": [
+        {
+          "assertion": "Update wallet returns 200 and updated name",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - Create Custom Category",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 29,
+      "assertions": [
+        {
+          "assertion": "Create category returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09b - Upload Evidence for Expense Transaction",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 9,
+      "assertions": [
+        {
+          "assertion": "Expense evidence upload returns 200/201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - Record Expense Transaction (45,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 296,
+      "assertions": [
+        {
+          "assertion": "Expense returns 201 Created and transaction ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - Internal Transfer Between Wallets (3,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 294,
+      "assertions": [
+        {
+          "assertion": "Internal transfer returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - Check Balances After Expense and Transfer",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Balances reflect 10M - 45k - 3M = 6,955,000 VND in Main and 3M in Savings",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "13 - List Transactions with Query Filters",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 40,
+      "assertions": [
+        {
+          "assertion": "Filtered transactions list returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "14 - Get Transaction Details",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 145,
+      "assertions": [
+        {
+          "assertion": "Get transaction details returns 200 and matches 45,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "15 - Update Transaction Description",
+      "method": "PATCH",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 626,
+      "assertions": [
+        {
+          "assertion": "Update transaction returns 200 and updated description",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "16 - Close Emergency Wallet",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 44,
+      "assertions": [
+        {
+          "assertion": "Close empty wallet returns 204 NoContent",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "00 - Fund User B Main Wallet (P2P Transfer 2,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 369,
+      "assertions": [
+        {
+          "assertion": "P2P Transfer returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "00b - Get User B Main Wallet",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "User B Main wallet retrieved",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Create Fixed Fund (User A)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 295,
+      "assertions": [
+        {
+          "assertion": "Create Fixed Fund returns 200/201 and fund ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Get Fixed Fund Details",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Get Fixed Fund details returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Invite User B to Fixed Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 70,
+      "assertions": [
+        {
+          "assertion": "Invite User B returns 200 and invitation ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - User B Accepts Fixed Fund Invitation",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 52,
+      "assertions": [
+        {
+          "assertion": "User B accepts fund invitation returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - List Fixed Fund Members",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 22,
+      "assertions": [
+        {
+          "assertion": "List members returns 200 and contains 2 members",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Confirm Obligations (Target: 2,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 382,
+      "assertions": [
+        {
+          "assertion": "Confirm obligations returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - User A Contributes 1,000,000 VND to Fixed Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 339,
+      "assertions": [
+        {
+          "assertion": "User A contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - User B Contributes 1,000,000 VND to Fixed Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 340,
+      "assertions": [
+        {
+          "assertion": "User B contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - List Fixed Fund Contributions",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "List contributions returns 200 and contains 2 entries",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - Grant Spending Permission to User B",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 276,
+      "assertions": [
+        {
+          "assertion": "Grant spending permission returns 204 NoContent",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - Check Fixed Fund Activities",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 13,
+      "assertions": [
+        {
+          "assertion": "Activities list returns 200 and records events",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - Check Fixed Fund Financial Overview",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 23,
+      "assertions": [
+        {
+          "assertion": "Finance overview returns 200 and total collected 2,000,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Create Free Fund (User A)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 259,
+      "assertions": [
+        {
+          "assertion": "Create Free Fund returns 200/201 and fund ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Invite User B to Free Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 30,
+      "assertions": [
+        {
+          "assertion": "Invite User B returns 200 and invitation ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - User B Accepts Free Fund Invitation",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "User B accepts Free Fund invitation returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - User A Contributes 500,000 VND to Free Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 249,
+      "assertions": [
+        {
+          "assertion": "User A flexible contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - User B Contributes 300,000 VND to Free Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 283,
+      "assertions": [
+        {
+          "assertion": "User B flexible contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Track Free Fund Finance",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 145,
+      "assertions": [
+        {
+          "assertion": "Free Fund finance overview returns 200 and balance 800,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - User B Creates Free Fund Expense Request",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 274,
+      "assertions": [
+        {
+          "assertion": "Create fund request returns 200 and request ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07b - User A (Owner) Reviews and Approves Free Fund Request",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 358,
+      "assertions": [
+        {
+          "assertion": "Owner approves free fund request successfully",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07c - User B Creates Second Free Fund Expense Request for Security Testing",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 255,
+      "assertions": [
+        {
+          "assertion": "Create second fund request returns 200 and request ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Refund Preview for User B",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 34,
+      "assertions": [
+        {
+          "assertion": "Refund preview returns 200 and refundable amount",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - User B Leaves Free Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 296,
+      "assertions": [
+        {
+          "assertion": "User B leaving fund returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - Verify Remaining Members in Free Fund",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Members list now has 1 active member",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Create Monthly Budget User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 242,
+      "assertions": [
+        {
+          "assertion": "Create budget returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - List Monthly Budgets",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "List budgets returns 200 and contains created budget",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Update Monthly Budget Limit",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 253,
+      "assertions": [
+        {
+          "assertion": "Update budget returns 200 and updated limit",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Delete Monthly Budget",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 246,
+      "assertions": [
+        {
+          "assertion": "Delete budget returns 204 NoContent",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - Create Savings Goal (MacBook M4)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 243,
+      "assertions": [
+        {
+          "assertion": "Create savings goal returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Deposit to Savings Goal (2,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 272,
+      "assertions": [
+        {
+          "assertion": "Goal contribution returns 200 and updated currentAllocatedAmount",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Get Goal Details and Verify Progress",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 22,
+      "assertions": [
+        {
+          "assertion": "Get goal details returns 200 and allocated 2M",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Withdraw from Savings Goal (500,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 259,
+      "assertions": [
+        {
+          "assertion": "Goal withdrawal returns 200 and remaining 1,500,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - Create Recurring Transaction (Monthly Internet)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 26,
+      "assertions": [
+        {
+          "assertion": "Create recurring transaction returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - List Recurring Transactions",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "List recurring transactions returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - Create Transaction Rule",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Create transaction rule returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - List Transaction Rules",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 16,
+      "assertions": [
+        {
+          "assertion": "List transaction rules returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Create AI Conversation",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 13,
+      "assertions": [
+        {
+          "assertion": "Create AI conversation returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - List AI Conversations",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 42,
+      "assertions": [
+        {
+          "assertion": "List AI conversations returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Ask AI Financial Advisor (Chat) - Fallback Safe",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 3318,
+      "assertions": [
+        {
+          "assertion": "AI chat returns 200 OK (with live key) or controlled 503 (without live Gemini key)",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - Find Bank Transfer Recipient by Phone",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "Find bank transfer recipient returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Create Bank Direct Transfer Instruction",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 58,
+      "assertions": [
+        {
+          "assertion": "Create bank direct transfer returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Bank Direct Transfer History",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "Bank direct transfer history returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - SePay Webhook Invariant (Controlled Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 401,
+      "responseTimeMs": 5,
+      "assertions": [
+        {
+          "assertion": "Webhook with invalid secret returns 401 Unauthorized",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - List Notifications for User A",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 30,
+      "assertions": [
+        {
+          "assertion": "List notifications returns 200 and captures real notificationId",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - Mark All Notifications Read",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 18,
+      "assertions": [
+        {
+          "assertion": "Mark all notifications read returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - Search Notifications",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 69,
+      "assertions": [
+        {
+          "assertion": "Search notifications returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Create Support Case",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 62,
+      "assertions": [
+        {
+          "assertion": "Create support case returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - List Support Cases",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 26,
+      "assertions": [
+        {
+          "assertion": "List support cases returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Get Support Case Details",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Get support case details returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Reply to Support Case Message",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 39,
+      "assertions": [
+        {
+          "assertion": "Reply to support case returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - List Financial Disputes",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "List disputes returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A01 - Pre-check Profile Avatar",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 9,
+      "assertions": [
+        {
+          "assertion": "Profile returned successfully",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A02 - Upload Real Avatar Image",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 41,
+      "assertions": [
+        {
+          "assertion": "Avatar upload returns 200 and avatarUrl",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A03 - Check Profile Immediately Has New Avatar",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Profile reflects newly uploaded avatar",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A04 - Logout User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 39,
+      "assertions": [
+        {
+          "assertion": "Logout returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A05 - Re-login User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 185,
+      "assertions": [
+        {
+          "assertion": "Re-login returns challengeToken",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A06 - Complete PIN Login for Re-login",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 329,
+      "assertions": [
+        {
+          "assertion": "PIN login gives fresh active token",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow A07 - Check Profile After Fresh Login Retains Avatar",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 7,
+      "assertions": [
+        {
+          "assertion": "Avatar persisted across fresh login sessions",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B01 - Request Email Change to New Email",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 84,
+      "assertions": [
+        {
+          "assertion": "Email change request returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B02 - Confirm Email Change with OTP",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 67,
+      "assertions": [
+        {
+          "assertion": "Confirm email change returns 200 and updated email",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B03 - Logout After Email Change",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Logout succeeds (200, 204 or 401)",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B04 - Login with New Email (Expected: Success)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 176,
+      "assertions": [
+        {
+          "assertion": "Login with new email returns 200 and challenge",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B05 - Complete PIN Verification with New Email",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 315,
+      "assertions": [
+        {
+          "assertion": "PIN login gives fresh active tokens for new email",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow B06 - Login with Old Email (Expected: 401 / Denied)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 401,
+      "responseTimeMs": 6,
+      "assertions": [
+        {
+          "assertion": "Login with old email is rejected (400 or 401)",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow C01 - User A Searches User B by Contact",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "User B found by contact",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow C02 - User A Checks Friend Request Status to User B",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 18,
+      "assertions": [
+        {
+          "assertion": "Friend request accepted or idempotent",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow C03 - User A Checks Friend List (Has User B)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 236,
+      "assertions": [
+        {
+          "assertion": "User A friend list contains User B",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow C04 - User B Checks Friend List (Has User A)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "User B friend list contains User A",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D01 - User A Creates Fixed Fund (1,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 261,
+      "assertions": [
+        {
+          "assertion": "Fixed Fund created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D02 - Invite User B to Fixed Fund",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 51,
+      "assertions": [
+        {
+          "assertion": "Invite sent to User B",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D03 - User B Accepts Fixed Fund Invitation",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 76,
+      "assertions": [
+        {
+          "assertion": "User B accepts fund invitation",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D04 - Confirm Obligations (Target: 1,000,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 437,
+      "assertions": [
+        {
+          "assertion": "Obligations confirmed",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D05 - User A Contributes 500,000 VND",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 408,
+      "assertions": [
+        {
+          "assertion": "User A contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D06 - User B Contributes 500,000 VND",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 295,
+      "assertions": [
+        {
+          "assertion": "User B contribution returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D07 - Check Fund Finance (Total 1,000,000 VND)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 38,
+      "assertions": [
+        {
+          "assertion": "Total fund balance reaches 1,000,000 VND target",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D08 - Grant User B Spending Permission",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 294,
+      "assertions": [
+        {
+          "assertion": "Spending permission granted",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow D09 - Check Activity Log for Spending Permission Event",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 25,
+      "assertions": [
+        {
+          "assertion": "Activity log recorded events",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow E01 - Identify Main and Savings Wallets for Flow E",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Main and Savings wallets identified",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow E02 - Transfer 300,000 VND from Main to Savings Wallet",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 366,
+      "assertions": [
+        {
+          "assertion": "Internal transfer returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow E03 - Check Savings Wallet Balance Increased by 300,000 VND",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Wallet 2 balance increased by 300,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow E04 - Check Linked Transactions List",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 47,
+      "assertions": [
+        {
+          "assertion": "Transactions list returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F01 - Get Expense Category for Budgeting",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 13,
+      "assertions": [
+        {
+          "assertion": "Expense category found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F02 - Create Budget (2,000,000 VND limit)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 288,
+      "assertions": [
+        {
+          "assertion": "Budget created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03 - Check Budget Status (Spent: 0, Remaining: 2,000,000 VND)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 15,
+      "assertions": [
+        {
+          "assertion": "Budget details match initial state",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03a - Upload Evidence for Flow F Budget Expense",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 22,
+      "assertions": [
+        {
+          "assertion": "Evidence uploaded for budget expense returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03b - Record Expense Transaction for Budget Category (500,000 VND)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 305,
+      "assertions": [
+        {
+          "assertion": "Record budget expense returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03c - Verify Budget Spent (500,000 VND, 25.0%)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Budget spent amount and percentage updated after expense",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03d - Correct Expense Amount via PATCH (800,000 VND)",
+      "method": "PATCH",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 523,
+      "assertions": [
+        {
+          "assertion": "PATCH transaction correction returns 200 and updated amount",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F03e - Verify Budget Re-calculation after Correction (800,000 VND, 40.0%)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Budget spent amount and percentage re-calculated after correction",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F04 - Update Budget Limit to 3,000,000 VND",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 254,
+      "assertions": [
+        {
+          "assertion": "Budget limit updated to 3,000,000 VND",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "Flow F05 - Clean Up Budget via Delete",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 281,
+      "assertions": [
+        {
+          "assertion": "Budget cleanly deleted",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "01 - User B Prepares Isolated Budget and Goal",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 268,
+      "assertions": [
+        {
+          "assertion": "User B budget created successfully",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "02 - User B Creates Target Goal",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 290,
+      "assertions": [
+        {
+          "assertion": "User B goal created successfully returns 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03 - User B Uploads Evidence",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "User B evidence uploaded returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "03b - User B Downloads Own Evidence (Happy Path)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 9,
+      "assertions": [
+        {
+          "assertion": "User B downloads own evidence returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "04 - Cross-User Wallet Access User A to User B Wallet (Expect 404)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Cross-user wallet access is rejected with 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "05 - Cross-User Budget Modification User A to User B Budget (Expect 404)",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 267,
+      "assertions": [
+        {
+          "assertion": "Cross-user budget deletion is rejected with 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "06 - Cross-User Goal Access User A to User B Goal (Expect 404)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Cross-user goal access is rejected with 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "07 - Cross-User Evidence Access User A to User B Evidence (Expect 404)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 8,
+      "assertions": [
+        {
+          "assertion": "Cross-user evidence access is rejected with 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "08 - Cross-User Fund Permission Escalation User B to Fixed Fund (Expect 403)",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 403,
+      "responseTimeMs": 256,
+      "assertions": [
+        {
+          "assertion": "Non-owner permission change is rejected with 403 Forbidden",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403 or 404)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 274,
+      "assertions": [
+        {
+          "assertion": "Non-owner fund review is rejected with 403 Forbidden or 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "10 - Non-Existent AI Action Execution (Architecture Controlled Fallback - Expect 404)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Execution of non-existent AI action returns 404 Not Found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 409)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Cancellation of non-existent AI action returns 409 Conflict",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "12 - Verify User B Resources Intact After Unauthorized Attempts",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "User B budget remains intact and unmodified",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-01 - 07 - Change Password User B",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 351,
+      "assertions": [
+        {
+          "assertion": "Status code is 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-02 - 11 - Forgot Security PIN User A",
+      "method": "POST",
+      "url": "",
+      "responseCode": 202,
+      "responseTimeMs": 7,
+      "assertions": [
+        {
+          "assertion": "Forgot PIN instructions accepted (202 Accepted)",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-03 - 12 - Validate Invalid PIN Reset Token",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 9,
+      "assertions": [
+        {
+          "assertion": "Token validation responds (200 OK)",
+          "failed": false
+        },
+        {
+          "assertion": "Token is reported invalid",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-04 - 01 - Bank Connections Status",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Bank connections status returned (200 OK)",
+          "failed": false
+        },
+        {
+          "assertion": "Reports bank connections list",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-05 - 02 - SePay TestMode: Start Link Challenge",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Bank link challenge created (200 OK)",
+          "failed": false
+        },
+        {
+          "assertion": "Captures challengeId",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-06 - 03 - SePay TestMode: Verify Challenge Rejection When Unconfirmed",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 491,
+      "assertions": [
+        {
+          "assertion": "Unconfirmed challenge rejected (409 Conflict)",
+          "failed": false
+        },
+        {
+          "assertion": "Returns bank_link_not_confirmed",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-07 - 05 - SePay TestMode: Top-Up Without Active Connection Rejected",
+      "method": "POST",
+      "url": "",
+      "responseCode": 404,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Unlinked connection top-up rejected (404 Not Found)",
+          "failed": false
+        },
+        {
+          "assertion": "Returns bank_connection_not_found",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-08 - 06 - SePay TestMode: List Wallet Top-Ups",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 23,
+      "assertions": [
+        {
+          "assertion": "Wallet top-ups retrieved (200 OK)",
+          "failed": false
+        },
+        {
+          "assertion": "Returns array of top-ups",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-09 - 04 - SePay TestMode: List Linked Accounts",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Linked accounts retrieved (200 OK)",
+          "failed": false
+        },
+        {
+          "assertion": "Returns array of linked accounts",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-10 - 10b - Member Reports Large Expense Hold (Transitions to Suspended)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 50,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Reported fund request enters Suspended state",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-11 - 10d - Requester Cancels Suspended Expense Releasing Hold",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 280,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Cancelled fund request returns Cancelled state and request id",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-12 - Owner settles approved activity",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 360,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Activity proposal settled",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-13 - Advance Election Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 27,
+      "assertions": [
+        {
+          "assertion": "Advance election returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-14 - 20 - User A Kicks User B from Fixed Fund 2 (Refund Processed)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 327,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Kicked member returns valid refund result structure",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-15 - 21 - User A Dissolves Fixed Fund 2 (Zero Balance Invariant)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 319,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Dissolved fund returns valid result structure",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "V1-IMP-16 - 11 - ADM-05: Maintenance Status",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 8,
+      "assertions": [
+        {
+          "assertion": "System maintenance status returned (200 OK)",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-01 - Submit Anonymous Account Recovery",
+      "method": "POST",
+      "url": "",
+      "responseCode": 202,
+      "responseTimeMs": 18,
+      "assertions": [
+        {
+          "assertion": "Submit account recovery returns 202 Accepted",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-02 - Reset Security PIN Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 300,
+      "assertions": [
+        {
+          "assertion": "Status code is 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-03 - Get System Maintenance State (Public/User)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Get maintenance state returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-04 - Get Active System Announcement (Public/User)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Get active announcement returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-05 - Register Mobile Push Installation",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 25,
+      "assertions": [
+        {
+          "assertion": "Register push installation returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-06 - Unregister Mobile Push Installation",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "Unregister push installation returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-07 - Get Notification Preferences",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 16,
+      "assertions": [
+        {
+          "assertion": "Get notification preferences returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-08 - Save Notification Preference",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 25,
+      "assertions": [
+        {
+          "assertion": "Save notification preference succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-09 - Mark Single Notification Read",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 38,
+      "assertions": [
+        {
+          "assertion": "Mark notification read succeeds with 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-10 - Delete Single Notification",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 26,
+      "assertions": [
+        {
+          "assertion": "Delete single notification succeeds with 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-11 - Clear All Read Notifications",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 30,
+      "assertions": [
+        {
+          "assertion": "Clear notifications returns 200 OK with deleted count",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-12 - Reject Friend Request Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 49,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Request status is Rejected",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-13 - Cancel Friend Request Success",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-14 - Unfriend Friend Success",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Status code is 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-01 - Create Isolated Category for Testing",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Create category returns 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-02 - Get Category Details by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Get category returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-03 - Update Category Details",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "Update category returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-04 - Archive/Delete Category",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 65,
+      "assertions": [
+        {
+          "assertion": "Archive/Delete category returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-05 - Get User Dashboard Summary",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 79,
+      "assertions": [
+        {
+          "assertion": "Get dashboard returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-06 - SePay BankHub IPN Webhook Invariant (Controlled Secret Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 401,
+      "responseTimeMs": 8,
+      "assertions": [
+        {
+          "assertion": "SePay IPN returns 401 Unauthorized with wrong secret",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-06b - Upload Isolated Evidence for Multi-Wallet Expense",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 40,
+      "assertions": [
+        {
+          "assertion": "Upload evidence for multi-wallet returns 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-07 - Multi-Wallet Expense Allocation (Controlled Validation / Ledger)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 488,
+      "assertions": [
+        {
+          "assertion": "Multi-wallet expense succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-08 - Get Transfer Details by ID Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 18,
+      "assertions": [
+        {
+          "assertion": "Get transfer details returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-09 - Confirm Bank Direct Transfer Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 364,
+      "assertions": [
+        {
+          "assertion": "Confirm transfer returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B2-10 - Record V1 Activity Event",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 33,
+      "assertions": [
+        {
+          "assertion": "Record V1 activity returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-01 - Create Or Update Compatible Budget via PUT /api/budgets",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 304,
+      "assertions": [
+        {
+          "assertion": "Compatible budget PUT succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-02 - List User Goals via GET /api/goals",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 9,
+      "assertions": [
+        {
+          "assertion": "List goals returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-03 - Create Target Goal for Lifecycle",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 275,
+      "assertions": [
+        {
+          "assertion": "Create goal succeeds with 200/201 and stores ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-04 - Update Goal via PUT /api/goals/{id}",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 250,
+      "assertions": [
+        {
+          "assertion": "Update goal returns 200, 204, 400 or 404",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-05 - Delete Empty Goal via DELETE /api/goals/{id}",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 292,
+      "assertions": [
+        {
+          "assertion": "Delete goal returns 200, 204 or 404",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-06 - Create Recurring Transaction for Lifecycle",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Create recurring transaction succeeds with 200/201 and stores ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-07 - Get Recurring Transaction by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 13,
+      "assertions": [
+        {
+          "assertion": "Get recurring transaction succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-08 - Update Recurring Transaction via PUT",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 15,
+      "assertions": [
+        {
+          "assertion": "Update recurring transaction succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-09 - Pause Recurring Transaction",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "Pause recurring transaction succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-10 - Resume Recurring Transaction",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Resume recurring transaction succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-11 - Record Recurring Occurrence Execution Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 696,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Transaction recorded",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-12 - Delete Recurring Transaction",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Recurring transaction operation returns expected status",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-13 - Create Transaction Rule for Testing",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Create transaction rule succeeds with 200/201 and stores ID",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-14 - Get Transaction Rule by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Get transaction rule succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-15 - Update Transaction Rule via PUT",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Update transaction rule succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B3-16 - Delete Transaction Rule via DELETE",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Transaction rule operation returns expected status",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-01 - Create Financial Dispute",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 29,
+      "assertions": [
+        {
+          "assertion": "Create dispute succeeds with 200 or 201 and stores disputeId",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-02 - Get Dispute Details by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 14,
+      "assertions": [
+        {
+          "assertion": "Get dispute details returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-03 - Reply to Dispute Message",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 31,
+      "assertions": [
+        {
+          "assertion": "Reply to dispute returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-04 - Reply to Dispute with Multipart Form (Happy Path)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Dispute multipart reply succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-05 - Reply to Support Case with Multipart Form (Happy Path)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 43,
+      "assertions": [
+        {
+          "assertion": "Support multipart reply succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-06 - Download Case Attachment Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Case attachment download returns valid file payload",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-07 - Create AI Conversation for Lifecycle",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Create AI conversation returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-08 - Get AI Conversation by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 36,
+      "assertions": [
+        {
+          "assertion": "Case or AI operation returns expected status",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-09 - Update AI Conversation Title",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 21,
+      "assertions": [
+        {
+          "assertion": "Case or AI operation returns expected status",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-10 - Delete AI Conversation via DELETE",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 35,
+      "assertions": [
+        {
+          "assertion": "Case or AI operation returns expected status",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-11 - Upload AI Attachment with Valid File (Happy Path)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 201,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Upload AI attachment returns 201 Created",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-12 - Download AI Attachment Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "AI attachment download returns valid file payload",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-13 - Get AI Action Proposal by ID Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 15,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Proposal details returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-14 - Execute AI Action Proposal Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 348,
+      "assertions": [
+        {
+          "assertion": "Execute proposal succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B4-15 - Cancel AI Action Proposal Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 12,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "AI action proposal cancelled returns valid DTO",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-01 - Create Bank Link Session (Controlled Sandbox Response)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 503,
+      "responseTimeMs": 8,
+      "assertions": [
+        {
+          "assertion": "Create bank link session returns 200 OK or controlled response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-02 - Get Bank Connection Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Connection details returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-03 - Unlink Bank Connection Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Unlink bank connection returns 200 OK",
+          "failed": false
+        },
+        {
+          "assertion": "Unlink response contains valid sessionId and purpose",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-04 - Reactivate Active Connection Rejected (409 Conflict)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 6,
+      "assertions": [
+        {
+          "assertion": "Reactivating active connection returns 409 Conflict",
+          "failed": false
+        },
+        {
+          "assertion": "Returns bank_connection_not_inactive code",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-05 - Sync TestMode Connection Rejected (409 Conflict)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 6,
+      "assertions": [
+        {
+          "assertion": "Syncing test-mode connection returns 409 Conflict",
+          "failed": false
+        },
+        {
+          "assertion": "Returns bank_sync_not_supported code",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-06 - Confirm Pending TestMode TopUp Rejected (409 Conflict or 503 Provider)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 409,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Confirm pending top-up verifies business state (409 Conflict or 503)",
+          "failed": false
+        },
+        {
+          "assertion": "Returns wallet_top_up_pending or provider code",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-07 - List Bank Transactions (Paginated)",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 23,
+      "assertions": [
+        {
+          "assertion": "List bank transactions returns 200 OK",
+          "failed": false
+        },
+        {
+          "assertion": "List bank transactions returns pagination structure",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-08 - Get Bank Transaction Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 16,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Transaction details returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B5-09 - Reclassify Bank Transaction Success",
+      "method": "PATCH",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 28,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Reclassified bank transaction returns updated category and transaction id",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-01 - List User V1 Funds",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 32,
+      "assertions": [
+        {
+          "assertion": "List V1 funds returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-02 - Get Fund Requests List",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Get fund requests returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-03 - Get Fund Governance Status",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 25,
+      "assertions": [
+        {
+          "assertion": "Get governance returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-04 - Get Fund Owner Response Status Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Fund owner response details returned with valid structure",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-05 - Escalate Owner Response Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 83,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Support case ticket GUID returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-06 - Close Activity Window via POST /api/v1/funds/{id}/activity/close",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 352,
+      "assertions": [
+        {
+          "assertion": "Close activity window returns 204 or 400",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-07 - Propose Fund Activity Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 327,
+      "assertions": [
+        {
+          "assertion": "Propose activity returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-08 - Get Activity Proposal by ID Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 16,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Proposal details returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-09 - Vote on Activity Proposal Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 32,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Proposal vote accepted",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-10 - Open Election Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 61,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Election opened",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-11 - Get Election Details by ID Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 28,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Election details returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-12 - Register Candidate Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 355,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Candidate registered",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-13 - Cast Ballot Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 54,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Ballot receipt returned",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-14 - Accept Elected Ownership Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 297,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Accepted elected ownership returns valid election DTO",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-15 - Reject Elected Ownership Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 328,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Rejected elected ownership transitions with FailureReason",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-16 - Get Contribution Allocation Details",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Get contribution allocation returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-17 - Get User Invitations List",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Get invitations returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-18 - Get Fund Invitation Proposals List",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 13,
+      "assertions": [
+        {
+          "assertion": "Get invitation proposals returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-19 - Review Invitation Proposal Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 69,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Invitation status is Pending",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-20 - Decline Invitation Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Invitation declined",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-21 - Cancel Invitation Success",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 17,
+      "assertions": [
+        {
+          "assertion": "Status code is 200",
+          "failed": false
+        },
+        {
+          "assertion": "Invitation cancelled",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-22 - Offer Fund Ownership via POST /api/v1/funds/{id}/ownership-offers",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 285,
+      "assertions": [
+        {
+          "assertion": "Offer ownership returns 200 or 400 when rules apply",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-23 - Accept Ownership Offer Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 300,
+      "assertions": [
+        {
+          "assertion": "Status code is 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B6-24 - List User Ownership Offers",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 52,
+      "assertions": [
+        {
+          "assertion": "List ownership offers returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-01 - List Legacy Groups",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 34,
+      "assertions": [
+        {
+          "assertion": "List groups returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-02 - Create Legacy Group for Compatibility Test",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 271,
+      "assertions": [
+        {
+          "assertion": "Create legacy group succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-03 - Get Legacy Group Details by ID",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 20,
+      "assertions": [
+        {
+          "assertion": "Get legacy group details succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-04 - Update Legacy Group Details",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 29,
+      "assertions": [
+        {
+          "assertion": "Update legacy group succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-05 - Invite Member to Legacy Group",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 48,
+      "assertions": [
+        {
+          "assertion": "Invite member succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-06 - List User Legacy Group Invitations",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "List group invites returns 200 OK with array",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-07 - Reject Legacy Invite Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 31,
+      "assertions": [
+        {
+          "assertion": "Reject group invite succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-08 - Accept Legacy Invite Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Accept invite succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-09 - Remove Member from Legacy Group Success",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 37,
+      "assertions": [
+        {
+          "assertion": "Remove group member returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-10 - Transfer Group Ownership Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 56,
+      "assertions": [
+        {
+          "assertion": "Transfer group ownership returns 200 or 204",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-11 - Set Group Receiving Bank Account",
+      "method": "PUT",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 46,
+      "assertions": [
+        {
+          "assertion": "Set receiving bank succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-12 - Get Shared Fund Status for Group",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 7,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-13 - Get Shared Fund Transactions",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 15,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-14 - Contribute to Shared Fund (Wallet Balance Check)",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 346,
+      "assertions": [
+        {
+          "assertion": "Contribute to shared fund succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-15 - List Group Fund Requests",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 16,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-16 - Create Group Fund Request",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 31,
+      "assertions": [
+        {
+          "assertion": "Create fund request succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-17 - Pay Group Fund Request Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 280,
+      "assertions": [
+        {
+          "assertion": "Pay fund request succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-18 - List Group Fund Rounds",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-19 - Create Group Fund Round",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 40,
+      "assertions": [
+        {
+          "assertion": "Create fund round succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-20 - Pay Group Fund Round Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 273,
+      "assertions": [
+        {
+          "assertion": "Pay fund round succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-21 - List Group Expenses",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 10,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-22 - Create Group Expense",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 282,
+      "assertions": [
+        {
+          "assertion": "Create group expense succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-23 - List Group Activities Log",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Legacy group operation returns expected response",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-24 - Get Group Deletion Request Status Success",
+      "method": "GET",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 11,
+      "assertions": [
+        {
+          "assertion": "Get deletion request returns 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-25 - Request Group Deletion",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 19,
+      "assertions": [
+        {
+          "assertion": "Request group deletion succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-27 - Cancel Group Deletion Request Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 27,
+      "assertions": [
+        {
+          "assertion": "Cancel deletion succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-25b - Re-request Group Deletion for Vote",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 23,
+      "assertions": [
+        {
+          "assertion": "Re-request group deletion succeeds with 200 or 201",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-26 - Vote on Group Deletion Request Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 331,
+      "assertions": [
+        {
+          "assertion": "Vote deletion succeeds with 200",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-28 - Create Group Refund Payment Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 314,
+      "assertions": [
+        {
+          "assertion": "Refund payment succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B7-29 - Finalize Group Deletion Success",
+      "method": "POST",
+      "url": "",
+      "responseCode": 200,
+      "responseTimeMs": 308,
+      "assertions": [
+        {
+          "assertion": "Finalize deletion succeeds with 200 OK",
+          "failed": false
+        }
+      ]
+    },
+    {
+      "name": "B1-15 - Revoke User Sessions via DELETE /api/users/me/sessions",
+      "method": "DELETE",
+      "url": "",
+      "responseCode": 204,
+      "responseTimeMs": 24,
+      "assertions": [
+        {
+          "assertion": "Revoke sessions returns 204 NoContent",
+          "failed": false
+        }
+      ]
+    }
+  ]
+}

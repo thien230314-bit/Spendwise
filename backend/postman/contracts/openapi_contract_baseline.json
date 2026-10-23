@@ -1,0 +1,2384 @@
+{
+  "version": "1.0.0",
+  "totalOperations": 339,
+  "counts": {
+    "SYSTEM": 1,
+    "ADMIN": 122,
+    "USER": 216
+  },
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/api/account-recovery",
+      "operationId": "POST_/api/account-recovery",
+      "scope": "USER",
+      "tag": "AccountRecovery"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/account-recovery",
+      "operationId": "GET_/api/admin/account-recovery",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/account-recovery/{id}",
+      "operationId": "GET_/api/admin/account-recovery/{id}",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/account-recovery/{id}/approve",
+      "operationId": "POST_/api/admin/account-recovery/{id}/approve",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/account-recovery/{id}/more-info",
+      "operationId": "POST_/api/admin/account-recovery/{id}/more-info",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/account-recovery/{id}/reject",
+      "operationId": "POST_/api/admin/account-recovery/{id}/reject",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/ai/chat",
+      "operationId": "POST_/api/admin/ai/chat",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai/conversations",
+      "operationId": "GET_/api/admin/ai/conversations",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/ai/conversations",
+      "operationId": "POST_/api/admin/ai/conversations",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/ai/conversations/{id}",
+      "operationId": "DELETE_/api/admin/ai/conversations/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai/conversations/{id}",
+      "operationId": "GET_/api/admin/ai/conversations/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/ai/conversations/{id}",
+      "operationId": "PUT_/api/admin/ai/conversations/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/ai/reports/export",
+      "operationId": "POST_/api/admin/ai/reports/export",
+      "scope": "ADMIN",
+      "tag": "AdminAi"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/audit-logs",
+      "operationId": "GET_/api/admin/audit-logs",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-connections",
+      "operationId": "GET_/api/admin/bank-connections",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-connections/{id}",
+      "operationId": "GET_/api/admin/bank-connections/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-integration/events",
+      "operationId": "GET_/api/admin/bank-integration/events",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-integration/reconciliation",
+      "operationId": "GET_/api/admin/bank-integration/reconciliation",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-transactions",
+      "operationId": "GET_/api/admin/bank-transactions",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/bank-transactions/{id}",
+      "operationId": "GET_/api/admin/bank-transactions/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/attachments/{id}",
+      "operationId": "GET_/api/admin/cases/attachments/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/disputes",
+      "operationId": "GET_/api/admin/cases/disputes",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/disputes/{id}",
+      "operationId": "GET_/api/admin/cases/disputes/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cases/disputes/{id}/messages",
+      "operationId": "POST_/api/admin/cases/disputes/{id}/messages",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cases/disputes/{id}/status",
+      "operationId": "POST_/api/admin/cases/disputes/{id}/status",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/support",
+      "operationId": "GET_/api/admin/cases/support",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/support/{id}",
+      "operationId": "GET_/api/admin/cases/support/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cases/support/{id}/correction-grant",
+      "operationId": "POST_/api/admin/cases/support/{id}/correction-grant",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cases/support/{id}/messages",
+      "operationId": "POST_/api/admin/cases/support/{id}/messages",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cases/support/{id}/status",
+      "operationId": "POST_/api/admin/cases/support/{id}/status",
+      "scope": "ADMIN",
+      "tag": "AdminCasesV2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/cases/{type}",
+      "operationId": "GET_/api/admin/cases/{type}",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/cases/{type}/{id}",
+      "operationId": "PUT_/api/admin/cases/{type}/{id}",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/configuration",
+      "operationId": "GET_/api/admin/configuration",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/configuration/{key}",
+      "operationId": "PUT_/api/admin/configuration/{key}",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/dashboard",
+      "operationId": "GET_/api/admin/dashboard",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/feature-flags",
+      "operationId": "GET_/api/admin/feature-flags",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/feature-flags/{name}",
+      "operationId": "PUT_/api/admin/feature-flags/{name}",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/health",
+      "operationId": "GET_/api/admin/health",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/integrations/sepay/sandbox/transactions",
+      "operationId": "POST_/api/admin/integrations/sepay/sandbox/transactions",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/integrations/sepay/status",
+      "operationId": "GET_/api/admin/integrations/sepay/status",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/integrations/sepay/test-mode/bank-accounts",
+      "operationId": "GET_/api/admin/integrations/sepay/test-mode/bank-accounts",
+      "scope": "ADMIN",
+      "tag": "AdminBankIntegration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/ledger/search",
+      "operationId": "POST_/api/admin/ledger/search",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/operations/announcements",
+      "operationId": "POST_/api/admin/operations/announcements",
+      "scope": "ADMIN",
+      "tag": "AdminOperations"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/operations/announcements/{id}",
+      "operationId": "DELETE_/api/admin/operations/announcements/{id}",
+      "scope": "ADMIN",
+      "tag": "AdminOperations"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/operations/maintenance",
+      "operationId": "PUT_/api/admin/operations/maintenance",
+      "scope": "ADMIN",
+      "tag": "AdminOperations"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/reports",
+      "operationId": "GET_/api/admin/reports",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/transactions/search",
+      "operationId": "POST_/api/admin/transactions/search",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "operationId": "GET_/api/admin/users",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{id}/reset-password",
+      "operationId": "POST_/api/admin/users/{id}/reset-password",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{id}/reset-pin",
+      "operationId": "POST_/api/admin/users/{id}/reset-pin",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{id}/revoke-sessions",
+      "operationId": "POST_/api/admin/users/{id}/revoke-sessions",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/{id}/status",
+      "operationId": "PUT_/api/admin/users/{id}/status",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/wallets/{id}/freeze",
+      "operationId": "PUT_/api/admin/wallets/{id}/freeze",
+      "scope": "ADMIN",
+      "tag": "Admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/actions/{id}",
+      "operationId": "GET_/api/ai/actions/{id}",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/actions/{id}/cancel",
+      "operationId": "POST_/api/ai/actions/{id}/cancel",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/actions/{id}/execute",
+      "operationId": "POST_/api/ai/actions/{id}/execute",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/attachments",
+      "operationId": "POST_/api/ai/attachments",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/attachments/{id}",
+      "operationId": "GET_/api/ai/attachments/{id}",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/chat",
+      "operationId": "POST_/api/ai/chat",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/conversations",
+      "operationId": "GET_/api/ai/conversations",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/conversations",
+      "operationId": "POST_/api/ai/conversations",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/ai/conversations/{id}",
+      "operationId": "DELETE_/api/ai/conversations/{id}",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/conversations/{id}",
+      "operationId": "GET_/api/ai/conversations/{id}",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/conversations/{id}",
+      "operationId": "PUT_/api/ai/conversations/{id}",
+      "scope": "USER",
+      "tag": "Ai"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/change-password",
+      "operationId": "POST_/api/auth/change-password",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/email-verification/resend",
+      "operationId": "POST_/api/auth/email-verification/resend",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/email-verification/verify",
+      "operationId": "POST_/api/auth/email-verification/verify",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/forgot-password",
+      "operationId": "POST_/api/auth/forgot-password",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "operationId": "POST_/api/auth/login",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "operationId": "POST_/api/auth/logout",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/pin/forgot",
+      "operationId": "POST_/api/auth/pin/forgot",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/pin/reset",
+      "operationId": "POST_/api/auth/pin/reset",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/pin/reset/validate",
+      "operationId": "POST_/api/auth/pin/reset/validate",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/pin/setup",
+      "operationId": "POST_/api/auth/pin/setup",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/pin/verify",
+      "operationId": "POST_/api/auth/pin/verify",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "operationId": "POST_/api/auth/refresh",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "operationId": "POST_/api/auth/register",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/reset-password",
+      "operationId": "POST_/api/auth/reset-password",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/sessions",
+      "operationId": "GET_/api/auth/sessions",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/sessions/{sessionId}",
+      "operationId": "DELETE_/api/auth/sessions/{sessionId}",
+      "scope": "USER",
+      "tag": "Auth"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-connections",
+      "operationId": "GET_/api/bank-connections",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/link",
+      "operationId": "POST_/api/bank-connections/link",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/test-mode/link-challenges",
+      "operationId": "POST_/api/bank-connections/test-mode/link-challenges",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/test-mode/link-challenges/{challengeId}/confirm",
+      "operationId": "POST_/api/bank-connections/test-mode/link-challenges/{challengeId}/confirm",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-connections/test-mode/linked-accounts",
+      "operationId": "GET_/api/bank-connections/test-mode/linked-accounts",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups",
+      "operationId": "GET_/api/bank-connections/test-mode/wallet-top-ups",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups",
+      "operationId": "POST_/api/bank-connections/test-mode/wallet-top-ups",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm",
+      "operationId": "POST_/api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-connections/{id}",
+      "operationId": "GET_/api/bank-connections/{id}",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/{id}/reactivate",
+      "operationId": "POST_/api/bank-connections/{id}/reactivate",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/{id}/sync",
+      "operationId": "POST_/api/bank-connections/{id}/sync",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bank-connections/{id}/unlink",
+      "operationId": "POST_/api/bank-connections/{id}/unlink",
+      "scope": "USER",
+      "tag": "BankConnections"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-transactions",
+      "operationId": "GET_/api/bank-transactions",
+      "scope": "USER",
+      "tag": "BankTransactions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bank-transactions/{id}",
+      "operationId": "GET_/api/bank-transactions/{id}",
+      "scope": "USER",
+      "tag": "BankTransactions"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/bank-transactions/{id}/category",
+      "operationId": "PATCH_/api/bank-transactions/{id}/category",
+      "scope": "USER",
+      "tag": "BankTransactions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/budgets",
+      "operationId": "GET_/api/budgets",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/budgets",
+      "operationId": "POST_/api/budgets",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/budgets",
+      "operationId": "PUT_/api/budgets",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/budgets/{id}",
+      "operationId": "DELETE_/api/budgets/{id}",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "GET",
+      "path": "/api/budgets/{id}",
+      "operationId": "GET_/api/budgets/{id}",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/budgets/{id}",
+      "operationId": "PUT_/api/budgets/{id}",
+      "scope": "USER",
+      "tag": "Budgets"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/attachments/{id}",
+      "operationId": "GET_/api/cases/attachments/{id}",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/disputes",
+      "operationId": "GET_/api/cases/disputes",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/disputes",
+      "operationId": "POST_/api/cases/disputes",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/disputes/{id}",
+      "operationId": "GET_/api/cases/disputes/{id}",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/disputes/{id}/messages",
+      "operationId": "POST_/api/cases/disputes/{id}/messages",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/disputes/{id}/messages/multipart",
+      "operationId": "POST_/api/cases/disputes/{id}/messages/multipart",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/support",
+      "operationId": "GET_/api/cases/support",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/support",
+      "operationId": "POST_/api/cases/support",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/support/{id}",
+      "operationId": "GET_/api/cases/support/{id}",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/support/{id}/messages",
+      "operationId": "POST_/api/cases/support/{id}/messages",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/support/{id}/messages/multipart",
+      "operationId": "POST_/api/cases/support/{id}/messages/multipart",
+      "scope": "USER",
+      "tag": "Cases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categories",
+      "operationId": "GET_/api/categories",
+      "scope": "USER",
+      "tag": "Categories"
+    },
+    {
+      "method": "POST",
+      "path": "/api/categories",
+      "operationId": "POST_/api/categories",
+      "scope": "USER",
+      "tag": "Categories"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/categories/{categoryId}",
+      "operationId": "DELETE_/api/categories/{categoryId}",
+      "scope": "USER",
+      "tag": "Categories"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categories/{categoryId}",
+      "operationId": "GET_/api/categories/{categoryId}",
+      "scope": "USER",
+      "tag": "Categories"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/categories/{categoryId}",
+      "operationId": "PUT_/api/categories/{categoryId}",
+      "scope": "USER",
+      "tag": "Categories"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard",
+      "operationId": "GET_/api/dashboard",
+      "scope": "USER",
+      "tag": "Dashboard"
+    },
+    {
+      "method": "POST",
+      "path": "/api/evidence",
+      "operationId": "POST_/api/evidence",
+      "scope": "USER",
+      "tag": "Evidence"
+    },
+    {
+      "method": "GET",
+      "path": "/api/evidence/{id}",
+      "operationId": "GET_/api/evidence/{id}",
+      "scope": "USER",
+      "tag": "Evidence"
+    },
+    {
+      "method": "GET",
+      "path": "/api/friends",
+      "operationId": "GET_/api/friends",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "GET",
+      "path": "/api/friends/discover",
+      "operationId": "GET_/api/friends/discover",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "POST",
+      "path": "/api/friends/requests",
+      "operationId": "POST_/api/friends/requests",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "GET",
+      "path": "/api/friends/requests/incoming",
+      "operationId": "GET_/api/friends/requests/incoming",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "GET",
+      "path": "/api/friends/requests/outgoing",
+      "operationId": "GET_/api/friends/requests/outgoing",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/friends/requests/{requestId}",
+      "operationId": "DELETE_/api/friends/requests/{requestId}",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "POST",
+      "path": "/api/friends/requests/{requestId}/accept",
+      "operationId": "POST_/api/friends/requests/{requestId}/accept",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "POST",
+      "path": "/api/friends/requests/{requestId}/reject",
+      "operationId": "POST_/api/friends/requests/{requestId}/reject",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "GET",
+      "path": "/api/friends/search",
+      "operationId": "GET_/api/friends/search",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/friends/{friendUserId}",
+      "operationId": "DELETE_/api/friends/{friendUserId}",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/friends/{friendUserId}/preference",
+      "operationId": "PATCH_/api/friends/{friendUserId}/preference",
+      "scope": "USER",
+      "tag": "Friends"
+    },
+    {
+      "method": "GET",
+      "path": "/api/goals",
+      "operationId": "GET_/api/goals",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "POST",
+      "path": "/api/goals",
+      "operationId": "POST_/api/goals",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/goals/{id}",
+      "operationId": "DELETE_/api/goals/{id}",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "GET",
+      "path": "/api/goals/{id}",
+      "operationId": "GET_/api/goals/{id}",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/goals/{id}",
+      "operationId": "PUT_/api/goals/{id}",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "POST",
+      "path": "/api/goals/{id}/contributions",
+      "operationId": "POST_/api/goals/{id}/contributions",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "POST",
+      "path": "/api/goals/{id}/withdrawals",
+      "operationId": "POST_/api/goals/{id}/withdrawals",
+      "scope": "USER",
+      "tag": "Goals"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups",
+      "operationId": "GET_/api/groups",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups",
+      "operationId": "POST_/api/groups",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/invites",
+      "operationId": "GET_/api/groups/invites",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/invites/{inviteId}/accept",
+      "operationId": "POST_/api/groups/invites/{inviteId}/accept",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/invites/{inviteId}/reject",
+      "operationId": "POST_/api/groups/invites/{inviteId}/reject",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}",
+      "operationId": "GET_/api/groups/{groupId}",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/groups/{groupId}",
+      "operationId": "PUT_/api/groups/{groupId}",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/activities",
+      "operationId": "GET_/api/groups/{groupId}/activities",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/deletion-request",
+      "operationId": "GET_/api/groups/{groupId}/deletion-request",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/deletion-requests",
+      "operationId": "POST_/api/groups/{groupId}/deletion-requests",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/deletion-requests/{requestId}/cancel",
+      "operationId": "POST_/api/groups/{groupId}/deletion-requests/{requestId}/cancel",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/deletion-requests/{requestId}/finalize",
+      "operationId": "POST_/api/groups/{groupId}/deletion-requests/{requestId}/finalize",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/deletion-requests/{requestId}/refunds/{refundId}/payment",
+      "operationId": "POST_/api/groups/{groupId}/deletion-requests/{requestId}/refunds/{refundId}/payment",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/deletion-requests/{requestId}/vote",
+      "operationId": "POST_/api/groups/{groupId}/deletion-requests/{requestId}/vote",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/expenses",
+      "operationId": "GET_/api/groups/{groupId}/expenses",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/expenses",
+      "operationId": "POST_/api/groups/{groupId}/expenses",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/fund",
+      "operationId": "GET_/api/groups/{groupId}/fund",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/fund-requests",
+      "operationId": "GET_/api/groups/{groupId}/fund-requests",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/fund-requests",
+      "operationId": "POST_/api/groups/{groupId}/fund-requests",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/fund-requests/{requestId}/pay",
+      "operationId": "POST_/api/groups/{groupId}/fund-requests/{requestId}/pay",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/fund-rounds",
+      "operationId": "GET_/api/groups/{groupId}/fund-rounds",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/fund-rounds",
+      "operationId": "POST_/api/groups/{groupId}/fund-rounds",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/fund-rounds/{roundId}/pay",
+      "operationId": "POST_/api/groups/{groupId}/fund-rounds/{roundId}/pay",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/fund/contributions",
+      "operationId": "POST_/api/groups/{groupId}/fund/contributions",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/groups/{groupId}/fund/transactions",
+      "operationId": "GET_/api/groups/{groupId}/fund/transactions",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/invites",
+      "operationId": "POST_/api/groups/{groupId}/invites",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/groups/{groupId}/members/{memberUserId}",
+      "operationId": "DELETE_/api/groups/{groupId}/members/{memberUserId}",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/{groupId}/ownership/{memberUserId}",
+      "operationId": "POST_/api/groups/{groupId}/ownership/{memberUserId}",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/groups/{groupId}/receiving-bank",
+      "operationId": "PUT_/api/groups/{groupId}/receiving-bank",
+      "scope": "USER",
+      "tag": "Groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/integrations/sepay/bankhub/events",
+      "operationId": "POST_/api/integrations/sepay/bankhub/events",
+      "scope": "USER",
+      "tag": "SePayBankHubIntegration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/integrations/sepay/bankhub/ipn",
+      "operationId": "POST_/api/integrations/sepay/bankhub/ipn",
+      "scope": "USER",
+      "tag": "SePayBankHubIntegration"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/mobile/push/installations/{installationId}",
+      "operationId": "DELETE_/api/mobile/push/installations/{installationId}",
+      "scope": "USER",
+      "tag": "MobilePush"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/mobile/push/installations/{installationId}",
+      "operationId": "PUT_/api/mobile/push/installations/{installationId}",
+      "scope": "USER",
+      "tag": "MobilePush"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications",
+      "operationId": "DELETE_/api/notifications",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "operationId": "GET_/api/notifications",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/preferences",
+      "operationId": "GET_/api/notifications/preferences",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/notifications/preferences",
+      "operationId": "PUT_/api/notifications/preferences",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/read-all",
+      "operationId": "POST_/api/notifications/read-all",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/search",
+      "operationId": "GET_/api/notifications/search",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications/{id}",
+      "operationId": "DELETE_/api/notifications/{id}",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/{id}/read",
+      "operationId": "POST_/api/notifications/{id}/read",
+      "scope": "USER",
+      "tag": "Notifications"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ping",
+      "operationId": "Ping",
+      "scope": "SYSTEM",
+      "tag": "System"
+    },
+    {
+      "method": "GET",
+      "path": "/api/recurring-transactions",
+      "operationId": "GET_/api/recurring-transactions",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/recurring-transactions",
+      "operationId": "POST_/api/recurring-transactions",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/recurring-transactions/{id}",
+      "operationId": "DELETE_/api/recurring-transactions/{id}",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/recurring-transactions/{id}",
+      "operationId": "GET_/api/recurring-transactions/{id}",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/recurring-transactions/{id}",
+      "operationId": "PUT_/api/recurring-transactions/{id}",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/recurring-transactions/{id}/occurrences/{occurrenceId}/record",
+      "operationId": "POST_/api/recurring-transactions/{id}/occurrences/{occurrenceId}/record",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/recurring-transactions/{id}/pause",
+      "operationId": "POST_/api/recurring-transactions/{id}/pause",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/recurring-transactions/{id}/resume",
+      "operationId": "POST_/api/recurring-transactions/{id}/resume",
+      "scope": "USER",
+      "tag": "RecurringTransactions"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/security-pin",
+      "operationId": "PUT_/api/security-pin",
+      "scope": "USER",
+      "tag": "SecurityPin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security-pin/status",
+      "operationId": "GET_/api/security-pin/status",
+      "scope": "USER",
+      "tag": "SecurityPin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security-pin/verify",
+      "operationId": "POST_/api/security-pin/verify",
+      "scope": "USER",
+      "tag": "SecurityPin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/system/announcements/active",
+      "operationId": "GET_/api/system/announcements/active",
+      "scope": "USER",
+      "tag": "Operations"
+    },
+    {
+      "method": "GET",
+      "path": "/api/system/maintenance",
+      "operationId": "GET_/api/system/maintenance",
+      "scope": "USER",
+      "tag": "Operations"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transaction-rules",
+      "operationId": "GET_/api/transaction-rules",
+      "scope": "USER",
+      "tag": "TransactionRules"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transaction-rules",
+      "operationId": "POST_/api/transaction-rules",
+      "scope": "USER",
+      "tag": "TransactionRules"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/transaction-rules/{id}",
+      "operationId": "DELETE_/api/transaction-rules/{id}",
+      "scope": "USER",
+      "tag": "TransactionRules"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transaction-rules/{id}",
+      "operationId": "GET_/api/transaction-rules/{id}",
+      "scope": "USER",
+      "tag": "TransactionRules"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/transaction-rules/{id}",
+      "operationId": "PUT_/api/transaction-rules/{id}",
+      "scope": "USER",
+      "tag": "TransactionRules"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transactions",
+      "operationId": "GET_/api/transactions",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transactions/expense",
+      "operationId": "POST_/api/transactions/expense",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transactions/expense/multi-wallet",
+      "operationId": "POST_/api/transactions/expense/multi-wallet",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transactions/income",
+      "operationId": "POST_/api/transactions/income",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transactions/{transactionId}",
+      "operationId": "GET_/api/transactions/{transactionId}",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/transactions/{transactionId}",
+      "operationId": "PATCH_/api/transactions/{transactionId}",
+      "scope": "USER",
+      "tag": "Transactions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers",
+      "operationId": "GET_/api/transfers",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers",
+      "operationId": "POST_/api/transfers",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers/internal",
+      "operationId": "POST_/api/transfers/internal",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers/p2p",
+      "operationId": "POST_/api/transfers/p2p",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers/recipients",
+      "operationId": "GET_/api/transfers/recipients",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers/{paymentId}/confirm",
+      "operationId": "POST_/api/transfers/{paymentId}/confirm",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers/{transferId}",
+      "operationId": "GET_/api/transfers/{transferId}",
+      "scope": "USER",
+      "tag": "Transfers"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "operationId": "GET_/api/users/me",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/me/avatar",
+      "operationId": "POST_/api/users/me/avatar",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/me/email/confirm",
+      "operationId": "POST_/api/users/me/email/confirm",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/me/email/request",
+      "operationId": "POST_/api/users/me/email/request",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/me/preferences",
+      "operationId": "PUT_/api/users/me/preferences",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/users/me/sessions",
+      "operationId": "DELETE_/api/users/me/sessions",
+      "scope": "USER",
+      "tag": "Users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/activity",
+      "operationId": "POST_/api/v1/activity",
+      "scope": "USER",
+      "tag": "V1Activity"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/delivery-history",
+      "operationId": "POST_/api/v1/admin/notifications/delivery-history",
+      "scope": "ADMIN",
+      "tag": "AdminA6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/failures",
+      "operationId": "POST_/api/v1/admin/notifications/failures",
+      "scope": "ADMIN",
+      "tag": "AdminA6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/maintenance-overview",
+      "operationId": "POST_/api/v1/admin/notifications/maintenance-overview",
+      "scope": "ADMIN",
+      "tag": "AdminA6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/search",
+      "operationId": "POST_/api/v1/admin/notifications/search",
+      "scope": "ADMIN",
+      "tag": "AdminA6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/templates",
+      "operationId": "POST_/api/v1/admin/notifications/templates",
+      "scope": "ADMIN",
+      "tag": "AdminA6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operators/search",
+      "operationId": "POST_/api/v1/admin/operators/search",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operators/{userId}",
+      "operationId": "PUT_/api/v1/admin/operators/{userId}",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview",
+      "operationId": "GET_/api/v1/admin/overview",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview/activity",
+      "operationId": "GET_/api/v1/admin/overview/activity",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview/alerts",
+      "operationId": "GET_/api/v1/admin/overview/alerts",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview/sources/{metric}",
+      "operationId": "GET_/api/v1/admin/overview/sources/{metric}",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview/tasks",
+      "operationId": "GET_/api/v1/admin/overview/tasks",
+      "scope": "ADMIN",
+      "tag": "AdminA1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/assigned",
+      "operationId": "POST_/api/v1/admin/support/assigned",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/disputes/{requestId}/resolve",
+      "operationId": "POST_/api/v1/admin/support/disputes/{requestId}/resolve",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/search",
+      "operationId": "POST_/api/v1/admin/support/search",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/templates",
+      "operationId": "POST_/api/v1/admin/support/templates",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/tickets/search",
+      "operationId": "POST_/api/v1/admin/support/tickets/search",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/accounts",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/accounts",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/actions",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/actions",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/assign",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/assign",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/support/{caseId}/assignment",
+      "operationId": "PUT_/api/v1/admin/support/{caseId}/assignment",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/detail",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/detail",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/dossier",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/dossier",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/escalate",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/escalate",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/search",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/search",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/activity",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/activity",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/cases",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/cases",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/detail",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/detail",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/dissolution",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/dissolution",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/expenses/{expenseId}/postings",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/expenses/{expenseId}/postings",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/finance/{source}",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/finance/{source}",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/governance/{source}",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/governance/{source}",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/invitations",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/invitations",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/members",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/members",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/postings/{postingId}",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/postings/{postingId}",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/reports/{source}/{reportId}/history",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/reports/{source}/{reportId}/history",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/funds/{fundId}/treasury",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/funds/{fundId}/treasury",
+      "scope": "ADMIN",
+      "tag": "AdminA3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/reply-template",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/reply-template",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/request-info",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/request-info",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/resolve",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/resolve",
+      "scope": "ADMIN",
+      "tag": "AdminA5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transaction",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transaction",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/ledger/{ledgerTransactionId}",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/ledger/{ledgerTransactionId}",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/lookup",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/lookup",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/pending-failed",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/pending-failed",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/search",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/search",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/wallets",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/wallets",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/transactions/{transactionId}/trace",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/transactions/{transactionId}/trace",
+      "scope": "ADMIN",
+      "tag": "AdminA4"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/user-profile",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/user-profile",
+      "scope": "ADMIN",
+      "tag": "V1Administration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/friends",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/friends",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/groups",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/groups",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/history",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/history",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/profile",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/profile",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/restrictions",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/restrictions",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/sessions",
+      "operationId": "POST_/api/v1/admin/support/{caseId}/users/{userId}/sessions",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/support/{caseId}/users/{userId}/status",
+      "operationId": "PUT_/api/v1/admin/support/{caseId}/users/{userId}/status",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/users/search",
+      "operationId": "POST_/api/v1/admin/users/search",
+      "scope": "ADMIN",
+      "tag": "AdminA2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds",
+      "operationId": "GET_/api/v1/funds",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds",
+      "operationId": "POST_/api/v1/funds",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/activity-proposals/{id}",
+      "operationId": "GET_/api/v1/funds/activity-proposals/{id}",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/activity-proposals/{id}/settle",
+      "operationId": "POST_/api/v1/funds/activity-proposals/{id}/settle",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/activity-proposals/{id}/vote",
+      "operationId": "POST_/api/v1/funds/activity-proposals/{id}/vote",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/elections/{id}",
+      "operationId": "GET_/api/v1/funds/elections/{id}",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/elections/{id}/accept",
+      "operationId": "POST_/api/v1/funds/elections/{id}/accept",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/elections/{id}/advance",
+      "operationId": "POST_/api/v1/funds/elections/{id}/advance",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/elections/{id}/ballots",
+      "operationId": "POST_/api/v1/funds/elections/{id}/ballots",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/elections/{id}/candidates",
+      "operationId": "POST_/api/v1/funds/elections/{id}/candidates",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/elections/{id}/reject",
+      "operationId": "POST_/api/v1/funds/elections/{id}/reject",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/invitations",
+      "operationId": "GET_/api/v1/funds/invitations",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/funds/invitations/{id}",
+      "operationId": "DELETE_/api/v1/funds/invitations/{id}",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/invitations/{id}/accept",
+      "operationId": "POST_/api/v1/funds/invitations/{id}/accept",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/invitations/{id}/decline",
+      "operationId": "POST_/api/v1/funds/invitations/{id}/decline",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/invitations/{id}/review",
+      "operationId": "POST_/api/v1/funds/invitations/{id}/review",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/ownership-offers",
+      "operationId": "GET_/api/v1/funds/ownership-offers",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/ownership-offers/{id}/accept",
+      "operationId": "POST_/api/v1/funds/ownership-offers/{id}/accept",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/requests/{id}/cancel",
+      "operationId": "POST_/api/v1/funds/requests/{id}/cancel",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/requests/{id}/report",
+      "operationId": "POST_/api/v1/funds/requests/{id}/report",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/requests/{id}/review",
+      "operationId": "POST_/api/v1/funds/requests/{id}/review",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}",
+      "operationId": "GET_/api/v1/funds/{id}",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/activities",
+      "operationId": "GET_/api/v1/funds/{id}/activities",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/activity-proposals",
+      "operationId": "POST_/api/v1/funds/{id}/activity-proposals",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/activity/close",
+      "operationId": "POST_/api/v1/funds/{id}/activity/close",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/contribution-allocation",
+      "operationId": "GET_/api/v1/funds/{id}/contribution-allocation",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/contributions",
+      "operationId": "GET_/api/v1/funds/{id}/contributions",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/contributions",
+      "operationId": "POST_/api/v1/funds/{id}/contributions",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/dissolve",
+      "operationId": "POST_/api/v1/funds/{id}/dissolve",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/elections",
+      "operationId": "POST_/api/v1/funds/{id}/elections",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/finance",
+      "operationId": "GET_/api/v1/funds/{id}/finance",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/governance",
+      "operationId": "GET_/api/v1/funds/{id}/governance",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/invitation-proposals",
+      "operationId": "GET_/api/v1/funds/{id}/invitation-proposals",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/invitations",
+      "operationId": "POST_/api/v1/funds/{id}/invitations",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/leave",
+      "operationId": "POST_/api/v1/funds/{id}/leave",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/members",
+      "operationId": "GET_/api/v1/funds/{id}/members",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/members/{userId}/kick",
+      "operationId": "POST_/api/v1/funds/{id}/members/{userId}/kick",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/funds/{id}/members/{userId}/spending-permission",
+      "operationId": "PUT_/api/v1/funds/{id}/members/{userId}/spending-permission",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/obligations/confirm",
+      "operationId": "POST_/api/v1/funds/{id}/obligations/confirm",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/owner-response",
+      "operationId": "GET_/api/v1/funds/{id}/owner-response",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/owner-response/escalate",
+      "operationId": "POST_/api/v1/funds/{id}/owner-response/escalate",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/ownership-offers",
+      "operationId": "POST_/api/v1/funds/{id}/ownership-offers",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/refund-preview",
+      "operationId": "GET_/api/v1/funds/{id}/refund-preview",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/funds/{id}/requests",
+      "operationId": "GET_/api/v1/funds/{id}/requests",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/funds/{id}/requests",
+      "operationId": "POST_/api/v1/funds/{id}/requests",
+      "scope": "USER",
+      "tag": "V1Funds"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/broadcasts",
+      "operationId": "POST_/api/v1/system/broadcasts",
+      "scope": "ADMIN",
+      "tag": "V1Broadcast"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/broadcasts/{id}/cancel",
+      "operationId": "POST_/api/v1/system/broadcasts/{id}/cancel",
+      "scope": "ADMIN",
+      "tag": "V1Broadcast"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/broadcasts/{id}/publish",
+      "operationId": "POST_/api/v1/system/broadcasts/{id}/publish",
+      "scope": "ADMIN",
+      "tag": "V1Broadcast"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/broadcasts/{id}/status",
+      "operationId": "POST_/api/v1/system/broadcasts/{id}/status",
+      "scope": "ADMIN",
+      "tag": "V1Broadcast"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/maintenance",
+      "operationId": "GET_/api/v1/system/maintenance",
+      "scope": "USER",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance",
+      "operationId": "POST_/api/v1/system/maintenance",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/emergency",
+      "operationId": "POST_/api/v1/system/maintenance/emergency",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/system/maintenance/{id}",
+      "operationId": "PUT_/api/v1/system/maintenance/{id}",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/{id}/cancel",
+      "operationId": "POST_/api/v1/system/maintenance/{id}/cancel",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/{id}/close",
+      "operationId": "POST_/api/v1/system/maintenance/{id}/close",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/{id}/extend",
+      "operationId": "POST_/api/v1/system/maintenance/{id}/extend",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/{id}/reminders",
+      "operationId": "POST_/api/v1/system/maintenance/{id}/reminders",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system/maintenance/{id}/review",
+      "operationId": "POST_/api/v1/system/maintenance/{id}/review",
+      "scope": "ADMIN",
+      "tag": "V1Maintenance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets",
+      "operationId": "GET_/api/wallets",
+      "scope": "USER",
+      "tag": "Wallets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallets",
+      "operationId": "POST_/api/wallets",
+      "scope": "USER",
+      "tag": "Wallets"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/wallets/{walletId}",
+      "operationId": "DELETE_/api/wallets/{walletId}",
+      "scope": "USER",
+      "tag": "Wallets"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/{walletId}",
+      "operationId": "GET_/api/wallets/{walletId}",
+      "scope": "USER",
+      "tag": "Wallets"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/wallets/{walletId}",
+      "operationId": "PUT_/api/wallets/{walletId}",
+      "scope": "USER",
+      "tag": "Wallets"
+    }
+  ]
+}

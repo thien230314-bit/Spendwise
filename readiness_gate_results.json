@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "engineVersion": "2.0.0",
+  "totalOperations": 339,
+  "userOperations": 216,
+  "adminOperations": 122,
+  "systemOperations": 1,
+  "executedRequests": 300,
+  "failedRequests": 0,
+  "totalAssertions": 339,
+  "passedAssertions": 339,
+  "failedAssertions": 0,
+  "tierCounts": {
+    "SUCCESS_VERIFIED": 196,
+    "BOTH_VERIFIED": 12,
+    "NEGATIVE_ONLY": 0,
+    "EXTERNAL_LIVE_DEFERRED": 8,
+    "NOT_VERIFIED": 0,
+    "FAIL": 0
+  },
+  "contractDeltaIssues": [],
+  "reasons": []
+}

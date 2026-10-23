@@ -8510,8 +8510,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Reported fund request enters Suspended state\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.state).to.eql(\"Suspended\");",
                   "});"
                 ]
               }
@@ -8570,8 +8573,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelled fund request returns Cancelled state and request id\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.state).to.eql(\"Cancelled\");",
                   "});"
                 ]
               }
@@ -8742,8 +8748,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Kicked member returns valid refund result structure\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "    pm.expect(res.refundId || res.status || res.refundAmount).to.not.be.undefined;",
                   "});"
                 ]
               }
@@ -8803,8 +8812,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dissolved fund returns valid result structure\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "    pm.expect(res.fundId || res.id || res.status).to.not.be.undefined;",
                   "});"
                 ]
               }
@@ -11187,12 +11199,14 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Case attachment download returns valid file payload\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.be.a(\"string\");",
+                  "    pm.expect(pm.response.text().length).to.be.above(0);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -11479,12 +11493,14 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"AI attachment download returns valid file payload\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.be.a(\"string\");",
+                  "    pm.expect(pm.response.text().length).to.be.above(0);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -11644,14 +11660,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    var data = pm.response.json();",
-                  "    pm.expect(data.status).to.equal(\"Cancelled\");",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"AI action proposal cancelled returns valid DTO\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.status).to.eql(\"Cancelled\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -11666,10 +11683,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11694,6 +11707,16 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"redirectUrl\": \"http://localhost:3000/bank/callback\",\n  \"language\": \"vi\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11763,14 +11786,10 @@
           ]
         },
         {
-          "name": "B5-03 - Unlink Non-Existent Bank Connection (Expect 404)",
+          "name": "B5-03 - Unlink Bank Connection Success",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11781,14 +11800,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-connections/00000000-0000-0000-0000-000000000001/unlink",
+              "raw": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_unlink_id}}/unlink",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-connections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_bank_connection_unlink_id}}",
                 "unlink"
               ],
               "query": []
@@ -11796,6 +11815,16 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"redirectUrl\": \"http://localhost:3000/bank/callback\",\n  \"language\": \"vi\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11803,25 +11832,27 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Unlink non-existent bank connection returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Unlink bank connection returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Unlink response contains valid sessionId and purpose\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.sessionId).to.be.a(\"string\");",
+                  "    pm.expect(res.purpose).to.eql(\"UNLINK_BANK_ACCOUNT\");",
+                  "    pm.expect(res.expiresAt).to.be.a(\"string\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
         },
         {
-          "name": "B5-04 - Reactivate Non-Existent Bank Connection (Expect 404)",
+          "name": "B5-04 - Reactivate Active Connection Rejected (409 Conflict)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11832,14 +11863,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-connections/00000000-0000-0000-0000-000000000001/reactivate",
+              "raw": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}/reactivate",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-connections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_bank_connection_id}}",
                 "reactivate"
               ],
               "query": []
@@ -11847,6 +11878,16 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"redirectUrl\": \"http://localhost:3000/bank/callback\",\n  \"language\": \"vi\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11854,75 +11895,86 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Reactivate non-existent bank connection returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Reactivating active connection returns 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Returns bank_connection_not_inactive code\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.code).to.eql(\"bank_connection_not_inactive\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
         },
         {
-          "name": "B5-05 - Sync Non-Existent Bank Connection (Expect 404)",
+          "name": "B5-05 - Sync TestMode Connection Rejected (409 Conflict)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-connections/00000000-0000-0000-0000-000000000001/sync",
+              "raw": "{{baseUrl}}/api/bank-connections/{{fixture_bank_connection_id}}/sync",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "bank-connections",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_bank_connection_id}}",
                 "sync"
               ],
               "query": []
-            }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": null
           },
           "response": [],
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Sync non-existent bank connection returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Syncing test-mode connection returns 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Returns bank_sync_not_supported code\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.code).to.eql(\"bank_sync_not_supported\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
         },
         {
-          "name": "B5-06 - Confirm Non-Existent TestMode TopUp (Expect 404)",
+          "name": "B5-06 - Confirm Pending TestMode TopUp Rejected (409 Conflict or 503 Provider)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups/00000000-0000-0000-0000-000000000001/confirm",
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups/{{fixture_pending_wallet_top_up_id}}/confirm",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11931,23 +11983,42 @@
                 "bank-connections",
                 "test-mode",
                 "wallet-top-ups",
-                "00000000-0000-0000-0000-000000000001",
+                "{{fixture_pending_wallet_top_up_id}}",
                 "confirm"
               ],
               "query": []
-            }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": null
           },
           "response": [],
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Confirm non-existent top-up returns 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Confirm pending top-up verifies business state (409 Conflict or 503)\", function () {",
+                  "    pm.expect([409, 503]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test(\"Returns wallet_top_up_pending or provider code\", function () {",
+                  "    var res = pm.response.json();",
+                  "    if (pm.response.code === 409) {",
+                  "        pm.expect([\"wallet_top_up_pending\", \"bank_connection_invalid\"]).to.include(res.code);",
+                  "    } else {",
+                  "        pm.expect([\"sepay_test_mode_provider_unavailable\", \"sepay_test_mode_provider_failed\"]).to.include(res.code);",
+                  "    }",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -11957,10 +12028,6 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userA_token}}"
-              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -11985,6 +12052,16 @@
                   "value": "10"
                 }
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fixture_user_token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],
@@ -11992,14 +12069,17 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"List bank transactions returns 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
-                  "    const data = pm.response.json();",
-                  "    pm.expect(data).to.have.property(\"items\");",
+                  "});",
+                  "pm.test(\"List bank transactions returns pagination structure\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "    pm.expect(res.items).to.be.an(\"array\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -12108,8 +12188,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Reclassified bank transaction returns updated category and transaction id\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.categoryId).to.be.a(\"string\");",
                   "});"
                 ]
               }
@@ -12303,12 +12386,16 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Fund owner response details returned with valid structure\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "    pm.expect(res.fundId).to.be.a(\"string\");",
+                  "    pm.expect(typeof res.overdue).to.eql(\"boolean\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -12924,12 +13011,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Accepted elected ownership returns valid election DTO\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.phase).to.be.a(\"string\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -12987,12 +13077,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Rejected elected ownership transitions with FailureReason\", function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.failureReason).to.eql(\"WinnerRejected\");",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]

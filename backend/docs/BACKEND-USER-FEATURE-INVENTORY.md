@@ -7,7 +7,7 @@
 
 ## TỔNG QUAN HỆ THỐNG USER BACKEND
 
-SpendWise Backend cung cấp tổng cộng **205 User endpoints** (trên tổng số 320 API endpoints của toàn bộ hệ thống gồm 115 Admin endpoints và 205 User endpoints), phân bổ trên 20 bộ Controller nghiệp vụ User.
+SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng số 339 API operations của toàn bộ hệ thống gồm 122 Admin operations, 1 System probe và 216 User operations), phân bổ trên 27 bộ Controller nghiệp vụ User.
 
 ### Bảng tổng hợp Controller và số lượng Endpoint
 
@@ -22,7 +22,7 @@ SpendWise Backend cung cấp tổng cộng **205 User endpoints** (trên tổng 
 | 7 | **Ví cá nhân (`WalletsController`)** | `/api/wallets` | 5 | `financial` | Authenticated User |
 | 8 | **Giao dịch thu/chi (`TransactionsController`)** | `/api/transactions` | 6 | `financial` | Authenticated User |
 | 9 | **Chuyển tiền P2P & Nội bộ (`TransfersController`)** | `/api/transfers` | 7 | `financial` | Authenticated User |
-| 10 | **Quỹ V1 authoritative (`V1FundsController`)** | `/api/v1/funds` | 36 | `financial` | Authenticated User (Member/Owner) |
+| 10 | **Quỹ V1 authoritative (`V1FundsController`)** | `/api/v1/funds` | 45 | `financial` | Authenticated User (Member/Owner) |
 | 11 | **Ghi nhận tương tác thực (`V1ActivityController`)** | `/api/v1/activity` | 1 | `financial` | Authenticated User |
 | 12 | **Danh mục thu chi (`CategoriesController`)** | `/api/categories` | 5 | Không | Authenticated User |
 | 13 | **Bằng chứng & Hóa đơn (`EvidenceController`)** | `/api/evidence` | 2 | `financial` | Authenticated User |
@@ -38,8 +38,9 @@ SpendWise Backend cung cấp tổng cộng **205 User endpoints** (trên tổng 
 | 23 | **SePay Webhook & IPN (`SePayBankHubIntegrationController`)** | `/api/bank-integrations/sepay` | 2 | IPN Signature Guard | Webhook Caller (SePay) |
 | 24 | **Tổng quan tài chính (`DashboardController`)** | `/api/dashboard` | 1 | Không | Authenticated User |
 | 25 | **Trạng thái bảo trì & Thông báo (`OperationsController`)** | `/api/system` | 2 | Không | Public / Authenticated |
-| 26 | **Nhóm cũ (`GroupsController`)** *(Legacy / Compatibility)* | `/api/groups` | 29 | `financial` | Authenticated User |
-| **Tổng cộng** | | | **205** | | |
+| 26 | **Thông tin bảo trì User (`V1MaintenanceController`)** | `/api/v1/maintenance/current` | 1 | Không | Public / Authenticated |
+| 27 | **Nhóm cũ (`GroupsController`)** *(Legacy / Compatibility)* | `/api/groups` | 29 | `financial` | Authenticated User |
+| **Tổng cộng** | | | **216** | | |
 
 ---
 

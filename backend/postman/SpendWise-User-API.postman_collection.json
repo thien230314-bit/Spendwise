@@ -1970,6 +1970,7 @@
                   "    const mainWallet = data.find(w => w.type === \"spending\" || w.isDefault);",
                   "    pm.expect(mainWallet).to.not.be.undefined;",
                   "    pm.environment.set(\"userA_mainWalletId\", mainWallet.id);",
+                  "    pm.environment.set(\"mainWalletId\", mainWallet.id);",
                   "});"
                 ]
               }
@@ -2013,7 +2014,10 @@
                   "    const inc = data.find(c => c.kind === \"Income\");",
                   "    const exp = data.find(c => c.kind === \"Expense\");",
                   "    if (inc) pm.environment.set(\"salaryCategoryId\", inc.id);",
-                  "    if (exp) pm.environment.set(\"expenseCategoryId\", exp.id);",
+                  "    if (exp) {",
+                  "        pm.environment.set(\"expenseCategoryId\", exp.id);",
+                  "        pm.environment.set(\"categoryId\", exp.id);",
+                  "    }",
                   "});"
                 ]
               }
@@ -2512,6 +2516,7 @@
                   "    pm.response.to.have.status(201);",
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"expenseTxId\", data.id);",
+                  "    pm.environment.set(\"firstExpenseTransactionId\", data.id);",
                   "});"
                 ]
               }
@@ -2564,6 +2569,8 @@
                 "exec": [
                   "pm.test(\"Internal transfer returns 201 Created\", function () {",
                   "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    if (data && data.id) pm.environment.set(\"transferId\", data.id);",
                   "});"
                 ]
               }
@@ -5111,10 +5118,16 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"List notifications returns 200\", function () {",
+                  "pm.test(\"List notifications returns 200 and captures real notificationId\", function () {",
                   "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.expect(Array.isArray(data)).to.be.true;",
+                  "    if (data.length > 0) {",
+                  "        pm.environment.set(\"firstNotificationId\", data[0].id);",
+                  "        if (data.length > 1) {",
+                  "            pm.environment.set(\"secondNotificationId\", data[1].id);",
+                  "        }",
+                  "    }",
                   "});"
                 ]
               }
@@ -9150,7 +9163,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"channel\": \"InApp\",\n  \"type\": \"ExpenseUpdate\",\n  \"isEnabled\": true,\n  \"accountKey\": \"default\",\n  \"accountName\": \"Default Account\"\n}"
+              "raw": "{\n  \"accountKey\": \"all\",\n  \"accountName\": \"All Accounts Global Preference\",\n  \"walletId\": null,\n  \"notifyBalanceChanges\": true,\n  \"notifyBudgetAlerts\": true,\n  \"notifyLargeTransactions\": true,\n  \"largeTransactionThreshold\": 5000000,\n  \"notifyMinBalanceAlert\": true,\n  \"minBalanceThreshold\": 100000\n}"
             }
           },
           "response": [],
@@ -9160,8 +9173,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Save notification preference returns 200 or controlled 400\", function () {",
-                  "    pm.expect([200, 204, 400]).to.include(pm.response.code);",
+                  "pm.test(\"Save notification preference succeeds with 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.accountKey).to.eql(\"all\");",
                   "});"
                 ]
               }
@@ -9169,7 +9184,7 @@
           ]
         },
         {
-          "name": "B1-09 - Mark Single Notification Read (Negative Check for non-existent)",
+          "name": "B1-09 - Mark Single Notification Read",
           "request": {
             "method": "POST",
             "header": [
@@ -9183,14 +9198,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/notifications/00000000-0000-0000-0000-000000000001/read",
+              "raw": "{{baseUrl}}/api/notifications/{{firstNotificationId}}/read",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "notifications",
-                "00000000-0000-0000-0000-000000000001",
+                "{{firstNotificationId}}",
                 "read"
               ],
               "query": []
@@ -9201,18 +9216,18 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Mark non-existent notification returns 204 or 404\", function () {",
-                  "    pm.expect([204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Mark notification read succeeds with 200 or 204\", function () {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
         },
         {
-          "name": "B1-10 - Delete Single Notification (Negative Check for non-existent)",
+          "name": "B1-10 - Delete Single Notification",
           "request": {
             "method": "DELETE",
             "header": [
@@ -9226,14 +9241,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/notifications/00000000-0000-0000-0000-000000000001",
+              "raw": "{{baseUrl}}/api/notifications/{{secondNotificationId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "notifications",
-                "00000000-0000-0000-0000-000000000001"
+                "{{secondNotificationId}}"
               ],
               "query": []
             }
@@ -9243,12 +9258,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Delete non-existent notification returns 204 or 404\", function () {",
-                  "    pm.expect([204, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Delete single notification succeeds with 200 or 204\", function () {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -9713,6 +9728,55 @@
           ]
         },
         {
+          "name": "B2-06b - Upload Isolated Evidence for Multi-Wallet Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "backend/postman/receipt.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "evidence"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Upload evidence for multi-wallet returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const data = pm.response.json();",
+                  "    pm.environment.set(\"b2_multiWalletEvidenceId\", data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "B2-07 - Multi-Wallet Expense Allocation (Controlled Validation / Ledger)",
           "request": {
             "method": "POST",
@@ -9745,7 +9809,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 100000,\n  \"categoryId\": \"{{categoryId}}\",\n  \"pin\": \"123456\",\n  \"description\": \"Multi-wallet expense test\",\n  \"allocations\": [\n    {\n      \"walletId\": \"{{mainWalletId}}\",\n      \"amount\": 60000\n    },\n    {\n      \"walletId\": \"{{savingsWalletId}}\",\n      \"amount\": 40000\n    }\n  ]\n}"
+              "raw": "{\n  \"amount\": 50000,\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"description\": \"Split grocery payment between wallets\",\n  \"walletAllocations\": [\n    {\n      \"walletId\": \"{{userA_mainWalletId}}\",\n      \"amount\": 30000\n    },\n    {\n      \"walletId\": \"{{userA_savingsWalletId}}\",\n      \"amount\": 20000\n    }\n  ],\n  \"evidenceIds\": [\n    \"{{b2_multiWalletEvidenceId}}\"\n  ],\n  \"idempotencyKey\": \"multi-wallet-exp-{{runId}}-01\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             }
           },
           "response": [],
@@ -9755,8 +9819,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Multi-wallet expense returns controlled response\", function () {",
-                  "    pm.expect([200, 201, 400, 422]).to.include(pm.response.code);",
+                  "pm.test(\"Multi-wallet expense succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -9797,7 +9861,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Get transfer details returns 200 or 404\", function () {",
+                  "pm.test(\"Get transfer details returns expected status\", function () {",
                   "    pm.expect([200, 404]).to.include(pm.response.code);",
                   "});"
                 ]
@@ -9934,7 +9998,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"year\": 2026,\n  \"month\": 12,\n  \"limitAmount\": 5000000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"123456\"\n}"
+              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"year\": 2026,\n  \"month\": 12,\n  \"limitAmount\": 15000000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"{{default_pin}}\"\n}"
             }
           },
           "response": [],
@@ -9944,8 +10008,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Compatible budget PUT returns expected status\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
+                  "pm.test(\"Compatible budget PUT succeeds with 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
                   "});"
                 ]
               }
@@ -10671,7 +10735,7 @@
       "name": "16 - Batch 4: Support Cases, Disputes & AI Lifecycle",
       "item": [
         {
-          "name": "B4-01 - Create Financial Dispute via POST /api/cases/disputes",
+          "name": "B4-01 - Create Financial Dispute",
           "request": {
             "method": "POST",
             "header": [
@@ -10702,7 +10766,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"linkedTransactionId\": \"{{firstExpenseTransactionId}}\",\n  \"reason\": \"incorrect_amount\",\n  \"description\": \"Amount billed did not match receipt from vendor\"\n}"
+              "raw": "{\n  \"linkedTransactionId\": \"{{expenseTxId}}\",\n  \"reason\": \"incorrect_amount\",\n  \"description\": \"Amount charged 45000 did not match receipt from merchant\"\n}"
             }
           },
           "response": [],
@@ -10712,13 +10776,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create dispute returns 200, 201 or controlled validation\", function () {",
-                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
-                  "    try {",
-                  "        const jsonData = pm.response.json();",
-                  "        const did = jsonData.id || (jsonData.data && jsonData.data.id);",
-                  "        if (did) pm.environment.set(\"b4_disputeId\", did);",
-                  "    } catch(e) {}",
+                  "pm.test(\"Create dispute succeeds with 200 or 201 and stores disputeId\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "    const data = pm.response.json();",
+                  "    const did = data.id || (data.data && data.data.id);",
+                  "    pm.expect(did).to.be.a(\"string\");",
+                  "    pm.environment.set(\"b4_disputeId\", did);",
                   "});"
                 ]
               }
@@ -10760,8 +10823,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Case or AI operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Get dispute details returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.eql(pm.environment.get(\"b4_disputeId\"));",
                   "});"
                 ]
               }
@@ -10769,7 +10834,7 @@
           ]
         },
         {
-          "name": "B4-03 - Reply to Dispute Message via POST /api/cases/disputes/{id}/messages",
+          "name": "B4-03 - Reply to Dispute Message",
           "request": {
             "method": "POST",
             "header": [
@@ -10802,7 +10867,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"message\": \"Adding additional invoice details for the investigation.\"\n}"
+              "raw": "{\n  \"message\": \"User response providing additional receipt documentation for dispute.\"\n}"
             }
           },
           "response": [],
@@ -10812,8 +10877,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Case or AI operation returns expected status\", function () {",
-                  "    pm.expect([200, 204, 400, 404, 415]).to.include(pm.response.code);",
+                  "pm.test(\"Reply to dispute returns 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }

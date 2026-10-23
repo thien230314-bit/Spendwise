@@ -586,7 +586,7 @@ Evidence và ma trận đầy đủ: [CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md](ba
 
 ## PHỤ LỤC G — Đồng bộ 100% Tính năng & API User Backend (Cập nhật 22/10/2026)
 
-> **Mục tiêu đồng bộ:** Ghi nhận toàn bộ 205 User endpoints trên 20 bộ Controller hiện có của Backend vào đặc tả chính thức `User.md`. Không xóa bỏ tính năng Backend đã có để ép khớp tài liệu cũ; không bỏ qua các tính năng tương thích ngược (Legacy Groups); giữ nguyên toàn bộ các quy tắc bảo toàn tiền và các BLOCKER sản phẩm đã chốt.
+> **Mục tiêu đồng bộ:** Ghi nhận toàn bộ 216 User operations trên 27 bộ Controller hiện có của Backend vào đặc tả chính thức `User.md`. Không xóa bỏ tính năng Backend đã có để ép khớp tài liệu cũ; không bỏ qua các tính năng tương thích ngược (Legacy Groups); giữ nguyên toàn bộ các quy tắc bảo toàn tiền và các BLOCKER sản phẩm đã chốt.
 
 Chi tiết kiểm kê toàn diện từng endpoint, tham số request/response, validation và kiểm soát an toàn được ghi nhận tại tài liệu liên kết: [BACKEND-USER-FEATURE-INVENTORY.md](backend/docs/BACKEND-USER-FEATURE-INVENTORY.md).
 
@@ -620,6 +620,6 @@ Chi tiết kiểm kê toàn diện từng endpoint, tham số request/response, 
 
 ### 5. Duy trì Tương thích ngược Nhóm cũ (Legacy Groups Compatibility)
 - Bộ Controller `/api/groups` (29 endpoints) tiếp tục được duy trì đầy đủ để phục vụ dữ liệu lịch sử và các ứng dụng tích hợp cũ.
-- Hệ thống quỹ authoritative phục vụ Mobile User là **Quỹ V1 (`/api/v1/funds`)** với 36 endpoints hỗ trợ đầy đủ Fixed Fund (`CanSpend`), Free Fund (xét duyệt chi/rút), Bầu cử Chủ quỹ 2 vòng, Biểu quyết hoạt động mới 24h, Quyết toán chia lại tiền rải đồng dư và Giải thể quỹ khi số dư về đúng 0 VND.
+- Hệ thống quỹ authoritative phục vụ Mobile User là **Quỹ V1 (`/api/v1/funds`)** với 45 operations hỗ trợ đầy đủ Fixed Fund (`CanSpend`), Free Fund (xét duyệt chi/rút), Bầu cử Chủ quỹ 2 vòng, Biểu quyết hoạt động mới 24h, Quyết toán chia lại tiền rải đồng dư và Giải thể quỹ khi số dư về đúng 0 VND.
 - Tài khoản bị hạn chế tài chính (`Restricted` Level 1): Không được ghi nợ xuất tiền (chuyển P2P, chuyển ví, tạo chi tiêu, góp quỹ, xin rút quỹ); vẫn được đăng nhập, đổi theme/language, đổi mật khẩu, upload avatar, gửi hỗ trợ và nhận tiền chuyển đến/hoàn tiền.
 - Tài khoản bị khóa (`Locked` Level 2): Từ chối đăng nhập (403), thu hồi toàn bộ token và phiên hoạt động.

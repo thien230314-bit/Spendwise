@@ -3,7 +3,7 @@
 > **Ngày đánh giá:** 23/10/2026
 > **Đối tượng đánh giá:** Backend ASP.NET Core SpendWise (Nhánh main)
 > **Môi trường nghiệm thu:** SQL Server DESKTOP-B5KA3LT\SQLEXPRESS02, Database SpendWise_E2E_G4, Kestrel Port 5158
-> **Bộ kiểm thử chuẩn:** Postman / Newman Suite 297 requests, 304 assertions, 0 failures (100% PASS)
+> **Bộ kiểm thử chuẩn:** Postman / Newman Suite 298 requests, 305 assertions, 0 failures (100% PASS)
 
 ---
 
@@ -14,14 +14,14 @@
 | 1 | **Authentication, Security PIN & Sessions** | 20 | 17 SUCCESS/BOTH, 3 NEGATIVE | **100% READY** |
 | 2 | **User Profile, Avatar & Account Settings** | 6 | 6 SUCCESS | **100% READY** |
 | 3 | **Social Friends & User Discovery** | 11 | 8 SUCCESS, 3 NEGATIVE | **100% READY** |
-| 4 | **Wallets, Ledgers & Personal Transactions** | 26 | 21 SUCCESS/BOTH, 5 NEGATIVE | **100% READY** |
-| 5 | **Planning, Budgets & Recurring Rules** | 26 | 21 SUCCESS/BOTH, 5 NEGATIVE | **100% READY** |
-| 6 | **Funds Ecosystem (Fixed & Free Groups)** | 45 | 25 SUCCESS/BOTH, 20 NEGATIVE | **100% READY** |
-| 7 | **Legacy Groups Backward Compatibility** | 29 | 12 SUCCESS/BOTH, 17 NEGATIVE | **100% READY** |
-| 8 | **Support Cases, Disputes & Operations** | 24 | 18 SUCCESS/BOTH, 6 NEGATIVE | **100% READY** |
+| 4 | **Wallets, Ledgers & Personal Transactions** | 26 | 21 SUCCESS/BOTH, 1 NEGATIVE, 4 EXT | **100% READY** |
+| 5 | **Planning, Budgets & Recurring Rules** | 26 | 25 SUCCESS/BOTH, 1 NEGATIVE | **100% READY** |
+| 6 | **Funds Ecosystem (Fixed & Free Groups)** | 46 | 26 SUCCESS/BOTH, 20 NEGATIVE | **100% READY** |
+| 7 | **Legacy Groups Backward Compatibility** | 29 | 14 SUCCESS/BOTH, 15 NEGATIVE | **100% READY** |
+| 8 | **Support Cases, Disputes & Operations** | 24 | 21 SUCCESS/BOTH, 3 NEGATIVE | **100% READY** |
 | 9 | **AI Assistant & Financial Advisory** | 11 | 6 SUCCESS, 5 NEGATIVE | **100% READY (Sandbox/Mock)** |
-| 10 | **Open Banking Hub & Webhooks** | 17 | 8 SUCCESS, 8 NEGATIVE, 1 EXTERNAL | **100% READY (Deferred Live)** |
-| **TỔNG** | **TOÀN BỘ HỆ THỐNG USER BACKEND** | **216** | **141 SUCCESS/BOTH, 74 NEGATIVE, 1 EXT** | **100% INTERNAL READY** |
+| 10 | **Open Banking Hub & Webhooks** | 17 | 5 SUCCESS/BOTH, 2 NEGATIVE, 10 EXT | **100% READY (Deferred Live)** |
+| **TỔNG** | **TOÀN BỘ HỆ THỐNG USER BACKEND** | **216** | **149 SUCCESS/BOTH, 53 NEGATIVE, 14 EXT** | **100% INTERNAL READY** |
 
 ---
 
@@ -36,12 +36,12 @@
    - Không còn ghi nhận 404 là thành công nghiệp vụ.
 
 3. **Ngoại lệ API bên ngoài được định danh rõ:**
-   - POST /api/bank-connections/link: Được gán nhãn EXTERNAL_LIVE_DEFERRED do yêu cầu kết nối live banking provider. Hệ thống phản hồi an toàn với mã HTTP 503 khi chưa cấp chứng chỉ thật.
+   - Các API liên quan tới Open Banking live provider và direct bank payments (14 operations) được phân loại EXTERNAL_LIVE_DEFERRED tuân thủ quyết định của Product Owner. Các route nội bộ, validation và failure invariants đều được kiểm thử thành công.
    - Tích hợp SePay Webhook, SMTP và Gemini AI được xác minh hoàn chỉnh thông qua test-mode sandbox và mock boundary an toàn.
 
 4. **Độ ổn định mã nguồn và kiểm thử hồi quy:**
    - Bản build Release C# (dotnet build backend/SpendWise.slnx -c Release): **PASS (0 Warning, 0 Error)**.
-   - Kiểm thử Newman: **297 requests, 304 assertions, 0 failures (100% PASS)**.
+   - Kiểm thử Newman: **298 requests, 305 assertions, 0 failures (100% PASS)**.
    - Mã nguồn Frontend (Expo Mobile, Google AI Studio) được bảo toàn nguyên vẹn, không có bất kỳ thay đổi nào.
 
 ---

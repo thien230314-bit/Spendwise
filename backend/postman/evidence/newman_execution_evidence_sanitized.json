@@ -2,7 +2,7 @@
   "evidenceMode": "FRESH_NEWMAN_EXECUTION",
   "suite": "SpendWise User API Acceptance Suite (Sanitized Real Execution Evidence)",
   "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
-  "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+  "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
   "verifierVersion": "2.1.0",
   "timestamp": "2026-10-24T18:32:35+07:00",
   "targetDatabase": "SpendWise_E2E_G4",
@@ -35,7 +35,7 @@
         "Status code is 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -62,7 +62,7 @@
         "Registration returns 200 with EMAIL_VERIFICATION_REQUIRED"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -89,7 +89,7 @@
         "Duplicate registration returns 409 Conflict"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -116,7 +116,7 @@
         "Resend verification returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -143,7 +143,7 @@
         "Email verification returns 200 and challengeToken"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -170,7 +170,7 @@
         "PIN setup returns 200 and auth tokens"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -197,7 +197,7 @@
         "Registration User B returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -224,7 +224,7 @@
         "User B verification returns challengeToken"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -251,7 +251,7 @@
         "User B PIN setup returns auth tokens"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -278,7 +278,7 @@
         "Token refresh returns 200 and new access token"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -305,7 +305,7 @@
         "Unverified registration succeeds"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -332,7 +332,7 @@
         "Unverified user login returns 403 Forbidden"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -359,7 +359,7 @@
         "Wrong password returns 400 or 401"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -386,7 +386,7 @@
         "Valid PIN verify returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -413,7 +413,7 @@
         "Invalid PIN verify returns 400 or 401"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -440,7 +440,7 @@
         "Change PIN returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -467,7 +467,7 @@
         "Revert PIN returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -494,7 +494,7 @@
         "Forgot password returns 200 or 202 Accepted"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -521,7 +521,7 @@
         "Reset password returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -548,7 +548,7 @@
         "Login gives challenge token"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -575,7 +575,7 @@
         "PIN login gives fresh active tokens"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -602,7 +602,7 @@
         "List sessions returns 200 and active session array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -629,7 +629,7 @@
         "Revoke session returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -656,7 +656,7 @@
         "Login re-establishes challenge"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -683,7 +683,7 @@
         "PIN login completes and stores permanent userA_token"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -710,7 +710,7 @@
         "PIN status returns isSet = true"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -737,7 +737,7 @@
         "Get profile returns 200 and user info"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -764,7 +764,7 @@
         "Upload avatar returns 200 and updated avatarUrl"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -791,7 +791,7 @@
         "Preferences update returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -818,7 +818,7 @@
         "Search User B returns 200 and matches User B ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -845,7 +845,7 @@
         "Search User B by SpendId returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -872,7 +872,7 @@
         "Discover users returns 200 with paginated array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -899,7 +899,7 @@
         "Send friend request returns 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -926,7 +926,7 @@
         "Duplicate friend request returns 200, 400 or 409"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -953,7 +953,7 @@
         "Outgoing requests contains request to User B"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -980,7 +980,7 @@
         "Incoming requests contains request from User A"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1007,7 +1007,7 @@
         "Accept friend request returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1034,7 +1034,7 @@
         "User A friend list contains User B"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1061,7 +1061,7 @@
         "User B friend list contains User A"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1088,7 +1088,7 @@
         "Update friend preference returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1115,7 +1115,7 @@
         "List wallets returns 200 and finds Main wallet"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1142,7 +1142,7 @@
         "Get categories returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1169,7 +1169,7 @@
         "Evidence upload returns 200/201 and ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1196,7 +1196,7 @@
         "Income returns 201 Created and transaction ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1223,7 +1223,7 @@
         "Create Savings Wallet returns 201"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1250,7 +1250,7 @@
         "Create Emergency Wallet returns 201"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1277,7 +1277,7 @@
         "Exceeding 3 personal wallets returns 409 Conflict"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1304,7 +1304,7 @@
         "Get wallet details returns 200 and balance 10,000,000 VND"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1331,7 +1331,7 @@
         "Update wallet returns 200 and updated name"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1358,7 +1358,7 @@
         "Create category returns 201 Created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1385,7 +1385,7 @@
         "Expense evidence upload returns 200/201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1412,7 +1412,7 @@
         "Expense returns 201 Created and transaction ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1439,7 +1439,7 @@
         "Internal transfer returns 201 Created"
       ],
       "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1466,7 +1466,7 @@
         "Balances reflect 10M - 45k - 3M = 6,955,000 VND in Main and 3M in Savings"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1493,7 +1493,7 @@
         "Filtered transactions list returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1520,7 +1520,7 @@
         "Get transaction details returns 200 and matches 45,000 VND"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1547,7 +1547,7 @@
         "Update transaction returns 200 and updated description"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1574,7 +1574,7 @@
         "Close empty wallet returns 204 NoContent"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1601,7 +1601,7 @@
         "P2P Transfer returns 201 Created"
       ],
       "financialVerificationReference": "SpendWise.Tests.P2PTransferTwoUserIntegrationTests.Execute_TransfersBalanceAtomicallyBetweenUsers",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1628,7 +1628,7 @@
         "User B Main wallet retrieved"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1655,7 +1655,7 @@
         "Create Fixed Fund returns 200/201 and fund ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1682,7 +1682,7 @@
         "Get Fixed Fund details returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1709,7 +1709,7 @@
         "Invite User B returns 200 and invitation ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1736,7 +1736,7 @@
         "User B accepts fund invitation returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1763,7 +1763,7 @@
         "List members returns 200 and contains 2 members"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1790,7 +1790,7 @@
         "Confirm obligations returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1817,7 +1817,7 @@
         "User A contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1844,7 +1844,7 @@
         "User B contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1871,7 +1871,7 @@
         "List contributions returns 200 and contains 2 entries"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1898,7 +1898,7 @@
         "Grant spending permission returns 204 NoContent"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1925,7 +1925,7 @@
         "Activities list returns 200 and records events"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1952,7 +1952,7 @@
         "Finance overview returns 200 and total collected 2,000,000 VND"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -1979,7 +1979,7 @@
         "Create Free Fund returns 200/201 and fund ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2006,7 +2006,7 @@
         "Invite User B returns 200 and invitation ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2033,7 +2033,7 @@
         "User B accepts Free Fund invitation returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2060,7 +2060,7 @@
         "User A flexible contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2087,7 +2087,7 @@
         "User B flexible contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2114,7 +2114,7 @@
         "Free Fund finance overview returns 200 and balance 800,000 VND"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2141,7 +2141,7 @@
         "Create fund request returns 200 and request ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2168,7 +2168,7 @@
         "Owner approves free fund request successfully"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2195,7 +2195,7 @@
         "Create second fund request returns 200 and request ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2222,7 +2222,7 @@
         "Refund preview returns 200 and refundable amount"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2249,7 +2249,7 @@
         "User B leaving fund returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2276,7 +2276,7 @@
         "Members list now has 1 active member"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2303,7 +2303,7 @@
         "Create budget returns 201 Created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2330,7 +2330,7 @@
         "List budgets returns 200 and contains created budget"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2357,7 +2357,7 @@
         "Update budget returns 200 and updated limit"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2384,7 +2384,7 @@
         "Delete budget returns 204 NoContent"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2411,7 +2411,7 @@
         "Create savings goal returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2438,7 +2438,7 @@
         "Goal contribution returns 200 and updated currentAllocatedAmount"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2465,7 +2465,7 @@
         "Get goal details returns 200 and allocated 2M"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2492,7 +2492,7 @@
         "Goal withdrawal returns 200 and remaining 1,500,000 VND"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2519,7 +2519,7 @@
         "Create recurring transaction returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2546,7 +2546,7 @@
         "List recurring transactions returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2573,7 +2573,7 @@
         "Create transaction rule returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2600,7 +2600,7 @@
         "List transaction rules returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2627,7 +2627,7 @@
         "Create AI conversation returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2654,7 +2654,7 @@
         "List AI conversations returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2681,7 +2681,7 @@
         "AI chat returns 200 OK (with live key) or controlled 503 (without live Gemini key)"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2708,7 +2708,7 @@
         "Find bank transfer recipient returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2735,7 +2735,7 @@
         "Create bank direct transfer returns 201 Created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2762,7 +2762,7 @@
         "Bank direct transfer history returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2789,7 +2789,7 @@
         "Webhook with invalid secret returns 401 Unauthorized"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2816,7 +2816,7 @@
         "List notifications returns 200 and captures real notificationId"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2843,7 +2843,7 @@
         "Mark all notifications read returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2870,7 +2870,7 @@
         "Search notifications returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2897,7 +2897,7 @@
         "Create support case returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2924,7 +2924,7 @@
         "List support cases returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2951,7 +2951,7 @@
         "Get support case details returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -2978,7 +2978,7 @@
         "Reply to support case returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3005,7 +3005,7 @@
         "List disputes returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3032,7 +3032,7 @@
         "Profile returned successfully"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3059,7 +3059,7 @@
         "Avatar upload returns 200 and avatarUrl"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3086,7 +3086,7 @@
         "Profile reflects newly uploaded avatar"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3113,7 +3113,7 @@
         "Logout returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3140,7 +3140,7 @@
         "Re-login returns challengeToken"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3167,7 +3167,7 @@
         "PIN login gives fresh active token"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3194,7 +3194,7 @@
         "Avatar persisted across fresh login sessions"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3221,7 +3221,7 @@
         "Email change request returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3248,7 +3248,7 @@
         "Confirm email change returns 200 and updated email"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3275,7 +3275,7 @@
         "Logout succeeds (200, 204 or 401)"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3302,7 +3302,7 @@
         "Login with new email returns 200 and challenge"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3329,7 +3329,7 @@
         "PIN login gives fresh active tokens for new email"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3356,7 +3356,7 @@
         "Login with old email is rejected (400 or 401)"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3383,7 +3383,7 @@
         "User B found by contact"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3410,7 +3410,7 @@
         "Friend request accepted or idempotent"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3437,7 +3437,7 @@
         "User A friend list contains User B"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3464,7 +3464,7 @@
         "User B friend list contains User A"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3491,7 +3491,7 @@
         "Fixed Fund created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3518,7 +3518,7 @@
         "Invite sent to User B"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3545,7 +3545,7 @@
         "User B accepts fund invitation"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3572,7 +3572,7 @@
         "Obligations confirmed"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3599,7 +3599,7 @@
         "User A contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3626,7 +3626,7 @@
         "User B contribution returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3653,7 +3653,7 @@
         "Total fund balance reaches 1,000,000 VND target"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3680,7 +3680,7 @@
         "Spending permission granted"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3707,7 +3707,7 @@
         "Activity log recorded events"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3734,7 +3734,7 @@
         "Main and Savings wallets identified"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3761,7 +3761,7 @@
         "Internal transfer returns 201 Created"
       ],
       "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3788,7 +3788,7 @@
         "Wallet 2 balance increased by 300,000 VND"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3815,7 +3815,7 @@
         "Transactions list returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3842,7 +3842,7 @@
         "Expense category found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3869,7 +3869,7 @@
         "Budget created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3896,7 +3896,7 @@
         "Budget details match initial state"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3923,7 +3923,7 @@
         "Evidence uploaded for budget expense returns 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3950,7 +3950,7 @@
         "Record budget expense returns 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -3977,7 +3977,7 @@
         "Budget spent amount and percentage updated after expense"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4004,7 +4004,7 @@
         "PATCH transaction correction returns 200 and updated amount"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4031,7 +4031,7 @@
         "Budget spent amount and percentage re-calculated after correction"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4058,7 +4058,7 @@
         "Budget limit updated to 3,000,000 VND"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4085,7 +4085,7 @@
         "Budget cleanly deleted"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4112,7 +4112,7 @@
         "User B budget created successfully"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4139,7 +4139,7 @@
         "User B goal created successfully returns 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4166,7 +4166,7 @@
         "User B evidence uploaded returns 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4193,7 +4193,7 @@
         "User B downloads own evidence returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4220,7 +4220,7 @@
         "Cross-user wallet access is rejected with 404 Not Found"
       ],
       "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4247,7 +4247,7 @@
         "Cross-user budget deletion is rejected with 404 Not Found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4274,7 +4274,7 @@
         "Cross-user goal access is rejected with 404 Not Found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4301,7 +4301,7 @@
         "Cross-user evidence access is rejected with 404 Not Found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4328,7 +4328,7 @@
         "Non-owner permission change is rejected with 403 Forbidden"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4355,7 +4355,7 @@
         "Non-owner fund review is rejected with 403 Forbidden or 404 Not Found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4382,7 +4382,7 @@
         "Execution of non-existent AI action returns 404 Not Found"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4409,7 +4409,7 @@
         "Cancellation of non-existent AI action returns 409 Conflict"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4436,7 +4436,7 @@
         "User B budget remains intact and unmodified"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4463,7 +4463,7 @@
         "Status code is 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4490,7 +4490,7 @@
         "Forgot PIN instructions accepted (202 Accepted)"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4524,7 +4524,7 @@
         "Token is reported invalid"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4558,7 +4558,7 @@
         "Reports bank connections list"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4594,7 +4594,7 @@
         "Explicit disabled code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4630,7 +4630,7 @@
         "Explicit disabled code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4666,7 +4666,7 @@
         "Explicit disabled code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4702,7 +4702,7 @@
         "Explicit disabled code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4738,7 +4738,7 @@
         "Explicit disabled code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4772,7 +4772,7 @@
         "Reported fund request enters Suspended state"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4806,7 +4806,7 @@
         "Cancelled fund request returns Cancelled state and request id"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4840,7 +4840,7 @@
         "Activity proposal settled"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4867,7 +4867,7 @@
         "Advance election returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4901,7 +4901,7 @@
         "Kicked member returns valid refund result structure"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4935,7 +4935,7 @@
         "Dissolved fund returns valid result structure"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4962,7 +4962,7 @@
         "System maintenance status returned (200 OK)"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -4989,7 +4989,7 @@
         "Submit account recovery returns 202 Accepted"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5016,7 +5016,7 @@
         "Status code is 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5043,7 +5043,7 @@
         "Get maintenance state returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5070,7 +5070,7 @@
         "Get active announcement returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5097,7 +5097,7 @@
         "Register push installation returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5124,7 +5124,7 @@
         "Unregister push installation returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5151,7 +5151,7 @@
         "Get notification preferences returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5178,7 +5178,7 @@
         "Save notification preference succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5205,7 +5205,7 @@
         "Mark notification read succeeds with 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5232,7 +5232,7 @@
         "Delete single notification succeeds with 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5259,7 +5259,7 @@
         "Clear notifications returns 200 OK with deleted count"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5293,7 +5293,7 @@
         "Request status is Rejected"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5320,7 +5320,7 @@
         "Status code is 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5347,7 +5347,7 @@
         "Status code is 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5374,7 +5374,7 @@
         "Create category returns 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5401,7 +5401,7 @@
         "Get category returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5428,7 +5428,7 @@
         "Update category returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5455,7 +5455,7 @@
         "Archive/Delete category returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5482,7 +5482,7 @@
         "Get dashboard returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5509,7 +5509,7 @@
         "SePay IPN returns 401 Unauthorized with wrong secret"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5536,7 +5536,7 @@
         "Upload evidence for multi-wallet returns 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5563,7 +5563,7 @@
         "Multi-wallet expense succeeds with 200 or 201"
       ],
       "financialVerificationReference": "SpendWise.Tests.MultiWalletExpenseTests.Execute_DeductsMultipleWalletsAtomically",
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5590,7 +5590,7 @@
         "Get transfer details returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5617,7 +5617,7 @@
         "Confirm transfer returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5644,7 +5644,7 @@
         "Record V1 activity returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5671,7 +5671,7 @@
         "Compatible budget PUT succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5698,7 +5698,7 @@
         "List goals returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5725,7 +5725,7 @@
         "Create goal succeeds with 200/201 and stores ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5752,7 +5752,7 @@
         "Update goal returns 200, 204, 400 or 404"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5779,7 +5779,7 @@
         "Delete goal returns 200, 204 or 404"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5806,7 +5806,7 @@
         "Create recurring transaction succeeds with 200/201 and stores ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5833,7 +5833,7 @@
         "Get recurring transaction succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5860,7 +5860,7 @@
         "Update recurring transaction succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5887,7 +5887,7 @@
         "Pause recurring transaction succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5914,7 +5914,7 @@
         "Resume recurring transaction succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5948,7 +5948,7 @@
         "Transaction recorded"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -5975,7 +5975,7 @@
         "Recurring transaction operation returns expected status"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6002,7 +6002,7 @@
         "Create transaction rule succeeds with 200/201 and stores ID"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6029,7 +6029,7 @@
         "Get transaction rule succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6056,7 +6056,7 @@
         "Update transaction rule succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6083,7 +6083,7 @@
         "Transaction rule operation returns expected status"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6110,7 +6110,7 @@
         "Create dispute succeeds with 200 or 201 and stores disputeId"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6137,7 +6137,7 @@
         "Get dispute details returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6164,7 +6164,7 @@
         "Reply to dispute returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6191,7 +6191,7 @@
         "Dispute multipart reply succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6218,7 +6218,7 @@
         "Support multipart reply succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6252,7 +6252,7 @@
         "Case attachment download returns valid file payload"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6279,7 +6279,7 @@
         "Create AI conversation returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6306,7 +6306,7 @@
         "Case or AI operation returns expected status"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6333,7 +6333,7 @@
         "Case or AI operation returns expected status"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6360,7 +6360,7 @@
         "Case or AI operation returns expected status"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6387,7 +6387,7 @@
         "Upload AI attachment returns 201 Created"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6421,7 +6421,7 @@
         "AI attachment download returns valid file payload"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6455,7 +6455,7 @@
         "Proposal details returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6482,7 +6482,7 @@
         "Execute proposal succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6516,7 +6516,7 @@
         "AI action proposal cancelled returns valid DTO"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6543,7 +6543,7 @@
         "Create bank link session returns 200 OK or controlled response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6577,7 +6577,7 @@
         "Connection details returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6611,7 +6611,7 @@
         "Unlink response contains valid sessionId and purpose"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6645,7 +6645,7 @@
         "Returns bank_connection_not_inactive code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6679,7 +6679,7 @@
         "Returns bank_sync_not_supported code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6713,7 +6713,7 @@
         "Returns wallet_top_up_pending or provider code"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6747,7 +6747,7 @@
         "List bank transactions returns pagination structure"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6781,7 +6781,7 @@
         "Transaction details returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6815,7 +6815,7 @@
         "Reclassified bank transaction returns updated category and transaction id"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6842,7 +6842,7 @@
         "List V1 funds returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6869,7 +6869,7 @@
         "Get fund requests returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6896,7 +6896,7 @@
         "Get governance returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6930,7 +6930,7 @@
         "Fund owner response details returned with valid structure"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6964,7 +6964,7 @@
         "Support case ticket GUID returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -6991,7 +6991,7 @@
         "Close activity window returns 204 or 400"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7018,7 +7018,7 @@
         "Propose activity returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7052,7 +7052,7 @@
         "Proposal details returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7086,7 +7086,7 @@
         "Proposal vote accepted"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7120,7 +7120,7 @@
         "Election opened"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7154,7 +7154,7 @@
         "Election details returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7188,7 +7188,7 @@
         "Candidate registered"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7222,7 +7222,7 @@
         "Ballot receipt returned"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7256,7 +7256,7 @@
         "Accepted elected ownership returns valid election DTO"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7290,7 +7290,7 @@
         "Rejected elected ownership transitions with FailureReason"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7317,7 +7317,7 @@
         "Get contribution allocation returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7344,7 +7344,7 @@
         "Get invitations returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7371,7 +7371,7 @@
         "Get invitation proposals returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7405,7 +7405,7 @@
         "Invitation status is Pending"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7439,7 +7439,7 @@
         "Invitation declined"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7473,7 +7473,7 @@
         "Invitation cancelled"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7500,7 +7500,7 @@
         "Offer ownership returns 200 or 400 when rules apply"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7527,7 +7527,7 @@
         "Status code is 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7554,7 +7554,7 @@
         "List ownership offers returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7581,7 +7581,7 @@
         "List groups returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7608,7 +7608,7 @@
         "Create legacy group succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7635,7 +7635,7 @@
         "Get legacy group details succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7662,7 +7662,7 @@
         "Update legacy group succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7689,7 +7689,7 @@
         "Invite member succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7716,7 +7716,7 @@
         "List group invites returns 200 OK with array"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7743,7 +7743,7 @@
         "Reject group invite succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7770,7 +7770,7 @@
         "Accept invite succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7797,7 +7797,7 @@
         "Remove group member returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7824,7 +7824,7 @@
         "Transfer group ownership returns 200 or 204"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7851,7 +7851,7 @@
         "Set receiving bank succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7878,7 +7878,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7905,7 +7905,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7932,7 +7932,7 @@
         "Contribute to shared fund succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7959,7 +7959,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -7986,7 +7986,7 @@
         "Create fund request succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8013,7 +8013,7 @@
         "Pay fund request succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8040,7 +8040,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8067,7 +8067,7 @@
         "Create fund round succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8094,7 +8094,7 @@
         "Pay fund round succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8121,7 +8121,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8148,7 +8148,7 @@
         "Create group expense succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8175,7 +8175,7 @@
         "Legacy group operation returns expected response"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8202,7 +8202,7 @@
         "Get deletion request returns 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8229,7 +8229,7 @@
         "Request group deletion succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8256,7 +8256,7 @@
         "Cancel deletion succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8283,7 +8283,7 @@
         "Re-request group deletion succeeds with 200 or 201"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8310,7 +8310,7 @@
         "Vote deletion succeeds with 200"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8337,7 +8337,7 @@
         "Refund payment succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8364,7 +8364,7 @@
         "Finalize deletion succeeds with 200 OK"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
@@ -8391,7 +8391,7 @@
         "Revoke sessions returns 204 NoContent"
       ],
       "financialVerificationReference": null,
-      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
       "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
       "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     }

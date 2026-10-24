@@ -1,6 +1,6 @@
 # BÁO CÁO KẾT QUẢ KIỂM THỬ TỰ ĐỘNG USER API SPENDWISE BẰNG NEWMAN / POSTMAN
 
-> **Ngày kiểm thử:** 24/10/2026
+> **Ngày kiểm thử:** 24/10/2026 (Lượt chạy chốt: 2026-10-24T18:32:35+07:00, Run ID: `fresh-run-20261024`)
 > **Môi trường:** Kestrel HTTP Server port 5158, SQL Server DESKTOP-B5KA3LT\SQLEXPRESS02, Database SpendWise_E2E_G4
 > **Phạm vi kiểm thử:** Toàn bộ 216 User Operations OpenAPI của hệ thống SpendWise
 > **Công cụ thực thi:** Newman CLI v6, Node.js v24.18.0
@@ -16,9 +16,9 @@
 | **Tổng số Assertions** | **339** | Kiểm tra Status Code, JSON Contract, State Invariants, Deep Business Evidence |
 | **Số Assertions ĐẠT (PASS)** | **339** | **100.0% PASS (0 Failure)** |
 | **Số Assertions LỖI (FAIL)** | **0** | **0 Failures** |
-| **Thời gian thực thi toàn bộ** | **1m 8s** | Chạy tự động liên tục qua Newman CLI |
-| **Tổng dữ liệu nhận được** | **130.07 kB** | |
-| **Thời gian phản hồi trung bình** | **133 ms** | Phản hồi ổn định trên SQL Server test instance |
+| **Thời gian thực thi toàn bộ** | **1m 24.5s** | Chạy tự động liên tục qua Newman CLI (FRESH_NEWMAN_EXECUTION) |
+| **Tổng dữ liệu nhận được** | **130.58 kB** | Nhận phản hồi hoàn chỉnh từ API server |
+| **Thời gian phản hồi trung bình** | **195 ms** | Phản hồi ổn định trên SQL Server test instance |
 
 ---
 

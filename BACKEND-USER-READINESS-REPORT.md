@@ -7,7 +7,7 @@
 
 ---
 
-## 1. TỔNG QUAN MỨC ĐỘ SẴN SÀNG THEO 10 MIỀN NGHIỆP VỤ
+## 1. TỔNG QUAN MỨC ĐỘ SẴN SÀNG THEO 11 MIỀN NGHIỆP VỤ
 
 | STT | Phân Hệ Nghiệp Vụ | Tổng Operations | Phân Loại Đạt Được | Trạng Thái Sẵn Sàng (Readiness) |
 | :---: | :--- | :---: | :--- | :---: |

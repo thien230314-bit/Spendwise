@@ -15,7 +15,7 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 |---|---|---|:---:|---|---|
 | 1 | **Xác thực & Bảo mật (`AuthController`)** | `/api/auth` | 16 | `auth`, `emailVerification`, `financial` | Anonymous / Token / Bearer |
 | 2 | **Hồ sơ & Người dùng (`UsersController`)** | `/api/users` | 6 | `financial` (preferences, avatar) | Authenticated User |
-| 3 | **Mã PIN giao dịch (`SecurityPinController`)** | `/api/security-pin` | 3 | `financial` | Authenticated User |
+| 3 | **Mã PIN giao dịch (`SecurityPinController`)** | `/api/security-pin` | 3 | `auth` | Authenticated User |
 | 4 | **Khôi phục tài khoản (`AccountRecoveryController`)** | `/api/account-recovery` | 1 | Không | Anonymous / Challenged |
 | 5 | **Đẩy thông báo thiết bị (`MobilePushController`)** | `/api/mobile/push` | 2 | Không | Authenticated User |
 | 6 | **Bạn bè & Mạng xã hội (`FriendsController`)** | `/api/friends` | 11 | `userDiscovery` (30 req/min) | Authenticated User |
@@ -44,9 +44,9 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 
 
 > **Ghi chú về Global API Read Rate Limiting (Bảo vệ chống spam F5 & request flooding):**
-> Toàn bộ các request HTTP GET gửi tới /api/* được bảo vệ thêm 2 tầng PartitionedRateLimiter toàn cục được cấu hình qua ppsettings.json:
-> 1. piReadSlidingLimiter: Giới hạn Sliding Window (mặc định 60 requests/phút, 6 phân đoạn 10s) phân vùng theo UserId (đã đăng nhập) hoặc IP từ kết nối tin cậy (khi chưa xác thực).
-> 2. piReadConcurrentLimiter: Giới hạn Concurrency Limiter (mặc định 10 request đồng thời) bảo vệ connection pool của database.
+> Toàn bộ các request HTTP GET gửi tới /api/* được bảo vệ thêm 2 tầng PartitionedRateLimiter toàn cục được cấu hình qua ppsettings.json:
+> 1. piReadSlidingLimiter: Giới hạn Sliding Window (mặc định 60 requests/phút, 6 phân đoạn 10s) phân vùng theo UserId (đã đăng nhập) hoặc IP từ kết nối tin cậy (khi chưa xác thực).
+> 2. piReadConcurrentLimiter: Giới hạn Concurrency Limiter (mặc định 10 request đồng thời) bảo vệ connection pool của database.
 > - Các endpoint hạ tầng được miễn trừ khỏi limiter này: /health, /hubs/* (SignalR), /api/ping, /openapi/*, /swagger/*.
 > - Khi bị chặn, hệ thống trả về mã trạng thái HTTP 429 Too Many Requests kèm header chuẩn Retry-After: <seconds> và Problem Details (code: rate_limit_exceeded).
 ---
@@ -497,9 +497,9 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/users/me/email/request` | POST | Profile | IMPLEMENTED | PASS (C# SQL02 E2E) |
 | `/api/users/me/email/confirm` | POST | Profile | IMPLEMENTED | PASS (C# SQL02 E2E) |
 | `/api/users/me/sessions` | DELETE | Profile | IMPLEMENTED | PASS (C#) |
-| `/api/pin/status` | GET | PIN | IMPLEMENTED | PASS (C#) |
-| `/api/pin/verify` | POST | PIN | IMPLEMENTED | PASS (C#) |
-| `/api/pin` | PUT | PIN | IMPLEMENTED | PASS (C#) |
+| `/api/security-pin/status` | GET | PIN | IMPLEMENTED | PASS (C#) |
+| `/api/security-pin/verify` | POST | PIN | IMPLEMENTED | PASS (C#) |
+| `/api/security-pin` | PUT | PIN | IMPLEMENTED | PASS (C#) |
 | `/api/account-recovery` | POST | Recovery | IMPLEMENTED | PASS (C#) |
 | `/api/mobile/push/{installationId}` | PUT | Push | IMPLEMENTED | PASS (C#) |
 | `/api/mobile/push/{installationId}` | DELETE | Push | IMPLEMENTED | PASS (C#) |

@@ -161,6 +161,8 @@ Mỗi bản ghi cần người/hệ thống thực hiện, hành động, thời
 10. **Khóa danh sách cử tri** và thành viên hợp lệ khi mở cuộc bầu, lưu đợt bầu, đề cử, phiếu, kết quả từng vòng, người nhận quyền, thời điểm và lý do; không bỏ phiếu trùng, không chuyển quyền hai lần do retry. Thông báo mẫu: “A không hoạt động trên SpendWise 15 ngày; nhóm mở bầu chủ mới”; “B đã trở thành chủ nhóm mới”; “D đã tham gia nhóm”; “D đã rời nhóm”. Các thông báo thuộc **Lịch sử hoạt động nhóm**, không phải Lịch sử giao dịch.
 11. **Bổ sung v1.2:** Chủ nhóm vẫn dùng app nhưng không phản hồi các việc bắt buộc ở **mục 4.6** cũng là một điều kiện để mở bầu lại chủ nhóm, theo đúng cơ chế hai vòng ở các điểm 4–10 nêu trên.
 
+> **[SUPERSEDED / ĐÃ ĐƯỢC THAY THẾ BỞI QUYẾT ĐỊNH PRODUCT OWNER TẠI MỤC V1.0 / PHỤ LỤC G]:** Mốc thời gian bầu cử chuẩn đã được phê duyệt cố định: Candidate 24h, Nomination/Round 1 48h, Run-off 24h, Confirmation 24h, Taking Power 24h; FreezeMembership = true, AllowContributions = false, và xử lý Failed Election / WinnerRejected.
+
 **CHƯA CHỐT — BLOCKER cho lập trình bầu cử tự động:** Thời lượng/mốc đóng **vòng 1, vòng bầu phụ, vòng 2**, cách xử lý không có ai nhận đề cử hoặc ứng viên không nhận chức, thời điểm chốt số cử tri nếu giữa hai vòng có tài khoản bị khóa, và thao tác khóa/mở đóng góp–chi–rời trong khi bầu cử. Không tự lấy mốc 24h chờ rời để áp cho thời gian bỏ phiếu. **Ngưỡng vòng 2 trên 50% đã CHỐT**.
 
 ### 4.6. Thời hạn phản hồi của chủ nhóm (v1.2 — vá lỗ hổng “giữ quyết định vô thời hạn”)
@@ -396,7 +398,9 @@ Với tổng dự kiến nguyên đồng `T`, `n` người tham gia nghĩa vụ 
 1. **ĐÃ CHỐT:** Trả khoản **dư khóa còn thực** đúng người trước; phần còn lại chia theo **quyền lợi đóng góp còn hiệu lực** sau khi đối soát các khoản góp/chi/rút/hoàn/chuyển kỳ. **Không lấy nguyên tổng góp gốc** làm trọng số nếu đã có rút/hoàn hoặc đã trả dư khóa; không đếm tiền hai lần.
 2. Với tổng số dư thực sự cần chia `B` và trọng số hợp lệ `w_i` đã được xác định từ ledger, mỗi người nhận phần nguyên `floor(B * w_i / sum(w))`, sau đó rải đồng dư theo phần dư lớn nhất, hòa thì theo thứ tự ổn định. Phải dùng số học nguyên không tràn, kết quả tổng bằng đúng `B`.
 3. **Ví dụ trọng số đã được quyết toán** `3:2:1` với 1.000đ ⇒ **500đ, 333đ, 167đ**.
-4. **CHƯA CHỐT — BLOCKER:** Công thức xác định `w_i` **khi đã có nhiều lần thay T, chi, thành viên rời/kick, chuyển hoạt động, khoản rút cá nhân ở nhóm loại 2**. Thuật toán rải đồng chỉ giải quyết làm tròn, **không** giải quyết quyền hưởng tiền. Không tự đồng nhất `w_i` với `totalContributed` hoặc đơn thuần `totalContributed - withdrawals` nếu chưa chứng minh ledger bảo toàn đầy đủ.
+4. > **[SUPERSEDED / ĐÃ ĐƯỢC THAY THẾ BỞI QUYẾT ĐỊNH PRODUCT OWNER TẠI PHỤ LỤC D/E/F]:** Quy tắc Membership Episode Isolation và Rejoin độc lập đã giải quyết việc cô lập nghĩa vụ tài chính: thành viên Rejoin bắt đầu episode mới với 0 VND đóng góp cũ và JoinedAt mới; hoàn tiền tính trên tỷ lệ đóng góp ròng của episode hiện hành không làm giảm khoản góp của lần tái gia nhập mới.
+
+   **[LỊCH SỬ THAM CHIẾU — CHƯA CHỐT / BLOCKER]:** Công thức xác định `w_i` **khi đã có nhiều lần thay T, chi, thành viên rời/kick, chuyển hoạt động, khoản rút cá nhân ở nhóm loại 2**. Thuật toán rải đồng chỉ giải quyết làm tròn, **không** giải quyết quyền hưởng tiền. Không tự đồng nhất `w_i` với `totalContributed` hoặc đơn thuần `totalContributed - withdrawals` nếu chưa chứng minh ledger bảo toàn đầy đủ.
 
 ### 9.4. Điều kiện bất biến tài chính
 

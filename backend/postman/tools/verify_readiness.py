@@ -418,11 +418,15 @@ def evaluate_evidence_quality(
     for m in happy_matches:
         assertion_texts = " ".join(m.get("assertionNames", [])).lower()
         
-        # 204 No Content or DELETE operations:
-        # HTTP 204 No Content inherently represents completion of mutation without response body
+        # 204 No Content operations:
+        # Require substantive post-condition assertion, financial keyword/reference, or non-generic assertion
         if m["statusCode"] == 204:
-            has_substantive_match = True
-            break
+            has_explicit_post_condition = any(kw in assertion_texts for kw in POST_CONDITION_KEYWORDS)
+            has_explicit_fin = is_financial_operation(op) and (any(kw in assertion_texts for kw in FINANCIAL_KEYWORDS) or bool(m.get("financialVerificationReference")))
+            if has_explicit_post_condition or has_explicit_fin or not is_execution_generic_status_only(m):
+                has_substantive_match = True
+                break
+            continue
 
         # DELETE operations returning 200: require post-condition or deletion verification
         if op["method"] == "DELETE":

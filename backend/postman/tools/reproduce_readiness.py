@@ -3,6 +3,7 @@
 SpendWise Backend Acceptance & Readiness Gate Reproducer Tool
 Ingests sanitized execution evidence, Postman collection, and versioned contract baseline.
 Re-executes the readiness audit logic and outputs readiness_gate_results.json and POSTMAN-ENDPOINT-COVERAGE.md.
+Fully self-contained: works on a completely clean checkout without any uncommitted scratch directory.
 """
 
 import sys
@@ -14,12 +15,18 @@ VERIFIER_SCRIPT = os.path.join(REPO_ROOT, "backend/postman/tools/verify_readines
 COLLECTION_PATH = os.path.join(REPO_ROOT, "backend/postman/SpendWise-User-API.postman_collection.json")
 BASELINE_PATH = os.path.join(REPO_ROOT, "backend/postman/contracts/openapi_contract_baseline.json")
 EVIDENCE_PATH = os.path.join(REPO_ROOT, "backend/postman/evidence/newman_execution_evidence_sanitized.json")
-OPENAPI_PATH = os.path.join(REPO_ROOT, "scratch/openapi_live.json")
+OPENAPI_PATH = os.path.join(REPO_ROOT, "backend/postman/contracts/openapi_runtime_verified.json")
 
 def reproduce():
     print("================================================================================")
     print(" REPRODUCING SPENDWISE BACKEND ACCEPTANCE READINESS GATE EVALUATION")
     print("================================================================================")
+    print(f"Repository Root : {REPO_ROOT}")
+    print(f"OpenAPI Verified: {OPENAPI_PATH}")
+    print(f"Collection      : {COLLECTION_PATH}")
+    print(f"Baseline        : {BASELINE_PATH}")
+    print(f"Evidence        : {EVIDENCE_PATH}")
+    
     cmd = [
         sys.executable, VERIFIER_SCRIPT,
         "--run-report", EVIDENCE_PATH,

@@ -13,7 +13,7 @@ VERIFIER_SCRIPT = os.path.join(repo_root, "backend/postman/tools/verify_readines
 COLLECTION_PATH = os.path.join(repo_root, "backend/postman/SpendWise-User-API.postman_collection.json")
 BASELINE_PATH = os.path.join(repo_root, "backend/postman/contracts/openapi_contract_baseline.json")
 EVIDENCE_PATH = os.path.join(repo_root, "backend/postman/evidence/newman_execution_evidence_sanitized.json")
-OPENAPI_PATH = os.path.join(repo_root, "scratch/openapi_live.json")
+OPENAPI_PATH = os.path.join(repo_root, "backend/postman/contracts/openapi_runtime_verified.json")
 
 class TestVerifyReadinessStrictGates(unittest.TestCase):
 
@@ -59,32 +59,28 @@ class TestVerifyReadinessStrictGates(unittest.TestCase):
 
     def test_collection_checksum_mismatch_fails_gate(self):
         """Verifier must detect mismatch between root and backend/postman collection copies."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            temp_root_col = os.path.join(tmpdir, "SpendWise-User-API.postman_collection.json")
-            with open(COLLECTION_PATH, "r", encoding="utf-8") as f:
-                c_data = json.load(f)
-            c_data["info"]["description"] = "Altered copy"
-            with open(temp_root_col, "w", encoding="utf-8") as f:
-                json.dump(c_data, f)
-            
-            # Link or copy backend/postman directory structure
-            temp_backend_dir = os.path.join(tmpdir, "backend", "postman")
-            os.makedirs(temp_backend_dir, exist_ok=True)
-            temp_backend_col = os.path.join(temp_backend_dir, "SpendWise-User-API.postman_collection.json")
-            with open(COLLECTION_PATH, "r", encoding="utf-8") as f:
-                with open(temp_backend_col, "w", encoding="utf-8") as out_f:
-                    out_f.write(f.read())
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as f:
+            with open(COLLECTION_PATH, "r", encoding="utf-8") as col_f:
+                c_data = json.load(col_f)
+            c_data["info"]["description"] = "Altered copy for adversarial test"
+            json.dump(c_data, f)
+            altered_col = f.name
 
+        try:
+            # Point --collection to altered file while root collection remains original
             cmd = [
                 sys.executable, VERIFIER_SCRIPT,
                 "--run-report", EVIDENCE_PATH,
                 "--openapi", OPENAPI_PATH,
-                "--collection", temp_backend_col,
+                "--collection", altered_col,
                 "--baseline", BASELINE_PATH
             ]
-            res = subprocess.run(cmd, capture_output=True, text=True, cwd=tmpdir)
+            res = subprocess.run(cmd, capture_output=True, text=True, cwd=repo_root)
             self.assertEqual(res.returncode, 1)
             self.assertIn("Collection checksum parity error", res.stderr + res.stdout)
+        finally:
+            if os.path.exists(altered_col):
+                os.remove(altered_col)
 
     def test_runtime_openapi_failure_aborts_when_required(self):
         """When --require-runtime is set and server is down, verifier must fail-closed."""
@@ -99,6 +95,39 @@ class TestVerifyReadinessStrictGates(unittest.TestCase):
         res = subprocess.run(cmd, capture_output=True, text=True, cwd=repo_root)
         self.assertEqual(res.returncode, 1)
         self.assertIn("Required runtime OpenAPI endpoint unreachable", res.stderr + res.stdout)
+
+    def test_adversarial_rejection_of_fake_evidence(self):
+        """Verifier must reject report where assertions are generic status-only or empty."""
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as f:
+            fake_evidence = {
+                "suite": "Fake Suite",
+                "totalExecutedRequests": 1,
+                "executions": [{
+                    "testCaseId": "FAKE-01",
+                    "name": "Fake Me",
+                    "method": "GET",
+                    "path": "/api/users/me",
+                    "responseCode": 200,
+                    "assertions": [{"assertion": "Status code is 200", "failed": False}]
+                }]
+            }
+            json.dump(fake_evidence, f)
+            fake_path = f.name
+
+        try:
+            cmd = [
+                sys.executable, VERIFIER_SCRIPT,
+                "--run-report", fake_path,
+                "--openapi", OPENAPI_PATH,
+                "--collection", COLLECTION_PATH,
+                "--baseline", BASELINE_PATH
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, cwd=repo_root)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("READINESS CRITERIA NOT MET", res.stdout)
+        finally:
+            if os.path.exists(fake_path):
+                os.remove(fake_path)
 
     def test_happy_path_passes_gate(self):
         """Full suite against verified evidence passes gate with exit code 0."""

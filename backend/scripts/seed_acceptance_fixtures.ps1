@@ -14,17 +14,32 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Hard Preflight Parameter Validation
-$normalizedServer = if ($Server) { $Server.Trim() } else { "" }
+# Hard Preflight Parameter Validation - EXACT Matching Only (No Substrings Allowed)
+$normalizedServer = if ($Server) { $Server.Trim().ToUpperInvariant() } else { "" }
 $normalizedDb = if ($Database) { $Database.Trim() } else { "" }
 
-if ($normalizedServer -match '(?i)SQL01' -or $normalizedServer -match '(?i)\bPROD\b' -or $normalizedServer -notmatch '(?i)SQLEXPRESS02') {
-    Write-Error "SAFETY ABORT: Target server '$normalizedServer' is prohibited. Acceptance test fixtures are strictly restricted to SQLEXPRESS02."
+$AUTHORIZED_SERVERS = @(
+    "DESKTOP-B5KA3LT\SQLEXPRESS02",
+    "localhost\SQLEXPRESS02",
+    "127.0.0.1\SQLEXPRESS02",
+    ".\SQLEXPRESS02"
+)
+
+$isAuthorizedServer = $false
+foreach ($authSrv in $AUTHORIZED_SERVERS) {
+    if ($normalizedServer -eq $authSrv.ToUpperInvariant()) {
+        $isAuthorizedServer = $true
+        break
+    }
+}
+
+if (-not $isAuthorizedServer) {
+    Write-Error "SAFETY ABORT: Target server '$Server' is prohibited. Acceptance test fixtures require exact instance match with authorized SQLEXPRESS02."
     exit 1
 }
 
 if ($normalizedDb -ne "SpendWise_E2E_G4") {
-    Write-Error "SAFETY ABORT: Target database '$normalizedDb' is prohibited. Acceptance test fixtures are strictly restricted to 'SpendWise_E2E_G4'."
+    Write-Error "SAFETY ABORT: Target database '$Database' is prohibited. Acceptance test fixtures are strictly restricted to 'SpendWise_E2E_G4'."
     exit 1
 }
 
@@ -37,24 +52,32 @@ Add-Type -AssemblyName System.Data
 $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
 $conn.Open()
 
-# Server-Side Environment Verification Query
+# Server-Side Environment Verification Query - Exact Instance and DB Verification
 $verifyCmd = $conn.CreateCommand()
-$verifyCmd.CommandText = "SELECT DB_NAME() AS CurrentDb, @@SERVERNAME AS ServerName, CAST(SERVERPROPERTY('InstanceName') AS NVARCHAR(100)) AS InstanceName;"
+$verifyCmd.CommandText = "SELECT DB_NAME() AS CurrentDb, @@SERVERNAME AS ServerName, CAST(SERVERPROPERTY('InstanceName') AS NVARCHAR(100)) AS InstanceName, CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(100)) AS MachineName;"
 $reader = $verifyCmd.ExecuteReader()
 if ($reader.Read()) {
-    $currentDb = $reader["CurrentDb"].ToString()
-    $serverName = $reader["ServerName"].ToString()
+    $currentDb = if ($reader["CurrentDb"] -ne [DBNull]::Value) { $reader["CurrentDb"].ToString() } else { "" }
+    $serverName = if ($reader["ServerName"] -ne [DBNull]::Value) { $reader["ServerName"].ToString() } else { "" }
     $instanceName = if ($reader["InstanceName"] -ne [DBNull]::Value) { $reader["InstanceName"].ToString() } else { "" }
     $reader.Close()
     
-    if ($currentDb -ne "SpendWise_E2E_G4") {
+    # Reject empty or unverified instance
+    if ([string]::IsNullOrWhiteSpace($instanceName)) {
         $conn.Close()
-        Write-Error "SAFETY ABORT: Connected database is '$currentDb', expected 'SpendWise_E2E_G4'. Aborting execution."
+        Write-Error "SAFETY ABORT: SQL Server InstanceName is empty or unverified. Default instances and non-SQLEXPRESS02 are prohibited."
         exit 1
     }
-    if ($serverName -match '(?i)SQL01|PROD' -or ($instanceName -ne "" -and $instanceName -notmatch '(?i)SQLEXPRESS02')) {
+
+    if ($instanceName.ToUpperInvariant() -ne "SQLEXPRESS02") {
         $conn.Close()
-        Write-Error "SAFETY ABORT: Connected server '$serverName' ($instanceName) is prohibited. Aborting execution."
+        Write-Error "SAFETY ABORT: SQL Server InstanceName is '$instanceName', strictly expected 'SQLEXPRESS02'. Aborting execution."
+        exit 1
+    }
+
+    if ($currentDb -ne "SpendWise_E2E_G4") {
+        $conn.Close()
+        Write-Error "SAFETY ABORT: Connected database is '$currentDb', strictly expected 'SpendWise_E2E_G4'. Aborting execution."
         exit 1
     }
 } else {
@@ -64,8 +87,12 @@ if ($reader.Read()) {
     exit 1
 }
 
+# Begin Database Transaction to guarantee atomic rollback upon any cleanup or seed error
+$transaction = $conn.BeginTransaction("AcceptanceFixtureSeeding")
+try {
 # Clean up existing test fixture rows in strictly scoped foreign key order
 $cleanupCmd = $conn.CreateCommand()
+$cleanupCmd.Transaction = $transaction
 $cleanupCmd.CommandText = @"
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -418,6 +445,7 @@ $pinHash = 'pin-pbkdf2-sha256$310000$fej+FEzmEpDX+x2Z2B5Ekw==$MB31foMUnHYMieqcke
 
 
 $uCmd = $conn.CreateCommand()
+$uCmd.Transaction = $transaction
 
 
 
@@ -942,6 +970,7 @@ Write-Host "Seeding Wallets, BankConnections, BankTransactions..."
 
 
 $wCmd = $conn.CreateCommand()
+$wCmd.Transaction = $transaction
 
 
 
@@ -1063,6 +1092,7 @@ Write-Host "Seeding Cases and Attachments..."
 
 
 $cCmd = $conn.CreateCommand()
+$cCmd.Transaction = $transaction
 
 
 
@@ -1183,6 +1213,7 @@ $pinTokenHash = [System.BitConverter]::ToString($sha.ComputeHash([System.Text.En
 
 
 $aiCmd = $conn.CreateCommand()
+$aiCmd.Transaction = $transaction
 
 
 
@@ -1339,6 +1370,7 @@ Write-Host "Seeding V1 Funds & Governance Fixtures..."
 
 
 $fCmd = $conn.CreateCommand()
+$fCmd.Transaction = $transaction
 
 
 
@@ -2395,6 +2427,7 @@ $fund2Ticks = $fund2Dt.Ticks
 
 
 $updEvCmd2 = $conn.CreateCommand()
+$updEvCmd2.Transaction = $transaction
 
 
 
@@ -2427,6 +2460,7 @@ $fund3Ticks = $fund3Dt.Ticks
 
 
 $updEvCmd3 = $conn.CreateCommand()
+$updEvCmd3.Transaction = $transaction
 
 
 
@@ -2442,6 +2476,15 @@ $updEvCmd3.ExecuteNonQuery() | Out-Null
 
 
 
+
+    $transaction.Commit()
+    Write-Host "Database transaction committed successfully."
+} catch {
+    Write-Host "ERROR encountered during fixture seeding. Rolling back transaction: $_"
+    try { $transaction.Rollback() } catch { Write-Host "Rollback warning: $_" }
+    $conn.Close()
+    throw $_
+}
 $conn.Close()
 
 

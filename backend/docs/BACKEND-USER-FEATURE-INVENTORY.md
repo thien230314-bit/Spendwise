@@ -15,7 +15,7 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 |---|---|---|:---:|---|---|
 | 1 | **Xác thực & Bảo mật (`AuthController`)** | `/api/auth` | 16 | `auth`, `emailVerification`, `financial` | Anonymous / Token / Bearer |
 | 2 | **Hồ sơ & Người dùng (`UsersController`)** | `/api/users` | 6 | `financial` (preferences, avatar) | Authenticated User |
-| 3 | **Mã PIN giao dịch (`SecurityPinController`)** | `/api/pin` | 3 | `financial` | Authenticated User |
+| 3 | **Mã PIN giao dịch (`SecurityPinController`)** | `/api/security-pin` | 3 | `financial` | Authenticated User |
 | 4 | **Khôi phục tài khoản (`AccountRecoveryController`)** | `/api/account-recovery` | 1 | Không | Anonymous / Challenged |
 | 5 | **Đẩy thông báo thiết bị (`MobilePushController`)** | `/api/mobile/push` | 2 | Không | Authenticated User |
 | 6 | **Bạn bè & Mạng xã hội (`FriendsController`)** | `/api/friends` | 11 | `userDiscovery` (30 req/min) | Authenticated User |
@@ -35,7 +35,7 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 | 20 | **Thông báo trong ứng dụng (`NotificationsController`)** | `/api/notifications` | 8 | Không | Authenticated User |
 | 21 | **Tích hợp Ngân hàng (`BankConnectionsController`)** | `/api/bank-connections` | 12 | Không | Authenticated User |
 | 22 | **Lịch sử giao dịch Ngân hàng (`BankTransactionsController`)** | `/api/bank-transactions` | 3 | Không | Authenticated User |
-| 23 | **SePay Webhook & IPN (`SePayBankHubIntegrationController`)** | `/api/bank-integrations/sepay` | 2 | IPN Signature Guard | Webhook Caller (SePay) |
+| 23 | **SePay Webhook & IPN (`SePayBankHubIntegrationController`)** | `/api/integrations/sepay/bankhub` | 2 | IPN Signature Guard | Webhook Caller (SePay) |
 | 24 | **Tổng quan tài chính (`DashboardController`)** | `/api/dashboard` | 1 | Không | Authenticated User |
 | 25 | **Trạng thái bảo trì & Thông báo (`OperationsController`)** | `/api/system` | 2 | Không | Public / Authenticated |
 | 26 | **Thông tin bảo trì User (`V1MaintenanceController`)** | `/api/v1/maintenance/current` | 1 | Không | Public / Authenticated |
@@ -420,8 +420,8 @@ Cung cấp trợ lý AI tương tác tự nhiên với người dùng về tình
 - `GET /api/bank-transactions` — Lấy danh sách giao dịch ngân hàng đã ghi nhận (`SUCCESS_VERIFIED`).
 - `GET /api/bank-transactions/{id}` — Lấy chi tiết một giao dịch ngân hàng (`SUCCESS_VERIFIED`).
 - `PATCH /api/bank-transactions/{id}/category` — Gán nhãn phân loại danh mục cho giao dịch ngân hàng (`SUCCESS_VERIFIED`).
-- `POST /api/bank-integrations/sepay/events` — Webhook nhận sự kiện giao dịch từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
-- `POST /api/bank-integrations/sepay/ipn` — Instant Payment Notification từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
+- `POST /api/integrations/sepay/bankhub/events` — Webhook nhận sự kiện giao dịch từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
+- `POST /api/integrations/sepay/bankhub/ipn` — Instant Payment Notification từ SePay (*EXTERNAL_LIVE_DEFERRED*: yêu cầu webhook live SePay).
 
 ---
 

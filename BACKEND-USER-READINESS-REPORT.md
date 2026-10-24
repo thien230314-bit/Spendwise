@@ -51,7 +51,8 @@
    - Bản build Release C# (`dotnet build backend/SpendWise.slnx -c Release`): **PASS (0 Warning, 0 Error)**.
    - Kiểm thử Newman Full Suite: **300 requests, 339 assertions, 0 failures (100% PASS)**.
    - Integration Tests ngân hàng: **28/28 PASS (0 failed)**.
-   - Verifier Regression Suite (`test_verify_readiness.py`): **12/12 PASS (0 failed)**.
+   - Verifier Regression Suite (`test_verify_readiness.py` & `test_verify_readiness_strict.py`): **19/19 PASS (12 standard + 7 strict/adversarial)**.
+   - SQL Fixture Safety Suite (`test_seed_safety.py`): **7/7 PASS (bao gồm kiểm thử cô lập bảo vệ dữ liệu control ngoài fixture)**.
    - Frontend UI (Expo Mobile, Web UI) được bảo toàn nguyên vẹn 100%, không bị sửa đổi.
 
 ---

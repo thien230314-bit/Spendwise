@@ -57,7 +57,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2a7a68aa-e408-51e9-991d-41c024aca2fd"
         },
         {
           "name": "02 - Register User A (Valid)",
@@ -106,7 +107,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d5d4a335-c9b4-5764-a773-9da5bf8a2b20"
         },
         {
           "name": "03 - Register User A Duplicate (Negative Check)",
@@ -153,7 +155,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "992cee66-4379-5432-8aa2-940a7398101c"
         },
         {
           "name": "04 - Resend Verification OTP (Happy Path)",
@@ -201,7 +204,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d3ea871d-8088-50a7-96d9-49d06db97c8e"
         },
         {
           "name": "05 - Verify Registration Email User A",
@@ -252,7 +256,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ae9d5489-b9b9-59f0-b2ef-1abb97f933b4"
         },
         {
           "name": "06 - Setup Security PIN User A",
@@ -307,7 +312,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "59c89c39-2020-5008-ac68-e51c21d3202a"
         },
         {
           "name": "07 - Register User B",
@@ -354,7 +360,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f6729073-cab6-5a06-8506-175c12212405"
         },
         {
           "name": "08 - Verify Registration Email User B",
@@ -404,7 +411,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "119e9c9d-ca42-5e1d-b505-a54f9e7641b9"
         },
         {
           "name": "09 - Setup Security PIN User B",
@@ -457,7 +465,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "eaf796b5-3a67-579e-847b-f8588b579405"
         },
         {
           "name": "10 - Refresh Access Token User A",
@@ -508,7 +517,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "9dee8c5b-012c-5d6a-9774-7508564daba5"
         },
         {
           "name": "11 - Register Unverified User (for Inactive Check)",
@@ -555,7 +565,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "fddad032-35d8-51f8-9e6d-d4ec3b725c6e"
         },
         {
           "name": "12 - Login with Unverified User (Negative Check)",
@@ -602,7 +613,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "75128e82-9c7f-5168-9bdd-f7554470e54a"
         },
         {
           "name": "13 - Login with Wrong Password (Negative Check)",
@@ -649,7 +661,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5ca2ee45-64b5-527c-a5d9-eea7945924f4"
         },
         {
           "name": "14 - Verify Security PIN Valid",
@@ -701,7 +714,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ca1f9cbb-8584-5553-b068-c847385851cc"
         },
         {
           "name": "15 - Verify Security PIN Invalid (Negative Check)",
@@ -753,7 +767,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "38015c30-637c-5fcf-b2f7-872ba1606189"
         },
         {
           "name": "16 - Change Security PIN User A",
@@ -804,7 +819,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "bcba4b06-c343-5910-989b-f6e37f9d8daf"
         },
         {
           "name": "17 - Revert Security PIN User A",
@@ -855,7 +871,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "99da0f68-4144-5fd8-ab01-f81a4a8add29"
         },
         {
           "name": "18 - Forgot Password User A",
@@ -902,7 +919,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ce11f82e-f6dd-5eb2-b1c5-a63f9d3dcfff"
         },
         {
           "name": "19 - Reset Password User A",
@@ -949,7 +967,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "cac5c7a8-949b-57c0-b803-40ca689cee14"
         },
         {
           "name": "20 - Re-login User A after Reset Password",
@@ -997,7 +1016,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "552fc2f6-0285-50e7-b566-6e4b3abd9513"
         },
         {
           "name": "21 - Complete PIN Login User A",
@@ -1048,7 +1068,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f70951af-b7da-5bbe-8715-3aa37b133b98"
         },
         {
           "name": "22 - List Active User Sessions",
@@ -1092,7 +1113,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d37079dc-8a83-5b50-87ae-0ad75a101369"
         },
         {
           "name": "23 - Revoke Single Session",
@@ -1132,7 +1154,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "cb788569-bc4b-55e6-a603-289b0e49dd14"
         },
         {
           "name": "24 - Refresh Token after Single Session Revoke (Re-establish Session)",
@@ -1180,7 +1203,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1632452a-af58-5175-a2da-e60917aa4f55"
         },
         {
           "name": "25 - Complete PIN Login for User A",
@@ -1231,7 +1255,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "99816b2e-8ef0-56ef-b959-ff5133eadb35"
         },
         {
           "name": "26 - Security PIN Status Check",
@@ -1272,7 +1297,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "54a2eb56-5140-59ac-bb4c-1f6ab60ba888"
         }
       ]
     },
@@ -1319,7 +1345,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d141f6f6-7ec1-5a29-855b-4817bbec9e04"
         },
         {
           "name": "02 - Upload User Avatar (User A)",
@@ -1371,7 +1398,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "9cba2cb5-5a8b-5279-ab11-9b78c635b36c"
         },
         {
           "name": "03 - Update User Preferences",
@@ -1426,7 +1454,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "af0bfd58-f6e7-57ba-82a0-346d05e18248"
         },
         {
           "name": "04 - Search User B by Contact (Email)",
@@ -1474,7 +1503,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "49ed4c0a-ed5b-5ae9-885a-868a401e56ed"
         },
         {
           "name": "05 - Search User B by SpendId",
@@ -1521,7 +1551,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "37d3c1a3-e783-5efe-b956-275f061d59ed"
         },
         {
           "name": "06 - Discover Users by Name with Pagination",
@@ -1577,7 +1608,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "acea5e9c-429e-5e38-bf6a-ebe9d399d5f5"
         },
         {
           "name": "07 - Send Friend Request (User A to User B)",
@@ -1631,7 +1663,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f283db49-de2e-5307-b260-b9bef1834316"
         },
         {
           "name": "08 - Send Friend Request Duplicate (Idempotency Check)",
@@ -1683,7 +1716,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "402028a0-df11-5e40-a3dd-02db5ab4ea20"
         },
         {
           "name": "09 - User A Checks Outgoing Requests",
@@ -1725,7 +1759,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d9f42de8-fbed-5636-83e7-56f6968b3a99"
         },
         {
           "name": "10 - User B Checks Incoming Requests",
@@ -1769,7 +1804,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5c271bdd-6e5d-5d38-95f1-25cd22e719fd"
         },
         {
           "name": "11 - User B Accepts Friend Request",
@@ -1810,7 +1846,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "46e2cf1b-d7d4-5801-a0bf-2e8aeef6e3a7"
         },
         {
           "name": "12 - User A Lists Friends",
@@ -1852,7 +1889,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "50dd9855-4161-57f0-82b2-e3e7535cda64"
         },
         {
           "name": "13 - User B Lists Friends",
@@ -1894,7 +1932,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "efbdde0d-31e8-51d3-8f53-da005c6f8152"
         },
         {
           "name": "14 - Update Friend Preference (User A sets Favorite)",
@@ -1947,7 +1986,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "610ac0a8-add6-525c-b011-e58326acd494"
         }
       ]
     },
@@ -1997,7 +2037,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "a86b7636-822e-550b-95ca-7b1aaad868a7"
         },
         {
           "name": "02 - Get System Categories (Income & Expense)",
@@ -2044,7 +2085,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c9f8ae20-9aea-54af-8774-dc2d3bb98ff3"
         },
         {
           "name": "02b - Upload Evidence for Income Posting",
@@ -2093,7 +2135,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "932de1a5-db82-5016-9b5a-048eb1a84cda"
         },
         {
           "name": "03 - Fund Main Wallet via Income Posting (10,000,000 VND)",
@@ -2148,7 +2191,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "cd7bb7b2-7eff-5a2b-a086-739bf8447a10"
         },
         {
           "name": "04 - Create Savings Wallet User A",
@@ -2201,7 +2245,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "bcdc28af-e859-5aa1-b907-a881d31302d7"
         },
         {
           "name": "05 - Create Emergency Wallet User A",
@@ -2254,7 +2299,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c6bd5152-7afc-510e-ab6a-0d175d26971f"
         },
         {
           "name": "06 - Check Wallet Limit (Try Creating 4th Wallet)",
@@ -2305,7 +2351,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "9580259a-474e-5632-9194-f3e07495d7d3"
         },
         {
           "name": "07 - Get Main Wallet Details",
@@ -2346,7 +2393,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d2aeffdb-cfe4-562d-89da-173e4d9a2066"
         },
         {
           "name": "08 - Update Savings Wallet Name",
@@ -2400,7 +2448,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "4be7e49f-f396-54bb-95c2-f4c25abf6b36"
         },
         {
           "name": "09 - Create Custom Category",
@@ -2453,7 +2502,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0162c41e-5ba1-5fb0-8926-e8458ec007a0"
         },
         {
           "name": "09b - Upload Evidence for Expense Transaction",
@@ -2502,7 +2552,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7f61a6ec-9b52-5145-9986-757e407afd7f"
         },
         {
           "name": "10 - Record Expense Transaction (45,000 VND)",
@@ -2557,7 +2608,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ad785482-44ee-530d-8e01-b3bd911bec64"
         },
         {
           "name": "11 - Internal Transfer Between Wallets (3,000,000 VND)",
@@ -2611,7 +2663,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5031edf1-1eb5-5a0d-a40d-aee45bbaeb1d"
         },
         {
           "name": "12 - Check Balances After Expense and Transfer",
@@ -2654,7 +2707,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "336d912b-9a62-54cb-a9ad-917b7a3f67da"
         },
         {
           "name": "13 - List Transactions with Query Filters",
@@ -2706,7 +2760,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c24b11d1-ced6-52a3-af88-f705d551d598"
         },
         {
           "name": "14 - Get Transaction Details",
@@ -2747,7 +2802,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "9cd6137e-bce3-5fdd-b142-80e44c4bf25e"
         },
         {
           "name": "15 - Update Transaction Description",
@@ -2801,7 +2857,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6948e624-7b5d-5c06-a8a9-7818ce899838"
         },
         {
           "name": "16 - Close Emergency Wallet",
@@ -2840,7 +2897,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "99d412b9-097a-5907-b358-220316e7487c"
         }
       ]
     },
@@ -2897,7 +2955,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f56387b7-cc38-53d7-a620-7c9274ed05e1"
         },
         {
           "name": "00b - Get User B Main Wallet",
@@ -2939,7 +2998,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "acd1a80f-5fe6-5172-8bac-174018ddb571"
         },
         {
           "name": "01 - Create Fixed Fund (User A)",
@@ -2994,7 +3054,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d6c9cff3-c28c-5bea-9637-7565608459d1"
         },
         {
           "name": "02 - Get Fixed Fund Details",
@@ -3037,7 +3098,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7c5a7652-bd36-5b18-aeb3-97b2920be9f3"
         },
         {
           "name": "03 - Invite User B to Fixed Fund",
@@ -3093,7 +3155,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c4693d39-5526-5bcd-9053-55fcaf865a6c"
         },
         {
           "name": "04 - User B Accepts Fixed Fund Invitation",
@@ -3135,7 +3198,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "728fb320-59d2-597a-9788-add68d33bc63"
         },
         {
           "name": "05 - List Fixed Fund Members",
@@ -3179,7 +3243,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2529bb3e-e0e5-5552-aa17-78e1467fcdbe"
         },
         {
           "name": "06 - Confirm Obligations (Target: 2,000,000 VND)",
@@ -3234,7 +3299,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0efbf5a4-27da-52a5-9a6a-7577b38bb658"
         },
         {
           "name": "07 - User A Contributes 1,000,000 VND to Fixed Fund",
@@ -3288,7 +3354,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7de8ae9b-0bd2-522c-bea6-c024b4daa851"
         },
         {
           "name": "08 - User B Contributes 1,000,000 VND to Fixed Fund",
@@ -3342,7 +3409,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "641b68df-83c9-515d-b4f1-4de59f030ce4"
         },
         {
           "name": "09 - List Fixed Fund Contributions",
@@ -3386,7 +3454,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f7c0fc7a-bd4c-5ba9-a888-d26610f07fcd"
         },
         {
           "name": "10 - Grant Spending Permission to User B",
@@ -3442,7 +3511,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "24410bd1-4d0b-5fc6-9482-b8b4e111ae9b"
         },
         {
           "name": "11 - Check Fixed Fund Activities",
@@ -3486,7 +3556,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "4214f6b8-94de-52a6-bf51-7caac11d1475"
         },
         {
           "name": "12 - Check Fixed Fund Financial Overview",
@@ -3529,7 +3600,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1be109c6-eaec-5b8a-b05c-bdb5efdd16eb"
         }
       ]
     },
@@ -3589,7 +3661,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "be410ad3-3010-5745-add0-15b0f487e909"
         },
         {
           "name": "02 - Invite User B to Free Fund",
@@ -3645,7 +3718,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "25d34631-1e11-5ec6-9deb-af2e52089658"
         },
         {
           "name": "03 - User B Accepts Free Fund Invitation",
@@ -3687,7 +3761,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "3b23b158-d775-5840-9433-cffc15e3fbe5"
         },
         {
           "name": "04 - User A Contributes 500,000 VND to Free Fund",
@@ -3741,7 +3816,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7a2acdc7-07eb-5ce3-83b4-345e69b011dc"
         },
         {
           "name": "05 - User B Contributes 300,000 VND to Free Fund",
@@ -3795,7 +3871,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "93488ea8-c5dc-5886-913f-19f120953328"
         },
         {
           "name": "06 - Track Free Fund Finance",
@@ -3838,7 +3915,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7b06a781-5e2b-5ec5-99ac-2f045975a409"
         },
         {
           "name": "07 - User B Creates Free Fund Expense Request",
@@ -3894,7 +3972,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6256737a-74dc-5b8c-bcb1-47568081b6a8"
         },
         {
           "name": "07b - User A (Owner) Reviews and Approves Free Fund Request",
@@ -3952,7 +4031,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6c6998ea-60fe-5e94-bcbd-5167f49f7423"
         },
         {
           "name": "07c - User B Creates Second Free Fund Expense Request for Security Testing",
@@ -4008,7 +4088,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "3fe45e75-505b-57b6-8c3c-4b2a342397a6"
         },
         {
           "name": "08 - Refund Preview for User B",
@@ -4057,7 +4138,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2f7932b5-940f-5df2-9073-cd9436436a65"
         },
         {
           "name": "09 - User B Leaves Free Fund",
@@ -4111,7 +4193,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "49c0cb5a-2a3a-5358-b189-13a989c85115"
         },
         {
           "name": "10 - Verify Remaining Members in Free Fund",
@@ -4154,7 +4237,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1d1ff308-a15d-59cb-867d-770840e844ec"
         }
       ]
     },
@@ -4212,7 +4296,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f3c6db3c-f98b-500f-bff1-88e535728feb"
         },
         {
           "name": "02 - List Monthly Budgets",
@@ -4263,7 +4348,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "dfac427e-5a0c-5ce2-893a-046a60c7116c"
         },
         {
           "name": "03 - Update Monthly Budget Limit",
@@ -4317,7 +4403,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "739f5889-3789-5f32-a10f-75ae214ac70d"
         },
         {
           "name": "04 - Delete Monthly Budget",
@@ -4369,7 +4456,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c691233e-8a79-50aa-8553-1a0a11191912"
         },
         {
           "name": "05 - Create Savings Goal (MacBook M4)",
@@ -4422,7 +4510,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0d0874a6-e48f-5322-822e-04814ea8bded"
         },
         {
           "name": "06 - Deposit to Savings Goal (2,000,000 VND)",
@@ -4477,7 +4566,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6cc1d864-e434-5cac-88bf-1cf9ae00c185"
         },
         {
           "name": "07 - Get Goal Details and Verify Progress",
@@ -4518,7 +4608,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d80864bb-da25-5b45-b22a-b510a3a85684"
         },
         {
           "name": "08 - Withdraw from Savings Goal (500,000 VND)",
@@ -4573,7 +4664,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "54f97e65-91a0-57eb-bd8a-23b32183d677"
         },
         {
           "name": "09 - Create Recurring Transaction (Monthly Internet)",
@@ -4626,7 +4718,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0d07bdd5-dc8a-5021-9d88-218ee04166ec"
         },
         {
           "name": "10 - List Recurring Transactions",
@@ -4667,7 +4760,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "8f7e58f1-ff94-5f6e-9e52-4ad918d79818"
         },
         {
           "name": "11 - Create Transaction Rule",
@@ -4720,7 +4814,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c29a3d36-6ed4-5cbc-adcb-b49c38d413d2"
         },
         {
           "name": "12 - List Transaction Rules",
@@ -4760,7 +4855,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "542d500a-e837-5342-8745-5f238c6f6737"
         }
       ]
     },
@@ -4819,7 +4915,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6c94db1c-1385-5b03-97a7-be255ee83d86"
         },
         {
           "name": "02 - List AI Conversations",
@@ -4860,7 +4957,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b4121695-5f20-58d2-bdc9-f1e8208e04d2"
         },
         {
           "name": "03 - Ask AI Financial Advisor (Chat) - Fallback Safe",
@@ -4912,7 +5010,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1a9a995a-a924-5fc1-a806-2230218f20fa"
         }
       ]
     },
@@ -4964,7 +5063,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ee3e00ba-a66e-5278-88a1-133a719c6a87"
         },
         {
           "name": "02 - Create Bank Direct Transfer Instruction",
@@ -5018,7 +5118,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0598a0b5-869d-5751-8ee0-ade73080e31a"
         },
         {
           "name": "03 - Bank Direct Transfer History",
@@ -5056,7 +5157,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "8d74df0d-c807-59f7-aefe-e18c729f291c"
         },
         {
           "name": "04 - SePay Webhook Invariant (Controlled Check)",
@@ -5105,7 +5207,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "e4229527-f6fe-57ed-8d88-ee03886341e8"
         }
       ]
     },
@@ -5156,7 +5259,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6f151960-191f-51d5-98fb-07f338fca97d"
         },
         {
           "name": "02 - Mark All Notifications Read",
@@ -5195,7 +5299,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "e1907862-b18b-536f-93c5-8c4e37fce462"
         },
         {
           "name": "03 - Search Notifications",
@@ -5244,7 +5349,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "4b8035de-3319-578d-a62f-d7acea66af9d"
         },
         {
           "name": "04 - Create Support Case",
@@ -5299,7 +5405,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "920dd24c-aa5b-50ef-91b6-082cb27702cf"
         },
         {
           "name": "05 - List Support Cases",
@@ -5341,7 +5448,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b404c712-7cac-5c42-8132-ac04118c2c90"
         },
         {
           "name": "06 - Get Support Case Details",
@@ -5383,7 +5491,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "3f5e86fa-9b7e-5aca-8dbb-cdc32f58afc4"
         },
         {
           "name": "07 - Reply to Support Case Message",
@@ -5437,7 +5546,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "98896f6c-d2f4-56ee-b79e-270323fccf6a"
         },
         {
           "name": "08 - List Financial Disputes",
@@ -5476,7 +5586,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5849680b-2622-5f32-97e0-466e90185a99"
         }
       ]
     },
@@ -5520,7 +5631,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2a0e0fb8-d1a8-56dd-b986-9c1dae3baec8"
         },
         {
           "name": "Flow A02 - Upload Real Avatar Image",
@@ -5572,7 +5684,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b00a2c8f-cbd5-54c2-a6e3-66c2f8af9fc5"
         },
         {
           "name": "Flow A03 - Check Profile Immediately Has New Avatar",
@@ -5613,7 +5726,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "26ee5d50-fd86-5c3a-a256-9a0dbc35b9f8"
         },
         {
           "name": "Flow A04 - Logout User A",
@@ -5665,7 +5779,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "a63c67c4-474e-5100-a6fe-74c0edca20ce"
         },
         {
           "name": "Flow A05 - Re-login User A",
@@ -5713,7 +5828,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "e31caa94-109f-550b-b9dc-b408a78c249d"
         },
         {
           "name": "Flow A06 - Complete PIN Login for Re-login",
@@ -5764,7 +5880,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "91644f46-ff05-5d03-8d2f-36486fe6947c"
         },
         {
           "name": "Flow A07 - Check Profile After Fresh Login Retains Avatar",
@@ -5805,7 +5922,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "afaeabf7-2d2c-56c6-b26b-b28c81099bad"
         },
         {
           "name": "Flow B01 - Request Email Change to New Email",
@@ -5859,7 +5977,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d5132be6-881e-5241-859c-18a5f1bc13b4"
         },
         {
           "name": "Flow B02 - Confirm Email Change with OTP",
@@ -5915,7 +6034,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "08818cc8-b844-5569-8791-9c106a0e555e"
         },
         {
           "name": "Flow B03 - Logout After Email Change",
@@ -5967,7 +6087,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "fe12d8ce-5f9a-5006-9159-e8c43a753b7e"
         },
         {
           "name": "Flow B04 - Login with New Email (Expected: Success)",
@@ -6015,7 +6136,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "605074cb-e4a7-5fe6-a980-b57673b67653"
         },
         {
           "name": "Flow B05 - Complete PIN Verification with New Email",
@@ -6066,7 +6188,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b06398a3-446c-5d39-a8d1-2d54fcd89e62"
         },
         {
           "name": "Flow B06 - Login with Old Email (Expected: 401 / Denied)",
@@ -6113,7 +6236,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f9605b41-0caa-513f-9b1c-efa7845791ba"
         },
         {
           "name": "Flow C01 - User A Searches User B by Contact",
@@ -6160,7 +6284,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "0ab324b6-94a5-52f9-9169-3c1093a53f4b"
         },
         {
           "name": "Flow C02 - User A Checks Friend Request Status to User B",
@@ -6212,7 +6337,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "185aeb0a-0000-5e1a-af96-5211462ceafe"
         },
         {
           "name": "Flow C03 - User A Checks Friend List (Has User B)",
@@ -6253,7 +6379,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ed796650-0b2b-5803-9cc8-c2356d64ad0a"
         },
         {
           "name": "Flow C04 - User B Checks Friend List (Has User A)",
@@ -6294,7 +6421,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "82226c41-5b9a-5d9f-884c-dc029f81f30d"
         },
         {
           "name": "Flow D01 - User A Creates Fixed Fund (1,000,000 VND)",
@@ -6347,7 +6475,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "4c9e7915-f236-5f00-a21f-5e9b46389747"
         },
         {
           "name": "Flow D02 - Invite User B to Fixed Fund",
@@ -6402,7 +6531,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "8ba2c54a-17c0-5335-b286-62bfbcc11284"
         },
         {
           "name": "Flow D03 - User B Accepts Fixed Fund Invitation",
@@ -6444,7 +6574,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "4f99d6db-101a-544e-87e1-128d4584a7c2"
         },
         {
           "name": "Flow D04 - Confirm Obligations (Target: 1,000,000 VND)",
@@ -6499,7 +6630,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "629e0112-ac08-50a5-9608-bf6d2feeb179"
         },
         {
           "name": "Flow D05 - User A Contributes 500,000 VND",
@@ -6553,7 +6685,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2d6122ee-9cf6-5661-ade6-2539a45896bb"
         },
         {
           "name": "Flow D06 - User B Contributes 500,000 VND",
@@ -6607,7 +6740,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d04e6111-52df-5ebb-bc08-09646dba80ed"
         },
         {
           "name": "Flow D07 - Check Fund Finance (Total 1,000,000 VND)",
@@ -6650,7 +6784,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "128531e6-bd5c-5356-8c18-9f52c459b613"
         },
         {
           "name": "Flow D08 - Grant User B Spending Permission",
@@ -6706,7 +6841,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "326ad9db-ffd5-5c6b-b69c-2ae1cfb298d0"
         },
         {
           "name": "Flow D09 - Check Activity Log for Spending Permission Event",
@@ -6750,7 +6886,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7969ab6a-9eb3-57c4-ad94-4270509c4864"
         },
         {
           "name": "Flow E01 - Identify Main and Savings Wallets for Flow E",
@@ -6796,7 +6933,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "a137050b-a45d-5a3f-b542-46644ed7eedb"
         },
         {
           "name": "Flow E02 - Transfer 300,000 VND from Main to Savings Wallet",
@@ -6848,7 +6986,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ef5e3040-d985-511b-b8b6-6bcb032731da"
         },
         {
           "name": "Flow E03 - Check Savings Wallet Balance Increased by 300,000 VND",
@@ -6890,7 +7029,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "693e3020-29aa-5ecf-aa03-0dc2e371d206"
         },
         {
           "name": "Flow E04 - Check Linked Transactions List",
@@ -6944,7 +7084,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d4391466-12fd-5e1d-9445-50f62c5e81ef"
         },
         {
           "name": "Flow F01 - Get Expense Category for Budgeting",
@@ -6985,7 +7126,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c0a44e4d-921d-5012-97e8-755ce85844cd"
         },
         {
           "name": "Flow F02 - Create Budget (2,000,000 VND limit)",
@@ -7037,7 +7179,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "44ab7b10-1fb9-56c9-9bf0-5126da8d1c0b"
         },
         {
           "name": "Flow F03 - Check Budget Status (Spent: 0, Remaining: 2,000,000 VND)",
@@ -7079,7 +7222,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "e495a12b-b7e5-595c-8691-8b1b5cc64145"
         },
         {
           "name": "Flow F03a - Upload Evidence for Flow F Budget Expense",
@@ -7129,7 +7273,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "2de1c785-11cb-5fb0-9ab0-6299cac7d5c6"
         },
         {
           "name": "Flow F03b - Record Expense Transaction for Budget Category (500,000 VND)",
@@ -7185,7 +7330,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "7c61e49b-10e6-5193-8b59-ffc28c3d78d7"
         },
         {
           "name": "Flow F03c - Verify Budget Spent (500,000 VND, 25.0%)",
@@ -7228,7 +7374,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c30138a2-947d-59e4-baf8-8202edc875ac"
         },
         {
           "name": "Flow F03d - Correct Expense Amount via PATCH (800,000 VND)",
@@ -7282,7 +7429,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "f7daa4d5-212b-5ce2-8b14-36f6d25ffe9f"
         },
         {
           "name": "Flow F03e - Verify Budget Re-calculation after Correction (800,000 VND, 40.0%)",
@@ -7325,7 +7473,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d73ae8b9-9d83-5f6f-b4b4-74151418ac7a"
         },
         {
           "name": "Flow F04 - Update Budget Limit to 3,000,000 VND",
@@ -7379,7 +7528,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "793f0a04-c25d-570d-ba7e-b05dae6a1c29"
         },
         {
           "name": "Flow F05 - Clean Up Budget via Delete",
@@ -7431,7 +7581,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "6a3adcf6-bfb0-5a0b-9ca0-8e60f2bf39a4"
         }
       ]
     },
@@ -7489,7 +7640,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5832d36e-b083-5607-8ccc-dc323c1cb0dc"
         },
         {
           "name": "02 - User B Creates Target Goal",
@@ -7542,7 +7694,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d51f0770-8d64-585e-94fb-a22e9ec11af2"
         },
         {
           "name": "03 - User B Uploads Evidence",
@@ -7591,7 +7744,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "92b49590-b70c-5a25-846c-fbcdb5784740"
         },
         {
           "name": "03b - User B Downloads Own Evidence (Happy Path)",
@@ -7630,7 +7784,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1e3dbff4-129c-5372-8760-4bb71166146b"
         },
         {
           "name": "04 - Cross-User Wallet Access User A to User B Wallet (Expect 404)",
@@ -7669,7 +7824,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1c44cbb2-d496-52cf-8546-a92806f7ff68"
         },
         {
           "name": "05 - Cross-User Budget Modification User A to User B Budget (Expect 404)",
@@ -7721,7 +7877,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c6a7eac2-03c7-51fb-ac13-3eec19930a5e"
         },
         {
           "name": "06 - Cross-User Goal Access User A to User B Goal (Expect 404)",
@@ -7760,7 +7917,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "a2b5fa0b-fb5c-540e-b382-408ac4cf1285"
         },
         {
           "name": "07 - Cross-User Evidence Access User A to User B Evidence (Expect 404)",
@@ -7799,7 +7957,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c26411f0-e162-55b2-afcb-920c89ba4cde"
         },
         {
           "name": "08 - Cross-User Fund Permission Escalation User B to Fixed Fund (Expect 403)",
@@ -7855,7 +8014,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "9799e8e3-724c-5498-a635-77ad6a334e3f"
         },
         {
           "name": "09 - Cross-User Fund Request Review User B to Free Fund (Expect 403 or 404)",
@@ -7910,7 +8070,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "c284d70d-3195-5e20-991f-9ad1faa97c99"
         },
         {
           "name": "10 - Non-Existent AI Action Execution (Architecture Controlled Fallback - Expect 404)",
@@ -7964,7 +8125,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "528ebd12-63a0-59f4-9d7e-e183673ef129"
         },
         {
           "name": "11 - Non-Existent AI Action Cancellation (Architecture Controlled Fallback - Expect 409)",
@@ -8018,7 +8180,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "fd5e6c38-3d31-59ce-b7e2-6333792ea771"
         },
         {
           "name": "12 - Verify User B Resources Intact After Unauthorized Attempts",
@@ -8060,7 +8223,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "1945c090-b854-5391-8da3-f5e9b695afe2"
         }
       ]
     },
@@ -8122,7 +8286,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "5b86107c-cd5a-5a59-9ea2-ac783be9e04a"
         },
         {
           "name": "V1-IMP-02 - 11 - Forgot Security PIN User A",
@@ -8170,7 +8335,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b787576f-42bd-54fc-ae9e-85c555702a3c"
         },
         {
           "name": "V1-IMP-03 - 12 - Validate Invalid PIN Reset Token",
@@ -8223,7 +8389,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "a1d29089-f98e-5e87-9ed5-2686a0389026"
         },
         {
           "name": "V1-IMP-04 - 01 - Bank Connections Status",
@@ -8265,7 +8432,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "cf7c3f3a-a8fe-586b-85e2-018cf260ce7e"
         },
         {
           "name": "V1-IMP-05 - 02 - SePay TestMode: Start Link Challenge",
@@ -8309,7 +8477,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "71525e3a-5459-5ac9-9516-17e0621a3115"
         },
         {
           "name": "V1-IMP-06 - 03 - SePay TestMode: Verify Challenge Rejection When Unconfirmed",
@@ -8355,7 +8524,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "df28b542-8479-5c0f-b7cd-865d17ea5d20"
         },
         {
           "name": "V1-IMP-07 - 05 - SePay TestMode: Top-Up Without Active Connection Rejected",
@@ -8412,7 +8582,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "37d9c50e-06f1-5db4-a14d-e06ca43acc32"
         },
         {
           "name": "V1-IMP-08 - 06 - SePay TestMode: List Wallet Top-Ups",
@@ -8456,7 +8627,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "871fc1cb-7b8f-5566-8f81-fa13e16a619e"
         },
         {
           "name": "V1-IMP-09 - 04 - SePay TestMode: List Linked Accounts",
@@ -8500,7 +8672,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b5e2cb20-6313-5eaa-86a5-a00c2be5f129"
         },
         {
           "name": "V1-IMP-10 - 10b - Member Reports Large Expense Hold (Transitions to Suspended)",
@@ -8563,7 +8736,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "d35601d9-f00b-5098-b926-e095e666e42c"
         },
         {
           "name": "V1-IMP-11 - 10d - Requester Cancels Suspended Expense Releasing Hold",
@@ -8626,7 +8800,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "97c8ebcf-8e45-566b-8c7e-294f5914a3eb"
         },
         {
           "name": "V1-IMP-12 - Owner settles approved activity",
@@ -8690,7 +8865,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "fc0609a5-14a5-5d8a-b5c1-9de1d0665b7f"
         },
         {
           "name": "V1-IMP-13 - Advance Election Success",
@@ -8738,7 +8914,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ad938f14-dc1f-55f2-9ab3-8678d940c000"
         },
         {
           "name": "V1-IMP-14 - 20 - User A Kicks User B from Fixed Fund 2 (Refund Processed)",
@@ -8802,7 +8979,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "ce1593e4-a472-57f1-bf1b-64a6b92fa574"
         },
         {
           "name": "V1-IMP-15 - 21 - User A Dissolves Fixed Fund 2 (Zero Balance Invariant)",
@@ -8864,7 +9042,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "57bf4d2c-68f6-5072-9273-b87f3c13be45"
         },
         {
           "name": "V1-IMP-16 - 11 - ADM-05: Maintenance Status",
@@ -8904,7 +9083,8 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "id": "b5c0096a-7acb-5a04-ad9a-1aaf3728e21f"
         }
       ]
     },
@@ -8956,7 +9136,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "7cda70db-e303-5531-90cf-af0982c7ac44"
         },
         {
           "name": "B1-02 - Reset Security PIN Success",
@@ -9007,7 +9188,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "4a6ae158-3586-5837-9c1b-04969bcc85c2"
         },
         {
           "name": "B1-03 - Get System Maintenance State (Public/User)",
@@ -9047,7 +9229,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "82f44dbb-a063-5950-a88b-6f223d1f72f3"
         },
         {
           "name": "B1-04 - Get Active System Announcement (Public/User)",
@@ -9086,7 +9269,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "ae3066b9-b20c-5366-ba5c-3925dbb3ac60"
         },
         {
           "name": "B1-05 - Register Mobile Push Installation",
@@ -9138,7 +9322,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "5cc2ccbc-44ac-5b6b-b0e6-9549db2276f1"
         },
         {
           "name": "B1-06 - Unregister Mobile Push Installation",
@@ -9182,7 +9367,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f8d8b756-5ebc-57a2-b800-70ba2f53de03"
         },
         {
           "name": "B1-07 - Get Notification Preferences",
@@ -9226,7 +9412,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "e6bce7ea-4b98-5068-9abd-c6005817531f"
         },
         {
           "name": "B1-08 - Save Notification Preference",
@@ -9278,7 +9465,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "b6d859f5-26e3-5ad1-80ac-eac3e32ab6f1"
         },
         {
           "name": "B1-09 - Mark Single Notification Read",
@@ -9321,7 +9509,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "98ec5964-0ae8-590b-a7fe-e6efa0fad184"
         },
         {
           "name": "B1-10 - Delete Single Notification",
@@ -9363,7 +9552,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "56a701b2-f5dd-51c1-90ef-6bd489bb39f4"
         },
         {
           "name": "B1-11 - Clear All Read Notifications",
@@ -9405,7 +9595,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "1e6bff90-2f23-5e7b-a7cf-9cb3492defd1"
         },
         {
           "name": "B1-12 - Reject Friend Request Success",
@@ -9458,7 +9649,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "7533ec28-6b20-5e37-bf18-f65898d24f40"
         },
         {
           "name": "B1-13 - Cancel Friend Request Success",
@@ -9506,7 +9698,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "50803903-126f-5593-92f6-1a51ea94ed95"
         },
         {
           "name": "B1-14 - Unfriend Friend Success",
@@ -9553,7 +9746,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "949fa812-0b9c-52af-b2b2-8c6344042b0f"
         }
       ]
     },
@@ -9610,7 +9804,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "dff45d6e-cd8a-5e9f-9585-e508380a0e46"
         },
         {
           "name": "B2-02 - Get Category Details by ID",
@@ -9654,7 +9849,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "68b62210-8512-5152-b598-9c1c2a1f780a"
         },
         {
           "name": "B2-03 - Update Category Details",
@@ -9704,7 +9900,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "c3eafa46-05a0-5429-9677-96e9a5e3604b"
         },
         {
           "name": "B2-04 - Archive/Delete Category",
@@ -9746,7 +9943,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "368d4774-4905-5407-aeb1-c07e104f2cb8"
         },
         {
           "name": "B2-05 - Get User Dashboard Summary",
@@ -9789,7 +9987,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "025e15dd-5116-51da-bb93-282eda185426"
         },
         {
           "name": "B2-06 - SePay BankHub IPN Webhook Invariant (Controlled Secret Check)",
@@ -9841,7 +10040,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "b686faea-5f1e-5955-b630-b7c22ed78806"
         },
         {
           "name": "B2-06b - Upload Isolated Evidence for Multi-Wallet Expense",
@@ -9890,7 +10090,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "b75c3e37-ae1c-5d92-acd9-50154d62599d"
         },
         {
           "name": "B2-07 - Multi-Wallet Expense Allocation (Controlled Validation / Ledger)",
@@ -9941,7 +10142,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "fc10294f-0e64-5be8-908b-856dc2f8f947"
         },
         {
           "name": "B2-08 - Get Transfer Details by ID Success",
@@ -9995,7 +10197,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "c9f6fb4d-5eb1-5c14-a301-747a5e8cb094"
         },
         {
           "name": "B2-09 - Confirm Bank Direct Transfer Success",
@@ -10058,7 +10261,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "dd4825be-9099-51fc-8b50-89f455cd876b"
         },
         {
           "name": "B2-10 - Record V1 Activity Event",
@@ -10108,7 +10312,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "9600fc56-36fc-5f34-9d3c-e1d202735ed0"
         }
       ]
     },
@@ -10162,7 +10367,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "c28366a1-9d9c-5c85-9d6f-9b735fcf8768"
         },
         {
           "name": "B3-02 - List User Goals via GET /api/goals",
@@ -10205,7 +10411,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "a1ea5157-32b5-585f-bed6-58e190285047"
         },
         {
           "name": "B3-03 - Create Target Goal for Lifecycle",
@@ -10258,7 +10465,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "8cbf8124-72a5-5422-a21b-107e289eb37e"
         },
         {
           "name": "B3-04 - Update Goal via PUT /api/goals/{id}",
@@ -10308,7 +10516,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "df750b79-1e6a-5693-aaf8-565f63d0a483"
         },
         {
           "name": "B3-05 - Delete Empty Goal via DELETE /api/goals/{id}",
@@ -10358,7 +10567,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "68ccc6c4-0740-59cf-933b-191e62243d6e"
         },
         {
           "name": "B3-06 - Create Recurring Transaction for Lifecycle",
@@ -10411,7 +10621,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "5d14a276-1907-50b5-a610-bd7ab890acd9"
         },
         {
           "name": "B3-07 - Get Recurring Transaction by ID",
@@ -10455,7 +10666,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "df52b09d-6ef2-52e2-885f-8aaa3923fbd1"
         },
         {
           "name": "B3-08 - Update Recurring Transaction via PUT",
@@ -10505,7 +10717,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "03f8f600-0424-5c8e-a755-1b6e41aab4f1"
         },
         {
           "name": "B3-09 - Pause Recurring Transaction",
@@ -10548,7 +10761,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "272a2fa3-c0a7-5af4-8c57-60a95d85c054"
         },
         {
           "name": "B3-10 - Resume Recurring Transaction",
@@ -10591,7 +10805,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "15550603-63b4-5330-9559-29f33481f5c5"
         },
         {
           "name": "B3-11 - Record Recurring Occurrence Execution Success",
@@ -10658,7 +10873,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "c579de09-4795-53f8-a097-591ef4c3a6cb"
         },
         {
           "name": "B3-12 - Delete Recurring Transaction",
@@ -10700,7 +10916,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "37e9248b-3499-5b91-ae77-8ea96d1fcce3"
         },
         {
           "name": "B3-13 - Create Transaction Rule for Testing",
@@ -10753,7 +10970,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "cf7fee38-a132-54e4-8539-e0809fe33df8"
         },
         {
           "name": "B3-14 - Get Transaction Rule by ID",
@@ -10797,7 +11015,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f7c7880f-b78b-53c0-bb62-cf5869341634"
         },
         {
           "name": "B3-15 - Update Transaction Rule via PUT",
@@ -10847,7 +11066,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "9e7b67fd-b448-5cf7-a222-1321cb09a593"
         },
         {
           "name": "B3-16 - Delete Transaction Rule via DELETE",
@@ -10889,7 +11109,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "28cceb83-fd3f-51e1-b23e-3f407ad29212"
         }
       ]
     },
@@ -10948,7 +11169,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "d98b059b-7795-5d98-8fbe-6165c75b3661"
         },
         {
           "name": "B4-02 - Get Dispute Details by ID",
@@ -10993,7 +11215,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "9c17bfad-ad8f-5b8a-ac0d-91ffdb073b2c"
         },
         {
           "name": "B4-03 - Reply to Dispute Message",
@@ -11045,7 +11268,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "437b9d06-5859-5729-803b-9daac59ea532"
         },
         {
           "name": "B4-04 - Reply to Dispute with Multipart Form (Happy Path)",
@@ -11102,7 +11326,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "9061f3c2-af6a-5787-9301-cd06bde87089"
         },
         {
           "name": "B4-05 - Reply to Support Case with Multipart Form (Happy Path)",
@@ -11159,7 +11384,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "ec8c06fa-c7e9-5149-9ed9-a53b63f64de1"
         },
         {
           "name": "B4-06 - Download Case Attachment Success",
@@ -11209,7 +11435,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "a5965303-7a60-5762-84df-2221d3864f23"
         },
         {
           "name": "B4-07 - Create AI Conversation for Lifecycle",
@@ -11262,7 +11489,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "c63e333c-46dc-53bd-aa42-3d0d7b5faabf"
         },
         {
           "name": "B4-08 - Get AI Conversation by ID",
@@ -11305,7 +11533,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "cdf79052-7e2e-51ee-a3c7-8e0a2eaeb65b"
         },
         {
           "name": "B4-09 - Update AI Conversation Title",
@@ -11356,7 +11585,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "6255ea78-8dfe-57fd-be07-8a7e000d8bdf"
         },
         {
           "name": "B4-10 - Delete AI Conversation via DELETE",
@@ -11399,7 +11629,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "cf7fc7a3-a55e-5af9-ac9a-2ce091bd01d2"
         },
         {
           "name": "B4-11 - Upload AI Attachment with Valid File (Happy Path)",
@@ -11453,7 +11684,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "3aca7959-ea8a-5d77-af99-e4c90169e907"
         },
         {
           "name": "B4-12 - Download AI Attachment Success",
@@ -11503,7 +11735,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "7f802bad-78e4-5ebc-b5ba-9dd4ddc09808"
         },
         {
           "name": "B4-13 - Get AI Action Proposal by ID Success",
@@ -11555,7 +11788,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "ab4d8996-b2f5-5ebb-92ce-72bb91281d04"
         },
         {
           "name": "B4-14 - Execute AI Action Proposal Success",
@@ -11619,7 +11853,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "dedb13ae-c9df-59db-8a3b-1f5b511386e5"
         },
         {
           "name": "B4-15 - Cancel AI Action Proposal Success",
@@ -11671,7 +11906,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "84e73637-0d24-5076-a395-748ba149faac"
         }
       ]
     },
@@ -11732,7 +11968,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "4c4b1a45-227c-5d0e-bc66-dc938b0dd0b2"
         },
         {
           "name": "B5-02 - Get Bank Connection Success",
@@ -11783,7 +12020,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "5a199f33-1a02-5e19-80e9-9576e29f3299"
         },
         {
           "name": "B5-03 - Unlink Bank Connection Success",
@@ -11846,7 +12084,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "ab3d18fa-84e9-5d48-9cb0-a7659beadb30"
         },
         {
           "name": "B5-04 - Reactivate Active Connection Rejected (409 Conflict)",
@@ -11907,7 +12146,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f0ae483d-e96f-5353-ab51-ac3bd9709d63"
         },
         {
           "name": "B5-05 - Sync TestMode Connection Rejected (409 Conflict)",
@@ -11961,7 +12201,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "e06d2150-e47f-52d3-b41d-e5fc04d0a612"
         },
         {
           "name": "B5-06 - Confirm Pending TestMode TopUp Rejected (409 Conflict or 503 Provider)",
@@ -12021,7 +12262,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "910eaf42-4353-5ec8-8b91-319abea2423f"
         },
         {
           "name": "B5-07 - List Bank Transactions (Paginated)",
@@ -12082,7 +12324,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "b40e86ba-d34c-505c-97e2-22912f7f48fb"
         },
         {
           "name": "B5-08 - Get Bank Transaction Success",
@@ -12133,7 +12376,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "768bb58f-5288-5b2a-a741-f73a4f7b5af8"
         },
         {
           "name": "B5-09 - Reclassify Bank Transaction Success",
@@ -12197,7 +12441,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "57fdbc1f-eb93-5e4b-9df3-305680cc590a"
         }
       ]
     },
@@ -12246,7 +12491,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "7b8fa7af-e467-51fc-95af-65a798fa89b9"
         },
         {
           "name": "B6-02 - Get Fund Requests List",
@@ -12301,7 +12547,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "6387f213-a760-5739-a0d6-086e6fddfb80"
         },
         {
           "name": "B6-03 - Get Fund Governance Status",
@@ -12345,7 +12592,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "3faa860d-7bb3-5b02-afc1-716c405177af"
         },
         {
           "name": "B6-04 - Get Fund Owner Response Status Success",
@@ -12398,7 +12646,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "c3bdc80f-d49b-5276-9fd9-8f1eaa0565bb"
         },
         {
           "name": "B6-05 - Escalate Owner Response Success",
@@ -12462,7 +12711,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "cb51e7a3-d98f-5e97-bd58-c1b168d9f9d0"
         },
         {
           "name": "B6-06 - Close Activity Window via POST /api/v1/funds/{id}/activity/close",
@@ -12515,7 +12765,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "37a42483-e598-53dd-bce7-75dd3dc77da1"
         },
         {
           "name": "B6-07 - Propose Fund Activity Success",
@@ -12583,7 +12834,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "8c9c5734-d93a-5ca8-b9be-c3bfcd7aecf2"
         },
         {
           "name": "B6-08 - Get Activity Proposal by ID Success",
@@ -12636,7 +12888,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "d8f950e8-4d4a-5769-a171-758bbb1bcdb8"
         },
         {
           "name": "B6-09 - Vote on Activity Proposal Success",
@@ -12703,7 +12956,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "50fd3770-fb77-51da-bc64-c77f37c3b572"
         },
         {
           "name": "B6-10 - Open Election Success",
@@ -12769,7 +13023,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "0afb30a0-ef09-5108-aab2-a2348cda0dab"
         },
         {
           "name": "B6-11 - Get Election Details by ID Success",
@@ -12822,7 +13077,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "ebb0c7e4-082f-5aaf-bfdb-c48bb4c5d814"
         },
         {
           "name": "B6-12 - Register Candidate Success",
@@ -12889,7 +13145,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "bd9c53b4-e3b1-5691-91a9-642597558042"
         },
         {
           "name": "B6-13 - Cast Ballot Success",
@@ -12956,7 +13213,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "913abdf5-1724-56ea-b1ab-b1ad69eae5a5"
         },
         {
           "name": "B6-14 - Accept Elected Ownership Success",
@@ -13022,7 +13280,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "4796f4dc-5d5f-5ee2-bdbb-e9a1e4607fef"
         },
         {
           "name": "B6-15 - Reject Elected Ownership Success",
@@ -13088,7 +13347,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "1ef2353c-1c1a-57bd-ba91-a99e7adf4c27"
         },
         {
           "name": "B6-16 - Get Contribution Allocation Details",
@@ -13132,7 +13392,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f12086b8-f88c-51af-8598-450c69858325"
         },
         {
           "name": "B6-17 - Get User Invitations List",
@@ -13186,7 +13447,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "fc9fcda6-9c19-5cf0-9f58-422909265510"
         },
         {
           "name": "B6-18 - Get Fund Invitation Proposals List",
@@ -13241,7 +13503,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "806fb3fb-483a-59e2-8fd9-339065b95f37"
         },
         {
           "name": "B6-19 - Review Invitation Proposal Success",
@@ -13308,7 +13571,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "f04c5ce0-b4db-5cc9-b7c1-188451af45a5"
         },
         {
           "name": "B6-20 - Decline Invitation Success",
@@ -13362,7 +13626,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "6a53ab21-0891-5043-90c7-47ac35355a53"
         },
         {
           "name": "B6-21 - Cancel Invitation Success",
@@ -13415,7 +13680,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "3a078fde-b343-5ef7-9623-5e96e8e5bd73"
         },
         {
           "name": "B6-22 - Offer Fund Ownership via POST /api/v1/funds/{id}/ownership-offers",
@@ -13471,7 +13737,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "e0e62534-2d95-50ed-98fe-df9c683e363e"
         },
         {
           "name": "B6-23 - Accept Ownership Offer Success",
@@ -13534,7 +13801,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "3092413f-d6a3-51af-9141-bdaccdbfad6b"
         },
         {
           "name": "B6-24 - List User Ownership Offers",
@@ -13579,7 +13847,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "df9450f8-60b0-5714-ab26-beda9fdc108e"
         }
       ]
     },
@@ -13633,7 +13902,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "e70894ad-94a1-5032-9eef-0ccbc1f649de"
         },
         {
           "name": "B7-02 - Create Legacy Group for Compatibility Test",
@@ -13696,7 +13966,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "73ea534b-bf82-5c19-9654-2040ecfffcd0"
         },
         {
           "name": "B7-03 - Get Legacy Group Details by ID",
@@ -13745,7 +14016,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "23b232c2-57ae-542e-90df-d57c463ed748"
         },
         {
           "name": "B7-04 - Update Legacy Group Details",
@@ -13802,7 +14074,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "d912da61-3299-559a-ae66-346d1098f97a"
         },
         {
           "name": "B7-05 - Invite Member to Legacy Group",
@@ -13867,7 +14140,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "3a659434-3336-5870-b755-919d5fc6528a"
         },
         {
           "name": "B7-06 - List User Legacy Group Invitations",
@@ -13917,7 +14191,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "a4db9d5d-c8d1-57cc-a670-24f40b5b65e9"
         },
         {
           "name": "B7-07 - Reject Legacy Invite Success",
@@ -13968,7 +14243,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "8ef4ce2c-d0c2-5c3e-8a1b-b2e600f6a5f5"
         },
         {
           "name": "B7-08 - Accept Legacy Invite Success",
@@ -14025,7 +14301,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "687e01cb-c010-5f79-96bc-6e91663c9392"
         },
         {
           "name": "B7-09 - Remove Member from Legacy Group Success",
@@ -14074,7 +14351,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "81c6dad7-dee3-559f-bc0c-f2510db34501"
         },
         {
           "name": "B7-10 - Transfer Group Ownership Success",
@@ -14123,7 +14401,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "52a13f59-19a8-59e1-8c16-e64a6840a09e"
         },
         {
           "name": "B7-11 - Set Group Receiving Bank Account",
@@ -14186,7 +14465,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "d936cc00-d884-5522-a214-bc0c5b8d6e5c"
         },
         {
           "name": "B7-12 - Get Shared Fund Status for Group",
@@ -14234,7 +14514,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "d17f382c-e71a-5b46-8b6b-431e10c4b36e"
         },
         {
           "name": "B7-13 - Get Shared Fund Transactions",
@@ -14283,7 +14564,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "2da96d24-9bef-5ee5-96de-27122f10a388"
         },
         {
           "name": "B7-14 - Contribute to Shared Fund (Wallet Balance Check)",
@@ -14345,7 +14627,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "cc3de7b0-21ae-5c06-9b7c-e0db6c93d2cc"
         },
         {
           "name": "B7-15 - List Group Fund Requests",
@@ -14393,7 +14676,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "6310982c-f109-541e-9145-48b4881a5fdd"
         },
         {
           "name": "B7-16 - Create Group Fund Request",
@@ -14457,7 +14741,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f8120edb-c107-511b-9e38-f4962f7a6b15"
         },
         {
           "name": "B7-17 - Pay Group Fund Request Success",
@@ -14520,7 +14805,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "5f9ecf49-6211-5f65-a95a-f39d638d325a"
         },
         {
           "name": "B7-18 - List Group Fund Rounds",
@@ -14568,7 +14854,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "309336c2-6630-5fa6-bdc4-44c89bfa85b0"
         },
         {
           "name": "B7-19 - Create Group Fund Round",
@@ -14632,7 +14919,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "5352078f-b237-5059-b162-72e6cf7cb078"
         },
         {
           "name": "B7-20 - Pay Group Fund Round Success",
@@ -14695,7 +14983,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "51bdcac1-1976-53b2-8547-69f192e89575"
         },
         {
           "name": "B7-21 - List Group Expenses",
@@ -14743,7 +15032,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "c89dbf5b-312c-54f7-b720-4f4fd8946d64"
         },
         {
           "name": "B7-22 - Create Group Expense",
@@ -14804,7 +15094,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "f33af6a7-b58c-5ef8-8a44-ab072b1f9f9a"
         },
         {
           "name": "B7-23 - List Group Activities Log",
@@ -14852,7 +15143,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "e89d64dc-5cfb-5a74-9dad-c60f78889278"
         },
         {
           "name": "B7-24 - Get Group Deletion Request Status Success",
@@ -14902,7 +15194,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "9ce15b6a-7774-5c99-b5dc-df38ff4fc3a2"
         },
         {
           "name": "B7-25 - Request Group Deletion",
@@ -14962,7 +15255,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "fb17ed65-7055-5110-bb05-9d4398d6a815"
         },
         {
           "name": "B7-27 - Cancel Group Deletion Request Success",
@@ -15012,7 +15306,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "c887241c-9ca3-52bc-98e9-a345539b76a1"
         },
         {
           "name": "B7-25b - Re-request Group Deletion for Vote",
@@ -15072,7 +15367,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "3c2128e3-f286-5336-a812-0c4049d8e35a"
         },
         {
           "name": "B7-26 - Vote on Group Deletion Request Success",
@@ -15135,7 +15431,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "1d0c5699-bc08-5cbe-93a6-fbf75dc30d9b"
         },
         {
           "name": "B7-28 - Create Group Refund Payment Success",
@@ -15202,7 +15499,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "1ec2208f-05d5-5646-8111-090b2c65479e"
         },
         {
           "name": "B7-29 - Finalize Group Deletion Success",
@@ -15267,7 +15565,8 @@
                 ]
               }
             }
-          ]
+          ],
+          "id": "df213d61-11c5-544d-9d92-55e787bdf7c6"
         },
         {
           "name": "B1-15 - Revoke User Sessions via DELETE /api/users/me/sessions",
@@ -15316,7 +15615,8 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "id": "a4e0f380-2ea8-53b4-9349-eb51150cfe84"
         }
       ]
     }

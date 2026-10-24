@@ -1,10 +1,10 @@
 {
-  "evidenceMode": "REPLAYED_EVIDENCE",
+  "evidenceMode": "FRESH_NEWMAN_EXECUTION",
   "suite": "SpendWise User API Acceptance Suite (Sanitized Real Execution Evidence)",
-  "testRunSha": "65379dacd8a82a45dda5b32cc13dda2e5e8c46f2",
-  "backendSourceFingerprint": "db84ac2c77a86f6d29defb5f9cb08e1552ad8344c0acbf642dcd0c0d791bc682",
+  "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+  "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
   "verifierVersion": "2.1.0",
-  "timestamp": "2026-10-24T03:22:00Z",
+  "timestamp": "2026-10-24T18:32:35+07:00",
   "targetDatabase": "SpendWise_E2E_G4",
   "targetInstance": "DESKTOP-B5KA3LT\\SQLEXPRESS02",
   "totalExecutedRequests": 300,
@@ -34,7 +34,10 @@
       "definedAssertions": [
         "Status code is 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d5d4a335-c9b4-5764-a773-9da5bf8a2b20",
@@ -58,7 +61,10 @@
       "definedAssertions": [
         "Registration returns 200 with EMAIL_VERIFICATION_REQUIRED"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "992cee66-4379-5432-8aa2-940a7398101c",
@@ -82,7 +88,10 @@
       "definedAssertions": [
         "Duplicate registration returns 409 Conflict"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d3ea871d-8088-50a7-96d9-49d06db97c8e",
@@ -106,7 +115,10 @@
       "definedAssertions": [
         "Resend verification returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ae9d5489-b9b9-59f0-b2ef-1abb97f933b4",
@@ -130,7 +142,10 @@
       "definedAssertions": [
         "Email verification returns 200 and challengeToken"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "59c89c39-2020-5008-ac68-e51c21d3202a",
@@ -154,7 +169,10 @@
       "definedAssertions": [
         "PIN setup returns 200 and auth tokens"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f6729073-cab6-5a06-8506-175c12212405",
@@ -178,7 +196,10 @@
       "definedAssertions": [
         "Registration User B returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "119e9c9d-ca42-5e1d-b505-a54f9e7641b9",
@@ -202,7 +223,10 @@
       "definedAssertions": [
         "User B verification returns challengeToken"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "eaf796b5-3a67-579e-847b-f8588b579405",
@@ -226,7 +250,10 @@
       "definedAssertions": [
         "User B PIN setup returns auth tokens"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9dee8c5b-012c-5d6a-9774-7508564daba5",
@@ -250,7 +277,10 @@
       "definedAssertions": [
         "Token refresh returns 200 and new access token"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fddad032-35d8-51f8-9e6d-d4ec3b725c6e",
@@ -274,7 +304,10 @@
       "definedAssertions": [
         "Unverified registration succeeds"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "75128e82-9c7f-5168-9bdd-f7554470e54a",
@@ -298,7 +331,10 @@
       "definedAssertions": [
         "Unverified user login returns 403 Forbidden"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5ca2ee45-64b5-527c-a5d9-eea7945924f4",
@@ -322,7 +358,10 @@
       "definedAssertions": [
         "Wrong password returns 400 or 401"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ca1f9cbb-8584-5553-b068-c847385851cc",
@@ -346,7 +385,10 @@
       "definedAssertions": [
         "Valid PIN verify returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "38015c30-637c-5fcf-b2f7-872ba1606189",
@@ -370,7 +412,10 @@
       "definedAssertions": [
         "Invalid PIN verify returns 400 or 401"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "bcba4b06-c343-5910-989b-f6e37f9d8daf",
@@ -394,7 +439,10 @@
       "definedAssertions": [
         "Change PIN returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "99da0f68-4144-5fd8-ab01-f81a4a8add29",
@@ -418,7 +466,10 @@
       "definedAssertions": [
         "Revert PIN returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ce11f82e-f6dd-5eb2-b1c5-a63f9d3dcfff",
@@ -442,7 +493,10 @@
       "definedAssertions": [
         "Forgot password returns 200 or 202 Accepted"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cac5c7a8-949b-57c0-b803-40ca689cee14",
@@ -466,7 +520,10 @@
       "definedAssertions": [
         "Reset password returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "552fc2f6-0285-50e7-b566-6e4b3abd9513",
@@ -490,7 +547,10 @@
       "definedAssertions": [
         "Login gives challenge token"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f70951af-b7da-5bbe-8715-3aa37b133b98",
@@ -514,7 +574,10 @@
       "definedAssertions": [
         "PIN login gives fresh active tokens"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d37079dc-8a83-5b50-87ae-0ad75a101369",
@@ -538,7 +601,10 @@
       "definedAssertions": [
         "List sessions returns 200 and active session array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cb788569-bc4b-55e6-a603-289b0e49dd14",
@@ -562,7 +628,10 @@
       "definedAssertions": [
         "Revoke session returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1632452a-af58-5175-a2da-e60917aa4f55",
@@ -586,7 +655,10 @@
       "definedAssertions": [
         "Login re-establishes challenge"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "99816b2e-8ef0-56ef-b959-ff5133eadb35",
@@ -610,7 +682,10 @@
       "definedAssertions": [
         "PIN login completes and stores permanent userA_token"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "54a2eb56-5140-59ac-bb4c-1f6ab60ba888",
@@ -634,7 +709,10 @@
       "definedAssertions": [
         "PIN status returns isSet = true"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d141f6f6-7ec1-5a29-855b-4817bbec9e04",
@@ -658,7 +736,10 @@
       "definedAssertions": [
         "Get profile returns 200 and user info"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9cba2cb5-5a8b-5279-ab11-9b78c635b36c",
@@ -682,7 +763,10 @@
       "definedAssertions": [
         "Upload avatar returns 200 and updated avatarUrl"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "af0bfd58-f6e7-57ba-82a0-346d05e18248",
@@ -706,7 +790,10 @@
       "definedAssertions": [
         "Preferences update returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "49ed4c0a-ed5b-5ae9-885a-868a401e56ed",
@@ -730,7 +817,10 @@
       "definedAssertions": [
         "Search User B returns 200 and matches User B ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "37d3c1a3-e783-5efe-b956-275f061d59ed",
@@ -754,7 +844,10 @@
       "definedAssertions": [
         "Search User B by SpendId returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "acea5e9c-429e-5e38-bf6a-ebe9d399d5f5",
@@ -778,7 +871,10 @@
       "definedAssertions": [
         "Discover users returns 200 with paginated array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f283db49-de2e-5307-b260-b9bef1834316",
@@ -802,7 +898,10 @@
       "definedAssertions": [
         "Send friend request returns 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "402028a0-df11-5e40-a3dd-02db5ab4ea20",
@@ -826,7 +925,10 @@
       "definedAssertions": [
         "Duplicate friend request returns 200, 400 or 409"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d9f42de8-fbed-5636-83e7-56f6968b3a99",
@@ -850,7 +952,10 @@
       "definedAssertions": [
         "Outgoing requests contains request to User B"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5c271bdd-6e5d-5d38-95f1-25cd22e719fd",
@@ -874,7 +979,10 @@
       "definedAssertions": [
         "Incoming requests contains request from User A"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "46e2cf1b-d7d4-5801-a0bf-2e8aeef6e3a7",
@@ -898,7 +1006,10 @@
       "definedAssertions": [
         "Accept friend request returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "50dd9855-4161-57f0-82b2-e3e7535cda64",
@@ -922,7 +1033,10 @@
       "definedAssertions": [
         "User A friend list contains User B"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "efbdde0d-31e8-51d3-8f53-da005c6f8152",
@@ -946,7 +1060,10 @@
       "definedAssertions": [
         "User B friend list contains User A"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "610ac0a8-add6-525c-b011-e58326acd494",
@@ -970,7 +1087,10 @@
       "definedAssertions": [
         "Update friend preference returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a86b7636-822e-550b-95ca-7b1aaad868a7",
@@ -994,7 +1114,10 @@
       "definedAssertions": [
         "List wallets returns 200 and finds Main wallet"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c9f8ae20-9aea-54af-8774-dc2d3bb98ff3",
@@ -1018,7 +1141,10 @@
       "definedAssertions": [
         "Get categories returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "932de1a5-db82-5016-9b5a-048eb1a84cda",
@@ -1042,7 +1168,10 @@
       "definedAssertions": [
         "Evidence upload returns 200/201 and ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cd7bb7b2-7eff-5a2b-a086-739bf8447a10",
@@ -1066,7 +1195,10 @@
       "definedAssertions": [
         "Income returns 201 Created and transaction ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "bcdc28af-e859-5aa1-b907-a881d31302d7",
@@ -1090,7 +1222,10 @@
       "definedAssertions": [
         "Create Savings Wallet returns 201"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c6bd5152-7afc-510e-ab6a-0d175d26971f",
@@ -1114,7 +1249,10 @@
       "definedAssertions": [
         "Create Emergency Wallet returns 201"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9580259a-474e-5632-9194-f3e07495d7d3",
@@ -1138,7 +1276,10 @@
       "definedAssertions": [
         "Exceeding 3 personal wallets returns 409 Conflict"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d2aeffdb-cfe4-562d-89da-173e4d9a2066",
@@ -1162,7 +1303,10 @@
       "definedAssertions": [
         "Get wallet details returns 200 and balance 10,000,000 VND"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4be7e49f-f396-54bb-95c2-f4c25abf6b36",
@@ -1186,7 +1330,10 @@
       "definedAssertions": [
         "Update wallet returns 200 and updated name"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0162c41e-5ba1-5fb0-8926-e8458ec007a0",
@@ -1210,7 +1357,10 @@
       "definedAssertions": [
         "Create category returns 201 Created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7f61a6ec-9b52-5145-9986-757e407afd7f",
@@ -1234,7 +1384,10 @@
       "definedAssertions": [
         "Expense evidence upload returns 200/201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ad785482-44ee-530d-8e01-b3bd911bec64",
@@ -1258,7 +1411,10 @@
       "definedAssertions": [
         "Expense returns 201 Created and transaction ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5031edf1-1eb5-5a0d-a40d-aee45bbaeb1d",
@@ -1282,7 +1438,10 @@
       "definedAssertions": [
         "Internal transfer returns 201 Created"
       ],
-      "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult"
+      "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "336d912b-9a62-54cb-a9ad-917b7a3f67da",
@@ -1306,7 +1465,10 @@
       "definedAssertions": [
         "Balances reflect 10M - 45k - 3M = 6,955,000 VND in Main and 3M in Savings"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c24b11d1-ced6-52a3-af88-f705d551d598",
@@ -1330,7 +1492,10 @@
       "definedAssertions": [
         "Filtered transactions list returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9cd6137e-bce3-5fdd-b142-80e44c4bf25e",
@@ -1354,7 +1519,10 @@
       "definedAssertions": [
         "Get transaction details returns 200 and matches 45,000 VND"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6948e624-7b5d-5c06-a8a9-7818ce899838",
@@ -1378,7 +1546,10 @@
       "definedAssertions": [
         "Update transaction returns 200 and updated description"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "99d412b9-097a-5907-b358-220316e7487c",
@@ -1402,7 +1573,10 @@
       "definedAssertions": [
         "Close empty wallet returns 204 NoContent"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f56387b7-cc38-53d7-a620-7c9274ed05e1",
@@ -1426,7 +1600,10 @@
       "definedAssertions": [
         "P2P Transfer returns 201 Created"
       ],
-      "financialVerificationReference": "SpendWise.Tests.P2PTransferTwoUserIntegrationTests.Execute_TransfersBalanceAtomicallyBetweenUsers"
+      "financialVerificationReference": "SpendWise.Tests.P2PTransferTwoUserIntegrationTests.Execute_TransfersBalanceAtomicallyBetweenUsers",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "acd1a80f-5fe6-5172-8bac-174018ddb571",
@@ -1450,7 +1627,10 @@
       "definedAssertions": [
         "User B Main wallet retrieved"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d6c9cff3-c28c-5bea-9637-7565608459d1",
@@ -1474,7 +1654,10 @@
       "definedAssertions": [
         "Create Fixed Fund returns 200/201 and fund ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7c5a7652-bd36-5b18-aeb3-97b2920be9f3",
@@ -1498,7 +1681,10 @@
       "definedAssertions": [
         "Get Fixed Fund details returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c4693d39-5526-5bcd-9053-55fcaf865a6c",
@@ -1522,7 +1708,10 @@
       "definedAssertions": [
         "Invite User B returns 200 and invitation ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "728fb320-59d2-597a-9788-add68d33bc63",
@@ -1546,7 +1735,10 @@
       "definedAssertions": [
         "User B accepts fund invitation returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2529bb3e-e0e5-5552-aa17-78e1467fcdbe",
@@ -1570,7 +1762,10 @@
       "definedAssertions": [
         "List members returns 200 and contains 2 members"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0efbf5a4-27da-52a5-9a6a-7577b38bb658",
@@ -1594,7 +1789,10 @@
       "definedAssertions": [
         "Confirm obligations returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7de8ae9b-0bd2-522c-bea6-c024b4daa851",
@@ -1618,7 +1816,10 @@
       "definedAssertions": [
         "User A contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "641b68df-83c9-515d-b4f1-4de59f030ce4",
@@ -1642,7 +1843,10 @@
       "definedAssertions": [
         "User B contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f7c0fc7a-bd4c-5ba9-a888-d26610f07fcd",
@@ -1666,7 +1870,10 @@
       "definedAssertions": [
         "List contributions returns 200 and contains 2 entries"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "24410bd1-4d0b-5fc6-9482-b8b4e111ae9b",
@@ -1690,7 +1897,10 @@
       "definedAssertions": [
         "Grant spending permission returns 204 NoContent"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4214f6b8-94de-52a6-bf51-7caac11d1475",
@@ -1714,7 +1924,10 @@
       "definedAssertions": [
         "Activities list returns 200 and records events"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1be109c6-eaec-5b8a-b05c-bdb5efdd16eb",
@@ -1738,7 +1951,10 @@
       "definedAssertions": [
         "Finance overview returns 200 and total collected 2,000,000 VND"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "be410ad3-3010-5745-add0-15b0f487e909",
@@ -1762,7 +1978,10 @@
       "definedAssertions": [
         "Create Free Fund returns 200/201 and fund ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "25d34631-1e11-5ec6-9deb-af2e52089658",
@@ -1786,7 +2005,10 @@
       "definedAssertions": [
         "Invite User B returns 200 and invitation ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3b23b158-d775-5840-9433-cffc15e3fbe5",
@@ -1810,7 +2032,10 @@
       "definedAssertions": [
         "User B accepts Free Fund invitation returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7a2acdc7-07eb-5ce3-83b4-345e69b011dc",
@@ -1834,7 +2059,10 @@
       "definedAssertions": [
         "User A flexible contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "93488ea8-c5dc-5886-913f-19f120953328",
@@ -1858,7 +2086,10 @@
       "definedAssertions": [
         "User B flexible contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7b06a781-5e2b-5ec5-99ac-2f045975a409",
@@ -1882,7 +2113,10 @@
       "definedAssertions": [
         "Free Fund finance overview returns 200 and balance 800,000 VND"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6256737a-74dc-5b8c-bcb1-47568081b6a8",
@@ -1906,7 +2140,10 @@
       "definedAssertions": [
         "Create fund request returns 200 and request ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6c6998ea-60fe-5e94-bcbd-5167f49f7423",
@@ -1930,7 +2167,10 @@
       "definedAssertions": [
         "Owner approves free fund request successfully"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3fe45e75-505b-57b6-8c3c-4b2a342397a6",
@@ -1954,7 +2194,10 @@
       "definedAssertions": [
         "Create second fund request returns 200 and request ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2f7932b5-940f-5df2-9073-cd9436436a65",
@@ -1978,7 +2221,10 @@
       "definedAssertions": [
         "Refund preview returns 200 and refundable amount"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "49c0cb5a-2a3a-5358-b189-13a989c85115",
@@ -2002,7 +2248,10 @@
       "definedAssertions": [
         "User B leaving fund returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1d1ff308-a15d-59cb-867d-770840e844ec",
@@ -2026,7 +2275,10 @@
       "definedAssertions": [
         "Members list now has 1 active member"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f3c6db3c-f98b-500f-bff1-88e535728feb",
@@ -2050,7 +2302,10 @@
       "definedAssertions": [
         "Create budget returns 201 Created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "dfac427e-5a0c-5ce2-893a-046a60c7116c",
@@ -2074,7 +2329,10 @@
       "definedAssertions": [
         "List budgets returns 200 and contains created budget"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "739f5889-3789-5f32-a10f-75ae214ac70d",
@@ -2098,7 +2356,10 @@
       "definedAssertions": [
         "Update budget returns 200 and updated limit"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c691233e-8a79-50aa-8553-1a0a11191912",
@@ -2122,7 +2383,10 @@
       "definedAssertions": [
         "Delete budget returns 204 NoContent"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0d0874a6-e48f-5322-822e-04814ea8bded",
@@ -2146,7 +2410,10 @@
       "definedAssertions": [
         "Create savings goal returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6cc1d864-e434-5cac-88bf-1cf9ae00c185",
@@ -2170,7 +2437,10 @@
       "definedAssertions": [
         "Goal contribution returns 200 and updated currentAllocatedAmount"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d80864bb-da25-5b45-b22a-b510a3a85684",
@@ -2194,7 +2464,10 @@
       "definedAssertions": [
         "Get goal details returns 200 and allocated 2M"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "54f97e65-91a0-57eb-bd8a-23b32183d677",
@@ -2218,7 +2491,10 @@
       "definedAssertions": [
         "Goal withdrawal returns 200 and remaining 1,500,000 VND"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0d07bdd5-dc8a-5021-9d88-218ee04166ec",
@@ -2242,7 +2518,10 @@
       "definedAssertions": [
         "Create recurring transaction returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8f7e58f1-ff94-5f6e-9e52-4ad918d79818",
@@ -2266,7 +2545,10 @@
       "definedAssertions": [
         "List recurring transactions returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c29a3d36-6ed4-5cbc-adcb-b49c38d413d2",
@@ -2290,7 +2572,10 @@
       "definedAssertions": [
         "Create transaction rule returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "542d500a-e837-5342-8745-5f238c6f6737",
@@ -2314,7 +2599,10 @@
       "definedAssertions": [
         "List transaction rules returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6c94db1c-1385-5b03-97a7-be255ee83d86",
@@ -2338,7 +2626,10 @@
       "definedAssertions": [
         "Create AI conversation returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b4121695-5f20-58d2-bdc9-f1e8208e04d2",
@@ -2362,7 +2653,10 @@
       "definedAssertions": [
         "List AI conversations returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1a9a995a-a924-5fc1-a806-2230218f20fa",
@@ -2386,7 +2680,10 @@
       "definedAssertions": [
         "AI chat returns 200 OK (with live key) or controlled 503 (without live Gemini key)"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ee3e00ba-a66e-5278-88a1-133a719c6a87",
@@ -2410,7 +2707,10 @@
       "definedAssertions": [
         "Find bank transfer recipient returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0598a0b5-869d-5751-8ee0-ade73080e31a",
@@ -2434,7 +2734,10 @@
       "definedAssertions": [
         "Create bank direct transfer returns 201 Created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8d74df0d-c807-59f7-aefe-e18c729f291c",
@@ -2458,7 +2761,10 @@
       "definedAssertions": [
         "Bank direct transfer history returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e4229527-f6fe-57ed-8d88-ee03886341e8",
@@ -2482,7 +2788,10 @@
       "definedAssertions": [
         "Webhook with invalid secret returns 401 Unauthorized"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6f151960-191f-51d5-98fb-07f338fca97d",
@@ -2506,7 +2815,10 @@
       "definedAssertions": [
         "List notifications returns 200 and captures real notificationId"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e1907862-b18b-536f-93c5-8c4e37fce462",
@@ -2530,7 +2842,10 @@
       "definedAssertions": [
         "Mark all notifications read returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4b8035de-3319-578d-a62f-d7acea66af9d",
@@ -2554,7 +2869,10 @@
       "definedAssertions": [
         "Search notifications returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "920dd24c-aa5b-50ef-91b6-082cb27702cf",
@@ -2578,7 +2896,10 @@
       "definedAssertions": [
         "Create support case returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b404c712-7cac-5c42-8132-ac04118c2c90",
@@ -2602,7 +2923,10 @@
       "definedAssertions": [
         "List support cases returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3f5e86fa-9b7e-5aca-8dbb-cdc32f58afc4",
@@ -2626,7 +2950,10 @@
       "definedAssertions": [
         "Get support case details returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "98896f6c-d2f4-56ee-b79e-270323fccf6a",
@@ -2650,7 +2977,10 @@
       "definedAssertions": [
         "Reply to support case returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5849680b-2622-5f32-97e0-466e90185a99",
@@ -2674,7 +3004,10 @@
       "definedAssertions": [
         "List disputes returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2a0e0fb8-d1a8-56dd-b986-9c1dae3baec8",
@@ -2698,7 +3031,10 @@
       "definedAssertions": [
         "Profile returned successfully"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b00a2c8f-cbd5-54c2-a6e3-66c2f8af9fc5",
@@ -2722,7 +3058,10 @@
       "definedAssertions": [
         "Avatar upload returns 200 and avatarUrl"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "26ee5d50-fd86-5c3a-a256-9a0dbc35b9f8",
@@ -2746,7 +3085,10 @@
       "definedAssertions": [
         "Profile reflects newly uploaded avatar"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a63c67c4-474e-5100-a6fe-74c0edca20ce",
@@ -2770,7 +3112,10 @@
       "definedAssertions": [
         "Logout returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e31caa94-109f-550b-b9dc-b408a78c249d",
@@ -2794,7 +3139,10 @@
       "definedAssertions": [
         "Re-login returns challengeToken"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "91644f46-ff05-5d03-8d2f-36486fe6947c",
@@ -2818,7 +3166,10 @@
       "definedAssertions": [
         "PIN login gives fresh active token"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "afaeabf7-2d2c-56c6-b26b-b28c81099bad",
@@ -2842,7 +3193,10 @@
       "definedAssertions": [
         "Avatar persisted across fresh login sessions"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d5132be6-881e-5241-859c-18a5f1bc13b4",
@@ -2866,7 +3220,10 @@
       "definedAssertions": [
         "Email change request returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "08818cc8-b844-5569-8791-9c106a0e555e",
@@ -2890,7 +3247,10 @@
       "definedAssertions": [
         "Confirm email change returns 200 and updated email"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fe12d8ce-5f9a-5006-9159-e8c43a753b7e",
@@ -2914,7 +3274,10 @@
       "definedAssertions": [
         "Logout succeeds (200, 204 or 401)"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "605074cb-e4a7-5fe6-a980-b57673b67653",
@@ -2938,7 +3301,10 @@
       "definedAssertions": [
         "Login with new email returns 200 and challenge"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b06398a3-446c-5d39-a8d1-2d54fcd89e62",
@@ -2962,7 +3328,10 @@
       "definedAssertions": [
         "PIN login gives fresh active tokens for new email"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f9605b41-0caa-513f-9b1c-efa7845791ba",
@@ -2986,7 +3355,10 @@
       "definedAssertions": [
         "Login with old email is rejected (400 or 401)"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0ab324b6-94a5-52f9-9169-3c1093a53f4b",
@@ -3010,7 +3382,10 @@
       "definedAssertions": [
         "User B found by contact"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "185aeb0a-0000-5e1a-af96-5211462ceafe",
@@ -3034,7 +3409,10 @@
       "definedAssertions": [
         "Friend request accepted or idempotent"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ed796650-0b2b-5803-9cc8-c2356d64ad0a",
@@ -3058,7 +3436,10 @@
       "definedAssertions": [
         "User A friend list contains User B"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "82226c41-5b9a-5d9f-884c-dc029f81f30d",
@@ -3082,7 +3463,10 @@
       "definedAssertions": [
         "User B friend list contains User A"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4c9e7915-f236-5f00-a21f-5e9b46389747",
@@ -3106,7 +3490,10 @@
       "definedAssertions": [
         "Fixed Fund created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8ba2c54a-17c0-5335-b286-62bfbcc11284",
@@ -3130,7 +3517,10 @@
       "definedAssertions": [
         "Invite sent to User B"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4f99d6db-101a-544e-87e1-128d4584a7c2",
@@ -3154,7 +3544,10 @@
       "definedAssertions": [
         "User B accepts fund invitation"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "629e0112-ac08-50a5-9608-bf6d2feeb179",
@@ -3178,7 +3571,10 @@
       "definedAssertions": [
         "Obligations confirmed"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2d6122ee-9cf6-5661-ade6-2539a45896bb",
@@ -3202,7 +3598,10 @@
       "definedAssertions": [
         "User A contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d04e6111-52df-5ebb-bc08-09646dba80ed",
@@ -3226,7 +3625,10 @@
       "definedAssertions": [
         "User B contribution returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "128531e6-bd5c-5356-8c18-9f52c459b613",
@@ -3250,7 +3652,10 @@
       "definedAssertions": [
         "Total fund balance reaches 1,000,000 VND target"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "326ad9db-ffd5-5c6b-b69c-2ae1cfb298d0",
@@ -3274,7 +3679,10 @@
       "definedAssertions": [
         "Spending permission granted"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7969ab6a-9eb3-57c4-ad94-4270509c4864",
@@ -3298,7 +3706,10 @@
       "definedAssertions": [
         "Activity log recorded events"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a137050b-a45d-5a3f-b542-46644ed7eedb",
@@ -3322,7 +3733,10 @@
       "definedAssertions": [
         "Main and Savings wallets identified"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ef5e3040-d985-511b-b8b6-6bcb032731da",
@@ -3346,7 +3760,10 @@
       "definedAssertions": [
         "Internal transfer returns 201 Created"
       ],
-      "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult"
+      "financialVerificationReference": "SpendWise.Tests.InternalTransferIdempotencyTests.Execute_WithSameIdempotencyKey_ReturnsSameResult",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "693e3020-29aa-5ecf-aa03-0dc2e371d206",
@@ -3370,7 +3787,10 @@
       "definedAssertions": [
         "Wallet 2 balance increased by 300,000 VND"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d4391466-12fd-5e1d-9445-50f62c5e81ef",
@@ -3394,7 +3814,10 @@
       "definedAssertions": [
         "Transactions list returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c0a44e4d-921d-5012-97e8-755ce85844cd",
@@ -3418,7 +3841,10 @@
       "definedAssertions": [
         "Expense category found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "44ab7b10-1fb9-56c9-9bf0-5126da8d1c0b",
@@ -3442,7 +3868,10 @@
       "definedAssertions": [
         "Budget created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e495a12b-b7e5-595c-8691-8b1b5cc64145",
@@ -3466,7 +3895,10 @@
       "definedAssertions": [
         "Budget details match initial state"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2de1c785-11cb-5fb0-9ab0-6299cac7d5c6",
@@ -3490,7 +3922,10 @@
       "definedAssertions": [
         "Evidence uploaded for budget expense returns 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7c61e49b-10e6-5193-8b59-ffc28c3d78d7",
@@ -3514,7 +3949,10 @@
       "definedAssertions": [
         "Record budget expense returns 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c30138a2-947d-59e4-baf8-8202edc875ac",
@@ -3538,7 +3976,10 @@
       "definedAssertions": [
         "Budget spent amount and percentage updated after expense"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f7daa4d5-212b-5ce2-8b14-36f6d25ffe9f",
@@ -3562,7 +4003,10 @@
       "definedAssertions": [
         "PATCH transaction correction returns 200 and updated amount"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d73ae8b9-9d83-5f6f-b4b4-74151418ac7a",
@@ -3586,7 +4030,10 @@
       "definedAssertions": [
         "Budget spent amount and percentage re-calculated after correction"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "793f0a04-c25d-570d-ba7e-b05dae6a1c29",
@@ -3610,7 +4057,10 @@
       "definedAssertions": [
         "Budget limit updated to 3,000,000 VND"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6a3adcf6-bfb0-5a0b-9ca0-8e60f2bf39a4",
@@ -3634,7 +4084,10 @@
       "definedAssertions": [
         "Budget cleanly deleted"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5832d36e-b083-5607-8ccc-dc323c1cb0dc",
@@ -3658,7 +4111,10 @@
       "definedAssertions": [
         "User B budget created successfully"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d51f0770-8d64-585e-94fb-a22e9ec11af2",
@@ -3682,7 +4138,10 @@
       "definedAssertions": [
         "User B goal created successfully returns 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "92b49590-b70c-5a25-846c-fbcdb5784740",
@@ -3706,7 +4165,10 @@
       "definedAssertions": [
         "User B evidence uploaded returns 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1e3dbff4-129c-5372-8760-4bb71166146b",
@@ -3730,7 +4192,10 @@
       "definedAssertions": [
         "User B downloads own evidence returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1c44cbb2-d496-52cf-8546-a92806f7ff68",
@@ -3754,7 +4219,10 @@
       "definedAssertions": [
         "Cross-user wallet access is rejected with 404 Not Found"
       ],
-      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit"
+      "financialVerificationReference": "SpendWise.Tests.PersonalWalletLimitTests.CreateWallet_EnforcesThreeWalletLimit",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c6a7eac2-03c7-51fb-ac13-3eec19930a5e",
@@ -3778,7 +4246,10 @@
       "definedAssertions": [
         "Cross-user budget deletion is rejected with 404 Not Found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a2b5fa0b-fb5c-540e-b382-408ac4cf1285",
@@ -3802,7 +4273,10 @@
       "definedAssertions": [
         "Cross-user goal access is rejected with 404 Not Found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c26411f0-e162-55b2-afcb-920c89ba4cde",
@@ -3826,7 +4300,10 @@
       "definedAssertions": [
         "Cross-user evidence access is rejected with 404 Not Found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9799e8e3-724c-5498-a635-77ad6a334e3f",
@@ -3850,7 +4327,10 @@
       "definedAssertions": [
         "Non-owner permission change is rejected with 403 Forbidden"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c284d70d-3195-5e20-991f-9ad1faa97c99",
@@ -3874,7 +4354,10 @@
       "definedAssertions": [
         "Non-owner fund review is rejected with 403 Forbidden or 404 Not Found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "528ebd12-63a0-59f4-9d7e-e183673ef129",
@@ -3898,7 +4381,10 @@
       "definedAssertions": [
         "Execution of non-existent AI action returns 404 Not Found"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fd5e6c38-3d31-59ce-b7e2-6333792ea771",
@@ -3922,7 +4408,10 @@
       "definedAssertions": [
         "Cancellation of non-existent AI action returns 409 Conflict"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1945c090-b854-5391-8da3-f5e9b695afe2",
@@ -3946,7 +4435,10 @@
       "definedAssertions": [
         "User B budget remains intact and unmodified"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5b86107c-cd5a-5a59-9ea2-ac783be9e04a",
@@ -3970,7 +4462,10 @@
       "definedAssertions": [
         "Status code is 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b787576f-42bd-54fc-ae9e-85c555702a3c",
@@ -3994,7 +4489,10 @@
       "definedAssertions": [
         "Forgot PIN instructions accepted (202 Accepted)"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a1d29089-f98e-5e87-9ed5-2686a0389026",
@@ -4025,7 +4523,10 @@
         "Token validation responds (200 OK)",
         "Token is reported invalid"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cf7c3f3a-a8fe-586b-85e2-018cf260ce7e",
@@ -4056,7 +4557,10 @@
         "Bank connections status returned (200 OK)",
         "Reports bank connections list"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "71525e3a-5459-5ac9-9516-17e0621a3115",
@@ -4089,7 +4593,10 @@
         "TestMode disabled outside Development",
         "Explicit disabled code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "df28b542-8479-5c0f-b7cd-865d17ea5d20",
@@ -4122,7 +4629,10 @@
         "TestMode disabled outside Development",
         "Explicit disabled code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "37d9c50e-06f1-5db4-a14d-e06ca43acc32",
@@ -4155,7 +4665,10 @@
         "TestMode disabled outside Development",
         "Explicit disabled code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "871fc1cb-7b8f-5566-8f81-fa13e16a619e",
@@ -4188,7 +4701,10 @@
         "TestMode disabled outside Development",
         "Explicit disabled code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b5e2cb20-6313-5eaa-86a5-a00c2be5f129",
@@ -4221,7 +4737,10 @@
         "TestMode disabled outside Development",
         "Explicit disabled code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d35601d9-f00b-5098-b926-e095e666e42c",
@@ -4252,7 +4771,10 @@
         "Status code is 200",
         "Reported fund request enters Suspended state"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "97c8ebcf-8e45-566b-8c7e-294f5914a3eb",
@@ -4283,7 +4805,10 @@
         "Status code is 200",
         "Cancelled fund request returns Cancelled state and request id"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fc0609a5-14a5-5d8a-b5c1-9de1d0665b7f",
@@ -4314,7 +4839,10 @@
         "Status code is 200",
         "Activity proposal settled"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ad938f14-dc1f-55f2-9ab3-8678d940c000",
@@ -4338,7 +4866,10 @@
       "definedAssertions": [
         "Advance election returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ce1593e4-a472-57f1-bf1b-64a6b92fa574",
@@ -4369,7 +4900,10 @@
         "Status code is 200",
         "Kicked member returns valid refund result structure"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "57bf4d2c-68f6-5072-9273-b87f3c13be45",
@@ -4400,7 +4934,10 @@
         "Status code is 200",
         "Dissolved fund returns valid result structure"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b5c0096a-7acb-5a04-ad9a-1aaf3728e21f",
@@ -4424,7 +4961,10 @@
       "definedAssertions": [
         "System maintenance status returned (200 OK)"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7cda70db-e303-5531-90cf-af0982c7ac44",
@@ -4448,7 +4988,10 @@
       "definedAssertions": [
         "Submit account recovery returns 202 Accepted"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4a6ae158-3586-5837-9c1b-04969bcc85c2",
@@ -4472,7 +5015,10 @@
       "definedAssertions": [
         "Status code is 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "82f44dbb-a063-5950-a88b-6f223d1f72f3",
@@ -4496,7 +5042,10 @@
       "definedAssertions": [
         "Get maintenance state returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ae3066b9-b20c-5366-ba5c-3925dbb3ac60",
@@ -4520,7 +5069,10 @@
       "definedAssertions": [
         "Get active announcement returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5cc2ccbc-44ac-5b6b-b0e6-9549db2276f1",
@@ -4544,7 +5096,10 @@
       "definedAssertions": [
         "Register push installation returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f8d8b756-5ebc-57a2-b800-70ba2f53de03",
@@ -4568,7 +5123,10 @@
       "definedAssertions": [
         "Unregister push installation returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e6bce7ea-4b98-5068-9abd-c6005817531f",
@@ -4592,7 +5150,10 @@
       "definedAssertions": [
         "Get notification preferences returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b6d859f5-26e3-5ad1-80ac-eac3e32ab6f1",
@@ -4616,7 +5177,10 @@
       "definedAssertions": [
         "Save notification preference succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "98ec5964-0ae8-590b-a7fe-e6efa0fad184",
@@ -4640,7 +5204,10 @@
       "definedAssertions": [
         "Mark notification read succeeds with 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "56a701b2-f5dd-51c1-90ef-6bd489bb39f4",
@@ -4664,7 +5231,10 @@
       "definedAssertions": [
         "Delete single notification succeeds with 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1e6bff90-2f23-5e7b-a7cf-9cb3492defd1",
@@ -4688,7 +5258,10 @@
       "definedAssertions": [
         "Clear notifications returns 200 OK with deleted count"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7533ec28-6b20-5e37-bf18-f65898d24f40",
@@ -4719,7 +5292,10 @@
         "Status code is 200",
         "Request status is Rejected"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "50803903-126f-5593-92f6-1a51ea94ed95",
@@ -4743,7 +5319,10 @@
       "definedAssertions": [
         "Status code is 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "949fa812-0b9c-52af-b2b2-8c6344042b0f",
@@ -4767,7 +5346,10 @@
       "definedAssertions": [
         "Status code is 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "dff45d6e-cd8a-5e9f-9585-e508380a0e46",
@@ -4791,7 +5373,10 @@
       "definedAssertions": [
         "Create category returns 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "68b62210-8512-5152-b598-9c1c2a1f780a",
@@ -4815,7 +5400,10 @@
       "definedAssertions": [
         "Get category returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c3eafa46-05a0-5429-9677-96e9a5e3604b",
@@ -4839,7 +5427,10 @@
       "definedAssertions": [
         "Update category returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "368d4774-4905-5407-aeb1-c07e104f2cb8",
@@ -4863,7 +5454,10 @@
       "definedAssertions": [
         "Archive/Delete category returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "025e15dd-5116-51da-bb93-282eda185426",
@@ -4887,7 +5481,10 @@
       "definedAssertions": [
         "Get dashboard returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b686faea-5f1e-5955-b630-b7c22ed78806",
@@ -4911,7 +5508,10 @@
       "definedAssertions": [
         "SePay IPN returns 401 Unauthorized with wrong secret"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b75c3e37-ae1c-5d92-acd9-50154d62599d",
@@ -4935,7 +5535,10 @@
       "definedAssertions": [
         "Upload evidence for multi-wallet returns 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fc10294f-0e64-5be8-908b-856dc2f8f947",
@@ -4959,7 +5562,10 @@
       "definedAssertions": [
         "Multi-wallet expense succeeds with 200 or 201"
       ],
-      "financialVerificationReference": "SpendWise.Tests.MultiWalletExpenseTests.Execute_DeductsMultipleWalletsAtomically"
+      "financialVerificationReference": "SpendWise.Tests.MultiWalletExpenseTests.Execute_DeductsMultipleWalletsAtomically",
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c9f6fb4d-5eb1-5c14-a301-747a5e8cb094",
@@ -4983,7 +5589,10 @@
       "definedAssertions": [
         "Get transfer details returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "dd4825be-9099-51fc-8b50-89f455cd876b",
@@ -5007,7 +5616,10 @@
       "definedAssertions": [
         "Confirm transfer returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9600fc56-36fc-5f34-9d3c-e1d202735ed0",
@@ -5031,7 +5643,10 @@
       "definedAssertions": [
         "Record V1 activity returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c28366a1-9d9c-5c85-9d6f-9b735fcf8768",
@@ -5055,7 +5670,10 @@
       "definedAssertions": [
         "Compatible budget PUT succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a1ea5157-32b5-585f-bed6-58e190285047",
@@ -5079,7 +5697,10 @@
       "definedAssertions": [
         "List goals returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8cbf8124-72a5-5422-a21b-107e289eb37e",
@@ -5103,7 +5724,10 @@
       "definedAssertions": [
         "Create goal succeeds with 200/201 and stores ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "df750b79-1e6a-5693-aaf8-565f63d0a483",
@@ -5127,7 +5751,10 @@
       "definedAssertions": [
         "Update goal returns 200, 204, 400 or 404"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "68ccc6c4-0740-59cf-933b-191e62243d6e",
@@ -5151,7 +5778,10 @@
       "definedAssertions": [
         "Delete goal returns 200, 204 or 404"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5d14a276-1907-50b5-a610-bd7ab890acd9",
@@ -5175,7 +5805,10 @@
       "definedAssertions": [
         "Create recurring transaction succeeds with 200/201 and stores ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "df52b09d-6ef2-52e2-885f-8aaa3923fbd1",
@@ -5199,7 +5832,10 @@
       "definedAssertions": [
         "Get recurring transaction succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "03f8f600-0424-5c8e-a755-1b6e41aab4f1",
@@ -5223,7 +5859,10 @@
       "definedAssertions": [
         "Update recurring transaction succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "272a2fa3-c0a7-5af4-8c57-60a95d85c054",
@@ -5247,7 +5886,10 @@
       "definedAssertions": [
         "Pause recurring transaction succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "15550603-63b4-5330-9559-29f33481f5c5",
@@ -5271,7 +5913,10 @@
       "definedAssertions": [
         "Resume recurring transaction succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c579de09-4795-53f8-a097-591ef4c3a6cb",
@@ -5302,7 +5947,10 @@
         "Status code is 200",
         "Transaction recorded"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "37e9248b-3499-5b91-ae77-8ea96d1fcce3",
@@ -5326,7 +5974,10 @@
       "definedAssertions": [
         "Recurring transaction operation returns expected status"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cf7fee38-a132-54e4-8539-e0809fe33df8",
@@ -5350,7 +6001,10 @@
       "definedAssertions": [
         "Create transaction rule succeeds with 200/201 and stores ID"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f7c7880f-b78b-53c0-bb62-cf5869341634",
@@ -5374,7 +6028,10 @@
       "definedAssertions": [
         "Get transaction rule succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9e7b67fd-b448-5cf7-a222-1321cb09a593",
@@ -5398,7 +6055,10 @@
       "definedAssertions": [
         "Update transaction rule succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "28cceb83-fd3f-51e1-b23e-3f407ad29212",
@@ -5422,7 +6082,10 @@
       "definedAssertions": [
         "Transaction rule operation returns expected status"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d98b059b-7795-5d98-8fbe-6165c75b3661",
@@ -5446,7 +6109,10 @@
       "definedAssertions": [
         "Create dispute succeeds with 200 or 201 and stores disputeId"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9c17bfad-ad8f-5b8a-ac0d-91ffdb073b2c",
@@ -5470,7 +6136,10 @@
       "definedAssertions": [
         "Get dispute details returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "437b9d06-5859-5729-803b-9daac59ea532",
@@ -5494,7 +6163,10 @@
       "definedAssertions": [
         "Reply to dispute returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9061f3c2-af6a-5787-9301-cd06bde87089",
@@ -5518,7 +6190,10 @@
       "definedAssertions": [
         "Dispute multipart reply succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ec8c06fa-c7e9-5149-9ed9-a53b63f64de1",
@@ -5542,7 +6217,10 @@
       "definedAssertions": [
         "Support multipart reply succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a5965303-7a60-5762-84df-2221d3864f23",
@@ -5573,7 +6251,10 @@
         "Status code is 200",
         "Case attachment download returns valid file payload"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c63e333c-46dc-53bd-aa42-3d0d7b5faabf",
@@ -5597,7 +6278,10 @@
       "definedAssertions": [
         "Create AI conversation returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cdf79052-7e2e-51ee-a3c7-8e0a2eaeb65b",
@@ -5621,7 +6305,10 @@
       "definedAssertions": [
         "Case or AI operation returns expected status"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6255ea78-8dfe-57fd-be07-8a7e000d8bdf",
@@ -5645,7 +6332,10 @@
       "definedAssertions": [
         "Case or AI operation returns expected status"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cf7fc7a3-a55e-5af9-ac9a-2ce091bd01d2",
@@ -5669,7 +6359,10 @@
       "definedAssertions": [
         "Case or AI operation returns expected status"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3aca7959-ea8a-5d77-af99-e4c90169e907",
@@ -5693,7 +6386,10 @@
       "definedAssertions": [
         "Upload AI attachment returns 201 Created"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7f802bad-78e4-5ebc-b5ba-9dd4ddc09808",
@@ -5724,7 +6420,10 @@
         "Status code is 200",
         "AI attachment download returns valid file payload"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ab4d8996-b2f5-5ebb-92ce-72bb91281d04",
@@ -5755,7 +6454,10 @@
         "Status code is 200",
         "Proposal details returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "dedb13ae-c9df-59db-8a3b-1f5b511386e5",
@@ -5779,7 +6481,10 @@
       "definedAssertions": [
         "Execute proposal succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "84e73637-0d24-5076-a395-748ba149faac",
@@ -5810,7 +6515,10 @@
         "Status code is 200",
         "AI action proposal cancelled returns valid DTO"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4c4b1a45-227c-5d0e-bc66-dc938b0dd0b2",
@@ -5834,7 +6542,10 @@
       "definedAssertions": [
         "Create bank link session returns 200 OK or controlled response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5a199f33-1a02-5e19-80e9-9576e29f3299",
@@ -5865,7 +6576,10 @@
         "Status code is 200",
         "Connection details returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ab3d18fa-84e9-5d48-9cb0-a7659beadb30",
@@ -5896,7 +6610,10 @@
         "Unlink bank connection returns 200 OK",
         "Unlink response contains valid sessionId and purpose"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f0ae483d-e96f-5353-ab51-ac3bd9709d63",
@@ -5927,7 +6644,10 @@
         "Reactivating active connection returns 409 Conflict",
         "Returns bank_connection_not_inactive code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e06d2150-e47f-52d3-b41d-e5fc04d0a612",
@@ -5958,7 +6678,10 @@
         "Syncing test-mode connection returns 409 Conflict",
         "Returns bank_sync_not_supported code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "910eaf42-4353-5ec8-8b91-319abea2423f",
@@ -5989,7 +6712,10 @@
         "Confirm pending top-up verifies business state (409 Conflict or 503)",
         "Returns wallet_top_up_pending or provider code"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "b40e86ba-d34c-505c-97e2-22912f7f48fb",
@@ -6020,7 +6746,10 @@
         "List bank transactions returns 200 OK",
         "List bank transactions returns pagination structure"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "768bb58f-5288-5b2a-a741-f73a4f7b5af8",
@@ -6051,7 +6780,10 @@
         "Status code is 200",
         "Transaction details returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "57fdbc1f-eb93-5e4b-9df3-305680cc590a",
@@ -6082,7 +6814,10 @@
         "Status code is 200",
         "Reclassified bank transaction returns updated category and transaction id"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "7b8fa7af-e467-51fc-95af-65a798fa89b9",
@@ -6106,7 +6841,10 @@
       "definedAssertions": [
         "List V1 funds returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6387f213-a760-5739-a0d6-086e6fddfb80",
@@ -6130,7 +6868,10 @@
       "definedAssertions": [
         "Get fund requests returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3faa860d-7bb3-5b02-afc1-716c405177af",
@@ -6154,7 +6895,10 @@
       "definedAssertions": [
         "Get governance returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c3bdc80f-d49b-5276-9fd9-8f1eaa0565bb",
@@ -6185,7 +6929,10 @@
         "Status code is 200",
         "Fund owner response details returned with valid structure"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cb51e7a3-d98f-5e97-bd58-c1b168d9f9d0",
@@ -6216,7 +6963,10 @@
         "Status code is 200",
         "Support case ticket GUID returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "37a42483-e598-53dd-bce7-75dd3dc77da1",
@@ -6240,7 +6990,10 @@
       "definedAssertions": [
         "Close activity window returns 204 or 400"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8c9c5734-d93a-5ca8-b9be-c3bfcd7aecf2",
@@ -6264,7 +7017,10 @@
       "definedAssertions": [
         "Propose activity returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d8f950e8-4d4a-5769-a171-758bbb1bcdb8",
@@ -6295,7 +7051,10 @@
         "Status code is 200",
         "Proposal details returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "50fd3770-fb77-51da-bc64-c77f37c3b572",
@@ -6326,7 +7085,10 @@
         "Status code is 200",
         "Proposal vote accepted"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "0afb30a0-ef09-5108-aab2-a2348cda0dab",
@@ -6357,7 +7119,10 @@
         "Status code is 200",
         "Election opened"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "ebb0c7e4-082f-5aaf-bfdb-c48bb4c5d814",
@@ -6388,7 +7153,10 @@
         "Status code is 200",
         "Election details returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "bd9c53b4-e3b1-5691-91a9-642597558042",
@@ -6419,7 +7187,10 @@
         "Status code is 200",
         "Candidate registered"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "913abdf5-1724-56ea-b1ab-b1ad69eae5a5",
@@ -6450,7 +7221,10 @@
         "Status code is 200",
         "Ballot receipt returned"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "4796f4dc-5d5f-5ee2-bdbb-e9a1e4607fef",
@@ -6481,7 +7255,10 @@
         "Status code is 200",
         "Accepted elected ownership returns valid election DTO"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1ef2353c-1c1a-57bd-ba91-a99e7adf4c27",
@@ -6512,7 +7289,10 @@
         "Status code is 200",
         "Rejected elected ownership transitions with FailureReason"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f12086b8-f88c-51af-8598-450c69858325",
@@ -6536,7 +7316,10 @@
       "definedAssertions": [
         "Get contribution allocation returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fc9fcda6-9c19-5cf0-9f58-422909265510",
@@ -6560,7 +7343,10 @@
       "definedAssertions": [
         "Get invitations returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "806fb3fb-483a-59e2-8fd9-339065b95f37",
@@ -6584,7 +7370,10 @@
       "definedAssertions": [
         "Get invitation proposals returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f04c5ce0-b4db-5cc9-b7c1-188451af45a5",
@@ -6615,7 +7404,10 @@
         "Status code is 200",
         "Invitation status is Pending"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6a53ab21-0891-5043-90c7-47ac35355a53",
@@ -6646,7 +7438,10 @@
         "Status code is 200",
         "Invitation declined"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3a078fde-b343-5ef7-9623-5e96e8e5bd73",
@@ -6677,7 +7472,10 @@
         "Status code is 200",
         "Invitation cancelled"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e0e62534-2d95-50ed-98fe-df9c683e363e",
@@ -6701,7 +7499,10 @@
       "definedAssertions": [
         "Offer ownership returns 200 or 400 when rules apply"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3092413f-d6a3-51af-9141-bdaccdbfad6b",
@@ -6725,7 +7526,10 @@
       "definedAssertions": [
         "Status code is 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "df9450f8-60b0-5714-ab26-beda9fdc108e",
@@ -6749,7 +7553,10 @@
       "definedAssertions": [
         "List ownership offers returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e70894ad-94a1-5032-9eef-0ccbc1f649de",
@@ -6773,7 +7580,10 @@
       "definedAssertions": [
         "List groups returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "73ea534b-bf82-5c19-9654-2040ecfffcd0",
@@ -6797,7 +7607,10 @@
       "definedAssertions": [
         "Create legacy group succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "23b232c2-57ae-542e-90df-d57c463ed748",
@@ -6821,7 +7634,10 @@
       "definedAssertions": [
         "Get legacy group details succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d912da61-3299-559a-ae66-346d1098f97a",
@@ -6845,7 +7661,10 @@
       "definedAssertions": [
         "Update legacy group succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3a659434-3336-5870-b755-919d5fc6528a",
@@ -6869,7 +7688,10 @@
       "definedAssertions": [
         "Invite member succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a4db9d5d-c8d1-57cc-a670-24f40b5b65e9",
@@ -6893,7 +7715,10 @@
       "definedAssertions": [
         "List group invites returns 200 OK with array"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "8ef4ce2c-d0c2-5c3e-8a1b-b2e600f6a5f5",
@@ -6917,7 +7742,10 @@
       "definedAssertions": [
         "Reject group invite succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "687e01cb-c010-5f79-96bc-6e91663c9392",
@@ -6941,7 +7769,10 @@
       "definedAssertions": [
         "Accept invite succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "81c6dad7-dee3-559f-bc0c-f2510db34501",
@@ -6965,7 +7796,10 @@
       "definedAssertions": [
         "Remove group member returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "52a13f59-19a8-59e1-8c16-e64a6840a09e",
@@ -6989,7 +7823,10 @@
       "definedAssertions": [
         "Transfer group ownership returns 200 or 204"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d936cc00-d884-5522-a214-bc0c5b8d6e5c",
@@ -7013,7 +7850,10 @@
       "definedAssertions": [
         "Set receiving bank succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "d17f382c-e71a-5b46-8b6b-431e10c4b36e",
@@ -7037,7 +7877,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "2da96d24-9bef-5ee5-96de-27122f10a388",
@@ -7061,7 +7904,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "cc3de7b0-21ae-5c06-9b7c-e0db6c93d2cc",
@@ -7085,7 +7931,10 @@
       "definedAssertions": [
         "Contribute to shared fund succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "6310982c-f109-541e-9145-48b4881a5fdd",
@@ -7109,7 +7958,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f8120edb-c107-511b-9e38-f4962f7a6b15",
@@ -7133,7 +7985,10 @@
       "definedAssertions": [
         "Create fund request succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5f9ecf49-6211-5f65-a95a-f39d638d325a",
@@ -7157,7 +8012,10 @@
       "definedAssertions": [
         "Pay fund request succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "309336c2-6630-5fa6-bdc4-44c89bfa85b0",
@@ -7181,7 +8039,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "5352078f-b237-5059-b162-72e6cf7cb078",
@@ -7205,7 +8066,10 @@
       "definedAssertions": [
         "Create fund round succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "51bdcac1-1976-53b2-8547-69f192e89575",
@@ -7229,7 +8093,10 @@
       "definedAssertions": [
         "Pay fund round succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c89dbf5b-312c-54f7-b720-4f4fd8946d64",
@@ -7253,7 +8120,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "f33af6a7-b58c-5ef8-8a44-ab072b1f9f9a",
@@ -7277,7 +8147,10 @@
       "definedAssertions": [
         "Create group expense succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "e89d64dc-5cfb-5a74-9dad-c60f78889278",
@@ -7301,7 +8174,10 @@
       "definedAssertions": [
         "Legacy group operation returns expected response"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "9ce15b6a-7774-5c99-b5dc-df38ff4fc3a2",
@@ -7325,7 +8201,10 @@
       "definedAssertions": [
         "Get deletion request returns 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "fb17ed65-7055-5110-bb05-9d4398d6a815",
@@ -7349,7 +8228,10 @@
       "definedAssertions": [
         "Request group deletion succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "c887241c-9ca3-52bc-98e9-a345539b76a1",
@@ -7373,7 +8255,10 @@
       "definedAssertions": [
         "Cancel deletion succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "3c2128e3-f286-5336-a812-0c4049d8e35a",
@@ -7397,7 +8282,10 @@
       "definedAssertions": [
         "Re-request group deletion succeeds with 200 or 201"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1d0c5699-bc08-5cbe-93a6-fbf75dc30d9b",
@@ -7421,7 +8309,10 @@
       "definedAssertions": [
         "Vote deletion succeeds with 200"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "1ec2208f-05d5-5646-8111-090b2c65479e",
@@ -7445,7 +8336,10 @@
       "definedAssertions": [
         "Refund payment succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "df213d61-11c5-544d-9d92-55e787bdf7c6",
@@ -7469,7 +8363,10 @@
       "definedAssertions": [
         "Finalize deletion succeeds with 200 OK"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     },
     {
       "requestId": "a4e0f380-2ea8-53b4-9349-eb51150cfe84",
@@ -7493,7 +8390,11 @@
       "definedAssertions": [
         "Revoke sessions returns 204 NoContent"
       ],
-      "financialVerificationReference": null
+      "financialVerificationReference": null,
+      "backendSourceFingerprint": "9d9ec66a4993cc31d6d83d48a7a847ac6d9aaaf20a15441d563d324723b70a52",
+      "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
+      "evidenceMode": "FRESH_NEWMAN_EXECUTION"
     }
-  ]
+  ],
+  "runId": "fresh-run-20261024"
 }

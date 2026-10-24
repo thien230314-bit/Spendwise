@@ -1,10 +1,10 @@
 {
   "passed": true,
   "engineVersion": "2.2.0",
-  "evidenceMode": "REPLAYED_EVIDENCE",
-  "testRunSha": "65379dacd8a82a45dda5b32cc13dda2e5e8c46f2",
+  "evidenceMode": "FRESH_NEWMAN_EXECUTION",
+  "testRunSha": "25875f7537678d6184627cf75c211f966b62e04e",
   "backendSourceFingerprint": "053d71d12fa563028899e629c3383fd3421983ecd510567c32e4db92d91d12aa",
-  "gitHead": "27031fdf051bf9311563eafac134b391cb718263",
+  "gitHead": "25875f7537678d6184627cf75c211f966b62e04e",
   "totalOperations": 339,
   "userOperations": 216,
   "adminOperations": 122,

@@ -152,7 +152,8 @@ SELECT Id FROM Groups WHERE Id IN (
     'E2E00000-0000-0000-0000-000000000087',
     'E2E00000-0000-0000-0000-000000000089',
     'E2E00000-0000-0000-0000-00000000008A'
-) OR Name IN ('E2E Acceptance Group', 'Ops Test Group', 'Refund Test Group');
+) OR Name IN ('E2E Acceptance Group', 'Ops Test Group', 'Refund Test Group')
+  OR Id IN (SELECT GroupId FROM GroupMembers WHERE UserId IN (SELECT UserId FROM #FixtureUserIds));
 
 -- Populate Fixture Support Case IDs
 INSERT INTO #FixtureCaseIds (CaseId)
@@ -241,7 +242,7 @@ END
 
 -- Legacy Group Sub-entities
 IF OBJECT_ID('BankDirectPayments', 'U') IS NOT NULL
-    DELETE FROM BankDirectPayments WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
+    DELETE FROM BankDirectPayments WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds) OR RecipientBankConnectionId IN (SELECT Id FROM BankConnections WHERE UserId IN (SELECT UserId FROM #FixtureUserIds));
 
 IF OBJECT_ID('GroupFundShares', 'U') IS NOT NULL
     DELETE FROM GroupFundShares WHERE GroupId IN (SELECT GroupId FROM #FixtureGroupIds);
@@ -2411,6 +2412,7 @@ $fCmd.ExecuteNonQuery() | Out-Null
 
 
 $getDt2Cmd = $conn.CreateCommand()
+$getDt2Cmd.Transaction = $transaction
 
 
 
@@ -2444,6 +2446,7 @@ $updEvCmd2.ExecuteNonQuery() | Out-Null
 
 
 $getDt3Cmd = $conn.CreateCommand()
+$getDt3Cmd.Transaction = $transaction
 
 
 

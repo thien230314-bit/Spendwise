@@ -32,8 +32,8 @@
 | :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | `POST` | `/api/account-recovery` | AccountRecovery | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 202) | B1-01 - Submit Anonymous Account Recovery |
 | 2 | `GET` | `/api/ai/actions/{id}` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B4-13 - Get AI Action Proposal by ID Success |
-| 3 | `POST` | `/api/ai/actions/{id}/cancel` | Ai | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | B4-15 - Cancel AI Action Proposal Success, 11 - Non-Existent |
-| 4 | `POST` | `/api/ai/actions/{id}/execute` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200, 404) | 10 - Non-Existent AI Action Execution (Architecture Controll |
+| 3 | `POST` | `/api/ai/actions/{id}/cancel` | Ai | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | 11 - Non-Existent AI Action Cancellation (Architecture Contr |
+| 4 | `POST` | `/api/ai/actions/{id}/execute` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200, 404) | B4-14 - Execute AI Action Proposal Success, 10 - Non-Existen |
 | 5 | `POST` | `/api/ai/attachments` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | B4-11 - Upload AI Attachment with Valid File (Happy Path) |
 | 6 | `GET` | `/api/ai/attachments/{id}` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B4-12 - Download AI Attachment Success |
 | 7 | `POST` | `/api/ai/chat` | Ai | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 03 - Ask AI Financial Advisor (Chat) - Fallback Safe |
@@ -46,15 +46,15 @@
 | 14 | `POST` | `/api/auth/email-verification/resend` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 04 - Resend Verification OTP (Happy Path) |
 | 15 | `POST` | `/api/auth/email-verification/verify` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 05 - Verify Registration Email User A, 08 - Verify Registrat |
 | 16 | `POST` | `/api/auth/forgot-password` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 202) | 18 - Forgot Password User A |
-| 17 | `POST` | `/api/auth/login` | Auth | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 401, 403) | 20 - Re-login User A after Reset Password, Flow B06 - Login  |
+| 17 | `POST` | `/api/auth/login` | Auth | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 401, 403) | Flow A05 - Re-login User A, 12 - Login with Unverified User  |
 | 18 | `POST` | `/api/auth/logout` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | Flow B03 - Logout After Email Change, Flow A04 - Logout User |
 | 19 | `POST` | `/api/auth/pin/forgot` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 202) | V1-IMP-02 - 11 - Forgot Security PIN User A |
 | 20 | `POST` | `/api/auth/pin/reset` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-02 - Reset Security PIN Success |
 | 21 | `POST` | `/api/auth/pin/reset/validate` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-03 - 12 - Validate Invalid PIN Reset Token |
 | 22 | `POST` | `/api/auth/pin/setup` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 09 - Setup Security PIN User B, 06 - Setup Security PIN User |
-| 23 | `POST` | `/api/auth/pin/verify` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 25 - Complete PIN Login for User A, Flow A06 - Complete PIN  |
+| 23 | `POST` | `/api/auth/pin/verify` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow B05 - Complete PIN Verification with New Email, Flow A0 |
 | 24 | `POST` | `/api/auth/refresh` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 10 - Refresh Access Token User A |
-| 25 | `POST` | `/api/auth/register` | Auth | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | 07 - Register User B, 11 - Register Unverified User (for Ina |
+| 25 | `POST` | `/api/auth/register` | Auth | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | 03 - Register User A Duplicate (Negative Check), 02 - Regist |
 | 26 | `POST` | `/api/auth/reset-password` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | 19 - Reset Password User A |
 | 27 | `GET` | `/api/auth/sessions` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 22 - List Active User Sessions |
 | 28 | `DELETE` | `/api/auth/sessions/{sessionId}` | Auth | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | 23 - Revoke Single Session |
@@ -74,11 +74,11 @@
 | 42 | `GET` | `/api/bank-transactions/{id}` | BankTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B5-08 - Get Bank Transaction Success |
 | 43 | `PATCH` | `/api/bank-transactions/{id}/category` | BankTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B5-09 - Reclassify Bank Transaction Success |
 | 44 | `GET` | `/api/budgets` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - List Monthly Budgets |
-| 45 | `POST` | `/api/budgets` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | 01 - User B Prepares Isolated Budget and Goal, Flow F02 - Cr |
+| 45 | `POST` | `/api/budgets` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | Flow F02 - Create Budget (2,000,000 VND limit), 01 - Create  |
 | 46 | `PUT` | `/api/budgets` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-01 - Create Or Update Compatible Budget via PUT /api/budg |
-| 47 | `DELETE` | `/api/budgets/{id}` | Budgets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 204, 404) | 04 - Delete Monthly Budget, Flow F05 - Clean Up Budget via D |
-| 48 | `GET` | `/api/budgets/{id}` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow F03e - Verify Budget Re-calculation after Correction (8 |
-| 49 | `PUT` | `/api/budgets/{id}` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 03 - Update Monthly Budget Limit, Flow F04 - Update Budget L |
+| 47 | `DELETE` | `/api/budgets/{id}` | Budgets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 204, 404) | 05 - Cross-User Budget Modification User A to User B Budget  |
+| 48 | `GET` | `/api/budgets/{id}` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow F03c - Verify Budget Spent (500,000 VND, 25.0%), Flow F |
+| 49 | `PUT` | `/api/budgets/{id}` | Budgets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow F04 - Update Budget Limit to 3,000,000 VND, 03 - Update |
 | 50 | `GET` | `/api/cases/attachments/{id}` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B4-06 - Download Case Attachment Success |
 | 51 | `GET` | `/api/cases/disputes` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 08 - List Financial Disputes |
 | 52 | `POST` | `/api/cases/disputes` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B4-01 - Create Financial Dispute |
@@ -90,27 +90,27 @@
 | 58 | `GET` | `/api/cases/support/{id}` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 06 - Get Support Case Details |
 | 59 | `POST` | `/api/cases/support/{id}/messages` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 07 - Reply to Support Case Message |
 | 60 | `POST` | `/api/cases/support/{id}/messages/multipart` | Cases | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B4-05 - Reply to Support Case with Multipart Form (Happy Pat |
-| 61 | `GET` | `/api/categories` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow F01 - Get Expense Category for Budgeting, 02 - Get Syst |
-| 62 | `POST` | `/api/categories` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | B2-01 - Create Isolated Category for Testing, 09 - Create Cu |
+| 61 | `GET` | `/api/categories` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - Get System Categories (Income & Expense), Flow F01 - Ge |
+| 62 | `POST` | `/api/categories` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | 09 - Create Custom Category, B2-01 - Create Isolated Categor |
 | 63 | `DELETE` | `/api/categories/{categoryId}` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-04 - Archive/Delete Category |
 | 64 | `GET` | `/api/categories/{categoryId}` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-02 - Get Category Details by ID |
 | 65 | `PUT` | `/api/categories/{categoryId}` | Categories | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-03 - Update Category Details |
 | 66 | `GET` | `/api/dashboard` | Dashboard | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-05 - Get User Dashboard Summary |
-| 67 | `POST` | `/api/evidence` | Evidence | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | 03 - User B Uploads Evidence, Flow F03a - Upload Evidence fo |
+| 67 | `POST` | `/api/evidence` | Evidence | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | Flow F03a - Upload Evidence for Flow F Budget Expense, B2-06 |
 | 68 | `GET` | `/api/evidence/{id}` | Evidence | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 404) | 03b - User B Downloads Own Evidence (Happy Path), 07 - Cross |
-| 69 | `GET` | `/api/friends` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 12 - User A Lists Friends, Flow C04 - User B Checks Friend L |
+| 69 | `GET` | `/api/friends` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow C03 - User A Checks Friend List (Has User B), 13 - User |
 | 70 | `GET` | `/api/friends/discover` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 06 - Discover Users by Name with Pagination |
-| 71 | `POST` | `/api/friends/requests` | Friends | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | Flow C02 - User A Checks Friend Request Status to User B, 08 |
+| 71 | `POST` | `/api/friends/requests` | Friends | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 409) | 08 - Send Friend Request Duplicate (Idempotency Check), 07 - |
 | 72 | `GET` | `/api/friends/requests/incoming` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 10 - User B Checks Incoming Requests |
 | 73 | `GET` | `/api/friends/requests/outgoing` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 09 - User A Checks Outgoing Requests |
 | 74 | `DELETE` | `/api/friends/requests/{requestId}` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B1-13 - Cancel Friend Request Success |
 | 75 | `POST` | `/api/friends/requests/{requestId}/accept` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 11 - User B Accepts Friend Request |
 | 76 | `POST` | `/api/friends/requests/{requestId}/reject` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B1-12 - Reject Friend Request Success |
-| 77 | `GET` | `/api/friends/search` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 04 - Search User B by Contact (Email), 05 - Search User B by |
+| 77 | `GET` | `/api/friends/search` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 05 - Search User B by SpendId, 04 - Search User B by Contact |
 | 78 | `DELETE` | `/api/friends/{friendUserId}` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-14 - Unfriend Friend Success |
 | 79 | `PATCH` | `/api/friends/{friendUserId}/preference` | Friends | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 14 - Update Friend Preference (User A sets Favorite) |
 | 80 | `GET` | `/api/goals` | Goals | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-02 - List User Goals via GET /api/goals |
-| 81 | `POST` | `/api/goals` | Goals | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-03 - Create Target Goal for Lifecycle, 05 - Create Saving |
+| 81 | `POST` | `/api/goals` | Goals | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - User B Creates Target Goal, B3-03 - Create Target Goal  |
 | 82 | `DELETE` | `/api/goals/{id}` | Goals | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B3-05 - Delete Empty Goal via DELETE /api/goals/{id} |
 | 83 | `GET` | `/api/goals/{id}` | Goals | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 404) | 06 - Cross-User Goal Access User A to User B Goal (Expect 40 |
 | 84 | `PUT` | `/api/goals/{id}` | Goals | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-04 - Update Goal via PUT /api/goals/{id} |
@@ -121,7 +121,7 @@
 | 89 | `GET` | `/api/groups/invites` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-06 - List User Legacy Group Invitations |
 | 90 | `POST` | `/api/groups/invites/{inviteId}/accept` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-08 - Accept Legacy Invite Success |
 | 91 | `POST` | `/api/groups/invites/{inviteId}/reject` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-07 - Reject Legacy Invite Success |
-| 92 | `GET` | `/api/groups/{groupId}` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-03 - Get Legacy Group Details by ID, B7-06 - List User Le |
+| 92 | `GET` | `/api/groups/{groupId}` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-06 - List User Legacy Group Invitations, B7-03 - Get Lega |
 | 93 | `PUT` | `/api/groups/{groupId}` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-04 - Update Legacy Group Details |
 | 94 | `GET` | `/api/groups/{groupId}/activities` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-23 - List Group Activities Log |
 | 95 | `GET` | `/api/groups/{groupId}/deletion-request` | Groups | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B7-24 - Get Group Deletion Request Status Success |
@@ -158,25 +158,25 @@
 | 126 | `DELETE` | `/api/notifications/{id}` | Notifications | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-10 - Delete Single Notification |
 | 127 | `POST` | `/api/notifications/{id}/read` | Notifications | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-09 - Mark Single Notification Read |
 | 128 | `GET` | `/api/recurring-transactions` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 10 - List Recurring Transactions |
-| 129 | `POST` | `/api/recurring-transactions` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 09 - Create Recurring Transaction (Monthly Internet), B3-06  |
+| 129 | `POST` | `/api/recurring-transactions` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-06 - Create Recurring Transaction for Lifecycle, 09 - Cre |
 | 130 | `DELETE` | `/api/recurring-transactions/{id}` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B3-12 - Delete Recurring Transaction |
 | 131 | `GET` | `/api/recurring-transactions/{id}` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-07 - Get Recurring Transaction by ID |
 | 132 | `PUT` | `/api/recurring-transactions/{id}` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-08 - Update Recurring Transaction via PUT |
 | 133 | `POST` | `/api/recurring-transactions/{id}/occurrences/{occurrenceId}/record` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-11 - Record Recurring Occurrence Execution Success |
 | 134 | `POST` | `/api/recurring-transactions/{id}/pause` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-09 - Pause Recurring Transaction |
 | 135 | `POST` | `/api/recurring-transactions/{id}/resume` | RecurringTransactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-10 - Resume Recurring Transaction |
-| 136 | `PUT` | `/api/security-pin` | SecurityPin | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | 16 - Change Security PIN User A, 17 - Revert Security PIN Us |
+| 136 | `PUT` | `/api/security-pin` | SecurityPin | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | 17 - Revert Security PIN User A, 16 - Change Security PIN Us |
 | 137 | `GET` | `/api/security-pin/status` | SecurityPin | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 26 - Security PIN Status Check |
 | 138 | `POST` | `/api/security-pin/verify` | SecurityPin | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 204, 401) | 14 - Verify Security PIN Valid, 15 - Verify Security PIN Inv |
 | 139 | `GET` | `/api/system/announcements/active` | Operations | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-04 - Get Active System Announcement (Public/User) |
 | 140 | `GET` | `/api/system/maintenance` | Operations | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B1-03 - Get System Maintenance State (Public/User) |
 | 141 | `GET` | `/api/transaction-rules` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 12 - List Transaction Rules |
-| 142 | `POST` | `/api/transaction-rules` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 11 - Create Transaction Rule, B3-13 - Create Transaction Rul |
+| 142 | `POST` | `/api/transaction-rules` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-13 - Create Transaction Rule for Testing, 11 - Create Tra |
 | 143 | `DELETE` | `/api/transaction-rules/{id}` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B3-16 - Delete Transaction Rule via DELETE |
 | 144 | `GET` | `/api/transaction-rules/{id}` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-14 - Get Transaction Rule by ID |
 | 145 | `PUT` | `/api/transaction-rules/{id}` | TransactionRules | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B3-15 - Update Transaction Rule via PUT |
-| 146 | `GET` | `/api/transactions` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 13 - List Transactions with Query Filters, Flow E04 - Check  |
-| 147 | `POST` | `/api/transactions/expense` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | Flow F03b - Record Expense Transaction for Budget Category ( |
+| 146 | `GET` | `/api/transactions` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow E04 - Check Linked Transactions List, 13 - List Transac |
+| 147 | `POST` | `/api/transactions/expense` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | 10 - Record Expense Transaction (45,000 VND), Flow F03b - Re |
 | 148 | `POST` | `/api/transactions/expense/multi-wallet` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | B2-07 - Multi-Wallet Expense Allocation (Controlled Validati |
 | 149 | `POST` | `/api/transactions/income` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 201) | 03 - Fund Main Wallet via Income Posting (10,000,000 VND) |
 | 150 | `GET` | `/api/transactions/{transactionId}` | Transactions | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 14 - Get Transaction Details |
@@ -188,15 +188,15 @@
 | 156 | `GET` | `/api/transfers/recipients` | Transfers | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 01 - Find Bank Transfer Recipient by Phone |
 | 157 | `POST` | `/api/transfers/{paymentId}/confirm` | Transfers | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-09 - Confirm Bank Direct Transfer Success |
 | 158 | `GET` | `/api/transfers/{transferId}` | Transfers | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B2-08 - Get Transfer Details by ID Success, 01 - Find Bank T |
-| 159 | `GET` | `/api/users/me` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow A01 - Pre-check Profile Avatar, 01 - Get Current User P |
-| 160 | `POST` | `/api/users/me/avatar` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow A02 - Upload Real Avatar Image, 02 - Upload User Avatar |
+| 159 | `GET` | `/api/users/me` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow A07 - Check Profile After Fresh Login Retains Avatar, F |
+| 160 | `POST` | `/api/users/me/avatar` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - Upload User Avatar (User A), Flow A02 - Upload Real Ava |
 | 161 | `POST` | `/api/users/me/email/confirm` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow B02 - Confirm Email Change with OTP |
 | 162 | `POST` | `/api/users/me/email/request` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow B01 - Request Email Change to New Email |
 | 163 | `PUT` | `/api/users/me/preferences` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 03 - Update User Preferences |
 | 164 | `DELETE` | `/api/users/me/sessions` | Users | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B1-15 - Revoke User Sessions via DELETE /api/users/me/sessio |
 | 165 | `POST` | `/api/v1/activity` | V1Activity | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B2-10 - Record V1 Activity Event |
 | 166 | `GET` | `/api/v1/funds` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-01 - List User V1 Funds |
-| 167 | `POST` | `/api/v1/funds` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 01 - Create Fixed Fund (User A), 01 - Create Free Fund (User |
+| 167 | `POST` | `/api/v1/funds` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 01 - Create Free Fund (User A), 01 - Create Fixed Fund (User |
 | 168 | `GET` | `/api/v1/funds/activity-proposals/{id}` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-08 - Get Activity Proposal by ID Success |
 | 169 | `POST` | `/api/v1/funds/activity-proposals/{id}/settle` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-12 - Owner settles approved activity |
 | 170 | `POST` | `/api/v1/funds/activity-proposals/{id}/vote` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-09 - Vote on Activity Proposal Success |
@@ -208,7 +208,7 @@
 | 176 | `POST` | `/api/v1/funds/elections/{id}/reject` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-15 - Reject Elected Ownership Success |
 | 177 | `GET` | `/api/v1/funds/invitations` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-17 - Get User Invitations List |
 | 178 | `DELETE` | `/api/v1/funds/invitations/{id}` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-21 - Cancel Invitation Success |
-| 179 | `POST` | `/api/v1/funds/invitations/{id}/accept` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow D03 - User B Accepts Fixed Fund Invitation, 03 - User B |
+| 179 | `POST` | `/api/v1/funds/invitations/{id}/accept` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 04 - User B Accepts Fixed Fund Invitation, 03 - User B Accep |
 | 180 | `POST` | `/api/v1/funds/invitations/{id}/decline` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-20 - Decline Invitation Success |
 | 181 | `POST` | `/api/v1/funds/invitations/{id}/review` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-19 - Review Invitation Proposal Success |
 | 182 | `GET` | `/api/v1/funds/ownership-offers` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-24 - List User Ownership Offers |
@@ -217,32 +217,32 @@
 | 185 | `POST` | `/api/v1/funds/requests/{id}/report` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-10 - 10b - Member Reports Large Expense Hold (Transit |
 | 186 | `POST` | `/api/v1/funds/requests/{id}/review` | V1Funds | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 404) | 07b - User A (Owner) Reviews and Approves Free Fund Request, |
 | 187 | `GET` | `/api/v1/funds/{id}` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - Get Fixed Fund Details, B6-17 - Get User Invitations Li |
-| 188 | `GET` | `/api/v1/funds/{id}/activities` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 11 - Check Fixed Fund Activities, Flow D09 - Check Activity  |
+| 188 | `GET` | `/api/v1/funds/{id}/activities` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow D09 - Check Activity Log for Spending Permission Event, |
 | 189 | `POST` | `/api/v1/funds/{id}/activity-proposals` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-07 - Propose Fund Activity Success |
 | 190 | `POST` | `/api/v1/funds/{id}/activity/close` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | B6-06 - Close Activity Window via POST /api/v1/funds/{id}/ac |
 | 191 | `GET` | `/api/v1/funds/{id}/contribution-allocation` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-16 - Get Contribution Allocation Details |
 | 192 | `GET` | `/api/v1/funds/{id}/contributions` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 09 - List Fixed Fund Contributions |
-| 193 | `POST` | `/api/v1/funds/{id}/contributions` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 05 - User B Contributes 300,000 VND to Free Fund, 04 - User  |
+| 193 | `POST` | `/api/v1/funds/{id}/contributions` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow D05 - User A Contributes 500,000 VND, 08 - User B Contr |
 | 194 | `POST` | `/api/v1/funds/{id}/dissolve` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-15 - 21 - User A Dissolves Fixed Fund 2 (Zero Balance |
 | 195 | `POST` | `/api/v1/funds/{id}/elections` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-10 - Open Election Success |
 | 196 | `GET` | `/api/v1/funds/{id}/finance` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow D07 - Check Fund Finance (Total 1,000,000 VND), 06 - Tr |
 | 197 | `GET` | `/api/v1/funds/{id}/governance` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-03 - Get Fund Governance Status |
 | 198 | `GET` | `/api/v1/funds/{id}/invitation-proposals` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-18 - Get Fund Invitation Proposals List |
-| 199 | `POST` | `/api/v1/funds/{id}/invitations` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 03 - Invite User B to Fixed Fund, Flow D02 - Invite User B t |
+| 199 | `POST` | `/api/v1/funds/{id}/invitations` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 02 - Invite User B to Free Fund, 03 - Invite User B to Fixed |
 | 200 | `POST` | `/api/v1/funds/{id}/leave` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 09 - User B Leaves Free Fund |
 | 201 | `GET` | `/api/v1/funds/{id}/members` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 10 - Verify Remaining Members in Free Fund, 05 - List Fixed  |
 | 202 | `POST` | `/api/v1/funds/{id}/members/{userId}/kick` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-14 - 20 - User A Kicks User B from Fixed Fund 2 (Refu |
-| 203 | `PUT` | `/api/v1/funds/{id}/members/{userId}/spending-permission` | V1Funds | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 204, 403) | 10 - Grant Spending Permission to User B, Flow D08 - Grant U |
+| 203 | `PUT` | `/api/v1/funds/{id}/members/{userId}/spending-permission` | V1Funds | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 204, 403) | Flow D08 - Grant User B Spending Permission, 08 - Cross-User |
 | 204 | `POST` | `/api/v1/funds/{id}/obligations/confirm` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | Flow D04 - Confirm Obligations (Target: 1,000,000 VND), 06 - |
 | 205 | `GET` | `/api/v1/funds/{id}/owner-response` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-04 - Get Fund Owner Response Status Success |
 | 206 | `POST` | `/api/v1/funds/{id}/owner-response/escalate` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-05 - Escalate Owner Response Success |
 | 207 | `POST` | `/api/v1/funds/{id}/ownership-offers` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-22 - Offer Fund Ownership via POST /api/v1/funds/{id}/own |
 | 208 | `GET` | `/api/v1/funds/{id}/refund-preview` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 08 - Refund Preview for User B |
 | 209 | `GET` | `/api/v1/funds/{id}/requests` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | B6-02 - Get Fund Requests List |
-| 210 | `POST` | `/api/v1/funds/{id}/requests` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 07 - User B Creates Free Fund Expense Request, 07c - User B  |
+| 210 | `POST` | `/api/v1/funds/{id}/requests` | V1Funds | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 07c - User B Creates Second Free Fund Expense Request for Se |
 | 211 | `GET` | `/api/v1/system/maintenance` | V1Maintenance | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | V1-IMP-16 - 11 - ADM-05: Maintenance Status |
-| 212 | `GET` | `/api/wallets` | Wallets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 01 - List Default Wallets for User A, Flow E01 - Identify Ma |
-| 213 | `POST` | `/api/wallets` | Wallets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 201, 409) | 06 - Check Wallet Limit (Try Creating 4th Wallet), 05 - Crea |
+| 212 | `GET` | `/api/wallets` | Wallets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 00b - Get User B Main Wallet, 01 - List Default Wallets for  |
+| 213 | `POST` | `/api/wallets` | Wallets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 201, 409) | 05 - Create Emergency Wallet User A, 06 - Check Wallet Limit |
 | 214 | `DELETE` | `/api/wallets/{walletId}` | Wallets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 204) | 16 - Close Emergency Wallet |
-| 215 | `GET` | `/api/wallets/{walletId}` | Wallets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 404) | Flow E03 - Check Savings Wallet Balance Increased by 300,000 |
+| 215 | `GET` | `/api/wallets/{walletId}` | Wallets | `BOTH_VERIFIED` | Success & security invariant verified (HTTP 200, 404) | 04 - Cross-User Wallet Access User A to User B Wallet (Expec |
 | 216 | `PUT` | `/api/wallets/{walletId}` | Wallets | `SUCCESS_VERIFIED` | Happy-path contract & state assertions passed (HTTP 200) | 08 - Update Savings Wallet Name |

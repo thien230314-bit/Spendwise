@@ -17,7 +17,7 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 | 2 | **Hồ sơ & Người dùng (`UsersController`)** | `/api/users` | 6 | `financial` (preferences, avatar) | Authenticated User |
 | 3 | **Mã PIN giao dịch (`SecurityPinController`)** | `/api/security-pin` | 3 | `auth` | Authenticated User |
 | 4 | **Khôi phục tài khoản (`AccountRecoveryController`)** | `/api/account-recovery` | 1 | Không | Anonymous / Challenged |
-| 5 | **Đẩy thông báo thiết bị (`MobilePushController`)** | `/api/mobile/push` | 2 | Không | Authenticated User |
+| 5 | **Đẩy thông báo thiết bị (`MobilePushController`)** | `/api/mobile/push/installations` | 2 | Không | Authenticated User |
 | 6 | **Bạn bè & Mạng xã hội (`FriendsController`)** | `/api/friends` | 11 | `userDiscovery` (30 req/min) | Authenticated User |
 | 7 | **Ví cá nhân (`WalletsController`)** | `/api/wallets` | 5 | `financial` | Authenticated User |
 | 8 | **Giao dịch thu/chi (`TransactionsController`)** | `/api/transactions` | 6 | `financial` | Authenticated User |
@@ -38,7 +38,7 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 | 23 | **SePay Webhook & IPN (`SePayBankHubIntegrationController`)** | `/api/integrations/sepay/bankhub` | 2 | IPN Signature Guard | Webhook Caller (SePay) |
 | 24 | **Tổng quan tài chính (`DashboardController`)** | `/api/dashboard` | 1 | Không | Authenticated User |
 | 25 | **Trạng thái bảo trì & Thông báo (`OperationsController`)** | `/api/system` | 2 | Không | Public / Authenticated |
-| 26 | **Thông tin bảo trì User (`V1MaintenanceController`)** | `/api/v1/maintenance/current` | 1 | Không | Public / Authenticated |
+| 26 | **Thông tin bảo trì User (`V1MaintenanceController`)** | `/api/v1/system/maintenance` | 1 | Không | Public / Authenticated |
 | 27 | **Nhóm cũ (`GroupsController`)** *(Legacy / Compatibility)* | `/api/groups` | 29 | `financial` | Authenticated User |
 | **Tổng cộng** | | | **216** | | |
 
@@ -91,8 +91,8 @@ Cung cấp toàn bộ luồng đăng ký tài khoản, gửi và xác thực mã
 - `POST /api/security-pin/verify` — Xác thực mã PIN tài khoản (trả về 204 No Content khi hợp lệ).
 - `PUT /api/security-pin` — Cập nhật mã PIN mới khi cung cấp mã PIN cũ (trả về 204 No Content khi hoàn tất).
 - `POST /api/account-recovery` — Gửi yêu cầu khôi phục tài khoản bị khóa/mất thiết bị.
-- `PUT /api/mobile/push/{installationId}` — Đăng ký thiết bị nhận thông báo Expo Push Token.
-- `DELETE /api/mobile/push/{installationId}` — Hủy đăng ký thiết bị nhận thông báo push.
+- `PUT /api/mobile/push/installations/{installationId}` — Đăng ký thiết bị nhận thông báo Expo Push Token.
+- `DELETE /api/mobile/push/installations/{installationId}` — Hủy đăng ký thiết bị nhận thông báo push.
 
 #### 4. Dữ liệu Đầu vào & Đầu ra (DTOs)
 - `RegisterRequest`: `{ email, spendId, fullName, password }` -> `EmailVerificationPendingResponse`: `{ message, email, verificationPending: true }`
@@ -314,18 +314,18 @@ Hỗ trợ người dùng lập kế hoạch tài chính cá nhân toàn diện:
 
 #### 2. Danh sách Endpoints
 - `GET /api/budgets` — Lấy danh sách ngân sách tài chính.
-- `GET /api/budgets/{budgetId}` — Lấy chi tiết một ngân sách.
+- `GET /api/budgets/{id}` — Lấy chi tiết một ngân sách.
 - `POST /api/budgets` — Tạo ngân sách chi tiêu mới.
-- `PUT /api/budgets/{budgetId}` — Cập nhật hạn mức ngân sách.
-- `DELETE /api/budgets/{budgetId}` — Xóa ngân sách.
+- `PUT /api/budgets/{id}` — Cập nhật hạn mức ngân sách.
+- `DELETE /api/budgets/{id}` — Xóa ngân sách.
 - `GET /api/budgets/summary` — Lấy báo cáo tổng quan tiến độ ngân sách trong tháng.
 - `GET /api/goals` — Lấy danh sách các mục tiêu tiết kiệm.
-- `GET /api/goals/{goalId}` — Lấy chi tiết một mục tiêu.
+- `GET /api/goals/{id}` — Lấy chi tiết một mục tiêu.
 - `POST /api/goals` — Tạo mục tiêu tích lũy mới.
-- `PUT /api/goals/{goalId}` — Cập nhật mục tiêu.
-- `DELETE /api/goals/{goalId}` — Xóa mục tiêu.
-- `POST /api/goals/{goalId}/deposit` — Nạp tiền tích lũy vào mục tiêu từ ví cá nhân.
-- `POST /api/goals/{goalId}/withdraw` — Rút tiền tích lũy từ mục tiêu về ví cá nhân.
+- `PUT /api/goals/{id}` — Cập nhật mục tiêu.
+- `DELETE /api/goals/{id}` — Xóa mục tiêu.
+- `POST /api/goals/{id}/contributions` — Nạp tiền tích lũy vào mục tiêu từ ví cá nhân.
+- `POST /api/goals/{id}/withdrawals` — Rút tiền tích lũy từ mục tiêu về ví cá nhân.
 - `GET /api/recurring-transactions` — Lấy danh sách các giao dịch định kỳ đã lập lịch.
 - `GET /api/recurring-transactions/{id}` — Lấy chi tiết một giao dịch định kỳ.
 - `POST /api/recurring-transactions` — Tạo giao dịch định kỳ mới.
@@ -333,7 +333,7 @@ Hỗ trợ người dùng lập kế hoạch tài chính cá nhân toàn diện:
 - `DELETE /api/recurring-transactions/{id}` — Hủy giao dịch định kỳ.
 - `POST /api/recurring-transactions/{id}/pause` — Tạm dừng lịch định kỳ.
 - `POST /api/recurring-transactions/{id}/resume` — Kích hoạt lại lịch định kỳ.
-- `POST /api/recurring-transactions/process-due` — Kích hoạt xử lý các giao dịch định kỳ đã đến hạn.
+- `POST /api/recurring-transactions/{id}/occurrences/{occurrenceId}/record` — Kích hoạt xử lý các giao dịch định kỳ đã đến hạn.
 - `GET /api/transaction-rules` — Lấy danh sách các quy tắc phân loại tự động.
 - `GET /api/transaction-rules/{id}` — Lấy chi tiết một quy tắc.
 - `POST /api/transaction-rules` — Tạo quy tắc phân loại mới.
@@ -401,6 +401,7 @@ Cung cấp trợ lý AI tương tác tự nhiên với người dùng về tình
 - `PUT /api/notifications/preferences` — Cập nhật cấu hình nhận thông báo (email, push, in-app).
 - `GET /api/system/maintenance` — Kiểm tra trạng thái bảo trì hệ thống hiện tại.
 - `GET /api/system/announcements/active` — Lấy các thông báo vận hành đang phát sóng từ Admin.
+- `GET /api/v1/system/maintenance` — Kiểm tra danh sách kế hoạch bảo trì người dùng.
 
 ---
 
@@ -501,8 +502,8 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/security-pin/verify` | POST | PIN | IMPLEMENTED | PASS (C#) |
 | `/api/security-pin` | PUT | PIN | IMPLEMENTED | PASS (C#) |
 | `/api/account-recovery` | POST | Recovery | IMPLEMENTED | PASS (C#) |
-| `/api/mobile/push/{installationId}` | PUT | Push | IMPLEMENTED | PASS (C#) |
-| `/api/mobile/push/{installationId}` | DELETE | Push | IMPLEMENTED | PASS (C#) |
+| `/api/mobile/push/installations/{installationId}` | PUT | Push | IMPLEMENTED | PASS (C#) |
+| `/api/mobile/push/installations/{installationId}` | DELETE | Push | IMPLEMENTED | PASS (C#) |
 | `/api/friends` | GET | Friends | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/friends/search` | GET | Friends | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/friends/discover` | GET | Friends | IMPLEMENTED | PASS (C# & RateLimiter) |
@@ -581,18 +582,18 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/v1/funds/requests/{id}/cancel` | POST | V1 Funds | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/v1/activity` | POST | Activity | IMPLEMENTED | PASS (C#) |
 | `/api/budgets` | GET | Budgets | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/budgets/{budgetId}` | GET | Budgets | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/budgets/{id}` | GET | Budgets | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/budgets` | POST | Budgets | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/budgets/{budgetId}` | PUT | Budgets | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/budgets/{budgetId}` | DELETE | Budgets | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/budgets/{id}` | PUT | Budgets | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/budgets/{id}` | DELETE | Budgets | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/budgets/summary` | GET | Budgets | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/goals` | GET | Goals | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/goals/{goalId}` | GET | Goals | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/goals/{id}` | GET | Goals | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/goals` | POST | Goals | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/goals/{goalId}` | PUT | Goals | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/goals/{goalId}` | DELETE | Goals | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/goals/{goalId}/deposit` | POST | Goals | IMPLEMENTED | PASS (Newman & C#) |
-| `/api/goals/{goalId}/withdraw` | POST | Goals | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/goals/{id}` | PUT | Goals | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/goals/{id}` | DELETE | Goals | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/goals/{id}/contributions` | POST | Goals | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/goals/{id}/withdrawals` | POST | Goals | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/recurring-transactions` | GET | Recurring | IMPLEMENTED | PASS (C#) |
 | `/api/recurring-transactions/{id}` | GET | Recurring | IMPLEMENTED | PASS (C#) |
 | `/api/recurring-transactions` | POST | Recurring | IMPLEMENTED | PASS (C#) |
@@ -600,7 +601,7 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/recurring-transactions/{id}` | DELETE | Recurring | IMPLEMENTED | PASS (C#) |
 | `/api/recurring-transactions/{id}/pause` | POST | Recurring | IMPLEMENTED | PASS (C#) |
 | `/api/recurring-transactions/{id}/resume` | POST | Recurring | IMPLEMENTED | PASS (C#) |
-| `/api/recurring-transactions/process-due` | POST | Recurring | IMPLEMENTED | PASS (C#) |
+| `/api/recurring-transactions/{id}/occurrences/{occurrenceId}/record` | POST | Recurring | IMPLEMENTED | PASS (C#) |
 | `/api/transaction-rules` | GET | Rules | IMPLEMENTED | PASS (C#) |
 | `/api/transaction-rules/{id}` | GET | Rules | IMPLEMENTED | PASS (C#) |
 | `/api/transaction-rules` | POST | Rules | IMPLEMENTED | PASS (C#) |
@@ -644,6 +645,7 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/dashboard` | GET | Dashboard | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/system/maintenance` | GET | Operations | IMPLEMENTED | PASS (C#) |
 | `/api/system/announcements/active` | GET | Operations | IMPLEMENTED | PASS (C#) |
+| `/api/v1/system/maintenance` | GET | V1 Maintenance | IMPLEMENTED | PASS (C#) |
 | `/api/bank-connections/link` | POST | Banking | IMPLEMENTED | PASS (C#) |
 | `/api/bank-connections` | GET | Banking | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/bank-connections/{id}` | GET | Banking | IMPLEMENTED | PASS (Newman & C#) |

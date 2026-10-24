@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 using SpendWise.Application.Banking;
 using SpendWise.Application.Common;
@@ -17,6 +18,12 @@ public sealed class CreateBankLinkCommandHandler(
         CancellationToken cancellationToken)
     {
         // UserId đến từ JWT; request public không có trường UserId để giả mạo chủ sở hữu.
+        var hasActiveBank = await db.BankConnections.AnyAsync(b => b.UserId == command.UserId && b.Status == BankConnectionStatus.Active, cancellationToken);
+        if (hasActiveBank)
+        {
+            throw new ConflictException("user_already_has_active_bank", "User already has an active bank connection.");
+        }
+
         var userExists = await db.Users.FindAsync([command.UserId], cancellationToken) is not null;
         if (!userExists)
         {

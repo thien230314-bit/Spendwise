@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
+using SpendWise.Application.Features.Banking;
 using SpendWise.Application.Finance;
 using SpendWise.Domain.Finance;
 
@@ -10,14 +11,17 @@ namespace SpendWise.Application.Features.Wallets.Commands.CreateWallet;
 // Handler tạo ví mới và chọn ví mặc định trong cùng database transaction.
 
 public sealed class CreateWalletCommandHandler(
-    ISpendWiseDbContext db) : IRequestHandler<CreateWalletCommand, WalletDto>
+    ISpendWiseDbContext db,
+    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<CreateWalletCommand, WalletDto>
 {
     private const int MaximumPersonalWallets = 3;
 
-    public Task<WalletDto> Handle(
+    public async Task<WalletDto> Handle(
         CreateWalletCommand command,
         CancellationToken cancellationToken)
     {
+        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
+
         // Chuyển loại ví từ request sang enum của Domain.
         if (!WalletMappings.TryParseApiType(command.Request.Type, out var walletType))
         {
@@ -32,7 +36,7 @@ public sealed class CreateWalletCommandHandler(
         }
 
         // Đổi ví mặc định và tạo ví mới trong cùng transaction để lỗi ghi cuối rollback toàn bộ.
-        return db.ExecuteInTransactionAsync(async token =>
+        return await db.ExecuteInTransactionAsync(async token =>
         {
             // Khóa hàng User trong transaction để hai request đồng thời không cùng vượt giới hạn.
             if (await LockOwnerAsync(command.UserId, token) != 1)

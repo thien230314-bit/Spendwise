@@ -422,7 +422,10 @@ Cung cấp trợ lý AI tương tác tự nhiên với người dùng về tình
 - `POST /api/bank-connections/test-mode/link-challenges` — Tạo yêu cầu liên kết thử nghiệm trong Test Mode (`SUCCESS_VERIFIED` — chạy 100% in-process local mà không cần provider).
 - `POST /api/bank-connections/test-mode/link-challenges/{challengeId}/confirm` — Xác nhận liên kết thử nghiệm (*EXTERNAL_LIVE_DEFERRED*: gọi trực tiếp `ISePayTestModeAccountReader` tới `https://userapi-sandbox.sepay.vn/v2/` cần remote sandbox API token).
 - `POST /api/bank-connections/test-mode/wallet-top-ups` — Tạo yêu cầu nạp tiền vào ví từ tài khoản ngân hàng Test Mode (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API; nghiệp vụ nội bộ đã kiểm thử từ chối kết nối unlinked 404 `bank_connection_not_found`).
-- `POST /api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` — Xác nhận hoàn tất nạp tiền vào ví (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API xác thực giao dịch chuyển khoản).
+- `POST /api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` — Xác nhận hoàn tất nạp tiền vào ví (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API xác thực giao dịch chuyển tiền).
+- `POST /api/bank-connections/test-mode/wallet-withdrawals` — Tạo yêu cầu rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết, xác thực PIN, kiểm tra số dư ví, gọi SePay BankHub Sandbox `POST /v1/transaction/create` (simulating bank credit), hạch toán kép debit ví / credit external account khi thành công (`IMPLEMENTED_PHASE1`).
+- `GET /api/bank-connections/test-mode/wallet-withdrawals` — Lấy danh sách lịch sử rút tiền của người dùng (`IMPLEMENTED_PHASE1`).
+- `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}` — Lấy chi tiết giao dịch rút tiền theo ID (`IMPLEMENTED_PHASE1`).c giao dịch chuyển khoản).
 - `GET /api/bank-connections/test-mode/linked-accounts` — Xem danh sách tài khoản liên kết Test Mode (`SUCCESS_VERIFIED`).
 - `GET /api/bank-connections/test-mode/wallet-top-ups` — Xem lịch sử nạp tiền Test Mode (`SUCCESS_VERIFIED`).
 - `GET /api/bank-transactions` — Lấy danh sách giao dịch ngân hàng đã ghi nhận (`SUCCESS_VERIFIED`).

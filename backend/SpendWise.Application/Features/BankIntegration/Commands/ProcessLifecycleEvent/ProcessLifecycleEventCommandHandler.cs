@@ -157,6 +157,19 @@ public sealed class ProcessLifecycleEventCommandHandler(
             item => item.Provider == BankProvider.SePayBankHub
                 && item.ExternalLinkTokenXid == linkTokenXid,
             cancellationToken);
+        if (session is not null)
+        {
+            var userHasOtherActiveBank = await db.BankConnections.AnyAsync(
+                item => item.UserId == session.UserId && item.Status == BankConnectionStatus.Active && item.ExternalAccountId != bankAccountXid,
+                cancellationToken);
+            if (userHasOtherActiveBank)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Failed;
+                integrationEvent.FailureCode = "user_already_has_active_bank";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+        }
         if (session is null)
         {
             // Không đoán người dùng dựa trên tên/số tài khoản khi thiếu session tương quan.
@@ -166,17 +179,25 @@ public sealed class ProcessLifecycleEventCommandHandler(
             return;
         }
 
-        var connection = await db.BankConnections.SingleOrDefaultAsync(
+        var activeWithOther = await db.BankConnections.AnyAsync(
             item => item.Provider == BankProvider.SePayBankHub
-                && item.ExternalAccountId == bankAccountXid,
+                && item.ExternalAccountId == bankAccountXid
+                && item.UserId != session.UserId
+                && item.Status == BankConnectionStatus.Active,
             cancellationToken);
-        if (connection is not null && connection.UserId != session.UserId)
+        if (activeWithOther)
         {
             integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Failed;
             integrationEvent.FailureCode = "bank_connection_owner_conflict";
             integrationEvent.ProcessedAt = clock.UtcNow;
             return;
         }
+
+        var connection = await db.BankConnections.SingleOrDefaultAsync(
+            item => item.UserId == session.UserId
+                && item.Provider == BankProvider.SePayBankHub
+                && item.ExternalAccountId == bankAccountXid,
+            cancellationToken);
 
         var accountNumber = MetadataString(metadata, "account_number");
         if (connection is null)
@@ -194,8 +215,16 @@ public sealed class ProcessLifecycleEventCommandHandler(
         connection.AccountHolderName = MetadataString(metadata, "account_holder_name", "account_name");
         connection.MaskedAccountNumber = Mask(accountNumber);
         connection.Status = BankConnectionStatus.Active;
-        connection.LinkedAt ??= clock.UtcNow;
+        connection.LinkedAt = clock.UtcNow;
         connection.UnlinkedAt = null;
+
+        var restrictedWallets = await db.Wallets
+            .Where(w => w.OwnerUserId == session.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Restricted)
+            .ToListAsync(cancellationToken);
+        foreach (var rw in restrictedWallets)
+        {
+            rw.Status = SpendWise.Domain.Finance.WalletStatus.Active;
+        }
 
         session.BankConnectionId = connection.Id;
         session.ExternalBankAccountId = bankAccountXid;
@@ -244,7 +273,16 @@ public sealed class ProcessLifecycleEventCommandHandler(
 
         connection.Status = status;
         if (status == BankConnectionStatus.Unlinked)
+        {
             connection.UnlinkedAt = clock.UtcNow;
+            var activeWallets = await db.Wallets
+                .Where(w => w.OwnerUserId == connection.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Active)
+                .ToListAsync(cancellationToken);
+            foreach (var aw in activeWallets)
+            {
+                aw.Status = SpendWise.Domain.Finance.WalletStatus.Restricted;
+            }
+        }
         else if (status == BankConnectionStatus.Active)
             connection.UnlinkedAt = null;
         integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;

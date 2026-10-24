@@ -84,6 +84,10 @@ public sealed class StartTestModeBankLinkCommandHandler(
         CancellationToken cancellationToken)
     {
         TestModeSePaySupport.EnsureDevelopment(command.IsDevelopment);
+        var hasActiveBank = await db.BankConnections.AnyAsync(b => b.UserId == command.UserId && b.Status == BankConnectionStatus.Active, cancellationToken);
+        if (hasActiveBank)
+            throw new ConflictException("user_already_has_active_bank", "User already has an active bank connection.");
+
         if (!await db.Users.AnyAsync(user => user.Id == command.UserId, cancellationToken))
             throw new NotFoundException("user_not_found", "User not found.");
 
@@ -146,6 +150,10 @@ public sealed class ConfirmTestModeBankLinkCommandHandler(
         if (matches.Count != 1)
             throw new ConflictException("bank_link_ambiguous", "Multiple matching SePay transactions were found.");
 
+        var userHasActiveBank = await db.BankConnections.AnyAsync(b => b.UserId == command.UserId && b.Status == BankConnectionStatus.Active, cancellationToken);
+        if (userHasActiveBank)
+            throw new ConflictException("user_already_has_active_bank", "User already has an active bank connection.");
+
         var proof = matches[0];
         var providerAccount = (await provider.GetAccountsAsync(cancellationToken))
             .SingleOrDefault(item => item.ProviderAccountId == proof.ProviderAccountId)
@@ -153,14 +161,22 @@ public sealed class ConfirmTestModeBankLinkCommandHandler(
         if (providerAccount.Status != "Active")
             throw new ConflictException("sepay_account_inactive", "The SePay account is not active.");
 
-        var existing = await db.BankConnections.SingleOrDefaultAsync(item =>
+        var activeWithOther = await db.BankConnections.AnyAsync(item =>
             item.Provider == BankProvider.SePayBankHub
             && item.AccountEnvironment == SePayAccountEnvironment.TestMode
-            && item.ExternalAccountId == proof.ProviderAccountId.ToString(), cancellationToken);
-        if (existing is not null && existing.UserId != command.UserId)
-            throw new ConflictException("bank_account_already_linked", "This SePay account is already linked to another user.");
+            && item.ExternalAccountId == proof.ProviderAccountId.ToString()
+            && item.UserId != command.UserId
+            && item.Status == BankConnectionStatus.Active, cancellationToken);
+        if (activeWithOther)
+            throw new ConflictException("bank_account_already_linked", "This bank account is already linked to another user.");
 
-        var connection = existing ?? new BankConnection
+        var existingUserConnection = await db.BankConnections.SingleOrDefaultAsync(item =>
+            item.UserId == command.UserId
+            && item.Provider == BankProvider.SePayBankHub
+            && item.AccountEnvironment == SePayAccountEnvironment.TestMode
+            && item.ExternalAccountId == proof.ProviderAccountId.ToString(), cancellationToken);
+
+        var connection = existingUserConnection ?? new BankConnection
         {
             UserId = command.UserId,
             Provider = BankProvider.SePayBankHub,
@@ -171,10 +187,18 @@ public sealed class ConfirmTestModeBankLinkCommandHandler(
         connection.AccountType = providerAccount.AccountType;
         connection.MaskedAccountNumber = providerAccount.MaskedAccountNumber;
         connection.Status = BankConnectionStatus.Active;
-        connection.LinkedAt ??= clock.UtcNow;
+        connection.LinkedAt = clock.UtcNow;
         connection.UnlinkedAt = null;
-        if (existing is null)
+        if (existingUserConnection is null)
             db.BankConnections.Add(connection);
+
+        var restrictedWallets = await db.Wallets
+            .Where(w => w.OwnerUserId == command.UserId && w.Status == WalletStatus.Restricted)
+            .ToListAsync(cancellationToken);
+        foreach (var rw in restrictedWallets)
+        {
+            rw.Status = WalletStatus.Active;
+        }
 
         challenge.BankConnectionId = connection.Id;
         challenge.ExternalBankAccountId = proof.ProviderAccountId.ToString();

@@ -1121,10 +1121,13 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Active'");
 
                     b.HasIndex("Provider", "AccountEnvironment", "ExternalAccountId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Active'");
 
                     b.ToTable("BankConnections");
                 });
@@ -1588,6 +1591,92 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.HasIndex("WalletId");
 
                     b.ToTable("WalletTopUps");
+                });
+
+            modelBuilder.Entity("SpendWise.Domain.Banking.WalletWithdrawal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("BankConnectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("FinancialTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("LedgerTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankConnectionId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN ('Pending', 'Processing')");
+
+                    b.HasIndex("FinancialTransactionId");
+
+                    b.HasIndex("LedgerTransactionId");
+
+                    b.HasIndex("Reference")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("UserId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("[IdempotencyKey] <> ''");
+
+                    b.ToTable("WalletWithdrawals");
                 });
 
             modelBuilder.Entity("SpendWise.Domain.Finance.Category", b =>
@@ -5431,6 +5520,47 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("SpendWise.Domain.Banking.WalletTopUp", b =>
+                {
+                    b.HasOne("SpendWise.Domain.Banking.BankConnection", "BankConnection")
+                        .WithMany()
+                        .HasForeignKey("BankConnectionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("SpendWise.Domain.Finance.FinancialTransaction", "FinancialTransaction")
+                        .WithMany()
+                        .HasForeignKey("FinancialTransactionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("SpendWise.Domain.Finance.LedgerTransaction", "LedgerTransaction")
+                        .WithMany()
+                        .HasForeignKey("LedgerTransactionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("SpendWise.Domain.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("SpendWise.Domain.Finance.Wallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BankConnection");
+
+                    b.Navigation("FinancialTransaction");
+
+                    b.Navigation("LedgerTransaction");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("SpendWise.Domain.Banking.WalletWithdrawal", b =>
                 {
                     b.HasOne("SpendWise.Domain.Banking.BankConnection", "BankConnection")
                         .WithMany()

@@ -86,6 +86,7 @@ public sealed class SpendWiseDbContext(DbContextOptions<SpendWiseDbContext> opti
     public DbSet<BankTransaction> BankTransactions => Set<BankTransaction>();
     public DbSet<BankIntegrationEvent> BankIntegrationEvents => Set<BankIntegrationEvent>();
     public DbSet<WalletTopUp> WalletTopUps => Set<WalletTopUp>();
+    public DbSet<WalletWithdrawal> WalletWithdrawals => Set<WalletWithdrawal>();
     public DbSet<BankDirectPayment> BankDirectPayments => Set<BankDirectPayment>();
     public DbSet<GroupReceivingBank> GroupReceivingBanks => Set<GroupReceivingBank>();
     public DbSet<FundTransaction> FundTransactions => Set<FundTransaction>();

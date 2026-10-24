@@ -84,6 +84,7 @@ public interface ISpendWiseDbContext
     DbSet<BankTransaction> BankTransactions { get; }
     DbSet<BankIntegrationEvent> BankIntegrationEvents { get; }
     DbSet<WalletTopUp> WalletTopUps { get; }
+    DbSet<WalletWithdrawal> WalletWithdrawals { get; }
     DbSet<BankDirectPayment> BankDirectPayments { get; }
     DbSet<GroupReceivingBank> GroupReceivingBanks { get; }
     DbSet<FundTransaction> FundTransactions { get; }

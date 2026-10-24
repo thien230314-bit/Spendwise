@@ -107,5 +107,23 @@ public sealed class BankConnectionsController(
         CancellationToken cancellationToken) => mediator.Send(
             new GetTestModeWalletTopUpsQuery(environment.IsDevelopment(), UserId()), cancellationToken);
 
+    [HttpPost("test-mode/wallet-withdrawals")]
+    [EnableRateLimiting("financial")]
+    public Task<WalletWithdrawalDto> CreateTestModeWithdrawal(
+        CreateWalletWithdrawalRequest request,
+        CancellationToken cancellationToken) => mediator.Send(
+            new CreateWalletWithdrawalCommand(environment.IsDevelopment(), UserId(), request), cancellationToken);
+
+    [HttpGet("test-mode/wallet-withdrawals")]
+    public Task<IReadOnlyList<WalletWithdrawalDto>> GetTestModeWithdrawals(
+        CancellationToken cancellationToken) => mediator.Send(
+            new GetWalletWithdrawalsQuery(environment.IsDevelopment(), UserId()), cancellationToken);
+
+    [HttpGet("test-mode/wallet-withdrawals/{id:guid}")]
+    public Task<WalletWithdrawalDto> GetTestModeWithdrawalById(
+        Guid id,
+        CancellationToken cancellationToken) => mediator.Send(
+            new GetWalletWithdrawalByIdQuery(environment.IsDevelopment(), UserId(), id), cancellationToken);
+
     private Guid UserId() => currentUser.UserId ?? throw new UnauthorizedAccessException();
 }

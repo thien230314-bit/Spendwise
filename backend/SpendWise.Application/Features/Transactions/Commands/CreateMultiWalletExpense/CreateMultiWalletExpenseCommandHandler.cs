@@ -1,3 +1,4 @@
+using SpendWise.Application.Features.Banking;
 using MediatR;
 
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,8 @@ public sealed class CreateMultiWalletExpenseCommandHandler(
 
     FinancialSecurityGuard security,
 
-    EvidenceSupport evidence) : IRequestHandler<CreateMultiWalletExpenseCommand, TransactionDto>
+    EvidenceSupport evidence,
+    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<CreateMultiWalletExpenseCommand, TransactionDto>
 
 {
 
@@ -44,6 +46,7 @@ public sealed class CreateMultiWalletExpenseCommandHandler(
 
     {
 
+        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
         await security.VerifyAsync(command.UserId, command.Request.SecurityPin, cancellationToken);
 
 

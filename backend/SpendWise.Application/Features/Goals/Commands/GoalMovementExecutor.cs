@@ -1,3 +1,4 @@
+using SpendWise.Application.Features.Banking;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common;
 using SpendWise.Application.Common.Exceptions;
@@ -14,7 +15,8 @@ public sealed class GoalMovementExecutor(
     ISpendWiseDbContext db,
     ILedgerService ledger,
     IClock clock,
-    FinancialSecurityGuard security)
+    FinancialSecurityGuard security,
+    IActiveBankGuard? activeBankGuard = null)
 {
     public async Task<GoalDto> MoveAsync(
         Guid userId,
@@ -23,6 +25,7 @@ public sealed class GoalMovementExecutor(
         bool contribute,
         CancellationToken cancellationToken)
     {
+        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(userId, cancellationToken);
         await security.VerifyAsync(userId, request.SecurityPin, cancellationToken);
         // Mở transaction cho toàn bộ luồng đóng góp hoặc rút tiền Goal.
         return await db.ExecuteInTransactionAsync(

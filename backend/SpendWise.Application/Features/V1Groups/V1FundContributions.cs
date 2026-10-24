@@ -58,7 +58,7 @@ public sealed partial class V1FundService
 
         var purpose = InputBoundary.OptionalText(request.Purpose, 500, "Purpose") ?? "Fund contribution";
 
-        await RequireActorAsync(userId, ct); await security.VerifyAsync(userId, request.SecurityPin, ct);
+        await RequireActorAsync(userId, ct); if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(userId, ct); await security.VerifyAsync(userId, request.SecurityPin, ct);
 
         return await db.ExecuteInTransactionAsync(async token =>
 

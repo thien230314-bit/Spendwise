@@ -50,6 +50,8 @@ public static class DependencyInjection
         services.AddScoped<AdminAuditWriter>();
         services.AddScoped<AdminSecurityGuard>();
         services.AddScoped<FinancialSecurityGuard>();
+        services.AddScoped<IActiveBankGuard, ActiveBankGuard>();
+        services.AddScoped<IBankUnlinkSafetyValidator, BankUnlinkSafetyValidator>();
         services.AddScoped<EvidenceSupport>();
         services.AddScoped<BankDirectPaymentSupport>();
         services.AddScoped<IBankDirectPaymentReconciler, BankDirectPaymentReconciler>();

@@ -47,7 +47,7 @@ public sealed partial class V1FundService
         if (requestActorUser?.Status == SpendWise.Domain.Identity.UserStatus.Restricted)
             throw new AppException("account_restricted", "Tài khoản đang bị hạn chế giao dịch tài chính.", 403);
 
-        await security.VerifyAsync(actor, request.SecurityPin, ct);
+        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(actor, ct); await security.VerifyAsync(actor, request.SecurityPin, ct);
 
 
 

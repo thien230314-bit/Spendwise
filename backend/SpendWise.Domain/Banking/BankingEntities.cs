@@ -15,6 +15,7 @@ public enum BankTransactionDirection { Credit, Debit }
 public enum BankTransactionSource { Webhook, ManualSync }
 public enum BankIntegrationEventStatus { Received, Processed, Duplicate, Unmatched, Failed, Ignored }
 public enum WalletTopUpStatus { Pending, Processing, Completed, Expired, Failed }
+public enum WalletWithdrawalStatus { Pending, Processing, Completed, Failed, Cancelled }
 
 // BankConnection chỉ lưu liên kết tới tài khoản bên ngoài; đây không phải ví do SpendWise giữ tiền.
 public sealed class BankConnection : BaseEntity
@@ -72,6 +73,29 @@ public sealed class WalletTopUp : BaseEntity
     public DateTime ExpiresAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     // ID giao dịch provider chỉ được gắn sau khi mọi trường đối soát khớp chính xác.
+    public string? ProviderTransactionId { get; set; }
+    public Guid? LedgerTransactionId { get; set; }
+    public LedgerTransaction? LedgerTransaction { get; set; }
+    public Guid? FinancialTransactionId { get; set; }
+    public FinancialTransaction? FinancialTransaction { get; set; }
+}
+
+// WalletWithdrawal lưu yêu cầu rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết.
+public sealed class WalletWithdrawal : BaseEntity
+{
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
+    public Guid BankConnectionId { get; set; }
+    public BankConnection BankConnection { get; set; } = null!;
+    public Guid WalletId { get; set; }
+    public Wallet Wallet { get; set; } = null!;
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = Money.DefaultCurrency;
+    public string Reference { get; set; } = string.Empty;
+    public string IdempotencyKey { get; set; } = string.Empty;
+    public WalletWithdrawalStatus Status { get; set; } = WalletWithdrawalStatus.Pending;
+    public string? FailureReason { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public string? ProviderTransactionId { get; set; }
     public Guid? LedgerTransactionId { get; set; }
     public LedgerTransaction? LedgerTransaction { get; set; }

@@ -628,3 +628,48 @@ Chi tiết kiểm kê toàn diện từng endpoint, tham số request/response, 
 - Hệ thống quỹ authoritative phục vụ Mobile User là **Quỹ V1 (`/api/v1/funds`)** với 45 operations hỗ trợ đầy đủ Fixed Fund (`CanSpend`), Free Fund (xét duyệt chi/rút), Bầu cử Chủ quỹ 2 vòng, Biểu quyết hoạt động mới 24h, Quyết toán chia lại tiền rải đồng dư và Giải thể quỹ khi số dư về đúng 0 VND.
 - Tài khoản bị hạn chế tài chính (`Restricted` Level 1): Không được ghi nợ xuất tiền (chuyển P2P, chuyển ví, tạo chi tiêu, góp quỹ, xin rút quỹ); vẫn được đăng nhập, đổi theme/language, đổi mật khẩu, upload avatar, gửi hỗ trợ và nhận tiền chuyển đến/hoàn tiền.
 - Tài khoản bị khóa (`Locked` Level 2): Từ chối đăng nhập (403), thu hồi toàn bộ token và phiên hoạt động.
+
+
+## PHỤ LỤC H — Đồng bộ Quyết định Product Owner: Chuẩn hóa Liên kết Ngân hàng 1–1, Rút tiền Ví Sandbox & Cơ chế Bảo vệ Ví (Cập nhật 24/10/2026)
+
+Theo các quyết định phê duyệt chính thức từ Product Owner nhằm chuẩn bị cho Phase 2 (SePay Sandbox + Postman E2E):
+
+### 1. Chuẩn hóa Liên kết Ngân hàng 1–1 và Hỗ trợ Tái liên kết (Relink)
+- **Mỗi người dùng tối đa 1 tài khoản ngân hàng hoạt động (`BankConnectionStatus.Active`):** Ngăn chặn người dùng liên kết đồng thời nhiều ngân hàng (`user_already_has_active_bank`).
+- **Mỗi tài khoản ngân hàng chỉ thuộc về 1 người dùng hoạt động tại một thời điểm:** Nếu User A đã liên kết và sau đó hủy liên kết (`Unlinked`), User B hoàn toàn có quyền liên kết tài khoản ngân hàng đó mà không bị xung đột khóa chính (`[Status] = 'Active'` Unique Filtered Index trên SQL Server).
+- **Phân tách lịch sử hoàn toàn:** Khi User B liên kết lại tài khoản ngân hàng đã từng thuộc User A, bản ghi liên kết mới được tạo riêng biệt cho User B. Lịch sử giao dịch, top-up và withdrawal của User A vẫn gắn chặt với User A và không bị lộ hoặc chuyển giao sang User B.
+- **Bảo vệ Webhook Provider:** Webhook `BANK_ACCOUNT_LINKED` từ SePay BankHub chỉ kích hoạt cho session hợp lệ (`link_token_xid`), từ chối các webhook cũ hoặc webhook cố gắng claim tài khoản đang thuộc về người dùng khác (`bank_connection_owner_conflict`).
+
+### 2. Ràng buộc An toàn khi Hủy liên kết Ngân hàng (Bank Unlink Safety)
+Người dùng chỉ được phép hủy liên kết ngân hàng khi thỏa mãn đồng thời toàn bộ 7 điều kiện an toàn:
+1. Tổng số dư khả dụng và số dư sổ cái kế toán (Ledger balance) của toàn bộ các ví cá nhân phải bằng đúng 0 VND (`unlink_balance_not_zero`).
+2. Không có yêu cầu nạp tiền (Top-up) nào đang ở trạng thái `Pending` hoặc `Processing` (`unlink_pending_topup_exists`).
+3. Không có yêu cầu rút tiền (Withdrawal) nào đang ở trạng thái `Pending` hoặc `Processing` (`unlink_pending_withdrawal_exists`).
+4. Không có giao dịch chuyển tiền cá nhân nào đang trong trạng thái xử lý (`unlink_pending_transfer_exists`).
+5. Không có yêu cầu quỹ nhóm đang chờ xử lý (`unlink_fund_entitlement_exists`).
+6. Không còn nghĩa vụ đóng góp quỹ nhóm nào chưa thanh toán (`unlink_fund_entitlement_exists`).
+7. Không đang là thành viên của bất kỳ quỹ nhóm nào chưa giải thể (`unlink_fund_entitlement_exists`).
+
+Khi hủy liên kết thành công: Toàn bộ ví cá nhân của người dùng tự động chuyển sang trạng thái `WalletStatus.Restricted` để bảo vệ tài khoản cho đến khi liên kết lại ngân hàng mới.
+
+### 3. Cơ chế Khóa Ví khi Thiếu Ngân hàng Hoạt động (`IActiveBankGuard`)
+Người dùng chưa liên kết hoặc đã hủy liên kết ngân hàng sẽ bị từ chối thực hiện các hoạt động làm biến động số dư hoặc tạo ví mới:
+- Mở ví mới (`POST /api/wallets`) -> `active_bank_required` (409).
+- Chuyển tiền P2P (`POST /api/transfers/p2p`) -> `active_bank_required` (áp dụng cho cả người gửi và người nhận).
+- Chuyển tiền giữa các ví cá nhân (`POST /api/transfers/internal`) -> `active_bank_required`.
+- Tạo giao dịch thu/chi (`POST /api/transactions/expenses`, `POST /api/transactions/income`, `POST /api/transactions/expenses/multi-wallet`) -> `active_bank_required`.
+- Đóng góp hoặc rút mục tiêu tiết kiệm (`POST /api/goals/{id}/contribute`, `/withdraw`) -> `active_bank_required`.
+- Ghi nhận định kỳ tự động (`POST /api/recurring-transactions/{id}/occurrences/{occId}/record`) -> `active_bank_required`.
+- Đóng góp quỹ nhóm hoặc nhận giải ngân quỹ nhóm -> `active_bank_required`.
+
+### 4. Tính năng Tự động Rút tiền Ví về Ngân hàng (Sandbox Wallet Withdrawal)
+Triển khai bộ API cho phép người dùng rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết:
+- **`POST /api/bank-connections/test-mode/wallet-withdrawals`**:
+  - Xác thực mã PIN tài khoản người dùng (`SecurityPin`).
+  - Kiểm tra `IActiveBankGuard` và số dư ví nguồn.
+  - Tạo bản ghi `WalletWithdrawal` trạng thái `Pending` và mã đối soát duy nhất `reference` (`SWWD...`).
+  - Gọi cổng thanh toán SePay BankHub Sandbox `POST /v1/transaction/create` (với `direction: "credit"`, `amount`, `bank_account_xid`) mô phỏng tiền chuyển vào tài khoản ngân hàng liên kết của người dùng.
+  - Khi SePay trả về thành công: Sổ cái hạch toán nợ ví nguồn (`Debit Wallet`), có tài khoản thanh toán ngoài (`Credit ExternalSource`), chuyển trạng thái withdrawal thành `Completed`, ghi nhận giao dịch tài chính `FinancialTransactionType.TransferOut`.
+  - Nếu kết nối SePay thất bại: Đánh dấu withdrawal `Failed`, giải phóng tài nguyên, báo lỗi và giữ nguyên số dư ví người dùng.
+- **`GET /api/bank-connections/test-mode/wallet-withdrawals`**: Danh sách lịch sử các lần rút tiền của người dùng.
+- **`GET /api/bank-connections/test-mode/wallet-withdrawals/{id}`**: Tra cứu chi tiết một lần rút tiền theo ID.

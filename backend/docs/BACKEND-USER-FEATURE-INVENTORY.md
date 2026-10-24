@@ -42,6 +42,13 @@ SpendWise Backend cung cấp tổng cộng **216 User operations** (trên tổng
 | 27 | **Nhóm cũ (`GroupsController`)** *(Legacy / Compatibility)* | `/api/groups` | 29 | `financial` | Authenticated User |
 | **Tổng cộng** | | | **216** | | |
 
+
+> **Ghi chú về Global API Read Rate Limiting (Bảo vệ chống spam F5 & request flooding):**
+> Toàn bộ các request HTTP GET gửi tới /api/* được bảo vệ thêm 2 tầng PartitionedRateLimiter toàn cục được cấu hình qua ppsettings.json:
+> 1. piReadSlidingLimiter: Giới hạn Sliding Window (mặc định 60 requests/phút, 6 phân đoạn 10s) phân vùng theo UserId (đã đăng nhập) hoặc IP từ kết nối tin cậy (khi chưa xác thực).
+> 2. piReadConcurrentLimiter: Giới hạn Concurrency Limiter (mặc định 10 request đồng thời) bảo vệ connection pool của database.
+> - Các endpoint hạ tầng được miễn trừ khỏi limiter này: /health, /hubs/* (SignalR), /api/ping, /openapi/*, /swagger/*.
+> - Khi bị chặn, hệ thống trả về mã trạng thái HTTP 429 Too Many Requests kèm header chuẩn Retry-After: <seconds> và Problem Details (code: rate_limit_exceeded).
 ---
 
 ## CHI TIẾT 11 NHÓM TÍNH NĂNG NGUYÊN BẢN CỦA BACKEND USER

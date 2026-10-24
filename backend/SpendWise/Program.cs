@@ -215,10 +215,32 @@ builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        var httpContext = context.HttpContext;
+        var retryAfter = "60";
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfterTimeSpan))
+        {
+            retryAfter = ((int)Math.Max(1, Math.Ceiling(retryAfterTimeSpan.TotalSeconds))).ToString();
+        }
+        httpContext.Response.Headers.RetryAfter = retryAfter;
+        await WriteLocalizedProblemAsync(
+            httpContext,
+            StatusCodes.Status429TooManyRequests,
+            "rate_limit_exceeded",
+            "Rate limit exceeded. Please wait and try again.");
+    };
+
+    var authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+    var emailPermitLimit = builder.Configuration.GetValue("RateLimiting:EmailVerificationPermitLimit", 10);
+    var financialPermitLimit = builder.Configuration.GetValue("RateLimiting:FinancialPermitLimit", 30);
+    var aiPermitLimit = builder.Configuration.GetValue("RateLimiting:AiPermitLimit", 15);
+    var userDiscoveryPermitLimit = builder.Configuration.GetValue("RateLimiting:UserDiscoveryPermitLimit", 30);
+    var apiReadPermitLimit = builder.Configuration.GetValue("RateLimiting:ApiReadPermitLimit", 60);
+    var apiReadConcurrentLimit = builder.Configuration.GetValue("RateLimiting:ApiReadConcurrentLimit", 10);
+
     // Admission chỉ cho User chat; named "ai" 15/phút vẫn chạy độc lập bên dưới.
-    // Global + endpoint leases được middleware giữ đến khi request thực sự kết thúc.
-    // https://learn.microsoft.com/aspnet/core/performance/rate-limit?view=aspnetcore-10.0
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    var aiChatLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
         var action = context.GetEndpoint()?.Metadata
             .GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>();
@@ -238,11 +260,74 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             });
     });
-    var authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
-    var emailPermitLimit = builder.Configuration.GetValue("RateLimiting:EmailVerificationPermitLimit", 10);
-    var financialPermitLimit = builder.Configuration.GetValue("RateLimiting:FinancialPermitLimit", 30);
-    var aiPermitLimit = builder.Configuration.GetValue("RateLimiting:AiPermitLimit", 15);
-    var userDiscoveryPermitLimit = builder.Configuration.GetValue("RateLimiting:UserDiscoveryPermitLimit", 30);
+
+    // Chống request flooding cho các GET read API, sliding window 1 phút + concurrency limiter.
+    var apiReadSlidingLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        if (!HttpMethods.IsGet(context.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("not-get");
+        }
+
+        var path = context.Request.Path.Value ?? string.Empty;
+        if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/hubs", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/api/ping", StringComparison.OrdinalIgnoreCase)
+            || !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            return RateLimitPartition.GetNoLimiter("excluded-get");
+        }
+
+        var partitionKey = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous-ip";
+
+        return RateLimitPartition.GetSlidingWindowLimiter($"get-read:{partitionKey}",
+            _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = apiReadPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0
+            });
+    });
+
+    var apiReadConcurrentLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        if (!HttpMethods.IsGet(context.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("not-get");
+        }
+
+        var path = context.Request.Path.Value ?? string.Empty;
+        if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/hubs", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/api/ping", StringComparison.OrdinalIgnoreCase)
+            || !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            return RateLimitPartition.GetNoLimiter("excluded-get");
+        }
+
+        var partitionKey = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous-ip";
+
+        return RateLimitPartition.GetConcurrencyLimiter($"get-concurrency:{partitionKey}",
+            _ => new ConcurrencyLimiterOptions
+            {
+                PermitLimit = apiReadConcurrentLimit,
+                QueueLimit = 0
+            });
+    });
+
+    options.GlobalLimiter = PartitionedRateLimiter.CreateChained(
+        aiChatLimiter,
+        apiReadSlidingLimiter,
+        apiReadConcurrentLimiter);
     options.AddPolicy(
         "auth",
         context => RateLimitPartition.GetFixedWindowLimiter(

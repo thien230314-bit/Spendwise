@@ -28,6 +28,7 @@ Architecture: ASP.NET Core API (`backend/SpendWise/SpendWise.API.csproj`, net10.
 | Registration / email OTP | `/api/auth/register`, `/api/auth/email-verification/verify`, `/resend`; anonymous challenge | IMPLEMENTED; current verification in Task14 report |
 | Password / PIN / sessions | `/api/auth/login`, `/pin/setup`, `/pin/verify`, `/refresh`, `/logout`, `/sessions`, `/change-password`, `/forgot-password`, `/reset-password`, `/pin/forgot`, `/pin/reset/validate`, `/pin/reset`; token or bearer as controller requires | IMPLEMENTED; credentials remain hashed; Production does not use static OTP |
 | Profile / preferences | `/api/users/me`; authenticated self | IMPLEMENTED |
+| Global API Read Rate Limiting | Anti-F5 sliding window (60 req/min) & concurrency guard (10 reqs) for GET /api/*; exempts /health, /hubs, /openapi | IMPLEMENTED; 429 Retry-After Problem Details |
 | Wallet / transactions / P2P | `/api/wallets`, `/api/transactions`, `/api/transfers/internal`, `/api/transfers/p2p`; authenticated owner, financial PIN and intent key | IMPLEMENTED; ledger-backed writes; no external bank payout implied |
 | Budgets / savings / recurring / rules | `/api/budgets`, `/api/goals`, `/api/recurring-transactions`, `/api/transaction-rules`; authenticated self | IMPLEMENTED; API regression distinct from live-provider verification |
 | Friends | `/api/friends`; authenticated parties | IMPLEMENTED; invitation acceptance and ownership enforced |

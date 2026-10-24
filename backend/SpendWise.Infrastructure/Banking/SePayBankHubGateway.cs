@@ -78,7 +78,7 @@ public sealed class SePayBankHubGateway(
         return new ExternalBankTransactionPage(items, page, totalPages);
     }
 
-    public async Task CreateSandboxTransactionAsync(
+    public async Task<SandboxTransactionResult> CreateSandboxTransactionAsync(
         string externalBankAccountId,
         BankTransactionDirection direction,
         decimal amount,
@@ -89,17 +89,105 @@ public sealed class SePayBankHubGateway(
         {
             throw new ForbiddenException("sepay_sandbox_forbidden", "SePay Sandbox simulator is disabled in Production mode.");
         }
-        using var response = await SendAuthorizedAsync(
-            () => NewJsonRequest(
-                HttpMethod.Post,
-                "/v1/transaction/create",
-                new CreateSandboxTransactionWireRequest(
-                    externalBankAccountId,
-                    direction == BankTransactionDirection.Credit ? "credit" : "debit",
-                    amount,
-                    content)),
-            cancellationToken);
-        await EnsureSuccessAsync(response, "sepay_unavailable", cancellationToken);
+
+        try
+        {
+            using var response = await SendAuthorizedAsync(
+                () => NewJsonRequest(
+                    HttpMethod.Post,
+                    "/v1/transaction/create",
+                    new CreateSandboxTransactionWireRequest(
+                        externalBankAccountId,
+                        direction == BankTransactionDirection.Credit ? "credit" : "debit",
+                        amount,
+                        content)),
+                cancellationToken);
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var isTimeout = response.StatusCode is System.Net.HttpStatusCode.RequestTimeout
+                    or System.Net.HttpStatusCode.GatewayTimeout
+                    or System.Net.HttpStatusCode.ServiceUnavailable;
+                return new SandboxTransactionResult(
+                    Success: false,
+                    ProviderTransactionId: null,
+                    ReferenceNumber: null,
+                    TransactionDate: null,
+                    Amount: amount,
+                    Direction: direction.ToString(),
+                    ExternalBankAccountId: externalBankAccountId,
+                    ProviderStatus: response.StatusCode.ToString(),
+                    ErrorCode: isTimeout ? "provider_timeout" : "provider_rejected",
+                    ErrorMessage: string.IsNullOrWhiteSpace(responseBody) ? response.ReasonPhrase : responseBody,
+                    IsTimeoutOrUnknown: isTimeout);
+            }
+
+            string? providerTxId = null;
+            string? refNum = null;
+            DateTime? txDate = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(responseBody);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("data", out var dataEl))
+                {
+                    if (dataEl.TryGetProperty("id", out var idProp) || dataEl.TryGetProperty("xid", out idProp))
+                        providerTxId = idProp.ToString();
+                    if (dataEl.TryGetProperty("reference_number", out var refProp))
+                        refNum = refProp.GetString();
+                    if (dataEl.TryGetProperty("transaction_date", out var dateProp) && dateProp.TryGetDateTime(out var parsedDate))
+                        txDate = parsedDate;
+                }
+            }
+            catch
+            {
+                // Non-JSON success body or unexpected structure
+            }
+
+            return new SandboxTransactionResult(
+                Success: true,
+                ProviderTransactionId: providerTxId,
+                ReferenceNumber: refNum,
+                TransactionDate: txDate,
+                Amount: amount,
+                Direction: direction.ToString(),
+                ExternalBankAccountId: externalBankAccountId,
+                ProviderStatus: "Success",
+                ErrorCode: null,
+                ErrorMessage: null,
+                IsTimeoutOrUnknown: false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new SandboxTransactionResult(
+                Success: false,
+                ProviderTransactionId: null,
+                ReferenceNumber: null,
+                TransactionDate: null,
+                Amount: amount,
+                Direction: direction.ToString(),
+                ExternalBankAccountId: externalBankAccountId,
+                ProviderStatus: "Timeout",
+                ErrorCode: "provider_timeout",
+                ErrorMessage: "Provider call timed out.",
+                IsTimeoutOrUnknown: true);
+        }
+        catch (HttpRequestException ex)
+        {
+            return new SandboxTransactionResult(
+                Success: false,
+                ProviderTransactionId: null,
+                ReferenceNumber: null,
+                TransactionDate: null,
+                Amount: amount,
+                Direction: direction.ToString(),
+                ExternalBankAccountId: externalBankAccountId,
+                ProviderStatus: "NetworkError",
+                ErrorCode: "provider_network_error",
+                ErrorMessage: ex.Message,
+                IsTimeoutOrUnknown: true);
+        }
     }
 
     private async Task<HttpResponseMessage> SendAuthorizedAsync(

@@ -5,6 +5,7 @@ using SpendWise.Application.Features.Wallets;
 using SpendWise.Application.Features;
 using SpendWise.Application.Features.Authentication;
 using SpendWise.Application.Identity;
+using SpendWise.Domain.Banking;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.Identity;
 using SpendWise.Infrastructure.Persistence;
@@ -52,7 +53,8 @@ internal sealed class TargetedCorrectnessFixture : IAsyncDisposable
     public async Task<User> AddUserAsync(
         string name,
         UserStatus status = UserStatus.Active,
-        SystemRole role = SystemRole.User)
+        SystemRole role = SystemRole.User,
+        bool linkActiveBank = true)
     {
         // Mỗi test dùng email và SpendId riêng để không vi phạm unique index.
         var unique = Guid.NewGuid().ToString("N");
@@ -71,6 +73,25 @@ internal sealed class TargetedCorrectnessFixture : IAsyncDisposable
         };
         Db.Users.Add(user);
         await Db.SaveChangesAsync();
+
+        if (linkActiveBank)
+        {
+            var bankConnection = new BankConnection
+            {
+                UserId = user.Id,
+                Provider = BankProvider.SePayBankHub,
+                AccountEnvironment = SePayAccountEnvironment.TestMode,
+                ExternalAccountId = $"ACC_{unique}",
+                BankBrandName = "MBBank",
+                AccountHolderName = name,
+                MaskedAccountNumber = "****1234",
+                Status = BankConnectionStatus.Active,
+                LinkedAt = DateTime.UtcNow
+            };
+            Db.BankConnections.Add(bankConnection);
+            await Db.SaveChangesAsync();
+        }
+
         return user;
     }
 

@@ -51,6 +51,8 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             "/api/bank-connections/test-mode/linked-accounts",
             "/api/bank-connections/test-mode/wallet-top-ups",
             "/api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm",
+            "/api/bank-connections/test-mode/wallet-withdrawals",
+            "/api/bank-connections/test-mode/wallet-withdrawals/{id}",
             "/api/bank-transactions",
             "/api/bank-transactions/{id}",
             "/api/admin/bank-connections",
@@ -246,8 +248,8 @@ public sealed class OpenApiContractTests(ITestOutputHelper output)
             Assert.True(paths.TryGetProperty(route.Key, out var path));
             foreach (var method in route.Value) Assert.True(path.TryGetProperty(method, out _));
         }
-        Assert.Equal(180 + v1Routes.Count, paths.EnumerateObject().Count());
-        Assert.Equal(218 + v1Routes.Sum(p => p.Value.Length), operationCount);
+        Assert.Equal(186 + v1Routes.Count, paths.EnumerateObject().Count());
+        Assert.Equal(225 + v1Routes.Sum(p => p.Value.Length), operationCount);
         output.WriteLine("OpenAPI paths={0}; operations={1}", paths.EnumerateObject().Count(), operationCount);
     }
 

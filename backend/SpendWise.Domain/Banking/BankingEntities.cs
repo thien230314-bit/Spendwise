@@ -15,7 +15,7 @@ public enum BankTransactionDirection { Credit, Debit }
 public enum BankTransactionSource { Webhook, ManualSync }
 public enum BankIntegrationEventStatus { Received, Processed, Duplicate, Unmatched, Failed, Ignored }
 public enum WalletTopUpStatus { Pending, Processing, Completed, Expired, Failed }
-public enum WalletWithdrawalStatus { Pending, Processing, Completed, Failed, Cancelled }
+public enum WalletWithdrawalStatus { Pending, Reserved, Processing, Completed, Failed, Cancelled, PendingReconciliation }
 
 // BankConnection chỉ lưu liên kết tới tài khoản bên ngoài; đây không phải ví do SpendWise giữ tiền.
 public sealed class BankConnection : BaseEntity
@@ -95,7 +95,12 @@ public sealed class WalletWithdrawal : BaseEntity
     public string IdempotencyKey { get; set; } = string.Empty;
     public WalletWithdrawalStatus Status { get; set; } = WalletWithdrawalStatus.Pending;
     public string? FailureReason { get; set; }
+    public DateTime? ReservedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public DateTime? FailedAt { get; set; }
+    public string? ProviderResponseData { get; set; }
+    public Guid? ReservationLedgerTransactionId { get; set; }
+    public LedgerTransaction? ReservationLedgerTransaction { get; set; }
     public string? ProviderTransactionId { get; set; }
     public Guid? LedgerTransactionId { get; set; }
     public LedgerTransaction? LedgerTransaction { get; set; }

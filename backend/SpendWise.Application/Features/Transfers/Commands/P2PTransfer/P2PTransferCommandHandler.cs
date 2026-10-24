@@ -32,7 +32,7 @@ public sealed class P2PTransferCommandHandler(
     IOperationPolicy policy,
 
     FinancialSecurityGuard security,
-    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<P2PTransferCommand, TransferDto>
+    IActiveBankGuard activeBankGuard) : IRequestHandler<P2PTransferCommand, TransferDto>
 
 {
 
@@ -46,8 +46,8 @@ public sealed class P2PTransferCommandHandler(
 
         await policy.EnsureFeatureEnabledAsync("P2PTransfer", cancellationToken);
 
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.SenderUserId, cancellationToken);
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.Request.RecipientUserId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(command.SenderUserId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(command.Request.RecipientUserId, cancellationToken);
         await security.VerifyAsync(command.SenderUserId, command.Request.SecurityPin, cancellationToken);
 
 

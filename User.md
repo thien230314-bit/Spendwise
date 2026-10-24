@@ -644,16 +644,16 @@ Theo các quyết định phê duyệt chính thức từ Product Owner nhằm c
 Người dùng chỉ được phép hủy liên kết ngân hàng khi thỏa mãn đồng thời toàn bộ 7 điều kiện an toàn:
 1. Tổng số dư khả dụng và số dư sổ cái kế toán (Ledger balance) của toàn bộ các ví cá nhân phải bằng đúng 0 VND (`unlink_balance_not_zero`).
 2. Không có yêu cầu nạp tiền (Top-up) nào đang ở trạng thái `Pending` hoặc `Processing` (`unlink_pending_topup_exists`).
-3. Không có yêu cầu rút tiền (Withdrawal) nào đang ở trạng thái `Pending` hoặc `Processing` (`unlink_pending_withdrawal_exists`).
+3. Không có yêu cầu rút tiền (Withdrawal) nào đang ở trạng thái `Pending`, `Reserved`, `Processing`, hoặc `PendingReconciliation` (`unlink_pending_withdrawal_exists`).
 4. Không có giao dịch chuyển tiền cá nhân nào đang trong trạng thái xử lý (`unlink_pending_transfer_exists`).
 5. Không có yêu cầu quỹ nhóm đang chờ xử lý (`unlink_fund_entitlement_exists`).
 6. Không còn nghĩa vụ đóng góp quỹ nhóm nào chưa thanh toán (`unlink_fund_entitlement_exists`).
 7. Không đang là thành viên của bất kỳ quỹ nhóm nào chưa giải thể (`unlink_fund_entitlement_exists`).
 
-Khi hủy liên kết thành công: Toàn bộ ví cá nhân của người dùng tự động chuyển sang trạng thái `WalletStatus.Restricted` để bảo vệ tài khoản cho đến khi liên kết lại ngân hàng mới.
+Khi hủy liên kết thành công: Toàn bộ ví cá nhân của người dùng tự động chuyển sang trạng thái `WalletStatus.Restricted` với lý do hạn chế `WalletRestrictionReason.NoActiveBank` để bảo vệ tài khoản cho đến khi liên kết lại ngân hàng mới. Khi người dùng liên kết lại ngân hàng thành công, hệ thống chỉ kích hoạt lại (`WalletStatus.Active`) các ví có lý do `WalletRestrictionReason.NoActiveBank`; các ví bị hạn chế do `SecurityLock` hoặc `AdminAction` vẫn giữ nguyên trạng thái hạn chế để bảo đảm an toàn.
 
-### 3. Cơ chế Khóa Ví khi Thiếu Ngân hàng Hoạt động (`IActiveBankGuard`)
-Người dùng chưa liên kết hoặc đã hủy liên kết ngân hàng sẽ bị từ chối thực hiện các hoạt động làm biến động số dư hoặc tạo ví mới:
+### 3. Cơ chế Khóa Ví khi Thiếu Ngân hàng Hoạt động (`IActiveBankGuard` Fail-Closed)
+Mọi Handler tài chính bắt buộc tiêm phụ thuộc `IActiveBankGuard` (non-nullable required dependency, không cho phép null bypass). Người dùng chưa liên kết hoặc đã hủy liên kết ngân hàng sẽ bị từ chối thực hiện các hoạt động làm biến động số dư hoặc tạo ví mới:
 - Mở ví mới (`POST /api/wallets`) -> `active_bank_required` (409).
 - Chuyển tiền P2P (`POST /api/transfers/p2p`) -> `active_bank_required` (áp dụng cho cả người gửi và người nhận).
 - Chuyển tiền giữa các ví cá nhân (`POST /api/transfers/internal`) -> `active_bank_required`.
@@ -662,14 +662,26 @@ Người dùng chưa liên kết hoặc đã hủy liên kết ngân hàng sẽ 
 - Ghi nhận định kỳ tự động (`POST /api/recurring-transactions/{id}/occurrences/{occId}/record`) -> `active_bank_required`.
 - Đóng góp quỹ nhóm hoặc nhận giải ngân quỹ nhóm -> `active_bank_required`.
 
-### 4. Tính năng Tự động Rút tiền Ví về Ngân hàng (Sandbox Wallet Withdrawal)
-Triển khai bộ API cho phép người dùng rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết:
-- **`POST /api/bank-connections/test-mode/wallet-withdrawals`**:
-  - Xác thực mã PIN tài khoản người dùng (`SecurityPin`).
-  - Kiểm tra `IActiveBankGuard` và số dư ví nguồn.
-  - Tạo bản ghi `WalletWithdrawal` trạng thái `Pending` và mã đối soát duy nhất `reference` (`SWWD...`).
-  - Gọi cổng thanh toán SePay BankHub Sandbox `POST /v1/transaction/create` (với `direction: "credit"`, `amount`, `bank_account_xid`) mô phỏng tiền chuyển vào tài khoản ngân hàng liên kết của người dùng.
-  - Khi SePay trả về thành công: Sổ cái hạch toán nợ ví nguồn (`Debit Wallet`), có tài khoản thanh toán ngoài (`Credit ExternalSource`), chuyển trạng thái withdrawal thành `Completed`, ghi nhận giao dịch tài chính `FinancialTransactionType.TransferOut`.
-  - Nếu kết nối SePay thất bại: Đánh dấu withdrawal `Failed`, giải phóng tài nguyên, báo lỗi và giữ nguyên số dư ví người dùng.
-- **`GET /api/bank-connections/test-mode/wallet-withdrawals`**: Danh sách lịch sử các lần rút tiền của người dùng.
-- **`GET /api/bank-connections/test-mode/wallet-withdrawals/{id}`**: Tra cứu chi tiết một lần rút tiền theo ID.
+### 4. Tính năng Tự động Rút tiền Ví về Ngân hàng (Sandbox Wallet Withdrawal & Reservation State Machine)
+Triển khai bộ API cho phép người dùng rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết với kiến trúc giữ chỗ (reservation hold) đảm bảo tính toàn vẹn tài chính:
+- **State Machine chuẩn**:
+  `Pending` -> `Reserved` (giữ tiền sổ cái) -> `Processing` (gọi SePay BankHub) -> `Completed` (tất toán) / `Failed` (giải phóng giữ chỗ) / `PendingReconciliation` (giữ chỗ chờ đối soát).
+- **Quy trình thực thi**:
+  1. Xác thực mã PIN tài khoản người dùng (`SecurityPin`).
+  2. Kiểm tra `IActiveBankGuard` (ngân hàng active, thuộc chính user), quyền sở hữu ví và số dư khả dụng (`AvailableBalance`).
+  3. **Tạo giữ chỗ nguyên tử (Reservation Hold)** trong database transaction trước khi thực hiện bất kỳ lệnh HTTP nào ra ngoài:
+     - Tạo bản ghi `WalletWithdrawal` trạng thái `Pending` -> `Reserved`.
+     - Hạch toán bút toán chuyển tiền từ ví người dùng sang tài khoản trung gian hệ thống `SYSTEM:ReservationHold:VND` (`ReservationLedgerTransactionId`).
+     - Commit transaction cơ sở dữ liệu. Số dư khả dụng của ví lập tức giảm đi tương ứng, ngăn chặn tuyệt đối double-spending từ P2P, Internal Transfer hoặc Fund Contribution.
+  4. Chuyển trạng thái sang `Processing` và gọi cổng SePay BankHub Sandbox `POST /v1/transaction/create` (với `direction: "credit"`, `amount`, `bank_account_xid`).
+  5. **Xử lý kết quả cổng thanh toán**:
+     - **Thành công (`Success = true`)**: Chuyển trạng thái sang `Completed`, ghi nhận thông tin provider (`ProviderResponseData`), hạch toán tất toán sổ cái từ `SYSTEM:ReservationHold:VND` sang `SYSTEM:ExternalSource:VND`, ghi nhận giao dịch tài chính `FinancialTransactionType.TransferOut`.
+     - **Thất bại xác định (`Success = false`, lỗi nghiệp vụ/tài khoản)**: Chuyển trạng thái sang `Failed`, tự động giải phóng giữ chỗ bằng cách hạch toán hoàn trả sổ cái từ `SYSTEM:ReservationHold:VND` về ví người dùng, ghi nhận lý do lỗi và phục hồi số dư khả dụng.
+     - **Timeout hoặc kết quả không xác định (`IsTimeoutOrUnknown = true`)**: Chuyển trạng thái sang `PendingReconciliation`. Khoản tiền vẫn được giữ an toàn tại `SYSTEM:ReservationHold:VND`, không tự động hoàn tiền và không thử lại mù quáng (blind retry) cho đến khi hoàn tất đối soát.
+- **Bảo vệ Concurrency & Lọc Chỉ mục (Filtered Unique Indexes)**:
+  - `IX_WalletTopUps_BankConnectionId`: lọc `[Status] IN ('Pending', 'Processing')` đảm bảo mỗi liên kết ngân hàng chỉ có tối đa 1 giao dịch nạp tiền đang chạy.
+  - `IX_WalletWithdrawals_BankConnectionId`: lọc `[Status] IN ('Pending', 'Reserved', 'Processing', 'PendingReconciliation')` đảm bảo mỗi liên kết ngân hàng chỉ có tối đa 1 giao dịch rút tiền đang thực thi hoặc chờ đối soát.
+- **Endpoints**:
+  - `POST /api/bank-connections/test-mode/wallet-withdrawals`: Khởi tạo yêu cầu rút tiền với khóa IdempotencyKey.
+  - `GET /api/bank-connections/test-mode/wallet-withdrawals`: Danh sách lịch sử các lần rút tiền của người dùng.
+  - `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}`: Tra cứu chi tiết một lần rút tiền theo ID kèm metadata đối soát.

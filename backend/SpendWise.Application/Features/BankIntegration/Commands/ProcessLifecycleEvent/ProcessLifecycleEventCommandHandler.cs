@@ -219,11 +219,14 @@ public sealed class ProcessLifecycleEventCommandHandler(
         connection.UnlinkedAt = null;
 
         var restrictedWallets = await db.Wallets
-            .Where(w => w.OwnerUserId == session.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Restricted)
+            .Where(w => w.OwnerUserId == session.UserId
+                && w.Status == SpendWise.Domain.Finance.WalletStatus.Restricted
+                && w.RestrictionReason == SpendWise.Domain.Finance.WalletRestrictionReason.NoActiveBank)
             .ToListAsync(cancellationToken);
         foreach (var rw in restrictedWallets)
         {
             rw.Status = SpendWise.Domain.Finance.WalletStatus.Active;
+            rw.RestrictionReason = SpendWise.Domain.Finance.WalletRestrictionReason.None;
         }
 
         session.BankConnectionId = connection.Id;
@@ -259,11 +262,12 @@ public sealed class ProcessLifecycleEventCommandHandler(
             return;
         }
 
-        var connection = await db.BankConnections.SingleOrDefaultAsync(
-            item => item.Provider == BankProvider.SePayBankHub
-                && item.ExternalAccountId == externalAccountId,
-            cancellationToken);
-        if (connection is null)
+        var matchingConnections = await db.BankConnections
+            .Where(item => item.Provider == BankProvider.SePayBankHub
+                && item.ExternalAccountId == externalAccountId)
+            .ToListAsync(cancellationToken);
+
+        if (matchingConnections.Count == 0)
         {
             integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
             integrationEvent.FailureCode = "unknown_bank_account_xid";
@@ -271,30 +275,105 @@ public sealed class ProcessLifecycleEventCommandHandler(
             return;
         }
 
-        connection.Status = status;
-        if (status == BankConnectionStatus.Unlinked)
+        var activeConnection = matchingConnections.SingleOrDefault(item => item.Status == BankConnectionStatus.Active);
+
+        if (status is BankConnectionStatus.Unlinked or BankConnectionStatus.Inactive)
         {
-            connection.UnlinkedAt = clock.UtcNow;
+            if (activeConnection is null)
+            {
+                // Historical / delayed webhook for an account that is already unlinked or inactive.
+                // Do not crash or mutate other users' connections.
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
+                integrationEvent.FailureCode = "already_unlinked";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            activeConnection.Status = status;
+            if (status == BankConnectionStatus.Unlinked)
+            {
+                activeConnection.UnlinkedAt = clock.UtcNow;
+            }
+
             var activeWallets = await db.Wallets
-                .Where(w => w.OwnerUserId == connection.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Active)
+                .Where(w => w.OwnerUserId == activeConnection.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Active)
                 .ToListAsync(cancellationToken);
             foreach (var aw in activeWallets)
             {
                 aw.Status = SpendWise.Domain.Finance.WalletStatus.Restricted;
+                aw.RestrictionReason = SpendWise.Domain.Finance.WalletRestrictionReason.NoActiveBank;
             }
-        }
-        else if (status == BankConnectionStatus.Active)
-            connection.UnlinkedAt = null;
-        integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
-        integrationEvent.ProcessedAt = clock.UtcNow;
 
-        await notifications.CreateAsync(
-            connection.UserId,
-            notificationType,
-            title,
-            $"Trạng thái {connection.BankBrandName} {connection.MaskedAccountNumber}: {status}.",
-            new { bankConnectionId = connection.Id, status = status.ToString() },
-            cancellationToken);
+            integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
+            integrationEvent.ProcessedAt = clock.UtcNow;
+
+            await notifications.CreateAsync(
+                activeConnection.UserId,
+                notificationType,
+                title,
+                $"Trạng thái {activeConnection.BankBrandName} {activeConnection.MaskedAccountNumber}: {status}.",
+                new { bankConnectionId = activeConnection.Id, status = status.ToString() },
+                cancellationToken);
+            return;
+        }
+
+        if (status == BankConnectionStatus.Active)
+        {
+            if (activeConnection is not null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            var targetConnection = matchingConnections
+                .OrderByDescending(c => c.LinkedAt ?? c.CreatedAt)
+                .FirstOrDefault();
+
+            if (targetConnection is null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
+                integrationEvent.FailureCode = "unknown_bank_account_xid";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            var userHasOtherActive = await db.BankConnections.AnyAsync(
+                c => c.UserId == targetConnection.UserId && c.Status == BankConnectionStatus.Active && c.Id != targetConnection.Id,
+                cancellationToken);
+            if (userHasOtherActive)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Failed;
+                integrationEvent.FailureCode = "user_already_has_active_bank";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            targetConnection.Status = BankConnectionStatus.Active;
+            targetConnection.UnlinkedAt = null;
+
+            var restrictedWallets = await db.Wallets
+                .Where(w => w.OwnerUserId == targetConnection.UserId
+                    && w.Status == SpendWise.Domain.Finance.WalletStatus.Restricted
+                    && w.RestrictionReason == SpendWise.Domain.Finance.WalletRestrictionReason.NoActiveBank)
+                .ToListAsync(cancellationToken);
+            foreach (var rw in restrictedWallets)
+            {
+                rw.Status = SpendWise.Domain.Finance.WalletStatus.Active;
+                rw.RestrictionReason = SpendWise.Domain.Finance.WalletRestrictionReason.None;
+            }
+
+            integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
+            integrationEvent.ProcessedAt = clock.UtcNow;
+
+            await notifications.CreateAsync(
+                targetConnection.UserId,
+                notificationType,
+                title,
+                $"Trạng thái {targetConnection.BankBrandName} {targetConnection.MaskedAccountNumber}: {status}.",
+                new { bankConnectionId = targetConnection.Id, status = status.ToString() },
+                cancellationToken);
+        }
     }
 
     private async Task UpdateSessionAsync(

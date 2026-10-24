@@ -28,7 +28,8 @@ public sealed record WalletWithdrawalDto(
     string MaskedAccountNumber,
     string Reference,
     DateTime CreatedAt,
-    DateTime? CompletedAt);
+    DateTime? CompletedAt,
+    string? FailureReason = null);
 
 public sealed record CreateWalletWithdrawalCommand(
     bool IsDevelopment,
@@ -95,100 +96,195 @@ public sealed class CreateWalletWithdrawalCommandHandler(
             && item.Status == BankConnectionStatus.Active, cancellationToken)
             ?? throw BankingErrors.ConnectionNotFound();
 
-        var wallet = await db.Wallets
-            .Include(w => w.LedgerAccount)
-            .SingleOrDefaultAsync(w => w.Id == request.WalletId && w.OwnerUserId == command.UserId, cancellationToken)
+        var walletCheck = await db.Wallets.AsNoTracking().SingleOrDefaultAsync(w => w.Id == request.WalletId && w.OwnerUserId == command.UserId, cancellationToken)
             ?? throw new NotFoundException("wallet_not_found", "Wallet not found.");
 
-        if (wallet.Status != WalletStatus.Active)
+        if (walletCheck.Status != WalletStatus.Active)
             throw new ConflictException("wallet_unavailable", "Wallet must be Active to withdraw funds.");
-
-        // Check wallet balance
-        var walletLedger = await db.LedgerAccounts.SingleOrDefaultAsync(
-            a => a.WalletId == wallet.Id && a.Type == LedgerAccountType.Wallet, cancellationToken)
-            ?? throw new ConflictException("wallet_unavailable", "Wallet ledger account not found.");
-
-        if (walletLedger.Balance < request.Amount)
-            throw new ConflictException("insufficient_wallet_balance", "Wallet does not have enough balance for withdrawal.");
 
         var reference = "SWWD" + Convert.ToHexString(RandomNumberGenerator.GetBytes(12));
 
-        // Create Pending withdrawal record
-        var withdrawal = new WalletWithdrawal
+        // Step 1: Atomic Database Reservation (Commit before HTTP call)
+        var withdrawal = await db.ExecuteInTransactionAsync(async token =>
         {
-            UserId = command.UserId,
-            BankConnectionId = connection.Id,
-            WalletId = wallet.Id,
-            Amount = request.Amount,
-            Status = WalletWithdrawalStatus.Pending,
-            Reference = reference,
-            IdempotencyKey = normalizedKey,
-            CreatedAt = clock.UtcNow
-        };
-        db.WalletWithdrawals.Add(withdrawal);
+            var wallet = await db.Wallets
+                .Include(w => w.LedgerAccount)
+                .SingleOrDefaultAsync(w => w.Id == request.WalletId && w.OwnerUserId == command.UserId, token)
+                ?? throw new NotFoundException("wallet_not_found", "Wallet not found.");
+
+            if (wallet.Status != WalletStatus.Active)
+                throw new ConflictException("wallet_unavailable", "Wallet must be Active to withdraw funds.");
+
+            var walletLedger = await db.LedgerAccounts.SingleOrDefaultAsync(
+                a => a.WalletId == wallet.Id && a.Type == LedgerAccountType.Wallet, token)
+                ?? throw new ConflictException("wallet_unavailable", "Wallet ledger account not found.");
+
+            if (walletLedger.Balance < request.Amount)
+                throw new ConflictException("insufficient_wallet_balance", "Wallet does not have enough balance for withdrawal.");
+
+            var newWithdrawal = new WalletWithdrawal
+            {
+                UserId = command.UserId,
+                BankConnectionId = connection.Id,
+                WalletId = wallet.Id,
+                Amount = request.Amount,
+                Status = WalletWithdrawalStatus.Reserved,
+                Reference = reference,
+                IdempotencyKey = normalizedKey,
+                ReservedAt = clock.UtcNow,
+                CreatedAt = clock.UtcNow
+            };
+
+            // Hold funds in reservation clearing account
+            var holdAccount = await GetOrCreateReservationHoldAccountAsync(db, token);
+            var holdPosting = await ledger.PostAsync(
+                walletLedger.Id,
+                holdAccount.Id,
+                request.Amount,
+                "VND",
+                "WithdrawalReservation",
+                newWithdrawal.Id,
+                $"wd-hold:{newWithdrawal.Id:N}",
+                normalizedKey + ":hold",
+                $"Tạm giữ số dư rút tiền {reference}",
+                token);
+
+            newWithdrawal.ReservationLedgerTransactionId = holdPosting.LedgerTransactionId;
+            db.WalletWithdrawals.Add(newWithdrawal);
+            await db.SaveChangesAsync(token);
+            return newWithdrawal;
+        }, cancellationToken);
+
+        // Step 2: Transition to Processing & Call Provider outside DB transaction
+        withdrawal.Status = WalletWithdrawalStatus.Processing;
         await db.SaveChangesAsync(cancellationToken);
 
-        // Call SePay Sandbox simulator: POST /v1/transaction/create
-        // simulating credit into the user's linked bank account
-        bool simulationSuccess = false;
-        string? failureReason = null;
+        SandboxTransactionResult result;
         try
         {
-            await gateway.CreateSandboxTransactionAsync(
+            result = await gateway.CreateSandboxTransactionAsync(
                 connection.ExternalAccountId,
                 BankTransactionDirection.Credit,
                 request.Amount,
                 $"SpendWise Withdrawal {reference}",
                 cancellationToken);
-            simulationSuccess = true;
         }
         catch (Exception ex)
         {
-            failureReason = ex.Message;
-            simulationSuccess = false;
+            result = new SandboxTransactionResult(
+                Success: false,
+                ProviderTransactionId: null,
+                ReferenceNumber: null,
+                TransactionDate: null,
+                Amount: request.Amount,
+                Direction: "Credit",
+                ExternalBankAccountId: connection.ExternalAccountId,
+                ProviderStatus: "Exception",
+                ErrorCode: "provider_exception",
+                ErrorMessage: ex.Message,
+                IsTimeoutOrUnknown: true);
         }
 
-        if (!simulationSuccess)
+        // Step 3: Handle Outcome atomically
+        var holdAccountFinal = await GetOrCreateReservationHoldAccountAsync(db, cancellationToken);
+        var walletLedgerFinal = await db.LedgerAccounts.SingleAsync(
+            a => a.WalletId == withdrawal.WalletId && a.Type == LedgerAccountType.Wallet, cancellationToken);
+
+        if (result.Success)
         {
+            return await db.ExecuteInTransactionAsync(async token =>
+            {
+                var clearingAccount = await GetOrCreateExternalSettlementAccountAsync(db, token);
+                var posting = await ledger.PostAsync(
+                    holdAccountFinal.Id,
+                    clearingAccount.Id,
+                    request.Amount,
+                    "VND",
+                    "WalletWithdrawal",
+                    withdrawal.Id,
+                    $"withdrawal:{withdrawal.Id:N}",
+                    normalizedKey,
+                    $"Rút tiền về {connection.BankBrandName} {connection.MaskedAccountNumber}",
+                    token);
+
+                withdrawal.Status = WalletWithdrawalStatus.Completed;
+                withdrawal.LedgerTransactionId = posting.LedgerTransactionId;
+                withdrawal.ProviderTransactionId = result.ProviderTransactionId;
+                withdrawal.CompletedAt = clock.UtcNow;
+
+                db.FinancialTransactions.Add(new FinancialTransaction
+                {
+                    OwnerUserId = command.UserId,
+                    WalletId = withdrawal.WalletId,
+                    LedgerTransactionId = posting.LedgerTransactionId,
+                    RelatedBusinessId = withdrawal.Id,
+                    Type = FinancialTransactionType.TransferOut,
+                    Amount = request.Amount,
+                    Description = $"Rút tiền về {connection.BankBrandName} {connection.MaskedAccountNumber}",
+                    OccurredAt = clock.UtcNow
+                });
+
+                await db.SaveChangesAsync(token);
+                return ToDto(withdrawal, connection.MaskedAccountNumber);
+            }, cancellationToken);
+        }
+
+        if (result.IsTimeoutOrUnknown)
+        {
+            await db.ExecuteInTransactionAsync(async token =>
+            {
+                withdrawal.Status = WalletWithdrawalStatus.PendingReconciliation;
+                withdrawal.FailureReason = result.ErrorMessage ?? "Giao dịch quá thời gian chờ, đang chờ đối soát kết quả từ ngân hàng.";
+                await db.SaveChangesAsync(token);
+                return true;
+            }, cancellationToken);
+
+            throw new AppException("withdrawal_pending_reconciliation", "Giao dịch đang chờ đối soát do chưa nhận được kết quả xác nhận cuối cùng từ ngân hàng.", 504);
+        }
+
+        // Definitive failure: release reservation hold back to wallet
+        await db.ExecuteInTransactionAsync(async token =>
+        {
+            await ledger.PostAsync(
+                holdAccountFinal.Id,
+                walletLedgerFinal.Id,
+                request.Amount,
+                "VND",
+                "WithdrawalReservationRelease",
+                withdrawal.Id,
+                $"wd-release:{withdrawal.Id:N}",
+                normalizedKey + ":release",
+                $"Hoàn trả số dư tạm giữ rút tiền {reference}",
+                token);
+
             withdrawal.Status = WalletWithdrawalStatus.Failed;
-            withdrawal.FailureReason = failureReason ?? "SePay Sandbox transaction creation failed";
-            await db.SaveChangesAsync(cancellationToken);
-            throw new ConflictException("withdrawal_failed", "Thực hiện rút tiền về tài khoản ngân hàng thất bại từ cổng thanh toán.");
-        }
+            withdrawal.FailureReason = result.ErrorMessage ?? "Thực hiện rút tiền về tài khoản ngân hàng thất bại từ cổng thanh toán.";
+            withdrawal.FailedAt = clock.UtcNow;
+            await db.SaveChangesAsync(token);
+            return true;
+        }, cancellationToken);
 
-        // Post ledger entries to settle withdrawal: Debit Wallet, Credit External Clearing Account
-        var clearingAccount = await GetOrCreateExternalSettlementAccountAsync(db, cancellationToken);
-        var posting = await ledger.PostAsync(
-            walletLedger.Id,
-            clearingAccount.Id,
-            request.Amount,
-            "VND",
-            "WalletWithdrawal",
-            withdrawal.Id,
-            $"withdrawal:{withdrawal.Id:N}",
-            normalizedKey,
-            $"Rút tiền về {connection.BankBrandName} {connection.MaskedAccountNumber}",
-            cancellationToken);
+        throw new ConflictException("withdrawal_failed", "Thực hiện rút tiền về tài khoản ngân hàng thất bại từ cổng thanh toán.");
+    }
 
-        withdrawal.Status = WalletWithdrawalStatus.Completed;
-        withdrawal.LedgerTransactionId = posting.LedgerTransactionId;
-        withdrawal.CompletedAt = clock.UtcNow;
+    private static async Task<LedgerAccount> GetOrCreateReservationHoldAccountAsync(
+        ISpendWiseDbContext db, CancellationToken cancellationToken)
+    {
+        const string code = "SYSTEM:ReservationHold:VND";
+        var account = await db.LedgerAccounts.SingleOrDefaultAsync(a => a.Code == code, cancellationToken);
+        if (account is not null) return account;
 
-        db.FinancialTransactions.Add(new FinancialTransaction
+        account = new LedgerAccount
         {
-            OwnerUserId = command.UserId,
-            WalletId = wallet.Id,
-            LedgerTransactionId = posting.LedgerTransactionId,
-            RelatedBusinessId = withdrawal.Id,
-            Type = FinancialTransactionType.TransferOut,
-            Amount = request.Amount,
-            Description = $"Rút tiền về {connection.BankBrandName} {connection.MaskedAccountNumber}",
-            OccurredAt = clock.UtcNow
-        });
-
+            Code = code,
+            Name = "Withdrawal Reservation Hold Account",
+            Type = LedgerAccountType.ExternalSource,
+            Currency = "VND",
+            IsSystem = true
+        };
+        db.LedgerAccounts.Add(account);
         await db.SaveChangesAsync(cancellationToken);
-
-        return ToDto(withdrawal, connection.MaskedAccountNumber);
+        return account;
     }
 
     private static async Task<LedgerAccount> GetOrCreateExternalSettlementAccountAsync(
@@ -220,7 +316,8 @@ public sealed class CreateWalletWithdrawalCommandHandler(
         maskedAccount,
         withdrawal.Reference,
         withdrawal.CreatedAt,
-        withdrawal.CompletedAt);
+        withdrawal.CompletedAt,
+        withdrawal.FailureReason);
 }
 
 public sealed class GetWalletWithdrawalsQueryHandler(
@@ -247,7 +344,8 @@ public sealed class GetWalletWithdrawalsQueryHandler(
             w.BankConnection?.MaskedAccountNumber ?? "",
             w.Reference,
             w.CreatedAt,
-            w.CompletedAt)).ToList();
+            w.CompletedAt,
+            w.FailureReason)).ToList();
     }
 }
 
@@ -274,6 +372,7 @@ public sealed class GetWalletWithdrawalByIdQueryHandler(
             item.BankConnection?.MaskedAccountNumber ?? "",
             item.Reference,
             item.CreatedAt,
-            item.CompletedAt);
+            item.CompletedAt,
+            item.FailureReason);
     }
 }

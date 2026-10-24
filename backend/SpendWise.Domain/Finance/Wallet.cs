@@ -7,6 +7,7 @@ namespace SpendWise.Domain.Finance;
 
 public enum WalletType { Main, Savings, Emergency }
 public enum WalletStatus { Active, Frozen, Restricted, Closed }
+public enum WalletRestrictionReason { None = 0, NoActiveBank = 1, SecurityLock = 2, FinancialRestriction = 3, AdminAction = 4 }
 
 public sealed class Wallet : BaseEntity
 {
@@ -17,6 +18,7 @@ public sealed class Wallet : BaseEntity
     public string Currency { get; set; } = Money.DefaultCurrency;
     // Status chuyển sang Closed thay vì xóa để giữ lịch sử tài chính.
     public WalletStatus Status { get; set; } = WalletStatus.Active;
+    public WalletRestrictionReason RestrictionReason { get; set; } = WalletRestrictionReason.None;
     // AvailableBalance chỉ thay đổi qua posting tài chính, không qua UpdateWallet.
     public decimal AvailableBalance { get; set; }
     public bool IsDefault { get; set; }

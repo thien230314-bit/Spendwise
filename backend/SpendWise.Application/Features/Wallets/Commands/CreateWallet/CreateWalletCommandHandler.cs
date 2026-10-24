@@ -12,7 +12,7 @@ namespace SpendWise.Application.Features.Wallets.Commands.CreateWallet;
 
 public sealed class CreateWalletCommandHandler(
     ISpendWiseDbContext db,
-    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<CreateWalletCommand, WalletDto>
+    IActiveBankGuard activeBankGuard) : IRequestHandler<CreateWalletCommand, WalletDto>
 {
     private const int MaximumPersonalWallets = 3;
 
@@ -20,8 +20,6 @@ public sealed class CreateWalletCommandHandler(
         CreateWalletCommand command,
         CancellationToken cancellationToken)
     {
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
-
         // Chuyển loại ví từ request sang enum của Domain.
         if (!WalletMappings.TryParseApiType(command.Request.Type, out var walletType))
         {
@@ -34,6 +32,8 @@ public sealed class CreateWalletCommandHandler(
                 "invalid_wallet_name",
                 "Wallet name is required and limited to 100 characters.");
         }
+
+        await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
 
         // Đổi ví mặc định và tạo ví mới trong cùng transaction để lỗi ghi cuối rollback toàn bộ.
         return await db.ExecuteInTransactionAsync(async token =>

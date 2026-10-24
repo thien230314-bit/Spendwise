@@ -193,11 +193,14 @@ public sealed class ConfirmTestModeBankLinkCommandHandler(
             db.BankConnections.Add(connection);
 
         var restrictedWallets = await db.Wallets
-            .Where(w => w.OwnerUserId == command.UserId && w.Status == WalletStatus.Restricted)
+            .Where(w => w.OwnerUserId == command.UserId
+                && w.Status == WalletStatus.Restricted
+                && w.RestrictionReason == WalletRestrictionReason.NoActiveBank)
             .ToListAsync(cancellationToken);
         foreach (var rw in restrictedWallets)
         {
             rw.Status = WalletStatus.Active;
+            rw.RestrictionReason = WalletRestrictionReason.None;
         }
 
         challenge.BankConnectionId = connection.Id;

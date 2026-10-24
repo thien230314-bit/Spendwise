@@ -31,7 +31,8 @@ public sealed record V1MemberDto(
 public sealed record V1ActivityDto(Guid Id, Guid? ActorUserId, Guid? SubjectUserId, string Event, string? Detail, DateTime CreatedAt, Guid? ReferenceId);
 
 public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, FinancialSecurityGuard security, INotificationService notifications, ILedgerService ledger,
-    Microsoft.Extensions.Options.IOptions<V1ElectionPolicy>? electionOptions = null, IV1InactivityEvidence? inactivityEvidence = null, ICurrentUser? requestUser = null, IActiveBankGuard? activeBankGuard = null)
+    IActiveBankGuard activeBankGuard,
+    Microsoft.Extensions.Options.IOptions<V1ElectionPolicy>? electionOptions = null, IV1InactivityEvidence? inactivityEvidence = null, ICurrentUser? requestUser = null)
 {
     public async Task<V1FundDto> CreateAsync(Guid userId, CreateV1FundRequest request, CancellationToken ct)
     {

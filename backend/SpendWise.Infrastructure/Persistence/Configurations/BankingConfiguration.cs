@@ -95,17 +95,19 @@ public sealed class WalletWithdrawalConfiguration : IEntityTypeConfiguration<Wal
             .HasFilter("[IdempotencyKey] <> ''");
         builder.HasIndex(x => x.BankConnectionId)
             .IsUnique()
-            .HasFilter("[Status] IN ('Pending', 'Processing')");
+            .HasFilter("[Status] IN ('Pending', 'Reserved', 'Processing', 'PendingReconciliation')");
         builder.Property(x => x.Amount).HasPrecision(Money.Precision, Money.Scale);
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.Reference).HasMaxLength(64);
         builder.Property(x => x.IdempotencyKey).HasMaxLength(100);
-        builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.ProviderTransactionId).HasMaxLength(100);
         builder.Property(x => x.FailureReason).HasMaxLength(500);
+        builder.Property(x => x.ProviderResponseData).HasMaxLength(4000);
         builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(x => x.BankConnection).WithMany().HasForeignKey(x => x.BankConnectionId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(x => x.Wallet).WithMany().HasForeignKey(x => x.WalletId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(x => x.ReservationLedgerTransaction).WithMany().HasForeignKey(x => x.ReservationLedgerTransactionId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(x => x.LedgerTransaction).WithMany().HasForeignKey(x => x.LedgerTransactionId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(x => x.FinancialTransaction).WithMany().HasForeignKey(x => x.FinancialTransactionId).OnDelete(DeleteBehavior.NoAction);
     }

@@ -32,7 +32,7 @@ public sealed class ManualTransactionCreator(
     FinancialSecurityGuard security,
 
     EvidenceSupport evidence,
-    IActiveBankGuard? activeBankGuard = null)
+    IActiveBankGuard activeBankGuard)
 
 {
 
@@ -52,7 +52,7 @@ public sealed class ManualTransactionCreator(
 
         // PIN được kiểm tra ngay trong mutation trước khi chạm tới ledger.
 
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(userId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(userId, cancellationToken);
         await security.VerifyAsync(userId, request.SecurityPin, cancellationToken);
 
 

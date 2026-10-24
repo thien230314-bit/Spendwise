@@ -34,7 +34,7 @@ public sealed class CreateMultiWalletExpenseCommandHandler(
     FinancialSecurityGuard security,
 
     EvidenceSupport evidence,
-    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<CreateMultiWalletExpenseCommand, TransactionDto>
+    IActiveBankGuard activeBankGuard) : IRequestHandler<CreateMultiWalletExpenseCommand, TransactionDto>
 
 {
 
@@ -46,7 +46,7 @@ public sealed class CreateMultiWalletExpenseCommandHandler(
 
     {
 
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
         await security.VerifyAsync(command.UserId, command.Request.SecurityPin, cancellationToken);
 
 

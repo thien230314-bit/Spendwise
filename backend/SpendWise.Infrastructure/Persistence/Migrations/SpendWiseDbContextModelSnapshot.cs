@@ -1617,6 +1617,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
 
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FailureReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1632,6 +1635,10 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("LedgerTransactionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ProviderResponseData")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<string>("ProviderTransactionId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1641,10 +1648,16 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<Guid?>("ReservationLedgerTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReservedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1659,7 +1672,7 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BankConnectionId")
                         .IsUnique()
-                        .HasFilter("[Status] IN ('Pending', 'Processing')");
+                        .HasFilter("[Status] IN ('Pending', 'Reserved', 'Processing', 'PendingReconciliation')");
 
                     b.HasIndex("FinancialTransactionId");
 
@@ -1667,6 +1680,8 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Reference")
                         .IsUnique();
+
+                    b.HasIndex("ReservationLedgerTransactionId");
 
                     b.HasIndex("UserId");
 
@@ -2485,6 +2500,11 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RestrictionReason")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -5578,6 +5598,11 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasForeignKey("LedgerTransactionId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("SpendWise.Domain.Finance.LedgerTransaction", "ReservationLedgerTransaction")
+                        .WithMany()
+                        .HasForeignKey("ReservationLedgerTransactionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("SpendWise.Domain.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -5595,6 +5620,8 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Navigation("FinancialTransaction");
 
                     b.Navigation("LedgerTransaction");
+
+                    b.Navigation("ReservationLedgerTransaction");
 
                     b.Navigation("User");
 

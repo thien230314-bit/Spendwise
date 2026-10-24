@@ -16,7 +16,7 @@ public sealed class GoalMovementExecutor(
     ILedgerService ledger,
     IClock clock,
     FinancialSecurityGuard security,
-    IActiveBankGuard? activeBankGuard = null)
+    IActiveBankGuard activeBankGuard)
 {
     public async Task<GoalDto> MoveAsync(
         Guid userId,
@@ -25,7 +25,7 @@ public sealed class GoalMovementExecutor(
         bool contribute,
         CancellationToken cancellationToken)
     {
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(userId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(userId, cancellationToken);
         await security.VerifyAsync(userId, request.SecurityPin, cancellationToken);
         // Mở transaction cho toàn bộ luồng đóng góp hoặc rút tiền Goal.
         return await db.ExecuteInTransactionAsync(

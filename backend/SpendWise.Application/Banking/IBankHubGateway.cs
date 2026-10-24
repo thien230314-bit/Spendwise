@@ -2,6 +2,19 @@ using SpendWise.Domain.Banking;
 
 namespace SpendWise.Application.Banking;
 
+public sealed record SandboxTransactionResult(
+    bool Success,
+    string? ProviderTransactionId = null,
+    string? ReferenceNumber = null,
+    DateTime? TransactionDate = null,
+    decimal Amount = 0,
+    string? Direction = null,
+    string? ExternalBankAccountId = null,
+    string? ProviderStatus = null,
+    string? ErrorCode = null,
+    string? ErrorMessage = null,
+    bool IsTimeoutOrUnknown = false);
+
 // Application chỉ biết gateway provider-neutral, còn HTTP/token SePay nằm trong Infrastructure.
 public interface IBankHubGateway
 {
@@ -15,7 +28,7 @@ public interface IBankHubGateway
         int page,
         int pageSize,
         CancellationToken cancellationToken);
-    Task CreateSandboxTransactionAsync(
+    Task<SandboxTransactionResult> CreateSandboxTransactionAsync(
         string externalBankAccountId,
         BankTransactionDirection direction,
         decimal amount,

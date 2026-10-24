@@ -39,9 +39,12 @@ public sealed class BankUnlinkSafetyValidator(ISpendWiseDbContext db) : IBankUnl
                 "Không thể hủy liên kết khi đang có yêu cầu nạp tiền chưa hoàn tất.");
         }
 
-        // 3. Không có yêu cầu rút tiền (Withdrawal) đang ở trạng thái Pending hoặc Processing
+        // 3. Không có yêu cầu rút tiền (Withdrawal) đang ở trạng thái Pending, Reserved, Processing hoặc PendingReconciliation
         var hasActiveWithdrawal = await db.WalletWithdrawals.AsNoTracking().AnyAsync(w =>
-            w.UserId == userId && (w.Status == WalletWithdrawalStatus.Pending || w.Status == WalletWithdrawalStatus.Processing),
+            w.UserId == userId && (w.Status == WalletWithdrawalStatus.Pending
+                || w.Status == WalletWithdrawalStatus.Reserved
+                || w.Status == WalletWithdrawalStatus.Processing
+                || w.Status == WalletWithdrawalStatus.PendingReconciliation),
             cancellationToken);
         if (hasActiveWithdrawal)
         {

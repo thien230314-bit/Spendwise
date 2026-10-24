@@ -14,7 +14,7 @@ public sealed class UnlinkBankConnectionCommandHandler(
     IBankHubGateway gateway,
     IBankHubConfiguration configuration,
     IClock clock,
-    IBankUnlinkSafetyValidator? unlinkSafety = null) : IRequestHandler<UnlinkBankConnectionCommand, BankLinkSessionDto>
+    IBankUnlinkSafetyValidator unlinkSafety) : IRequestHandler<UnlinkBankConnectionCommand, BankLinkSessionDto>
 {
     public async Task<BankLinkSessionDto> Handle(
         UnlinkBankConnectionCommand command,
@@ -29,10 +29,7 @@ public sealed class UnlinkBankConnectionCommandHandler(
             throw new ConflictException("bank_connection_not_active", "Bank connection cannot be unlinked in its current status.");
         }
 
-        if (unlinkSafety is not null)
-        {
-            await unlinkSafety.ValidateCanUnlinkAsync(command.UserId, cancellationToken);
-        }
+        await unlinkSafety.ValidateCanUnlinkAsync(command.UserId, cancellationToken);
 
         if (connection.AccountEnvironment == SePayAccountEnvironment.TestMode)
         {
@@ -44,6 +41,7 @@ public sealed class UnlinkBankConnectionCommandHandler(
             foreach (var aw in activeWallets)
             {
                 aw.Status = SpendWise.Domain.Finance.WalletStatus.Restricted;
+                aw.RestrictionReason = SpendWise.Domain.Finance.WalletRestrictionReason.NoActiveBank;
             }
             var completed = new BankLinkSession
             {

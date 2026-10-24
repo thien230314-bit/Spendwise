@@ -16,6 +16,7 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Wallet>
         b.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Currency).HasMaxLength(3);
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.RestrictionReason).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.AvailableBalance).HasPrecision(Money.Precision, Money.Scale);
         b.Property(x => x.RowVersion).IsRowVersion();
         // SQL Server chỉ cho phép mỗi người dùng có nhiều nhất một ví default.

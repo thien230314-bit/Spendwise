@@ -8631,6 +8631,147 @@
           "id": "871fc1cb-7b8f-5566-8f81-fa13e16a619e"
         },
         {
+          "name": "V1-IMP-10 - 01 - SePay TestMode: Create Wallet Withdrawal [POSTMAN_E2E_PENDING]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Wallet withdrawal created or accepted\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 201, 504]);\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankConnectionId\": \"{{bankConnectionId}}\",\n  \"walletId\": \"{{walletId}}\",\n  \"amount\": 50000,\n  \"securityPin\": \"{{securityPin}}\",\n  \"idempotencyKey\": \"{{$guid}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals"
+              ]
+            }
+          },
+          "response": [],
+          "id": "9e31d486-4b54-40d8-9173-22b08d3a4724"
+        },
+        {
+          "name": "V1-IMP-10 - 02 - SePay TestMode: List Wallet Withdrawals [POSTMAN_E2E_PENDING]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Wallet withdrawals list retrieved (200 OK)\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Returns array of withdrawals\", function () {\n    var list = pm.response.json();\n    pm.expect(list).to.be.an(\"array\");\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals"
+              ]
+            }
+          },
+          "response": [],
+          "id": "f393760c-880c-4ac2-baa6-d8ea89bda8c3"
+        },
+        {
+          "name": "V1-IMP-10 - 03 - SePay TestMode: Get Wallet Withdrawal By Id [POSTMAN_E2E_PENDING]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
+                  "pm.test(\"Wallet withdrawal retrieved (200 OK)\", function () {\n    pm.response.to.have.status(200);\n});",
+                  "} else {",
+                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}",
+                "type": "text"
+              }
+            ],
+            "body": null,
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals/{{walletWithdrawalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals",
+                "{{walletWithdrawalId}}"
+              ]
+            }
+          },
+          "response": [],
+          "id": "02c60a91-29de-4785-a787-81c480519623"
+        },
+        {
           "name": "V1-IMP-09 - 04 - SePay TestMode: List Linked Accounts",
           "event": [
             {

@@ -32,7 +32,7 @@ public sealed class TransferBetweenWalletsCommandHandler(
     IOperationPolicy policy,
 
     FinancialSecurityGuard security,
-    IActiveBankGuard? activeBankGuard = null) : IRequestHandler<TransferBetweenWalletsCommand, TransferDto>
+    IActiveBankGuard activeBankGuard) : IRequestHandler<TransferBetweenWalletsCommand, TransferDto>
 
 {
 
@@ -52,7 +52,7 @@ public sealed class TransferBetweenWalletsCommandHandler(
 
 
 
-        if (activeBankGuard is not null) await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
+        await activeBankGuard.EnsureActiveBankAsync(command.UserId, cancellationToken);
         await security.VerifyAsync(command.UserId, command.Request.SecurityPin, cancellationToken);
 
         // Chuyển giữa hai ví cá nhân không phải thu nhập hoặc chi tiêu.

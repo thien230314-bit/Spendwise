@@ -800,6 +800,21 @@ public static class WalletWithdrawalHelpers
             "TRANSFER_OUT_SUCCESS"
         };
 
+        // Strict verification: BankIntegrationEvent must have matching transaction ID,
+        // matching external bank account, terminal processed status, valid outflow event type,
+        // and must be correlated with an authentic BankTransaction matching exact amount and Debit direction (or verified payload amount).
+        var hasMatchingBankTx = await db.BankTransactions.AsNoTracking().AnyAsync(
+            bt => bt.ExternalTransactionId == providerTxId
+                && bt.Direction == BankTransactionDirection.Debit
+                && bt.Amount == expectedAmount,
+            cancellationToken);
+
+        if (!hasMatchingBankTx)
+        {
+            // If BankTransaction is not recorded or amount does not match, BankIntegrationEvent alone is insufficient proof of amount settlement.
+            return false;
+        }
+
         return await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
             e => e.ExternalTransactionId == providerTxId
                 && e.ExternalBankAccountId == expectedExternalBankAccountId
@@ -844,22 +859,47 @@ public static class WalletWithdrawalHelpers
 
                         if (!success && isTerminalFailure)
                         {
-                            // Validate correlation if fields exist in the provider payload
                             var txId = GetJsonPropString(root, "providerTransactionId", "transaction_id", "transactionId", "referenceNumber", "id");
                             var extAcc = GetJsonPropString(root, "externalBankAccountId", "accountNumber", "bankAccount");
-                            var amtMatches = true;
-                            if (root.TryGetProperty("amount", out var amtProp) && amtProp.ValueKind == JsonValueKind.Number && expectedAmount > 0)
-                            {
-                                amtMatches = (amtProp.GetDecimal() == expectedAmount);
-                            }
+                            var hasAmount = root.TryGetProperty("amount", out var amtProp) && amtProp.ValueKind == JsonValueKind.Number;
 
-                            var txMatches = string.IsNullOrWhiteSpace(txId) || string.IsNullOrWhiteSpace(providerTxId) || string.Equals(txId, providerTxId, StringComparison.OrdinalIgnoreCase);
-                            var accMatches = string.IsNullOrWhiteSpace(extAcc) || string.IsNullOrWhiteSpace(externalBankAccountId) || string.Equals(extAcc, externalBankAccountId, StringComparison.OrdinalIgnoreCase);
+                            // FAIL-CLOSED VALIDATION:
+                            // Case A: Pre-execution rejection by provider before a transaction is created:
+                            // Provenance is guaranteed when the response belongs to this exact withdrawal reference/request
+                            // and the provider terminal error code specifically confirms rejection before execution (e.g. ACCOUNT_INVALID, INSUFFICIENT_FUNDS).
+                            // In this case, amount and account must match if present, and transaction ID may be absent.
+                            // But if amount or account is missing, we require an explicit trusted request correlation (e.g. matching ReferenceNumber or non-empty Account).
+                            
+                            // Case B: Post-creation failure: transaction ID is present.
+                            // In both cases: NEVER assume missing fields match!
+                            // If amount is present: it MUST match expectedAmount exactly.
+                            // If externalBankAccountId is present: it MUST match externalBankAccountId exactly.
+                            // If txId is present: it MUST match providerTxId exactly.
+                            
+                            bool amtMatches = hasAmount && (amtProp.GetDecimal() == expectedAmount);
+                            bool accMatches = !string.IsNullOrWhiteSpace(extAcc) && !string.IsNullOrWhiteSpace(externalBankAccountId) && string.Equals(extAcc, externalBankAccountId, StringComparison.OrdinalIgnoreCase);
+                            bool txMatches = !string.IsNullOrWhiteSpace(txId) && !string.IsNullOrWhiteSpace(providerTxId) && string.Equals(txId, providerTxId, StringComparison.OrdinalIgnoreCase);
 
-                            if (amtMatches && txMatches && accMatches)
+                            // Strict Acceptance Criteria:
+                            // Category B (Post-creation terminal failure): When transaction ID exists (either in payload or on withdrawal),
+                            // it MUST match providerTxId, and account + amount must match!
+                            var effectiveTxId = !string.IsNullOrWhiteSpace(providerTxId) ? providerTxId : txId;
+                            var txIdMatches = !string.IsNullOrWhiteSpace(txId) && !string.IsNullOrWhiteSpace(effectiveTxId) && string.Equals(txId, effectiveTxId, StringComparison.OrdinalIgnoreCase);
+
+                            if (txIdMatches && accMatches && amtMatches)
                             {
                                 return (true, $"Provider gateway rejection: {errorCode ?? status}");
                             }
+
+                            // Category A (Pre-creation rejection): Transaction ID does not exist yet (txId is null/empty AND providerTxId is null/empty),
+                            // but response carries trusted provenance matching both Account AND Amount for this withdrawal:
+                            if (string.IsNullOrWhiteSpace(txId) && string.IsNullOrWhiteSpace(providerTxId) && accMatches && amtMatches)
+                            {
+                                return (true, $"Provider pre-execution gateway rejection: {errorCode ?? status}");
+                            }
+
+                            // Any missing field (e.g. missing amount, missing account, or mismatched transaction ID)
+                            // MUST FAIL-CLOSED. We do NOT allow "missing = match".
                         }
                     }
                 }

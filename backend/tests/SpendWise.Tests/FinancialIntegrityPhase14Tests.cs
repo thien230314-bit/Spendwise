@@ -247,6 +247,20 @@ public sealed class FinancialIntegrityPhase14Tests
         f.Db.WalletWithdrawals.Add(withdrawal);
 
         // Processed bank integration event exists
+        f.Db.BankTransactions.Add(new BankTransaction
+        {
+            UserId = user.Id,
+            BankConnectionId = bankConn.Id,
+            Provider = BankProvider.SePayBankHub,
+            ExternalTransactionId = provTxId,
+            Direction = BankTransactionDirection.Debit,
+            Amount = 50000m,
+            Currency = "VND",
+            TransactionDate = f.Clock.UtcNow,
+            Content = "WD_TEST_EVENT",
+            ImportedAt = f.Clock.UtcNow
+        });
+
         f.Db.BankIntegrationEvents.Add(new BankIntegrationEvent
         {
             Provider = BankProvider.SePayBankHub,
@@ -1253,6 +1267,7 @@ public sealed class FinancialIntegrityPhase14Tests
         // Find the distinct FinancialTransactions created for res1 and res2
         var finTx1 = await f.Db.FinancialTransactions.SingleAsync(ft => ft.RelatedBusinessId == res1.Id);
         var finTx2 = await f.Db.FinancialTransactions.SingleAsync(ft => ft.RelatedBusinessId == res2.Id);
+        Assert.NotEqual(finTx1.Id, finTx2.Id);
         Assert.NotEqual(finTx1.LedgerTransactionId, finTx2.LedgerTransactionId);
 
         // Member reports ONLY Expense 2
@@ -1265,5 +1280,250 @@ public sealed class FinancialIntegrityPhase14Tests
         Assert.Contains(res2.Id.ToString(), supportCase.Description);
         Assert.Contains(finTx2.LedgerTransactionId.ToString(), supportCase.Description);
         Assert.DoesNotContain(finTx1.LedgerTransactionId.ToString(), supportCase.Description);
+    }
+
+    [Fact]
+    public async Task T13_FailureResponse_MissingAmount_FailsClosed_HoldPreserved()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var user = await f.AddUserAsync("T13User");
+        var wallet = await f.AddWalletAsync(user.Id, "T13Wallet", true, balance: 100000);
+        var bankConn = await f.Db.BankConnections.FirstAsync(b => b.UserId == user.Id);
+        var walletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id);
+        var holdAccount = await WalletWithdrawalHelpers.GetOrCreateReservationHoldAccountAsync(f.Db, CancellationToken.None);
+
+        var ledgerService = new LedgerService(f.Db, f.Clock);
+        var holdPosting = await ledgerService.PostAsync(
+            walletLedger.Id,
+            holdAccount.Id,
+            50000m,
+            "VND",
+            "WithdrawalReservation",
+            wallet.Id,
+            "wd-hold:t13",
+            "wd-hold:t13",
+            "Hold for withdrawal",
+            CancellationToken.None);
+
+        var txId = "tx_t13_no_amt";
+        var withdrawal = new WalletWithdrawal
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BankConnectionId = bankConn.Id,
+            WalletId = wallet.Id,
+            Amount = 50000m,
+            Currency = "VND",
+            Status = WalletWithdrawalStatus.PendingReconciliation,
+            Reference = "WD_TEST_T13",
+            IdempotencyKey = "wd_key_t13",
+            ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
+            // Failure response has errorCode and account, but is MISSING amount!
+            ProviderResponseData = $"{{\"providerTransactionId\":\"{txId}\",\"externalBankAccountId\":\"{bankConn.ExternalAccountId}\",\"providerStatus\":\"REJECTED\",\"errorCode\":\"ACCOUNT_INVALID\",\"success\":false,\"isTimeoutOrUnknown\":false}}",
+            CreatedAt = f.Clock.UtcNow
+        };
+        f.Db.WalletWithdrawals.Add(withdrawal);
+        await f.Db.SaveChangesAsync();
+
+        var handler = new ReconcileWalletWithdrawalCommandHandler(f.Db, ledgerService, f.Clock);
+        var cmd = new ReconcileWalletWithdrawalCommand(
+            WithdrawalId: withdrawal.Id,
+            Action: WithdrawalReconciliationAction.ReleaseFailure,
+            ProviderTransactionId: txId);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(cmd, CancellationToken.None));
+        Assert.Equal("unverified_provider_failure_evidence", ex.Code);
+
+        // Verification: Hold preserved, wallet balance NOT released
+        f.Db.ChangeTracker.Clear();
+        var freshWd = await f.Db.WalletWithdrawals.SingleAsync(w => w.Id == withdrawal.Id);
+        Assert.Equal(WalletWithdrawalStatus.PendingReconciliation, freshWd.Status);
+        var freshWalletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == walletLedger.Id);
+        Assert.Equal(50000m, freshWalletLedger.Balance);
+    }
+
+    [Fact]
+    public async Task T14_FailureResponse_MissingAccount_FailsClosed_HoldPreserved()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var user = await f.AddUserAsync("T14User");
+        var wallet = await f.AddWalletAsync(user.Id, "T14Wallet", true, balance: 100000);
+        var bankConn = await f.Db.BankConnections.FirstAsync(b => b.UserId == user.Id);
+        var walletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id);
+        var holdAccount = await WalletWithdrawalHelpers.GetOrCreateReservationHoldAccountAsync(f.Db, CancellationToken.None);
+
+        var ledgerService = new LedgerService(f.Db, f.Clock);
+        var holdPosting = await ledgerService.PostAsync(
+            walletLedger.Id,
+            holdAccount.Id,
+            50000m,
+            "VND",
+            "WithdrawalReservation",
+            wallet.Id,
+            "wd-hold:t14",
+            "wd-hold:t14",
+            "Hold for withdrawal",
+            CancellationToken.None);
+
+        var txId = "tx_t14_no_acc";
+        var withdrawal = new WalletWithdrawal
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BankConnectionId = bankConn.Id,
+            WalletId = wallet.Id,
+            Amount = 50000m,
+            Currency = "VND",
+            Status = WalletWithdrawalStatus.PendingReconciliation,
+            Reference = "WD_TEST_T14",
+            IdempotencyKey = "wd_key_t14",
+            ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
+            // Failure response has amount and errorCode, but is MISSING account!
+            ProviderResponseData = $"{{\"providerTransactionId\":\"{txId}\",\"amount\":50000,\"providerStatus\":\"REJECTED\",\"errorCode\":\"ACCOUNT_INVALID\",\"success\":false,\"isTimeoutOrUnknown\":false}}",
+            CreatedAt = f.Clock.UtcNow
+        };
+        f.Db.WalletWithdrawals.Add(withdrawal);
+        await f.Db.SaveChangesAsync();
+
+        var handler = new ReconcileWalletWithdrawalCommandHandler(f.Db, ledgerService, f.Clock);
+        var cmd = new ReconcileWalletWithdrawalCommand(
+            WithdrawalId: withdrawal.Id,
+            Action: WithdrawalReconciliationAction.ReleaseFailure,
+            ProviderTransactionId: txId);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(cmd, CancellationToken.None));
+        Assert.Equal("unverified_provider_failure_evidence", ex.Code);
+
+        // Verification: Hold preserved, wallet balance NOT released
+        f.Db.ChangeTracker.Clear();
+        var freshWd = await f.Db.WalletWithdrawals.SingleAsync(w => w.Id == withdrawal.Id);
+        Assert.Equal(WalletWithdrawalStatus.PendingReconciliation, freshWd.Status);
+        var freshWalletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == walletLedger.Id);
+        Assert.Equal(50000m, freshWalletLedger.Balance);
+    }
+
+    [Fact]
+    public async Task T15_PreExecutionRejection_WithValidProvenance_ReleasesHold_ExactlyOnce()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var user = await f.AddUserAsync("T15User");
+        var wallet = await f.AddWalletAsync(user.Id, "T15Wallet", true, balance: 100000);
+        var bankConn = await f.Db.BankConnections.FirstAsync(b => b.UserId == user.Id);
+        var walletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id);
+        var holdAccount = await WalletWithdrawalHelpers.GetOrCreateReservationHoldAccountAsync(f.Db, CancellationToken.None);
+
+        var ledgerService = new LedgerService(f.Db, f.Clock);
+        var holdPosting = await ledgerService.PostAsync(
+            walletLedger.Id,
+            holdAccount.Id,
+            50000m,
+            "VND",
+            "WithdrawalReservation",
+            wallet.Id,
+            "wd-hold:t15",
+            "wd-hold:t15",
+            "Hold for withdrawal",
+            CancellationToken.None);
+
+        // Pre-execution rejection: No provider transaction ID was ever generated,
+        // but response contains authentic error code, matching account, and matching amount.
+        var withdrawal = new WalletWithdrawal
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BankConnectionId = bankConn.Id,
+            WalletId = wallet.Id,
+            Amount = 50000m,
+            Currency = "VND",
+            Status = WalletWithdrawalStatus.PendingReconciliation,
+            Reference = "WD_TEST_T15",
+            IdempotencyKey = "wd_key_t15",
+            ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
+            ProviderTransactionId = null,
+            ProviderResponseData = $"{{\"amount\":50000,\"externalBankAccountId\":\"{bankConn.ExternalAccountId}\",\"providerStatus\":\"REJECTED\",\"errorCode\":\"BENEFICIARY_BANK_UNAVAILABLE\",\"success\":false,\"isTimeoutOrUnknown\":false}}",
+            CreatedAt = f.Clock.UtcNow
+        };
+        f.Db.WalletWithdrawals.Add(withdrawal);
+        await f.Db.SaveChangesAsync();
+
+        var handler = new ReconcileWalletWithdrawalCommandHandler(f.Db, ledgerService, f.Clock);
+        var cmd = new ReconcileWalletWithdrawalCommand(
+            WithdrawalId: withdrawal.Id,
+            Action: WithdrawalReconciliationAction.ReleaseFailure,
+            Reason: "Pre-execution provider rejection");
+
+        var res = await handler.Handle(cmd, CancellationToken.None);
+        Assert.Equal("Failed", res.Status);
+
+        // Verification: Hold released back to wallet
+        f.Db.ChangeTracker.Clear();
+        var freshWd = await f.Db.WalletWithdrawals.SingleAsync(w => w.Id == withdrawal.Id);
+        Assert.Equal(WalletWithdrawalStatus.Failed, freshWd.Status);
+        var freshWalletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == walletLedger.Id);
+        Assert.Equal(100000m, freshWalletLedger.Balance);
+    }
+
+    [Fact]
+    public async Task T16_SuccessEvent_MissingMatchingBankTransactionAmount_DoesNotFinalize()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var user = await f.AddUserAsync("T16User");
+        var wallet = await f.AddWalletAsync(user.Id, "T16Wallet", true, balance: 100000);
+        var bankConn = await f.Db.BankConnections.FirstAsync(b => b.UserId == user.Id);
+        var walletLedger = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id);
+        var holdAccount = await WalletWithdrawalHelpers.GetOrCreateReservationHoldAccountAsync(f.Db, CancellationToken.None);
+
+        var ledgerService = new LedgerService(f.Db, f.Clock);
+        var holdPosting = await ledgerService.PostAsync(
+            walletLedger.Id,
+            holdAccount.Id,
+            50000m,
+            "VND",
+            "WithdrawalReservation",
+            wallet.Id,
+            "wd-hold:t16",
+            "wd-hold:t16",
+            "Hold for withdrawal",
+            CancellationToken.None);
+
+        var txId = "tx_t16_no_bank_tx";
+        var withdrawal = new WalletWithdrawal
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BankConnectionId = bankConn.Id,
+            WalletId = wallet.Id,
+            Amount = 50000m,
+            Currency = "VND",
+            Status = WalletWithdrawalStatus.PendingReconciliation,
+            Reference = "WD_TEST_T16",
+            IdempotencyKey = "wd_key_t16",
+            ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
+            ProviderResponseData = null,
+            CreatedAt = f.Clock.UtcNow
+        };
+        f.Db.WalletWithdrawals.Add(withdrawal);
+
+        // BankIntegrationEvent is Processed with OUTFLOW_CONFIRMED,
+        // BUT no corresponding authentic BankTransaction exists to prove actual debit settlement amount!
+        f.Db.BankIntegrationEvents.Add(new BankIntegrationEvent
+        {
+            Provider = BankProvider.SePayBankHub,
+            ExternalEventId = "evt_t16_no_bt",
+            ExternalTransactionId = txId,
+            ExternalBankAccountId = bankConn.ExternalAccountId,
+            EventType = "OUTFLOW_CONFIRMED",
+            ProcessingStatus = BankIntegrationEventStatus.Processed
+        });
+        await f.Db.SaveChangesAsync();
+
+        var handler = new ReconcileWalletWithdrawalCommandHandler(f.Db, ledgerService, f.Clock);
+        var cmd = new ReconcileWalletWithdrawalCommand(
+            WithdrawalId: withdrawal.Id,
+            Action: WithdrawalReconciliationAction.FinalizeSuccess,
+            ProviderTransactionId: txId);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(cmd, CancellationToken.None));
+        Assert.Equal("unverified_provider_evidence", ex.Code);
     }
 }

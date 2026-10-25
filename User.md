@@ -729,3 +729,28 @@ Triển khai bộ API cho phép người dùng rút tiền từ ví SpendWise v�
   - `GET /api/bank-connections/test-mode/wallet-withdrawals`: Danh sách lịch sử các lần rút tiền của người dùng.
   - `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}`: Tra cứu chi tiết một lần rút tiền theo ID kèm metadata đối soát.
   - `POST /api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile`: Thực hiện đối soát (FinalizeSuccess / ReleaseFailure).
+
+
+### 5. Nghiệm thu Đóng Lỗi Kỹ thuật Phase 1.5 (Final Corrective Closure & Pre-E2E Acceptance)
+Triển khai và kiểm chứng đầy đủ 5 yêu cầu kỹ thuật trọng yếu của Product Owner trước khi chuyển sang Phase 2 E2E:
+1. **P0-01 (Xác thực nguồn gốc bằng chứng đối soát thành công - Reconciliation Evidence Provenance)**:
+   - Loại bỏ hoàn toàn kiểm tra substring lỏng lẻo `string.Contains` và loại bỏ việc tin tưởng mù quáng `ProcessingStatus == Processed`.
+   - Bằng chứng đối soát thành công bắt buộc phải xác thực có cấu trúc (Option A: Parse JSON `ProviderResponseData` kiểm tra `transaction_id`, trạng thái thành công, số tiền và tài khoản; Option B: Khớp `BankIntegrationEvent` với EventType thanh toán ra dứt khoát như `OUTFLOW_CONFIRMED`, `OUTFLOW_SETTLED`, `PAYOUT_SUCCESSFUL`).
+   - Nếu không có bằng chứng, giữ nguyên `PendingReconciliation` và ném `ConflictException("unverified_provider_evidence")` kèm mã `WITHDRAWAL_PROVIDER_SETTLEMENT_EVIDENCE_UNAVAILABLE`.
+2. **P0-02 (Ràng buộc bằng chứng thất bại dứt khoát khi ReleaseFailure)**:
+   - Không cho phép giải tỏa tiền tạm giữ chỉ dựa trên lý do chủ quan của caller.
+   - Bắt buộc phải có bằng chứng thất bại dứt khoát (Definitive Failure Evidence) từ provider (gateway rejection hoặc fail webhook event `OUTFLOW_FAILED`/`OUTFLOW_REJECTED`).
+   - Mọi trạng thái chưa rõ (timeout, pending) đều giữ nguyên `PendingReconciliation`, ném `ConflictException("unverified_provider_failure_evidence")`.
+3. **P0-03 (Liên kết tranh chấp khoản chi đã hoàn thành 1-1 chính xác - Exact Fund Dispute Correlation)**:
+   - Loại bỏ hoàn toàn việc tìm kiếm giao dịch tài chính dựa trên `Amount` và `RelatedBusinessId == fund.Id`.
+   - Mọi khoản chi quỹ Cố định đều liên kết 1-1 thông qua `FundRequest.Id`: `FinancialTransaction.RelatedBusinessId = item.Id` và `LedgerTransaction.BusinessId = item.Id`.
+   - Khi tạo SupportCase khiếu nại, mô tả gắn kết chính xác `LedgerTransactionId` của đúng khoản chi bị khiếu nại; trường hợp legacy không tìm thấy ghi rõ `legacy_transaction_correlation_unresolved`.
+4. **P0-04 (Khớp phiên chính xác webhook vòng đời ngân hàng - Bank Lifecycle Webhook Session Match)**:
+   - Loại bỏ toàn bộ các fallback nguy hiểm (fallback sang active connection, fallback sang connection mới nhất).
+   - Nếu webhook mang Session Token không tồn tại: cách ly ngay với lý do `quarantined_invalid_session`.
+   - Nếu webhook không mang Session Token và tài khoản có nhiều episode lịch sử: cách ly an toàn với lý do `quarantined_unmatched_session_episode` hoặc `quarantined_ambiguous_ownership`.
+5. **P1-01 (Độ phủ 30 quy tắc nghiệp vụ độc lập Quỹ Cố định V2 - F01 đến F30)**:
+   - Toàn bộ 30 quy tắc nghiệp vụ từ F01 đến F30 được kiểm thử độc lập, tường minh trong `FixedFundV2BusinessRuleTests.cs` (30/30 PASS).
+   - Bao quát toàn bộ các bất biến tài chính: Stored vs Effective CanSpend, Catchup contribution, Overspending rejection, Locked excess exclusion, và Free fund isolation.
+   - Toàn bộ 7/7 test SQL Server Real Financial Concurrency trên `SpendWise_E2E_G4` (SQL02) đạt **100% PASS**.
+   - Toàn bộ endpoint liên quan được đánh dấu `[POSTMAN_E2E_PENDING]` và sẵn sàng nghiệm thu E2E tại Phase 2.

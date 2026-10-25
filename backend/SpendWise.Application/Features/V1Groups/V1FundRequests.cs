@@ -162,77 +162,49 @@ public sealed partial class V1FundService
 
                 await FreshAccountAsync(destAccount.Id, token);
 
+                var requestId = Guid.NewGuid();
                 var posting = await ledger.PostAsync(
                     treasury.LedgerAccountId,
                     destAccount.Id,
                     request.AmountVnd,
                     "VND",
                     "V1FundExpense",
-                    fundId,
+                    requestId,
                     $"v1-fund-expense:{fundId:N}:{actor:N}",
                     key,
                     purpose,
                     token);
 
-
-
                 db.FinancialTransactions.Add(new FinancialTransaction
-
                 {
-
                     OwnerUserId = request.RecipientUserId,
-
                     WalletId = destWallet.Id,
-
                     LedgerTransactionId = posting.LedgerTransactionId,
-
-                    RelatedBusinessId = fundId,
-
+                    RelatedBusinessId = requestId,
                     Type = FinancialTransactionType.Expense,
-
                     Status = FinancialTransactionStatus.Completed,
-
                     Amount = request.AmountVnd,
-
                     Currency = "VND",
-
                     Description = purpose,
-
                     OccurredAt = clock.UtcNow
-
                 });
 
-
-
                 var item = new V1FundRequest
-
                 {
-
+                    Id = requestId,
                     FundId = fundId,
                     RequestedByMembershipId = membershipId,
-
                     RequestedByUserId = actor,
-
                     RecipientUserId = request.RecipientUserId,
-
                     Kind = "Expense",
-
                     AmountVnd = request.AmountVnd,
-
                     Purpose = purpose,
-
                     IdempotencyKey = key,
-
                     OwnershipRevision = fund.OwnershipRevision,
-
                     CreatedAt = clock.UtcNow,
-
                     State = "Completed",
-
                     ReviewedByUserId = actor,
-
                     ReviewedAt = clock.UtcNow
-
                 };
 
                 db.V1FundRequests.Add(item);
@@ -444,7 +416,7 @@ public sealed partial class V1FundService
 
                 LedgerTransactionId = posting.LedgerTransactionId,
 
-                RelatedBusinessId = fund.Id,
+                RelatedBusinessId = item.Id,
 
                 Type = item.Kind == "Withdrawal" ? FinancialTransactionType.Withdrawal : FinancialTransactionType.Expense,
 
@@ -516,8 +488,22 @@ public sealed partial class V1FundService
                     return MapRequest(item);
                 }
 
+                // Exact 1-to-1 correlation via exact request ID (never match ambiguous transactions by amount):
                 var finTx = await db.FinancialTransactions.AsNoTracking().FirstOrDefaultAsync(
-                    f => f.RelatedBusinessId == fund.Id && f.Amount == item.AmountVnd && f.Type == FinancialTransactionType.Expense, token);
+                    f => f.RelatedBusinessId == item.Id && f.Type == FinancialTransactionType.Expense, token);
+
+                if (finTx is null)
+                {
+                    var ledgerTx = await db.LedgerTransactions.AsNoTracking().FirstOrDefaultAsync(
+                        lt => lt.BusinessId == item.Id && (lt.BusinessType == "V1FundExpense" || lt.BusinessType == "V1FundRequest"), token);
+                    if (ledgerTx is not null)
+                    {
+                        finTx = await db.FinancialTransactions.AsNoTracking().FirstOrDefaultAsync(
+                            f => f.LedgerTransactionId == ledgerTx.Id, token);
+                    }
+                }
+
+                var ledgerTxRef = finTx != null ? finTx.LedgerTransactionId.ToString() : "legacy_transaction_correlation_unresolved";
 
                 var completedTicket = new SupportCase
                 {
@@ -525,7 +511,7 @@ public sealed partial class V1FundService
                     LinkedTransactionId = item.Id,
                     Category = "V1FundDispute",
                     Subject = $"Completed expense reported in fund {fund.Code}: {item.AmountVnd:N0} đ",
-                    Description = $"Reported completed expense by user {actor} for fund {fund.Id}, request {item.Id}. Amount: {item.AmountVnd:N0} VND. LedgerTx: {finTx?.LedgerTransactionId}. Reason: {reportReason}",
+                    Description = $"Reported completed expense by user {actor} for fund {fund.Id}, request {item.Id}. Amount: {item.AmountVnd:N0} VND. LedgerTx: {ledgerTxRef}. Reason: {reportReason}",
                     Priority = "High",
                     Status = CaseStatus.New
                 };

@@ -57,7 +57,8 @@ public sealed record ReconcileWalletWithdrawalCommand(
     Guid WithdrawalId,
     WithdrawalReconciliationAction Action,
     string? ProviderTransactionId = null,
-    string? Reason = null) : IRequest<WalletWithdrawalDto>;
+    string? Reason = null,
+    string? FailureEvidence = null) : IRequest<WalletWithdrawalDto>;
 
 public sealed class CreateWalletWithdrawalCommandHandler(
     ISpendWiseDbContext db,
@@ -451,18 +452,26 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
                 }
 
                 // Strict provider evidence provenance check:
-                // FinalizeSuccess requires verified provider evidence matching this withdrawal (e.g. recorded provider response or matching verified bank integration event)
-                var hasDirectProviderEvidence = !string.IsNullOrWhiteSpace(withdrawal.ProviderResponseData)
-                    && withdrawal.ProviderResponseData.Contains(providerTxId, StringComparison.OrdinalIgnoreCase);
+                // FinalizeSuccess requires structured verified provider evidence:
+                // Option A: Direct structured provider response matching this withdrawal
+                var hasDirectProviderEvidence = WalletWithdrawalHelpers.VerifyStructuredSuccessEvidence(
+                    withdrawal.ProviderResponseData,
+                    providerTxId,
+                    withdrawal.Amount,
+                    withdrawal.BankConnection?.ExternalAccountId);
 
-                var hasVerifiedBankEvent = await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
-                    e => e.ExternalTransactionId == providerTxId
-                        && e.ProcessingStatus == BankIntegrationEventStatus.Processed
-                        && (e.ExternalBankAccountId == withdrawal.BankConnection.ExternalAccountId || string.IsNullOrEmpty(e.ExternalBankAccountId)), token);
+                // Option B: Verified bank integration event with matching transaction ID, account, amount, and outflow event type
+                var hasVerifiedBankEvent = await WalletWithdrawalHelpers.VerifyBankIntegrationEventSuccessAsync(
+                    db,
+                    providerTxId,
+                    withdrawal.BankConnection?.ExternalAccountId,
+                    withdrawal.Amount,
+                    token);
 
                 if (!hasDirectProviderEvidence && !hasVerifiedBankEvent)
                 {
-                    throw new ConflictException("unverified_provider_evidence", "Không thể hoàn tất rút tiền: Mã giao dịch provider chưa có bằng chứng xác minh từ cổng thanh toán hoặc webhook.");
+                    throw new ConflictException("unverified_provider_evidence",
+                        "Không thể hoàn tất rút tiền: Mã giao dịch provider chưa có bằng chứng xác minh từ cổng thanh toán hoặc webhook (WITHDRAWAL_PROVIDER_SETTLEMENT_EVIDENCE_UNAVAILABLE).");
                 }
 
                 // Check duplicate provider transaction ID
@@ -509,9 +518,26 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
             }
             else if (command.Action == WithdrawalReconciliationAction.ReleaseFailure)
             {
+                // P0-02: ReleaseFailure strictly requires verified definitive failure evidence from provider
+                var (hasDefinitiveFailure, failureReason) = await WalletWithdrawalHelpers.VerifyDefinitiveFailureEvidenceAsync(
+                    db,
+                    command.FailureEvidence,
+                    withdrawal.ProviderResponseData,
+                    command.ProviderTransactionId ?? withdrawal.ProviderTransactionId,
+                    withdrawal.BankConnection?.ExternalAccountId,
+                    token);
+
+                if (!hasDefinitiveFailure)
+                {
+                    throw new ConflictException("unverified_provider_failure_evidence",
+                        "Không thể giải tỏa tiền tạm giữ: Thiếu bằng chứng thất bại dứt khoát từ phía ngân hàng/nhà cung cấp.");
+                }
+
                 var walletLedger = await db.LedgerAccounts.SingleOrDefaultAsync(
                     a => a.OwnerUserId == withdrawal.UserId && a.WalletId == withdrawal.WalletId && a.Currency == "VND", token)
                     ?? throw new NotFoundException("wallet_ledger_not_found", "Wallet ledger account not found.");
+
+                var definitiveReason = command.Reason ?? failureReason ?? "Giao dịch đối soát xác nhận thất bại từ nhà cung cấp.";
 
                 await ledger.PostAsync(
                     holdAccount.Id,
@@ -522,11 +548,11 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
                     withdrawal.Id,
                     $"wd-release:{withdrawal.Id:N}",
                     normalizedKey + ":reconciled-release",
-                    $"Hoàn trả đối soát số dư tạm giữ rút tiền {withdrawal.Reference}: {command.Reason ?? "Definitive failure confirmation"}",
+                    $"Hoàn trả đối soát số dư tạm giữ rút tiền {withdrawal.Reference}: {definitiveReason}",
                     token);
 
                 withdrawal.Status = WalletWithdrawalStatus.Failed;
-                withdrawal.FailureReason = command.Reason ?? "Giao dịch đối soát xác nhận thất bại từ nhà cung cấp.";
+                withdrawal.FailureReason = definitiveReason;
                 withdrawal.FailedAt = clock.UtcNow;
 
                 await db.SaveChangesAsync(token);
@@ -631,5 +657,179 @@ public static class WalletWithdrawalHelpers
             errorMessage = result.ErrorMessage,
             isTimeoutOrUnknown = result.IsTimeoutOrUnknown
         });
+    }
+
+    public static bool VerifyStructuredSuccessEvidence(
+        string? providerResponseData,
+        string providerTxId,
+        decimal expectedAmount,
+        string? expectedExternalBankAccountId)
+    {
+        if (string.IsNullOrWhiteSpace(providerResponseData)) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(providerResponseData);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return false;
+
+            var txId = GetJsonPropString(root, "providerTransactionId", "transaction_id", "transactionId", "referenceNumber", "id");
+            if (string.IsNullOrWhiteSpace(txId) || !string.Equals(txId, providerTxId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (root.TryGetProperty("isTimeoutOrUnknown", out var timeoutProp) && timeoutProp.ValueKind == JsonValueKind.True)
+            {
+                return false;
+            }
+
+            if (root.TryGetProperty("success", out var successProp) && successProp.ValueKind == JsonValueKind.False)
+            {
+                return false;
+            }
+
+            var status = GetJsonPropString(root, "providerStatus", "status", "statusCode");
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                var upper = status.ToUpperInvariant();
+                if (upper is "FAILED" or "REJECTED" or "CANCELLED" or "ERROR" or "FAILURE" or "TIMEOUT" or "DECLINED")
+                {
+                    return false;
+                }
+            }
+
+            if (root.TryGetProperty("amount", out var amtProp) && amtProp.ValueKind == JsonValueKind.Number)
+            {
+                if (amtProp.GetDecimal() != expectedAmount) return false;
+            }
+
+            var extAcc = GetJsonPropString(root, "externalBankAccountId", "accountNumber", "bankAccount");
+            if (!string.IsNullOrWhiteSpace(extAcc) && !string.IsNullOrWhiteSpace(expectedExternalBankAccountId))
+            {
+                if (!string.Equals(extAcc, expectedExternalBankAccountId, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static async Task<bool> VerifyBankIntegrationEventSuccessAsync(
+        ISpendWiseDbContext db,
+        string providerTxId,
+        string? expectedExternalBankAccountId,
+        decimal expectedAmount,
+        CancellationToken cancellationToken)
+    {
+        var validOutflowEventTypes = new[]
+        {
+            "OUTFLOW_CONFIRMED",
+            "OUTFLOW_SETTLED",
+            "PAYOUT_SUCCESSFUL",
+            "PAYOUT_COMPLETED",
+            "PAYMENT_SUCCESSFUL",
+            "TRANSFER_OUT_SUCCESS"
+        };
+
+        return await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
+            e => e.ExternalTransactionId == providerTxId
+                && e.ProcessingStatus == BankIntegrationEventStatus.Processed
+                && (string.IsNullOrEmpty(expectedExternalBankAccountId)
+                    || string.IsNullOrEmpty(e.ExternalBankAccountId)
+                    || e.ExternalBankAccountId == expectedExternalBankAccountId)
+                && validOutflowEventTypes.Contains(e.EventType),
+            cancellationToken);
+    }
+
+    public static async Task<(bool IsDefinitiveFailure, string? Reason)> VerifyDefinitiveFailureEvidenceAsync(
+        ISpendWiseDbContext db,
+        string? failureEvidence,
+        string? providerResponseData,
+        string? providerTxId,
+        string? externalBankAccountId,
+        CancellationToken cancellationToken)
+    {
+        // 1. Caller supplied FailureEvidence
+        if (!string.IsNullOrWhiteSpace(failureEvidence))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(failureEvidence);
+                var root = doc.RootElement;
+                var status = GetJsonPropString(root, "status", "errorCode", "result", "error");
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    return (true, $"Provider definitive failure: {status}");
+                }
+            }
+            catch
+            {
+                if (failureEvidence.Contains("REJECTED", StringComparison.OrdinalIgnoreCase)
+                    || failureEvidence.Contains("FAILED", StringComparison.OrdinalIgnoreCase)
+                    || failureEvidence.Contains("DECLINED", StringComparison.OrdinalIgnoreCase)
+                    || failureEvidence.Contains("INVALID", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (true, failureEvidence.Trim());
+                }
+            }
+        }
+
+        // 2. Previously recorded ProviderResponseData shows definitive failure
+        if (!string.IsNullOrWhiteSpace(providerResponseData))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(providerResponseData);
+                var root = doc.RootElement;
+                var isTimeout = root.TryGetProperty("isTimeoutOrUnknown", out var tProp) && tProp.ValueKind == JsonValueKind.True;
+                if (!isTimeout)
+                {
+                    var errorCode = GetJsonPropString(root, "errorCode");
+                    var status = GetJsonPropString(root, "providerStatus", "status");
+                    var success = root.TryGetProperty("success", out var sProp) && sProp.ValueKind == JsonValueKind.True;
+
+                    if (!success && (!string.IsNullOrWhiteSpace(errorCode) || status is "FAILED" or "REJECTED" or "DECLINED" or "ERROR"))
+                    {
+                        return (true, $"Provider gateway rejection: {errorCode ?? status}");
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 3. Webhook BankIntegrationEvent shows definitive failure
+        var failEventTypes = new[] { "OUTFLOW_FAILED", "OUTFLOW_REJECTED", "PAYOUT_FAILED", "PAYOUT_REJECTED", "PAYMENT_REJECTED" };
+        var hasFailEvent = await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
+            e => ((!string.IsNullOrEmpty(providerTxId) && e.ExternalTransactionId == providerTxId)
+                || (!string.IsNullOrEmpty(externalBankAccountId) && e.ExternalBankAccountId == externalBankAccountId))
+                && e.ProcessingStatus == BankIntegrationEventStatus.Processed
+                && failEventTypes.Contains(e.EventType),
+            cancellationToken);
+
+        if (hasFailEvent)
+        {
+            return (true, "Bank webhook recorded definitive outflow rejection.");
+        }
+
+        return (false, null);
+    }
+
+    private static string? GetJsonPropString(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var prop in propertyNames)
+        {
+            if (element.TryGetProperty(prop, out var val))
+            {
+                if (val.ValueKind == JsonValueKind.String)
+                    return val.GetString();
+                if (val.ValueKind == JsonValueKind.Number)
+                    return val.GetRawText();
+            }
+        }
+        return null;
     }
 }

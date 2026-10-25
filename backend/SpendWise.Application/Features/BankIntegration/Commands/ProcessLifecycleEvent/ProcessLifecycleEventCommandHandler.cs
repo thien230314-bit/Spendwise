@@ -279,7 +279,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
             return;
         }
 
-        var linkTokenXid = MetadataString(metadata, "link_token_xid");
+        var linkTokenXid = MetadataString(metadata, "link_token_xid", "session_id", "sessionId", "token");
         BankLinkSession? session = null;
         if (!string.IsNullOrWhiteSpace(linkTokenXid))
         {
@@ -287,9 +287,15 @@ public sealed class ProcessLifecycleEventCommandHandler(
                 item => item.Provider == BankProvider.SePayBankHub
                     && item.ExternalLinkTokenXid == linkTokenXid,
                 cancellationToken);
-        }
 
-        var activeConnection = matchingConnections.SingleOrDefault(item => item.Status == BankConnectionStatus.Active);
+            if (session is null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Quarantined;
+                integrationEvent.FailureCode = "quarantined_invalid_session";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+        }
 
         BankConnection? targetConnection = null;
         if (session is not null)
@@ -298,7 +304,14 @@ public sealed class ProcessLifecycleEventCommandHandler(
             {
                 targetConnection = matchingConnections.SingleOrDefault(item => item.Id == session.BankConnectionId.Value);
             }
-            targetConnection ??= matchingConnections.SingleOrDefault(item => item.UserId == session.UserId);
+            else
+            {
+                var userMatches = matchingConnections.Where(item => item.UserId == session.UserId).ToList();
+                if (userMatches.Count == 1)
+                {
+                    targetConnection = userMatches[0];
+                }
+            }
 
             if (targetConnection is null)
             {
@@ -331,9 +344,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
                 return;
             }
 
-            targetConnection = activeConnection ?? matchingConnections
-                .OrderByDescending(c => c.LinkedAt ?? c.CreatedAt)
-                .FirstOrDefault();
+            targetConnection = matchingConnections[0];
         }
 
         if (status is BankConnectionStatus.Unlinked or BankConnectionStatus.Inactive)

@@ -294,7 +294,12 @@ public sealed class ProcessLifecycleEventCommandHandler(
         BankConnection? targetConnection = null;
         if (session is not null)
         {
-            targetConnection = matchingConnections.SingleOrDefault(item => item.UserId == session.UserId);
+            if (session.BankConnectionId.HasValue)
+            {
+                targetConnection = matchingConnections.SingleOrDefault(item => item.Id == session.BankConnectionId.Value);
+            }
+            targetConnection ??= matchingConnections.SingleOrDefault(item => item.UserId == session.UserId);
+
             if (targetConnection is null)
             {
                 integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
@@ -312,6 +317,16 @@ public sealed class ProcessLifecycleEventCommandHandler(
                 // Ambiguous ownership! Quarantine event to protect active connection and financial safety.
                 integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Quarantined;
                 integrationEvent.FailureCode = "quarantined_ambiguous_ownership";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            // Same user has multiple connection episodes without session correlation
+            // To prevent a delayed webhook from an older episode from mutating the newer active episode:
+            if (matchingConnections.Count > 1)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Quarantined;
+                integrationEvent.FailureCode = "quarantined_unmatched_session_episode";
                 integrationEvent.ProcessedAt = clock.UtcNow;
                 return;
             }

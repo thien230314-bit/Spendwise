@@ -231,7 +231,7 @@ Nhóm góp cố định được thiết kế cho các hoạt động có mục 
 - `GET /api/v1/funds/{id}/contributions` — Lấy lịch sử các khoản đóng góp của quỹ.
 - `PUT /api/v1/funds/{id}/members/{userId}/spending-permission` — Chủ quỹ bật/tắt quyền `CanSpend` (ON/OFF) cho thành viên.
 - `POST /api/v1/funds/{id}/requests` — Thực hiện chi tiền từ quỹ (chi trực tiếp hoặc tạo request).
-- `POST /api/v1/funds/requests/{id}/report` — Thành viên báo cáo khoản chi lớn trong giai đoạn Pending24h.
+- POST /api/v1/funds/requests/{id}/report — Thành viên báo cáo khoản chi: hỗ trợ cả báo cáo khoản chi đã hoàn tất (Completed) tạo SupportCase (V1FundDispute, status New) không đảo ngược tiền, lẫn báo cáo khiếu nại khoản chi tạm hoãn (Pending24h/Suspended).
 - `POST /api/v1/funds/requests/{id}/cancel` — Hủy bỏ khoản chi đang chờ hoặc đang bị tạm dừng.
 
 ---

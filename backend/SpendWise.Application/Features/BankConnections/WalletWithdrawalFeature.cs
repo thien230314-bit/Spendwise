@@ -450,6 +450,21 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
                     throw new ConflictException("missing_provider_evidence", "Cannot finalize withdrawal without valid provider transaction ID.");
                 }
 
+                // Strict provider evidence provenance check:
+                // FinalizeSuccess requires verified provider evidence matching this withdrawal (e.g. recorded provider response or matching verified bank integration event)
+                var hasDirectProviderEvidence = !string.IsNullOrWhiteSpace(withdrawal.ProviderResponseData)
+                    && withdrawal.ProviderResponseData.Contains(providerTxId, StringComparison.OrdinalIgnoreCase);
+
+                var hasVerifiedBankEvent = await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
+                    e => e.ExternalTransactionId == providerTxId
+                        && e.ProcessingStatus == BankIntegrationEventStatus.Processed
+                        && (e.ExternalBankAccountId == withdrawal.BankConnection.ExternalAccountId || string.IsNullOrEmpty(e.ExternalBankAccountId)), token);
+
+                if (!hasDirectProviderEvidence && !hasVerifiedBankEvent)
+                {
+                    throw new ConflictException("unverified_provider_evidence", "Không thể hoàn tất rút tiền: Mã giao dịch provider chưa có bằng chứng xác minh từ cổng thanh toán hoặc webhook.");
+                }
+
                 // Check duplicate provider transaction ID
                 var isDuplicateTxId = await db.WalletWithdrawals.AnyAsync(
                     w => w.ProviderTransactionId == providerTxId && w.Id != withdrawal.Id, token);

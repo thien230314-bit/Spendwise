@@ -561,6 +561,9 @@ public sealed class SqlServerRealFinancialConcurrencyTests
 
         wallet.AvailableBalance -= amount;
 
+        var barrier = new Barrier(2);
+        var providerTxId = $"tx_prov_{runId}";
+
         var withdrawal = new WalletWithdrawal
         {
             Id = Guid.NewGuid(),
@@ -573,13 +576,11 @@ public sealed class SqlServerRealFinancialConcurrencyTests
             Reference = $"WD{runId}",
             IdempotencyKey = $"c06_reconcile_{runId}",
             ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
+            ProviderResponseData = $"{{\"transaction_id\":\"{providerTxId}\"}}",
             CreatedAt = clock.UtcNow
         };
         seedDb.WalletWithdrawals.Add(withdrawal);
         await seedDb.SaveChangesAsync();
-
-        var barrier = new Barrier(2);
-        var providerTxId = $"tx_prov_{runId}";
 
         async Task<(int WorkerId, bool Success, string Status)> ReconcileAsync(int workerId)
         {

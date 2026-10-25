@@ -1,5 +1,11 @@
 
 > [!IMPORTANT]
+> **CẬP NHẬT CHÍNH THỨC PHASE 1.4 — FINANCIAL INTEGRITY & FIXED FUND V2 CLOSURE (PO DECISION)**
+> 1. Số dư khả dụng chi tiêu Quỹ Cố định (Fixed Spendable Balance) tính toán độc lập và tuyệt đối loại trừ Locked Excess (LockedExcessVnd từ đóng góp vượt mức sau khi điều chỉnh nghĩa vụ) cùng các khoản hold đang chờ xử lý (account.Balance - LockedExcess - holds).
+> 2. Báo cáo chi tiêu Quỹ Cố định đã hoàn tất (Completed expense): Thành viên có quyền báo cáo khi phát hiện bất thường qua endpoint POST /api/v1/funds/requests/{id}/report. Hệ thống ghi nhận tạo SupportCase (V1FundDispute, status New) để Admin điều tra, nhưng TUYỆT ĐỐI KHÔNG tự động đảo ngược tiền (no auto-clawback/reversal) và KHÔNG thay đổi trạng thái tài chính của khoản chi đã hoàn tất.
+> 3. Đối soát rút tiền về ngân hàng (ReconcileWalletWithdrawal - FinalizeSuccess): Bắt buộc phải có bằng chứng từ cổng thanh toán/ngân hàng (qua ProviderResponseData ghi nhận lúc khởi tạo giao dịch hoặc BankIntegrationEvent trạng thái Processed khớp mã giao dịch). Nghiêm cấm nhận ProviderTransactionId tự do không có đối chiếu (unverified_provider_evidence).
+> 4. An toàn webhook vòng đời liên kết ngân hàng (ProcessLifecycleEvent): Khi một người dùng có nhiều giai đoạn liên kết (BankConnection episodes) cho cùng một tài khoản ngân hàng bên ngoài nhưng webhook trễ không kèm session correlation ID, hệ thống tự động cách ly (Quarantined với failure code quarantined_unmatched_session_episode), bảo vệ liên kết Active hiện hành và trạng thái ví của người dùng.
+>
 > **CẬP NHẬT CHÍNH THỨC PHASE 1.3 — FIXED FUND V2 BUSINESS RULES (PO DECISION)**
 > 1. Bãi bỏ hoàn toàn ngưỡng 20% và trạng thái Pending24h / 24h cooloff hold đối với chi tiêu Quỹ Cố định.
 > 2. Owner chỉ có thể cấp quyền CanSpend = true cho thành viên đã hoàn thành 100% nghĩa vụ đóng góp cá nhân (RequiredVnd).

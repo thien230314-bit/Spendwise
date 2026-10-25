@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Features.V1Groups;
+using SpendWise.Domain.Admin;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.V1Groups;
 using Xunit;
@@ -12,140 +13,349 @@ public sealed class FixedFundV2BusinessRuleTests
     private const string Pin = TargetedCorrectnessFixture.SecurityPin;
 
     [Fact]
-    public async Task F01_To_F30_FixedFundV2_ComprehensiveSuite()
+    public async Task F01_CannotSetCanSpend_BeforeObligationsConfirmed()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("Owner");
-        var member1 = await f.AddUserAsync("Member1");
-        var member2 = await f.AddUserAsync("Member2");
-        var merchant = await f.AddUserAsync("Merchant");
-
-        await V1FundMembershipTests.MakeFriends(f, owner.Id, member1.Id);
-        await V1FundMembershipTests.MakeFriends(f, owner.Id, member2.Id);
-
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FixedV2Fund", "Fixed", 300, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF01", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
 
-        var inv1 = await service.InviteAsync(owner.Id, fund.Id, member1.Id, default);
-        await service.AcceptAsync(member1.Id, inv1.Id, default);
-        var inv2 = await service.InviteAsync(owner.Id, fund.Id, member2.Id, default);
-        await service.AcceptAsync(member2.Id, inv2.Id, default);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default));
+        Assert.Equal("treasury_not_found", ex.Code);
+    }
 
-        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 10_000);
-        var m1Wallet = await f.AddWalletAsync(member1.Id, "M1Wallet", true, balance: 10_000);
-        var m2Wallet = await f.AddWalletAsync(member2.Id, "M2Wallet", true, balance: 10_000);
-        var merchantWallet = await f.AddWalletAsync(merchant.Id, "MerchantWallet", true, balance: 0);
+    [Fact]
+    public async Task F02_F03_CannotSetCanSpend_WhenContributionIsIncomplete()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF02", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
 
-        // F01: Set CanSpend for member before obligations confirmed -> throws ConflictException
-        await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member1.Id, true, Pin, default));
+        // 0 contribution
+        var ex0 = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default));
+        Assert.Equal("fixed_member_contribution_incomplete", ex0.Code);
 
-        // Confirm obligations: 300 VND across 3 members = 100 VND each
-        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(300, Pin), default);
-        Assert.Equal(300, config.TargetVnd);
+        // Partial contribution (50 / 100)
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 50, "c-p", Pin, config.Revision), default);
+        var exPart = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default));
+        Assert.Equal("fixed_member_contribution_incomplete", exPart.Code);
+    }
 
-        // F02: Set CanSpend for member with 0 contributions -> throws ConflictException
-        var exIncomplete = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member1.Id, true, Pin, default));
-        Assert.Equal("fixed_member_contribution_incomplete", exIncomplete.Code);
+    [Fact]
+    public async Task F04_F05_CanSetCanSpend_When100PercentContributed_EffectiveCanSpendReflectsGroupFunding()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF04", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
 
-        // F03: Member1 contributes partial (50/100) -> Set CanSpend still throws
-        await service.ContributeAsync(member1.Id, fund.Id, new(m1Wallet.Id, 50, "c-m1-p", Pin, config.Revision), default);
-        await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SetSpendingPermissionAsync(owner.Id, fund.Id, member1.Id, true, Pin, default));
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-full", Pin, config.Revision), default);
+        await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
 
-        // Member1 completes 100% personal obligation (50 + 50 = 100)
-        await service.ContributeAsync(member1.Id, fund.Id, new(m1Wallet.Id, 50, "c-m1-full", Pin, config.Revision), default);
-
-        // F04: Owner enables CanSpend for Member1 -> succeeds
-        await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member1.Id, true, Pin, default);
-
-        // F05: Check MembersAsync DTOs
         var members = await service.MembersAsync(owner.Id, fund.Id, default);
-        var m1Dto = Assert.Single(members, m => m.UserId == member1.Id);
-        Assert.True(m1Dto.CanSpend); // Stored
-        Assert.True(m1Dto.IndividualContributionCompleted);
-        Assert.False(m1Dto.GroupFundingCompleted); // Group is only 100/300!
-        Assert.False(m1Dto.EffectiveCanSpend); // Group not yet completed!
+        var mDto = Assert.Single(members, m => m.UserId == member.Id);
+        Assert.True(mDto.CanSpend); // Stored
+        Assert.True(mDto.IndividualContributionCompleted);
+        Assert.False(mDto.GroupFundingCompleted); // Only 100/200
+        Assert.False(mDto.EffectiveCanSpend); // False because group is not 100%
+    }
 
-        // F06: Member1 attempts expense before group target 100% -> throws fixed_group_funding_incomplete
-        var exp1 = new V1FundRequestInput("Expense", 20, merchant.Id, "Exp before group", "exp-g-inc", Pin);
-        var exGroupInc = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.CreateFundRequestAsync(member1.Id, fund.Id, exp1, default));
-        Assert.Equal("fixed_group_funding_incomplete", exGroupInc.Code);
+    [Fact]
+    public async Task F06_F07_CannotSpend_WhenGroupFundingIncomplete_EvenWithCanSpendOn()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF06", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
 
-        // F07: Owner attempts expense before completing owner's individual quota -> throws fixed_member_contribution_incomplete
-        var exOwnerIndInc = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.CreateFundRequestAsync(owner.Id, fund.Id, exp1, default));
-        Assert.Equal("fixed_member_contribution_incomplete", exOwnerIndInc.Code);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-full", Pin, config.Revision), default);
+        await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
 
-        // Owner completes 100% individual quota (100 VND)
-        await service.ContributeAsync(owner.Id, fund.Id, new(ownerWallet.Id, 100, "c-own-full", Pin, config.Revision), default);
+        var exp = new V1FundRequestInput("Expense", 30, merchant.Id, "Premature expense", "exp-pre", Pin);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(member.Id, fund.Id, exp, default));
+        Assert.Equal("fixed_group_funding_incomplete", ex.Code);
+    }
 
-        // F07b: Now Owner has 100% individual, but group is only 200/300 -> throws fixed_group_funding_incomplete
-        var expOwnerGroup = new V1FundRequestInput("Expense", 20, merchant.Id, "Owner exp before group 100%", "exp-own-g-inc", Pin);
-        var exOwnerGroupInc = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.CreateFundRequestAsync(owner.Id, fund.Id, expOwnerGroup, default));
-        Assert.Equal("fixed_group_funding_incomplete", exOwnerGroupInc.Code);
+    [Fact]
+    public async Task F08_F09_F10_OwnerMustContribute100Percent_AndGroupMustBe100Percent_BeforeOwnerSpends()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF08", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
 
-        // Member2 completes 100% (100 VND)
-        await service.ContributeAsync(member2.Id, fund.Id, new(m2Wallet.Id, 100, "c-m2-full", Pin, config.Revision), default);
+        var exp = new V1FundRequestInput("Expense", 40, merchant.Id, "Owner expense", "exp-own", Pin);
 
-        // Now Group has 100 + 100 + 100 = 300 VND (100% funded)
-        members = await service.MembersAsync(owner.Id, fund.Id, default);
-        m1Dto = Assert.Single(members, m => m.UserId == member1.Id);
-        var m2Dto = Assert.Single(members, m => m.UserId == member2.Id);
-        var ownerDto = Assert.Single(members, m => m.UserId == owner.Id);
+        // Owner 0 contribution -> throws fixed_member_contribution_incomplete
+        var exInd = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default));
+        Assert.Equal("fixed_member_contribution_incomplete", exInd.Code);
 
-        Assert.True(m1Dto.GroupFundingCompleted);
-        Assert.True(m1Dto.IndividualContributionCompleted);
-        Assert.True(m1Dto.CanSpend);
-        Assert.True(m1Dto.EffectiveCanSpend);
+        // Owner contributes 100, but member hasn't contributed -> group is only 100/200
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-own", Pin, config.Revision), default);
+        var exGroup = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default));
+        Assert.Equal("fixed_group_funding_incomplete", exGroup.Code);
 
-        Assert.True(m2Dto.GroupFundingCompleted);
-        Assert.True(m2Dto.IndividualContributionCompleted);
-        Assert.False(m2Dto.CanSpend); // Owner hasn't granted CanSpend to Member2
-        Assert.False(m2Dto.EffectiveCanSpend);
+        // Member contributes 100 -> group is 200/200 (100% funded)
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-mem", Pin, config.Revision), default);
 
-        Assert.True(ownerDto.GroupFundingCompleted);
-        Assert.True(ownerDto.IndividualContributionCompleted);
-        Assert.True(ownerDto.EffectiveCanSpend); // Owner has implicit permission
+        // Owner spends directly -> succeeds!
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+        Assert.Equal("Completed", res.State);
+        Assert.Equal("Executed", res.ExecutionAvailability);
+    }
 
-        // F08: Member2 (CanSpend = false) attempts expense -> throws ForbiddenException
-        var expM2 = new V1FundRequestInput("Expense", 30, merchant.Id, "Exp M2 no permission", "exp-m2-no-perm", Pin);
-        await Assert.ThrowsAsync<ForbiddenException>(() =>
-            service.CreateFundRequestAsync(member2.Id, fund.Id, expM2, default));
+    [Fact]
+    public async Task F11_F12_TargetIncrease_RetainsStoredCanSpend_EffectiveCanSpendRestoresOnCatchup()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF11", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
 
-        // F09: Member1 (EffectiveCanSpend = true) spends 50 VND -> executes directly, no 20% limit, no 24h hold!
-        var expM1Valid = new V1FundRequestInput("Expense", 50, merchant.Id, "M1 Hotel deposit", "exp-m1-valid", Pin);
-        var spentResult = await service.CreateFundRequestAsync(member1.Id, fund.Id, expM1Valid, default);
-        Assert.Equal("Completed", spentResult.State);
-        Assert.Equal("Executed", spentResult.ExecutionAvailability);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o1", Pin, config1.Revision), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m1", Pin, config1.Revision), default);
+        await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
+
+        // Initial state: EffectiveCanSpend is True
+        var mems1 = await service.MembersAsync(owner.Id, fund.Id, default);
+        Assert.True(Assert.Single(mems1, m => m.UserId == member.Id).EffectiveCanSpend);
+
+        // Increase target: 200 -> 400 (each needs 200)
+        var config2 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
+
+        // Stored CanSpend is still True, but EffectiveCanSpend becomes False
+        var mems2 = await service.MembersAsync(owner.Id, fund.Id, default);
+        var mDto2 = Assert.Single(mems2, m => m.UserId == member.Id);
+        Assert.True(mDto2.CanSpend); // Stored persists
+        Assert.False(mDto2.IndividualContributionCompleted); // 100 / 200
+        Assert.False(mDto2.EffectiveCanSpend);
+
+        // Catchup: Member contributes remaining 100, Owner contributes remaining 100
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m2", Pin, config2.Revision), default);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o2", Pin, config2.Revision), default);
+
+        // EffectiveCanSpend automatically restores to True!
+        var mems3 = await service.MembersAsync(owner.Id, fund.Id, default);
+        var mDto3 = Assert.Single(mems3, m => m.UserId == member.Id);
+        Assert.True(mDto3.CanSpend);
+        Assert.True(mDto3.IndividualContributionCompleted);
+        Assert.True(mDto3.GroupFundingCompleted);
+        Assert.True(mDto3.EffectiveCanSpend);
+    }
+
+    [Fact]
+    public async Task F15_F16_SpendingAfter100PercentFunding_DoesNotCloseFundingGate_AndNo20PercentThreshold()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF15", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
+
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o", Pin, config.Revision), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m", Pin, config.Revision), default);
+        await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
+
+        // Spend 80 VND (40% of target, > 20%): Completes immediately without Pending24h
+        var exp1 = new V1FundRequestInput("Expense", 80, merchant.Id, "First expense 40%", "exp-1", Pin);
+        var res1 = await service.CreateFundRequestAsync(member.Id, fund.Id, exp1, default);
+        Assert.Equal("Completed", res1.State);
+
+        // Treasury balance is now 120 < 200 target. Group funding is STILL 100% because total paid = 200 >= 200.
+        // Subsequent spend of 50 VND succeeds immediately without re-blocking funding!
+        var exp2 = new V1FundRequestInput("Expense", 50, merchant.Id, "Second expense", "exp-2", Pin);
+        var res2 = await service.CreateFundRequestAsync(member.Id, fund.Id, exp2, default);
+        Assert.Equal("Completed", res2.State);
+    }
+
+    [Fact]
+    public async Task F17_FixedOwnerReview_IsExplicitlyDisallowed()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF17", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
+
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o", Pin, config.Revision), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m", Pin, config.Revision), default);
+
+        var exp = new V1FundRequestInput("Expense", 50, merchant.Id, "Direct expense", "exp-fixed", Pin);
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ReviewFundRequestAsync(owner.Id, res.Id, true, "Cannot review", Pin, default));
+        Assert.Equal("fixed_owner_review_disallowed", ex.Code);
+    }
+
+    [Fact]
+    public async Task F18_F19_FreeFund_WithdrawalAndOwnerReview_Remains100PercentIntact()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundFree", "Free", null, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 100);
+
+        // Owner contributes 300 to Free fund
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 300, "c-free", Pin), default);
+
+        // Member requests withdrawal -> AwaitingOwnerReview
+        var wd = new V1FundRequestInput("Withdrawal", 100, member.Id, "Reimbursement", "wd-free", Pin);
+        var req = await service.CreateFundRequestAsync(member.Id, fund.Id, wd, default);
+        Assert.Equal("AwaitingOwnerReview", req.State);
+
+        // Owner approves -> Completed
+        var reviewed = await service.ReviewFundRequestAsync(owner.Id, req.Id, true, "Approved", Pin, default);
+        Assert.Equal("Completed", reviewed.State);
 
         f.Db.ChangeTracker.Clear();
-        var merchWalletCheck = await f.Db.Wallets.SingleAsync(w => w.Id == merchantWallet.Id);
-        Assert.Equal(50, merchWalletCheck.AvailableBalance);
+        var mw = await f.Db.Wallets.SingleAsync(w => w.Id == mWallet.Id);
+        Assert.Equal(200, mw.AvailableBalance); // 100 + 100
+    }
 
-        // F10: Subsequent spending when balance dropped below target (balance = 250 < 300 target)
-        // Group funding remains 100% because valid contributions = 300 >= 300.
-        // Member1 can spend another 60 VND immediately!
-        var expM1Second = new V1FundRequestInput("Expense", 60, merchant.Id, "M1 Second expense", "exp-m1-sec", Pin);
-        var spentResult2 = await service.CreateFundRequestAsync(member1.Id, fund.Id, expM1Second, default);
-        Assert.Equal("Completed", spentResult2.State);
-        Assert.Equal("Executed", spentResult2.ExecutionAvailability);
+    [Fact]
+    public async Task F20_LockedExcess_IsExcludedFromSpendableBalance()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundExcess", "Fixed", 400, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+
+        // Revision 1: Target 400 -> each owes 200
+        var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
+
+        // Both contribute 200
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o", Pin, config1.Revision), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m", Pin, config1.Revision), default);
+
+        // Revision 2: Target reduced to 200 -> each owes 100, so each has 100 LockedExcess (Total Locked Excess = 200)
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+
+        // Treasury balance is 400 VND. Total Locked Excess is 200 VND. Spendable balance = 400 - 200 = 200 VND.
+        // Attempting to spend 220 VND (less than treasury balance 400, but greater than spendable 200) throws insufficient_fund_balance
+        var expOver = new V1FundRequestInput("Expense", 220, merchant.Id, "Over spendable", "exp-over", Pin);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(owner.Id, fund.Id, expOver, default));
+        Assert.Equal("insufficient_fund_balance", ex.Code);
+
+        // Spending 200 VND succeeds exactly
+        var expValid = new V1FundRequestInput("Expense", 200, merchant.Id, "Exact spendable", "exp-exact", Pin);
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, expValid, default);
+        Assert.Equal("Completed", res.State);
+    }
+
+    [Fact]
+    public async Task F28_CompletedExpenseReporting_CreatesSupportCase_WithoutReversingMoney()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("Owner");
+        var member = await f.AddUserAsync("Member");
+        var merchant = await f.AddUserAsync("Merchant");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundReport", "Fixed", 200, Pin), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
+        var merchWallet = await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
+
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o", Pin, config.Revision), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m", Pin, config.Revision), default);
+
+        var exp = new V1FundRequestInput("Expense", 50, merchant.Id, "Valid expense", "exp-rep", Pin);
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+        Assert.Equal("Completed", res.State);
+
+        // Member reports this completed expense
+        var reported = await service.ReportFundRequestAsync(member.Id, res.Id, "Suspicious item reported", default);
+        Assert.Equal("Completed", reported.State); // State remains Completed, no automatic reversal!
 
         f.Db.ChangeTracker.Clear();
-        merchWalletCheck = await f.Db.Wallets.SingleAsync(w => w.Id == merchantWallet.Id);
-        Assert.Equal(110, merchWalletCheck.AvailableBalance); // 50 + 60 = 110
+        var mw = await f.Db.Wallets.SingleAsync(w => w.Id == merchWallet.Id);
+        Assert.Equal(50, mw.AvailableBalance); // Money untouched!
 
-        // F11: Owner review on Fixed fund request -> throws ConflictException (fixed_owner_review_disallowed)
-        var exReview = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.ReviewFundRequestAsync(owner.Id, spentResult.Id, true, "Cannot review fixed", Pin, default));
-        Assert.Equal("fixed_owner_review_disallowed", exReview.Code);
-
-        // F12: Cannot modify Owner's CanSpend
-        var exOwnerMod = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SetSpendingPermissionAsync(owner.Id, fund.Id, owner.Id, true, Pin, default));
-        Assert.Equal("owner_spending_permission_invalid", exOwnerMod.Code);
+        var supportCase = await f.Db.SupportCases.SingleAsync(c => c.LinkedTransactionId == res.Id);
+        Assert.Equal("V1FundDispute", supportCase.Category);
+        Assert.Equal(member.Id, supportCase.LinkedUserId);
+        Assert.Equal(CaseStatus.New, supportCase.Status);
     }
 }

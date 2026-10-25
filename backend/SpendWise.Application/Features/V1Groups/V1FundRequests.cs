@@ -145,13 +145,9 @@ public sealed partial class V1FundService
 
                 if (fund.Kind == V1FundKind.Fixed)
                 {
-                    var holds = await db.V1FundRequests.AsNoTracking().Where(r => r.FundId == fund.Id
-                        && (r.State == "Pending24h" || r.State == "Suspended"))
-                        .SumAsync(r => r.AmountVnd, token);
-
-                    var availableBalance = Math.Max(0, treasuryAccount.Balance - holds);
+                    var availableBalance = await FixedSpendableAsync(fund, treasury, treasuryAccount, null, token);
                     if (request.AmountVnd > availableBalance)
-                        throw new ConflictException("insufficient_fund_balance", "Amount exceeds available balance after holds.");
+                        throw new ConflictException("insufficient_fund_balance", "Amount exceeds available balance after locked excess and holds.");
                 }
                 else // Free fund expense
                 {
@@ -503,84 +499,98 @@ public sealed partial class V1FundService
         ChangeFundRequestAsync(actor, id, null, async (fund, item, token) =>
 
         {
-
             var reportReason = InputBoundary.RequiredText(reason, 1000, "Report reason");
 
+            // For Completed Fixed Fund expenses under V2, reporting opens a dispute SupportCase without altering financial state or reversing money
+            if (item.State == "Completed")
+            {
+                if (item.Kind != "Expense")
+                    throw new ConflictException("fund_request_not_reportable", "Chỉ các khoản chi tiêu (Expense) đã hoàn thành mới có thể được báo cáo.");
+
+                // Idempotency: check if this actor has already opened a dispute for this request
+                var existingCase = await db.SupportCases.AsNoTracking().FirstOrDefaultAsync(
+                    c => c.Category == "V1FundDispute" && c.LinkedTransactionId == item.Id && c.LinkedUserId == actor, token);
+
+                if (existingCase is not null)
+                {
+                    return MapRequest(item);
+                }
+
+                var finTx = await db.FinancialTransactions.AsNoTracking().FirstOrDefaultAsync(
+                    f => f.RelatedBusinessId == fund.Id && f.Amount == item.AmountVnd && f.Type == FinancialTransactionType.Expense, token);
+
+                var completedTicket = new SupportCase
+                {
+                    LinkedUserId = actor,
+                    LinkedTransactionId = item.Id,
+                    Category = "V1FundDispute",
+                    Subject = $"Completed expense reported in fund {fund.Code}: {item.AmountVnd:N0} đ",
+                    Description = $"Reported completed expense by user {actor} for fund {fund.Id}, request {item.Id}. Amount: {item.AmountVnd:N0} VND. LedgerTx: {finTx?.LedgerTransactionId}. Reason: {reportReason}",
+                    Priority = "High",
+                    Status = CaseStatus.New
+                };
+                completedTicket.TicketNumber = "V1-" + completedTicket.Id.ToString("N");
+                db.SupportCases.Add(completedTicket);
+
+                var reporterNameCompleted = await db.Users.Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
+                db.CaseHistories.Add(new CaseHistory
+                {
+                    CaseKind = CaseKind.Support,
+                    CaseId = completedTicket.Id,
+                    ActorId = actor,
+                    ActorDisplayNameSnapshot = reporterNameCompleted,
+                    ActorRole = "User",
+                    Action = "Created",
+                    Message = $"Completed expense reported: {reportReason}",
+                    NewStatus = completedTicket.Status.ToString()
+                });
+
+                await ActivityAsync(fund.Id, actor, "FundExpenseReported", token, item.RequestedByUserId,
+                    detail: $"Khoản chi đã hoàn thành {item.AmountVnd:N0} đ bị khiếu nại/báo cáo: {reportReason}",
+                    referenceId: id);
+
+                return MapRequest(item);
+            }
+
+            // Legacy / hold-based dispute
             if (item.State == "Suspended") return MapRequest(item);
 
             if (item.State != "Pending24h")
-
-                throw new ConflictException("fund_request_not_reportable", "Only pending 24-hour holds can be reported.");
-
-
+                throw new ConflictException("fund_request_not_reportable", "Only pending 24-hour holds or completed expenses can be reported.");
 
             item.State = "Suspended";
-
             item.ReviewReason = reportReason;
 
-
-
             // Open SupportCase for the dispute
-
             var ticket = new SupportCase
-
             {
-
                 LinkedUserId = actor,
-
                 LinkedTransactionId = item.Id,
-
                 Category = "V1FundDispute",
-
                 Subject = $"Expense reported in fund {fund.Code}: {item.AmountVnd:N0} đ",
-
                 Description = $"Reported by user {actor} for fund {fund.Id}, request {item.Id}. Amount: {item.AmountVnd:N0} VND. Reason: {reportReason}",
-
                 Priority = "High",
-
                 Status = CaseStatus.New
-
             };
-
             ticket.TicketNumber = "V1-" + ticket.Id.ToString("N");
-
             db.SupportCases.Add(ticket);
 
-
-
             var reporterName = await db.Users.Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
-
             db.CaseHistories.Add(new CaseHistory
-
             {
-
                 CaseKind = CaseKind.Support,
-
                 CaseId = ticket.Id,
-
                 ActorId = actor,
-
                 ActorDisplayNameSnapshot = reporterName,
-
                 ActorRole = "User",
-
                 Action = "Created",
-
                 Message = $"Expense hold reported and suspended: {reportReason}",
-
                 NewStatus = ticket.Status.ToString()
-
             });
 
-
-
             await ActivityAsync(fund.Id, actor, "FundExpenseSuspended", token, item.RequestedByUserId,
-
                 detail: $"Khoản chi {item.AmountVnd:N0} đ bị báo cáo và tạm dừng: {reportReason}",
-
                 referenceId: id);
-
-
 
             return MapRequest(item);
 

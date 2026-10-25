@@ -451,6 +451,13 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
                     throw new ConflictException("missing_provider_evidence", "Cannot finalize withdrawal without valid provider transaction ID.");
                 }
 
+                if (!string.IsNullOrWhiteSpace(withdrawal.ProviderTransactionId)
+                    && !string.IsNullOrWhiteSpace(command.ProviderTransactionId)
+                    && !string.Equals(withdrawal.ProviderTransactionId, command.ProviderTransactionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ConflictException("mismatched_provider_transaction", "Mã giao dịch đối soát không khớp với mã giao dịch ban đầu của withdrawal.");
+                }
+
                 // Strict provider evidence provenance check:
                 // FinalizeSuccess requires structured verified provider evidence:
                 // Option A: Direct structured provider response matching this withdrawal
@@ -518,26 +525,47 @@ public sealed class ReconcileWalletWithdrawalCommandHandler(
             }
             else if (command.Action == WithdrawalReconciliationAction.ReleaseFailure)
             {
-                // P0-02: ReleaseFailure strictly requires verified definitive failure evidence from provider
+                if (!string.IsNullOrWhiteSpace(withdrawal.ProviderTransactionId)
+                    && !string.IsNullOrWhiteSpace(command.ProviderTransactionId)
+                    && !string.Equals(withdrawal.ProviderTransactionId, command.ProviderTransactionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ConflictException("mismatched_provider_transaction", "Mã giao dịch đối soát không khớp với mã giao dịch ban đầu của withdrawal.");
+                }
+
+                // P0-1: ReleaseFailure strictly requires verified definitive failure evidence with authentic provider provenance
                 var (hasDefinitiveFailure, failureReason) = await WalletWithdrawalHelpers.VerifyDefinitiveFailureEvidenceAsync(
                     db,
                     command.FailureEvidence,
                     withdrawal.ProviderResponseData,
                     command.ProviderTransactionId ?? withdrawal.ProviderTransactionId,
                     withdrawal.BankConnection?.ExternalAccountId,
+                    withdrawal.Amount,
                     token);
 
                 if (!hasDefinitiveFailure)
                 {
                     throw new ConflictException("unverified_provider_failure_evidence",
-                        "Không thể giải tỏa tiền tạm giữ: Thiếu bằng chứng thất bại dứt khoát từ phía ngân hàng/nhà cung cấp.");
+                        "Không thể giải tỏa tiền tạm giữ: Thiếu bằng chứng thất bại dứt khoát từ phía ngân hàng/nhà cung cấp có đối soát danh tính hợp lệ.");
                 }
 
                 var walletLedger = await db.LedgerAccounts.SingleOrDefaultAsync(
                     a => a.OwnerUserId == withdrawal.UserId && a.WalletId == withdrawal.WalletId && a.Currency == "VND", token)
                     ?? throw new NotFoundException("wallet_ledger_not_found", "Wallet ledger account not found.");
 
-                var definitiveReason = command.Reason ?? failureReason ?? "Giao dịch đối soát xác nhận thất bại từ nhà cung cấp.";
+                var noteParts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(failureReason))
+                {
+                    noteParts.Add(failureReason);
+                }
+                if (!string.IsNullOrWhiteSpace(command.Reason))
+                {
+                    noteParts.Add($"Note: {command.Reason.Trim()}");
+                }
+                if (!string.IsNullOrWhiteSpace(command.FailureEvidence))
+                {
+                    noteParts.Add($"EvidenceRef: {command.FailureEvidence.Trim()}");
+                }
+                var definitiveReason = noteParts.Count > 0 ? string.Join(" | ", noteParts) : "Giao dịch đối soát xác nhận thất bại từ nhà cung cấp.";
 
                 await ledger.PostAsync(
                     holdAccount.Id,
@@ -665,49 +693,79 @@ public static class WalletWithdrawalHelpers
         decimal expectedAmount,
         string? expectedExternalBankAccountId)
     {
-        if (string.IsNullOrWhiteSpace(providerResponseData)) return false;
+        if (string.IsNullOrWhiteSpace(providerResponseData) ||
+            string.IsNullOrWhiteSpace(providerTxId) ||
+            expectedAmount <= 0 ||
+            string.IsNullOrWhiteSpace(expectedExternalBankAccountId))
+        {
+            return false;
+        }
+
         try
         {
             using var doc = JsonDocument.Parse(providerResponseData);
             var root = doc.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return false;
 
+            // 1. Transaction ID match
             var txId = GetJsonPropString(root, "providerTransactionId", "transaction_id", "transactionId", "referenceNumber", "id");
             if (string.IsNullOrWhiteSpace(txId) || !string.Equals(txId, providerTxId, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
 
+            // 2. Timeout or unknown check
             if (root.TryGetProperty("isTimeoutOrUnknown", out var timeoutProp) && timeoutProp.ValueKind == JsonValueKind.True)
             {
                 return false;
             }
 
+            // 3. Success boolean flag (if present, must not be false)
             if (root.TryGetProperty("success", out var successProp) && successProp.ValueKind == JsonValueKind.False)
             {
                 return false;
             }
 
+            // 4. Terminal status check: MUST be present and MUST be in verified terminal success list
             var status = GetJsonPropString(root, "providerStatus", "status", "statusCode");
-            if (!string.IsNullOrWhiteSpace(status))
+            if (string.IsNullOrWhiteSpace(status))
             {
-                var upper = status.ToUpperInvariant();
-                if (upper is "FAILED" or "REJECTED" or "CANCELLED" or "ERROR" or "FAILURE" or "TIMEOUT" or "DECLINED")
+                return false;
+            }
+
+            var upperStatus = status.ToUpperInvariant();
+            var validSuccessStatuses = new[] { "SUCCESS", "COMPLETED", "SETTLED", "CONFIRMED" };
+            if (!validSuccessStatuses.Contains(upperStatus))
+            {
+                return false; // Rejects PENDING, CREATED, PROCESSING, SUBMITTED, etc.
+            }
+
+            // 5. Amount check: MUST be present, number, and exact match
+            if (!root.TryGetProperty("amount", out var amtProp) || amtProp.ValueKind != JsonValueKind.Number)
+            {
+                return false;
+            }
+            if (amtProp.GetDecimal() != expectedAmount)
+            {
+                return false;
+            }
+
+            // 6. External bank account match: MUST be present and exact match
+            var extAcc = GetJsonPropString(root, "externalBankAccountId", "accountNumber", "bankAccount");
+            if (string.IsNullOrWhiteSpace(extAcc) || !string.Equals(extAcc, expectedExternalBankAccountId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // 7. Direction check (if present, must be Credit/Outflow)
+            var direction = GetJsonPropString(root, "direction");
+            if (!string.IsNullOrWhiteSpace(direction))
+            {
+                var upperDir = direction.ToUpperInvariant();
+                if (upperDir is not ("CREDIT" or "OUTFLOW" or "TRANSFER_OUT" or "PAYOUT"))
                 {
                     return false;
                 }
-            }
-
-            if (root.TryGetProperty("amount", out var amtProp) && amtProp.ValueKind == JsonValueKind.Number)
-            {
-                if (amtProp.GetDecimal() != expectedAmount) return false;
-            }
-
-            var extAcc = GetJsonPropString(root, "externalBankAccountId", "accountNumber", "bankAccount");
-            if (!string.IsNullOrWhiteSpace(extAcc) && !string.IsNullOrWhiteSpace(expectedExternalBankAccountId))
-            {
-                if (!string.Equals(extAcc, expectedExternalBankAccountId, StringComparison.OrdinalIgnoreCase))
-                    return false;
             }
 
             return true;
@@ -725,6 +783,13 @@ public static class WalletWithdrawalHelpers
         decimal expectedAmount,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(providerTxId) ||
+            string.IsNullOrWhiteSpace(expectedExternalBankAccountId) ||
+            expectedAmount <= 0)
+        {
+            return false;
+        }
+
         var validOutflowEventTypes = new[]
         {
             "OUTFLOW_CONFIRMED",
@@ -737,10 +802,8 @@ public static class WalletWithdrawalHelpers
 
         return await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
             e => e.ExternalTransactionId == providerTxId
+                && e.ExternalBankAccountId == expectedExternalBankAccountId
                 && e.ProcessingStatus == BankIntegrationEventStatus.Processed
-                && (string.IsNullOrEmpty(expectedExternalBankAccountId)
-                    || string.IsNullOrEmpty(e.ExternalBankAccountId)
-                    || e.ExternalBankAccountId == expectedExternalBankAccountId)
                 && validOutflowEventTypes.Contains(e.EventType),
             cancellationToken);
     }
@@ -751,70 +814,79 @@ public static class WalletWithdrawalHelpers
         string? providerResponseData,
         string? providerTxId,
         string? externalBankAccountId,
+        decimal expectedAmount,
         CancellationToken cancellationToken)
     {
-        // 1. Caller supplied FailureEvidence
-        if (!string.IsNullOrWhiteSpace(failureEvidence))
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(failureEvidence);
-                var root = doc.RootElement;
-                var status = GetJsonPropString(root, "status", "errorCode", "result", "error");
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    return (true, $"Provider definitive failure: {status}");
-                }
-            }
-            catch
-            {
-                if (failureEvidence.Contains("REJECTED", StringComparison.OrdinalIgnoreCase)
-                    || failureEvidence.Contains("FAILED", StringComparison.OrdinalIgnoreCase)
-                    || failureEvidence.Contains("DECLINED", StringComparison.OrdinalIgnoreCase)
-                    || failureEvidence.Contains("INVALID", StringComparison.OrdinalIgnoreCase))
-                {
-                    return (true, failureEvidence.Trim());
-                }
-            }
-        }
+        // 1. Caller supplied FailureEvidence:
+        // P0-1 FIX: Caller cannot self-certify provider failure!
+        // FailureEvidence/Reason passed by caller can ONLY be used as investigative notes,
+        // NEVER to decide settlement or release of reservation funds.
+        // We do NOT parse or pattern-match caller-supplied failureEvidence to grant release.
 
-        // 2. Previously recorded ProviderResponseData shows definitive failure
+        // 2. Previously recorded ProviderResponseData shows definitive failure with trusted provenance:
         if (!string.IsNullOrWhiteSpace(providerResponseData))
         {
             try
             {
                 using var doc = JsonDocument.Parse(providerResponseData);
                 var root = doc.RootElement;
-                var isTimeout = root.TryGetProperty("isTimeoutOrUnknown", out var tProp) && tProp.ValueKind == JsonValueKind.True;
-                if (!isTimeout)
+                if (root.ValueKind == JsonValueKind.Object)
                 {
-                    var errorCode = GetJsonPropString(root, "errorCode");
-                    var status = GetJsonPropString(root, "providerStatus", "status");
-                    var success = root.TryGetProperty("success", out var sProp) && sProp.ValueKind == JsonValueKind.True;
-
-                    if (!success && (!string.IsNullOrWhiteSpace(errorCode) || status is "FAILED" or "REJECTED" or "DECLINED" or "ERROR"))
+                    var isTimeout = root.TryGetProperty("isTimeoutOrUnknown", out var tProp) && tProp.ValueKind == JsonValueKind.True;
+                    if (!isTimeout)
                     {
-                        return (true, $"Provider gateway rejection: {errorCode ?? status}");
+                        var status = GetJsonPropString(root, "providerStatus", "status", "statusCode")?.ToUpperInvariant();
+                        var errorCode = GetJsonPropString(root, "errorCode")?.ToUpperInvariant();
+                        var success = root.TryGetProperty("success", out var sProp) && sProp.ValueKind == JsonValueKind.True;
+
+                        var isTerminalFailure = status is "FAILED" or "REJECTED" or "DECLINED" or "CANCELLED" or "ERROR" or "FAILURE"
+                            || errorCode is "FAILED" or "REJECTED" or "DECLINED" or "ACCOUNT_INVALID" or "INVALID_ACCOUNT" or "INSUFFICIENT_FUNDS" or "BENEFICIARY_BANK_UNAVAILABLE" or "ACCOUNT_NOT_FOUND";
+
+                        if (!success && isTerminalFailure)
+                        {
+                            // Validate correlation if fields exist in the provider payload
+                            var txId = GetJsonPropString(root, "providerTransactionId", "transaction_id", "transactionId", "referenceNumber", "id");
+                            var extAcc = GetJsonPropString(root, "externalBankAccountId", "accountNumber", "bankAccount");
+                            var amtMatches = true;
+                            if (root.TryGetProperty("amount", out var amtProp) && amtProp.ValueKind == JsonValueKind.Number && expectedAmount > 0)
+                            {
+                                amtMatches = (amtProp.GetDecimal() == expectedAmount);
+                            }
+
+                            var txMatches = string.IsNullOrWhiteSpace(txId) || string.IsNullOrWhiteSpace(providerTxId) || string.Equals(txId, providerTxId, StringComparison.OrdinalIgnoreCase);
+                            var accMatches = string.IsNullOrWhiteSpace(extAcc) || string.IsNullOrWhiteSpace(externalBankAccountId) || string.Equals(extAcc, externalBankAccountId, StringComparison.OrdinalIgnoreCase);
+
+                            if (amtMatches && txMatches && accMatches)
+                            {
+                                return (true, $"Provider gateway rejection: {errorCode ?? status}");
+                            }
+                        }
                     }
                 }
             }
             catch { }
         }
 
-        // 3. Webhook BankIntegrationEvent shows definitive failure
-        var failEventTypes = new[] { "OUTFLOW_FAILED", "OUTFLOW_REJECTED", "PAYOUT_FAILED", "PAYOUT_REJECTED", "PAYMENT_REJECTED" };
-        var hasFailEvent = await db.BankIntegrationEvents.AsNoTracking().AnyAsync(
-            e => ((!string.IsNullOrEmpty(providerTxId) && e.ExternalTransactionId == providerTxId)
-                || (!string.IsNullOrEmpty(externalBankAccountId) && e.ExternalBankAccountId == externalBankAccountId))
-                && e.ProcessingStatus == BankIntegrationEventStatus.Processed
-                && failEventTypes.Contains(e.EventType),
-            cancellationToken);
-
-        if (hasFailEvent)
+        // 3. Processed Webhook BankIntegrationEvent shows definitive failure:
+        // P0-3 FIX: Strictly requires BOTH providerTxId and externalBankAccountId to match this exact withdrawal!
+        // Never use OR condition; never match on bank account alone.
+        if (!string.IsNullOrWhiteSpace(providerTxId) && !string.IsNullOrWhiteSpace(externalBankAccountId))
         {
-            return (true, "Bank webhook recorded definitive outflow rejection.");
+            var failEventTypes = new[] { "OUTFLOW_FAILED", "OUTFLOW_REJECTED", "PAYOUT_FAILED", "PAYOUT_REJECTED", "PAYMENT_REJECTED" };
+            var matchingEvent = await db.BankIntegrationEvents.AsNoTracking().FirstOrDefaultAsync(
+                e => e.ExternalTransactionId == providerTxId
+                    && e.ExternalBankAccountId == externalBankAccountId
+                    && e.ProcessingStatus == BankIntegrationEventStatus.Processed
+                    && failEventTypes.Contains(e.EventType),
+                cancellationToken);
+
+            if (matchingEvent != null)
+            {
+                return (true, $"Bank webhook recorded definitive outflow rejection: {matchingEvent.EventType}");
+            }
         }
 
+        // If neither trusted provider response nor processed webhook event proves failure, hold is preserved
         return (false, null);
     }
 

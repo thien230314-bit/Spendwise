@@ -576,7 +576,7 @@ public sealed class SqlServerRealFinancialConcurrencyTests
             Reference = $"WD{runId}",
             IdempotencyKey = $"c06_reconcile_{runId}",
             ReservationLedgerTransactionId = holdPosting.LedgerTransactionId,
-            ProviderResponseData = $"{{\"transaction_id\":\"{providerTxId}\",\"amount\":{amount},\"status\":\"SUCCESS\"}}",
+            ProviderResponseData = $"{{\"transaction_id\":\"{providerTxId}\",\"amount\":{amount},\"externalBankAccountId\":\"{bankConn.ExternalAccountId}\",\"status\":\"SUCCESS\"}}",
             CreatedAt = clock.UtcNow
         };
         seedDb.WalletWithdrawals.Add(withdrawal);

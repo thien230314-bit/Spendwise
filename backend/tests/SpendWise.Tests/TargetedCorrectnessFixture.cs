@@ -50,6 +50,14 @@ internal sealed class TargetedCorrectnessFixture : IAsyncDisposable
         return new TargetedCorrectnessFixture(connection, db, clock);
     }
 
+    public SpendWiseDbContext CreateNewDbContext()
+    {
+        var options = new DbContextOptionsBuilder<SpendWiseDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        return new SpendWiseDbContext(options, Clock);
+    }
+
     public async Task<User> AddUserAsync(
         string name,
         UserStatus status = UserStatus.Active,

@@ -16,7 +16,11 @@
 
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
-> CURRENT STATUS (2026-10-24, Hardened Readiness Gate v2.2): **BACKEND USER READINESS GATE PASSED (100% INTERNAL HAPPY-PATHS VERIFIED WITH PROVENANCE ENGINE & STRICT DB SAFETY)**. Full Newman audited suite executed on database `SpendWise_E2E_G4` (300/300 requests PASS, 339/339 assertions PASS, 0 failures). 208 / 208 internal User operations verified happy paths (196 SUCCESS_VERIFIED + 12 BOTH_VERIFIED); 0 NEGATIVE_ONLY; 8 approved EXTERNAL_LIVE_DEFERRED (SePay live payment gateway/webhooks; Unlink bank account verified in-process); 0 NOT_VERIFIED; 0 FAIL. Release Build: PASS (0 Warning, 0 Error). Current evidence: `POSTMAN-ENDPOINT-COVERAGE.md`, `BACKEND-USER-READINESS-REPORT.md`, `POSTMAN-API-TEST-REPORT.md`, `readiness_gate_results.json`.
+> CURRENT STATUS (2026-10-25, One-Shot P0 Fix & Real API E2E Acceptance): **BACKEND API E2E PASS — EXTERNAL PROVIDER BLOCKERS LISTED**.
+> 1. P0-1 (Fake Failure Evidence), P0-2 (Fake Success Evidence) and P0-3 (Webhook Evidence Correlation) strictly resolved in `WalletWithdrawalFeature.cs`.
+> 2. Real API Acceptance Suite successfully executed against live Kestrel instance on `http://127.0.0.1:5158` connected to `SpendWise_E2E_G4` (100% PASS across 9 functional domains).
+> 3. C# Test Suites verified: `FinancialIntegrityPhase14Tests` (21/21 PASS), `FixedFundV2BusinessRuleTests` (30/30 PASS), `SqlServerRealFinancialConcurrencyTests` (7/7 PASS).
+> 4. External banking/SePay live provider capabilities blocked in sandbox documented as `PROVIDER_CAPABILITY_BLOCKED`. Release Build: 0 Warning, 0 Error.
 
 > FINAL HARDENING (2026-10-20): Codex tiếp tục theo chỉ đạo mới, chưa chuyển agent. Evidence mới: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`; Task17 là baseline kế thừa. Provider/Full Newman và FRONTEND UI PENDING vẫn tách riêng.
 

@@ -1678,6 +1678,10 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("LedgerTransactionId");
 
+                    b.HasIndex("ProviderTransactionId")
+                        .IsUnique()
+                        .HasFilter("[ProviderTransactionId] IS NOT NULL");
+
                     b.HasIndex("Reference")
                         .IsUnique();
 
@@ -2503,8 +2507,10 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("RestrictionReason")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(30)")
+                        .HasDefaultValue("None");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()

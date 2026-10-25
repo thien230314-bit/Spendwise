@@ -64,6 +64,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
                     case "BANK_ACCOUNT_UNLINKED":
                         await ChangeConnectionStatusAsync(
                             externalAccountId,
+                            request.Metadata,
                             BankConnectionStatus.Unlinked,
                             "BankAccountUnlinked",
                             "Tài khoản ngân hàng đã hủy liên kết",
@@ -74,6 +75,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
                     case "BANK_ACCOUNT_INACTIVED":
                         await ChangeConnectionStatusAsync(
                             externalAccountId,
+                            request.Metadata,
                             BankConnectionStatus.Inactive,
                             "BankAccountInactive",
                             "Tài khoản ngân hàng cần được kích hoạt lại",
@@ -83,6 +85,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
                     case "BANK_ACCOUNT_REACTIVATED":
                         await ChangeConnectionStatusAsync(
                             externalAccountId,
+                            request.Metadata,
                             BankConnectionStatus.Active,
                             "BankAccountLinked",
                             "Tài khoản ngân hàng đã hoạt động trở lại",
@@ -248,6 +251,7 @@ public sealed class ProcessLifecycleEventCommandHandler(
 
     private async Task ChangeConnectionStatusAsync(
         string? externalAccountId,
+        JsonElement metadata,
         BankConnectionStatus status,
         string notificationType,
         string title,
@@ -275,28 +279,68 @@ public sealed class ProcessLifecycleEventCommandHandler(
             return;
         }
 
+        var linkTokenXid = MetadataString(metadata, "link_token_xid");
+        BankLinkSession? session = null;
+        if (!string.IsNullOrWhiteSpace(linkTokenXid))
+        {
+            session = await db.BankLinkSessions.SingleOrDefaultAsync(
+                item => item.Provider == BankProvider.SePayBankHub
+                    && item.ExternalLinkTokenXid == linkTokenXid,
+                cancellationToken);
+        }
+
         var activeConnection = matchingConnections.SingleOrDefault(item => item.Status == BankConnectionStatus.Active);
+
+        BankConnection? targetConnection = null;
+        if (session is not null)
+        {
+            targetConnection = matchingConnections.SingleOrDefault(item => item.UserId == session.UserId);
+            if (targetConnection is null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
+                integrationEvent.FailureCode = "session_user_connection_mismatch";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+        }
+        else
+        {
+            // When multiple distinct users historically owned this external account, we MUST NOT blindly pick one without session correlation.
+            var distinctUserCount = matchingConnections.Select(c => c.UserId).Distinct().Count();
+            if (distinctUserCount > 1)
+            {
+                // Ambiguous ownership! Quarantine event to protect active connection and financial safety.
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Quarantined;
+                integrationEvent.FailureCode = "quarantined_ambiguous_ownership";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            targetConnection = activeConnection ?? matchingConnections
+                .OrderByDescending(c => c.LinkedAt ?? c.CreatedAt)
+                .FirstOrDefault();
+        }
 
         if (status is BankConnectionStatus.Unlinked or BankConnectionStatus.Inactive)
         {
-            if (activeConnection is null)
+            if (targetConnection is null || targetConnection.Status == status)
             {
                 // Historical / delayed webhook for an account that is already unlinked or inactive.
-                // Do not crash or mutate other users' connections.
                 integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
                 integrationEvent.FailureCode = "already_unlinked";
                 integrationEvent.ProcessedAt = clock.UtcNow;
                 return;
             }
 
-            activeConnection.Status = status;
+            // Target connection resolved specifically to intended user; do NOT touch any other user's active connection.
+            targetConnection.Status = status;
             if (status == BankConnectionStatus.Unlinked)
             {
-                activeConnection.UnlinkedAt = clock.UtcNow;
+                targetConnection.UnlinkedAt = clock.UtcNow;
             }
 
             var activeWallets = await db.Wallets
-                .Where(w => w.OwnerUserId == activeConnection.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Active)
+                .Where(w => w.OwnerUserId == targetConnection.UserId && w.Status == SpendWise.Domain.Finance.WalletStatus.Active)
                 .ToListAsync(cancellationToken);
             foreach (var aw in activeWallets)
             {
@@ -308,32 +352,52 @@ public sealed class ProcessLifecycleEventCommandHandler(
             integrationEvent.ProcessedAt = clock.UtcNow;
 
             await notifications.CreateAsync(
-                activeConnection.UserId,
+                targetConnection.UserId,
                 notificationType,
                 title,
-                $"Trạng thái {activeConnection.BankBrandName} {activeConnection.MaskedAccountNumber}: {status}.",
-                new { bankConnectionId = activeConnection.Id, status = status.ToString() },
+                $"Trạng thái {targetConnection.BankBrandName} {targetConnection.MaskedAccountNumber}: {status}.",
+                new { bankConnectionId = targetConnection.Id, status = status.ToString() },
                 cancellationToken);
             return;
         }
 
         if (status == BankConnectionStatus.Active)
         {
-            if (activeConnection is not null)
+            if (targetConnection is null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
+                integrationEvent.FailureCode = "unknown_bank_account_xid";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            if (targetConnection.Status == BankConnectionStatus.Active)
             {
                 integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Processed;
                 integrationEvent.ProcessedAt = clock.UtcNow;
                 return;
             }
 
-            var targetConnection = matchingConnections
-                .OrderByDescending(c => c.LinkedAt ?? c.CreatedAt)
-                .FirstOrDefault();
-
-            if (targetConnection is null)
+            // Invariant: cannot reactivate if another user currently holds an Active connection for this bank!
+            var otherActive = await db.BankConnections.AnyAsync(
+                item => item.Provider == BankProvider.SePayBankHub
+                    && item.ExternalAccountId == externalAccountId
+                    && item.UserId != targetConnection.UserId
+                    && item.Status == BankConnectionStatus.Active,
+                cancellationToken);
+            if (otherActive)
             {
-                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Unmatched;
-                integrationEvent.FailureCode = "unknown_bank_account_xid";
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Failed;
+                integrationEvent.FailureCode = "bank_connection_owner_conflict";
+                integrationEvent.ProcessedAt = clock.UtcNow;
+                return;
+            }
+
+            // Reactivation without correlated session must be quarantined/rejected
+            if (session is null)
+            {
+                integrationEvent.ProcessingStatus = BankIntegrationEventStatus.Quarantined;
+                integrationEvent.FailureCode = "reactivation_requires_session_correlation";
                 integrationEvent.ProcessedAt = clock.UtcNow;
                 return;
             }

@@ -109,6 +109,7 @@ public sealed class SePayBankHubGateway(
                 var isTimeout = response.StatusCode is System.Net.HttpStatusCode.RequestTimeout
                     or System.Net.HttpStatusCode.GatewayTimeout
                     or System.Net.HttpStatusCode.ServiceUnavailable;
+                var isAmbiguous5xx = (int)response.StatusCode >= 500;
                 return new SandboxTransactionResult(
                     Success: false,
                     ProviderTransactionId: null,
@@ -118,45 +119,180 @@ public sealed class SePayBankHubGateway(
                     Direction: direction.ToString(),
                     ExternalBankAccountId: externalBankAccountId,
                     ProviderStatus: response.StatusCode.ToString(),
-                    ErrorCode: isTimeout ? "provider_timeout" : "provider_rejected",
+                    ErrorCode: (isTimeout || isAmbiguous5xx) ? "provider_timeout" : "provider_rejected",
                     ErrorMessage: string.IsNullOrWhiteSpace(responseBody) ? response.ReasonPhrase : responseBody,
-                    IsTimeoutOrUnknown: isTimeout);
+                    IsTimeoutOrUnknown: isTimeout || isAmbiguous5xx,
+                    RawResponseData: responseBody);
             }
 
-            string? providerTxId = null;
-            string? refNum = null;
-            DateTime? txDate = null;
+            // HTTP 2xx: Validate response envelope and mandatory business evidence
             try
             {
                 using var doc = JsonDocument.Parse(responseBody);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("data", out var dataEl))
+                if (root.ValueKind != JsonValueKind.Object)
                 {
-                    if (dataEl.TryGetProperty("id", out var idProp) || dataEl.TryGetProperty("xid", out idProp))
-                        providerTxId = idProp.ToString();
-                    if (dataEl.TryGetProperty("reference_number", out var refProp))
-                        refNum = refProp.GetString();
-                    if (dataEl.TryGetProperty("transaction_date", out var dateProp) && dateProp.TryGetDateTime(out var parsedDate))
-                        txDate = parsedDate;
+                    return new SandboxTransactionResult(
+                        Success: false,
+                        Amount: amount,
+                        Direction: direction.ToString(),
+                        ExternalBankAccountId: externalBankAccountId,
+                        ProviderStatus: "InvalidEnvelope",
+                        ErrorCode: "invalid_response_envelope",
+                        ErrorMessage: "Provider response root is not a JSON object.",
+                        IsTimeoutOrUnknown: false,
+                        RawResponseData: responseBody);
                 }
-            }
-            catch
-            {
-                // Non-JSON success body or unexpected structure
-            }
 
-            return new SandboxTransactionResult(
-                Success: true,
-                ProviderTransactionId: providerTxId,
-                ReferenceNumber: refNum,
-                TransactionDate: txDate,
-                Amount: amount,
-                Direction: direction.ToString(),
-                ExternalBankAccountId: externalBankAccountId,
-                ProviderStatus: "Success",
-                ErrorCode: null,
-                ErrorMessage: null,
-                IsTimeoutOrUnknown: false);
+                // Check for business error inside envelope if code property exists
+                if (root.TryGetProperty("code", out var codeProp) && codeProp.ValueKind == JsonValueKind.Number)
+                {
+                    var businessCode = codeProp.GetInt32();
+                    if (businessCode is not (200 or 201))
+                    {
+                        var msg = root.TryGetProperty("message", out var msgProp) ? msgProp.GetString() : "Provider business error.";
+                        return new SandboxTransactionResult(
+                            Success: false,
+                            Amount: amount,
+                            Direction: direction.ToString(),
+                            ExternalBankAccountId: externalBankAccountId,
+                            ProviderStatus: "BusinessError",
+                            ErrorCode: "provider_business_error",
+                            ErrorMessage: msg,
+                            IsTimeoutOrUnknown: false,
+                            RawResponseData: responseBody);
+                    }
+                }
+
+                if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+                {
+                    return new SandboxTransactionResult(
+                        Success: false,
+                        Amount: amount,
+                        Direction: direction.ToString(),
+                        ExternalBankAccountId: externalBankAccountId,
+                        ProviderStatus: "MissingData",
+                        ErrorCode: "missing_provider_data",
+                        ErrorMessage: "Provider response missing mandatory 'data' object.",
+                        IsTimeoutOrUnknown: false,
+                        RawResponseData: responseBody);
+                }
+
+                // Mandatory: Provider Transaction ID
+                string? providerTxId = null;
+                if (dataEl.TryGetProperty("transaction_id", out var txIdProp) && txIdProp.ValueKind == JsonValueKind.String)
+                {
+                    providerTxId = txIdProp.GetString()?.Trim();
+                }
+                else if (dataEl.TryGetProperty("id", out var idProp) && idProp.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+                {
+                    providerTxId = idProp.ToString().Trim();
+                }
+                else if (dataEl.TryGetProperty("xid", out var xidProp) && xidProp.ValueKind == JsonValueKind.String)
+                {
+                    providerTxId = xidProp.GetString()?.Trim();
+                }
+
+                if (string.IsNullOrWhiteSpace(providerTxId))
+                {
+                    return new SandboxTransactionResult(
+                        Success: false,
+                        Amount: amount,
+                        Direction: direction.ToString(),
+                        ExternalBankAccountId: externalBankAccountId,
+                        ProviderStatus: "MissingTransactionId",
+                        ErrorCode: "missing_provider_transaction_id",
+                        ErrorMessage: "Provider response does not contain a valid non-empty transaction ID.",
+                        IsTimeoutOrUnknown: false,
+                        RawResponseData: responseBody);
+                }
+
+                // Validate amount if present in provider response
+                if (dataEl.TryGetProperty("amount", out var amountProp) && amountProp.ValueKind == JsonValueKind.Number)
+                {
+                    if (amountProp.TryGetDecimal(out var returnedAmount) && returnedAmount != amount)
+                    {
+                        return new SandboxTransactionResult(
+                            Success: false,
+                            ProviderTransactionId: providerTxId,
+                            Amount: returnedAmount,
+                            Direction: direction.ToString(),
+                            ExternalBankAccountId: externalBankAccountId,
+                            ProviderStatus: "AmountMismatch",
+                            ErrorCode: "provider_amount_mismatch",
+                            ErrorMessage: $"Provider transaction amount {returnedAmount} does not match requested amount {amount}.",
+                            IsTimeoutOrUnknown: false,
+                            RawResponseData: responseBody);
+                    }
+                }
+
+                // Validate transfer_type / direction if present in provider response
+                var expectedType = direction == BankTransactionDirection.Credit ? "credit" : "debit";
+                if (dataEl.TryGetProperty("transfer_type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String)
+                {
+                    var returnedType = typeProp.GetString()?.Trim().ToLowerInvariant();
+                    if (!string.IsNullOrEmpty(returnedType) && returnedType != expectedType)
+                    {
+                        return new SandboxTransactionResult(
+                            Success: false,
+                            ProviderTransactionId: providerTxId,
+                            Amount: amount,
+                            Direction: returnedType,
+                            ExternalBankAccountId: externalBankAccountId,
+                            ProviderStatus: "DirectionMismatch",
+                            ErrorCode: "provider_direction_mismatch",
+                            ErrorMessage: $"Provider transfer_type '{returnedType}' does not match expected '{expectedType}'.",
+                            IsTimeoutOrUnknown: false,
+                            RawResponseData: responseBody);
+                    }
+                }
+
+                string? refNum = null;
+                if (dataEl.TryGetProperty("reference_number", out var refProp) && refProp.ValueKind == JsonValueKind.String)
+                {
+                    refNum = refProp.GetString()?.Trim();
+                }
+
+                DateTime? txDate = null;
+                if (dataEl.TryGetProperty("transaction_date", out var dateProp))
+                {
+                    if (dateProp.ValueKind == JsonValueKind.String && DateTime.TryParse(dateProp.GetString(), out var parsedDate))
+                    {
+                        txDate = parsedDate;
+                    }
+                    else if (dateProp.TryGetDateTime(out var directDate))
+                    {
+                        txDate = directDate;
+                    }
+                }
+
+                return new SandboxTransactionResult(
+                    Success: true,
+                    ProviderTransactionId: providerTxId,
+                    ReferenceNumber: refNum,
+                    TransactionDate: txDate,
+                    Amount: amount,
+                    Direction: direction.ToString(),
+                    ExternalBankAccountId: externalBankAccountId,
+                    ProviderStatus: "Success",
+                    ErrorCode: null,
+                    ErrorMessage: null,
+                    IsTimeoutOrUnknown: false,
+                    RawResponseData: responseBody);
+            }
+            catch (JsonException ex)
+            {
+                return new SandboxTransactionResult(
+                    Success: false,
+                    Amount: amount,
+                    Direction: direction.ToString(),
+                    ExternalBankAccountId: externalBankAccountId,
+                    ProviderStatus: "InvalidJson",
+                    ErrorCode: "invalid_provider_json",
+                    ErrorMessage: $"Failed to parse provider response as valid JSON: {ex.Message}",
+                    IsTimeoutOrUnknown: false,
+                    RawResponseData: responseBody);
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

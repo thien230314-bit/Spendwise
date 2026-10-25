@@ -13,7 +13,7 @@ public enum BankLinkPurpose { LinkBankAccount, UnlinkBankAccount, ReactivateBank
 public enum BankLinkSessionStatus { Pending, Completed, Failed, Expired }
 public enum BankTransactionDirection { Credit, Debit }
 public enum BankTransactionSource { Webhook, ManualSync }
-public enum BankIntegrationEventStatus { Received, Processed, Duplicate, Unmatched, Failed, Ignored }
+public enum BankIntegrationEventStatus { Received, Processed, Duplicate, Unmatched, Failed, Ignored, Quarantined }
 public enum WalletTopUpStatus { Pending, Processing, Completed, Expired, Failed }
 public enum WalletWithdrawalStatus { Pending, Reserved, Processing, Completed, Failed, Cancelled, PendingReconciliation }
 

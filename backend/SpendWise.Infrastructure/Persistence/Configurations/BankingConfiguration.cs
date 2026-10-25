@@ -96,6 +96,9 @@ public sealed class WalletWithdrawalConfiguration : IEntityTypeConfiguration<Wal
         builder.HasIndex(x => x.BankConnectionId)
             .IsUnique()
             .HasFilter("[Status] IN ('Pending', 'Reserved', 'Processing', 'PendingReconciliation')");
+        builder.HasIndex(x => x.ProviderTransactionId)
+            .IsUnique()
+            .HasFilter("[ProviderTransactionId] IS NOT NULL");
         builder.Property(x => x.Amount).HasPrecision(Money.Precision, Money.Scale);
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.Reference).HasMaxLength(64);

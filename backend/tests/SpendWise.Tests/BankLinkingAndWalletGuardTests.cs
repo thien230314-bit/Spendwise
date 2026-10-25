@@ -672,7 +672,7 @@ public sealed class BankLinkingAndWalletGuardTests
             DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             "evt_delayed_unlinked",
             "1.0",
-            "account.unlinked",
+            "BANK_ACCOUNT_UNLINKED",
             metadata);
 
         var result = await handler.Handle(new ProcessLifecycleEventCommand(evt), CancellationToken.None);
@@ -684,7 +684,11 @@ public sealed class BankLinkingAndWalletGuardTests
         Assert.Equal(BankConnectionStatus.Active, freshConnB.Status);
 
         var freshWalletB = await db.Wallets.SingleAsync(w => w.Id == walletB.Id);
-        Assert.Equal(WalletStatus.Active, freshWalletB.Status);
+        Assert.Equal(WalletStatus.Active, freshWalletB.Status);
+
+        var recordedEvent = await db.BankIntegrationEvents.SingleAsync(e => e.ExternalEventId == "evt_delayed_unlinked");
+        Assert.Equal(BankIntegrationEventStatus.Quarantined, recordedEvent.ProcessingStatus);
+        Assert.Equal("quarantined_ambiguous_ownership", recordedEvent.FailureCode);
     }
 
     [Theory]

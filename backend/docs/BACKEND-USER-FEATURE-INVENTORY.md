@@ -423,9 +423,10 @@ Cung cấp trợ lý AI tương tác tự nhiên với người dùng về tình
 - `POST /api/bank-connections/test-mode/link-challenges/{challengeId}/confirm` — Xác nhận liên kết thử nghiệm (*EXTERNAL_LIVE_DEFERRED*: gọi trực tiếp `ISePayTestModeAccountReader` tới `https://userapi-sandbox.sepay.vn/v2/` cần remote sandbox API token).
 - `POST /api/bank-connections/test-mode/wallet-top-ups` — Tạo yêu cầu nạp tiền vào ví từ tài khoản ngân hàng Test Mode (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API; nghiệp vụ nội bộ đã kiểm thử từ chối kết nối unlinked 404 `bank_connection_not_found`).
 - `POST /api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` — Xác nhận hoàn tất nạp tiền vào ví (*EXTERNAL_LIVE_DEFERRED*: gọi SePay sandbox API xác thực giao dịch chuyển tiền).
-- `POST /api/bank-connections/test-mode/wallet-withdrawals` — Tạo yêu cầu rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết, xác thực PIN, kiểm tra `IActiveBankGuard`, tạo reservation hold sổ cái `SYSTEM:ReservationHold:VND` trong DB transaction trước khi gọi HTTP, gọi SePay BankHub Sandbox `POST /v1/transaction/create`, tất toán sang `SYSTEM:ExternalSource:VND` khi thành công, hoàn trả hold khi thất bại, chuyển `PendingReconciliation` khi timeout (`IMPLEMENTED_PHASE1_1` — Unit/Integration Verified; Postman E2E deferred to Phase 2).
-- `GET /api/bank-connections/test-mode/wallet-withdrawals` — Lấy danh sách lịch sử rút tiền của người dùng (`IMPLEMENTED_PHASE1_1` — Unit/Integration Verified; Postman E2E deferred to Phase 2).
-- `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}` — Lấy chi tiết giao dịch rút tiền theo ID kèm metadata đối soát (`IMPLEMENTED_PHASE1_1` — Unit/Integration Verified; Postman E2E deferred to Phase 2).
+- `POST /api/bank-connections/test-mode/wallet-withdrawals` — Tạo yêu cầu rút tiền từ ví SpendWise về tài khoản ngân hàng liên kết, xác thực PIN, kiểm tra `IActiveBankGuard`, tạo reservation hold sổ cái `SYSTEM:ReservationHold:VND` trong DB transaction trước khi gọi HTTP, gọi SePay BankHub Sandbox `POST /v1/transaction/create`, tất toán sang `SYSTEM:ExternalSettlement:VND` khi thành công, hoàn trả hold khi thất bại, chuyển `PendingReconciliation` khi timeout (`IMPLEMENTED_PHASE1_2` — C# Unit/Integration Verified & SQL Server 2022 Concurrency Verified; Postman E2E deferred to Phase 2).
+- `GET /api/bank-connections/test-mode/wallet-withdrawals` — Lấy danh sách lịch sử rút tiền của người dùng (`IMPLEMENTED_PHASE1_2` — C# Unit/Integration Verified).
+- `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}` — Lấy chi tiết giao dịch rút tiền theo ID kèm metadata đối soát (`IMPLEMENTED_PHASE1_2` — C# Unit/Integration Verified).
+- `POST /api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile` — Thực hiện đối soát giao dịch rút tiền đang chờ (FinalizeSuccess / ReleaseFailure) với atomic CAS, ngăn double-finalize/double-release (`IMPLEMENTED_PHASE1_2` — C# Unit & SQL02 Concurrency C06 Verified).
 - `GET /api/bank-connections/test-mode/linked-accounts` — Xem danh sách tài khoản liên kết Test Mode (`SUCCESS_VERIFIED`).
 - `GET /api/bank-connections/test-mode/wallet-top-ups` — Xem lịch sử nạp tiền Test Mode (`SUCCESS_VERIFIED`).
 - `GET /api/bank-transactions` — Lấy danh sách giao dịch ngân hàng đã ghi nhận (`SUCCESS_VERIFIED`).
@@ -661,6 +662,10 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 | `/api/bank-connections/test-mode/wallet-top-ups/{topUpId}/confirm` | POST | Banking | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/bank-connections/test-mode/linked-accounts` | GET | Banking | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/bank-connections/test-mode/wallet-top-ups` | GET | Banking | IMPLEMENTED | PASS (Newman & C#) |
+| `/api/bank-connections/test-mode/wallet-withdrawals` | POST | Banking | IMPLEMENTED | PASS (C# & SQL02 Concurrency C01, C02, C05) |
+| `/api/bank-connections/test-mode/wallet-withdrawals` | GET | Banking | IMPLEMENTED | PASS (C#) |
+| `/api/bank-connections/test-mode/wallet-withdrawals/{id}` | GET | Banking | IMPLEMENTED | PASS (C#) |
+| `/api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile` | POST | Banking | IMPLEMENTED | PASS (C# & SQL02 Concurrency C06) |
 | `/api/bank-transactions` | GET | Bank Transactions | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/bank-transactions/{id}` | GET | Bank Transactions | IMPLEMENTED | PASS (Newman & C#) |
 | `/api/bank-transactions/{id}/category` | PATCH | Bank Transactions | IMPLEMENTED | PASS (Newman & C#) |

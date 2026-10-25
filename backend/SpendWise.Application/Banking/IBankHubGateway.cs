@@ -13,7 +13,8 @@ public sealed record SandboxTransactionResult(
     string? ProviderStatus = null,
     string? ErrorCode = null,
     string? ErrorMessage = null,
-    bool IsTimeoutOrUnknown = false);
+    bool IsTimeoutOrUnknown = false,
+    string? RawResponseData = null);
 
 // Application chỉ biết gateway provider-neutral, còn HTTP/token SePay nằm trong Infrastructure.
 public interface IBankHubGateway

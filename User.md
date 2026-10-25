@@ -681,7 +681,35 @@ Triển khai bộ API cho phép người dùng rút tiền từ ví SpendWise v�
 - **Bảo vệ Concurrency & Lọc Chỉ mục (Filtered Unique Indexes)**:
   - `IX_WalletTopUps_BankConnectionId`: lọc `[Status] IN ('Pending', 'Processing')` đảm bảo mỗi liên kết ngân hàng chỉ có tối đa 1 giao dịch nạp tiền đang chạy.
   - `IX_WalletWithdrawals_BankConnectionId`: lọc `[Status] IN ('Pending', 'Reserved', 'Processing', 'PendingReconciliation')` đảm bảo mỗi liên kết ngân hàng chỉ có tối đa 1 giao dịch rút tiền đang thực thi hoặc chờ đối soát.
+  - `IX_WalletWithdrawals_ProviderTransactionId`: lọc `[ProviderTransactionId] IS NOT NULL` ngăn ngừa trùng lặp mã giao dịch provider giữa các lần rút tiền.
+- **Quy trình Đối soát Rút tiền (Withdrawal Reconciliation Workflow - P0-04)**:
+  - `POST /api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile`:
+    - Áp dụng kỹ thuật nguyên tử **Compare-And-Swap (CAS)** (`Status` từ `PendingReconciliation`/`Reserved` sang `Processing` trong atomic update) đảm bảo xử lý đồng thời giữa nhiều worker/request luôn đạt tính chất **exactly-once**.
+    - Hành động `FinalizeSuccess`: Xác nhận rút tiền thành công khi có bằng chứng giao dịch từ ngân hàng (`ProviderTransactionId`). Thực hiện chuyển tiền sổ cái từ `SYSTEM:ReservationHold:VND` sang `SYSTEM:ExternalSettlement:VND`, ghi nhận `FinancialTransactionType.TransferOut` và cập nhật trạng thái `Completed`. Idempotent nếu đã hoàn tất.
+    - Hành động `ReleaseFailure`: Xác nhận giao dịch thất bại dứt khoát từ provider. Giải phóng số dư tạm giữ từ `SYSTEM:ReservationHold:VND` hoàn lại tài khoản sổ cái ví của người dùng, cập nhật trạng thái `Failed`. Idempotent nếu đã giải phóng.
+    - Hành động `QueryProvider`: SePay Bank Hub Sandbox không cung cấp mock transaction status query tự động; yêu cầu manual evidence hoặc webhook callback từ provider.
+- **SePay Bank Hub Gateway Contract Hardening (P0-01)**:
+  - Tuân thủ hợp đồng SePay `POST /v1/transaction/create`: phong bì `code` (200/201), đối tượng `data`.
+  - Bắt buộc kiểm tra `transaction_id` không rỗng (fallback `id`/`xid`), trả mã lỗi `missing_provider_transaction_id` nếu thiếu.
+  - Bắt buộc kiểm tra số tiền `amount` (`provider_amount_mismatch`) và hướng tiền `credit` (`provider_direction_mismatch`).
+  - Phân loại rõ ràng lỗi xác định 4xx (`IsTimeoutOrUnknown = false`) và lỗi quá thời gian/mạng 5xx/timeout (`IsTimeoutOrUnknown = true`).
+  - Lưu trữ `RawResponseData` đã được lọc bỏ thông tin nhạy cảm.
+- **Đối chiếu Định danh SePay User API v2 TestMode và Bank Hub Sandbox (P0-02)**:
+  - Trạng thái: `IDENTITY_MAPPING_REQUIRES_SANDBOX_VERIFICATION`.
+  - Hai môi trường sandbox hiện tại:
+    | Thuộc tính | User API v2 TestMode | Bank Hub Sandbox | Khả năng mapping |
+    |---|---|---|---|
+    | Endpoint | `userapi-sandbox.sepay.vn/v2` | `bankhub-sandbox.sepay.vn/v1` | Hai hệ thống sandbox độc lập |
+    | Account Identifier | `account_id` (Guid/Int) | `bank_account_xid` (String token) | Chưa có căn cứ chứng minh tương đương |
+    | Mô phỏng biến động | Không hỗ trợ tự tạo giao dịch | `POST /v1/transaction/create` | Flow nghiệp vụ khác nhau |
+    | Chính sách an toàn | Fail-closed: Validate định danh `ExternalAccountId` không rỗng; không tự ý map User API v2 ID sang Bank Hub xid |
+- **Xử lý Webhook Trễ và Cơ chế Quarantined (P0-03)**:
+  - Khi nhận webhook ngân hàng từ phiên liên kết cũ (ví dụ `BANK_ACCOUNT_UNLINKED`), nếu không xác định được session correlation của chủ sở hữu hiện tại hoặc phát hiện xung đột lịch sử sở hữu giữa nhiều người dùng, sự kiện được đánh dấu `BankIntegrationEventStatus.Quarantined` với `FailureCode = "quarantined_ambiguous_ownership"`.
+  - Bảo đảm tuyệt đối không tác động hoặc làm gián đoạn liên kết ngân hàng và ví của User B đang active.
+- **Migration Tương thích Dữ liệu Ví Cũ (P1-01)**:
+  - Migration `20261025010137_FixLegacyWalletRestrictionReasonDefaultAndData`: Chuẩn hóa 257 bản ghi ví trên SQL Server 2022 (`SpendWise_E2E_G4`), thiết lập default constraint `None` và fallback an toàn trong ValueConverter, giải quyết dứt điểm lỗi materialization enum trong EF Core.
 - **Endpoints**:
   - `POST /api/bank-connections/test-mode/wallet-withdrawals`: Khởi tạo yêu cầu rút tiền với khóa IdempotencyKey.
   - `GET /api/bank-connections/test-mode/wallet-withdrawals`: Danh sách lịch sử các lần rút tiền của người dùng.
   - `GET /api/bank-connections/test-mode/wallet-withdrawals/{id}`: Tra cứu chi tiết một lần rút tiền theo ID kèm metadata đối soát.
+  - `POST /api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile`: Thực hiện đối soát (FinalizeSuccess / ReleaseFailure).

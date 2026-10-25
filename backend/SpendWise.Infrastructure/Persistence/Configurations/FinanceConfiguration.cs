@@ -16,13 +16,30 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Wallet>
         b.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Currency).HasMaxLength(3);
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
-        b.Property(x => x.RestrictionReason).HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.RestrictionReason)
+            .HasConversion(
+                v => v.ToString(),
+                v => ParseRestrictionReason(v))
+            .HasMaxLength(30)
+            .HasDefaultValue(WalletRestrictionReason.None);
         b.Property(x => x.AvailableBalance).HasPrecision(Money.Precision, Money.Scale);
         b.Property(x => x.RowVersion).IsRowVersion();
         // SQL Server chỉ cho phép mỗi người dùng có nhiều nhất một ví default.
         b.HasIndex(x => x.OwnerUserId)
             .IsUnique()
             .HasFilter("[IsDefault] = 1");
+    }
+
+    private static WalletRestrictionReason ParseRestrictionReason(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return WalletRestrictionReason.None;
+        }
+
+        return Enum.TryParse<WalletRestrictionReason>(value, true, out var reason)
+            ? reason
+            : WalletRestrictionReason.None;
     }
 }
 public sealed class LedgerAccountConfiguration : IEntityTypeConfiguration<LedgerAccount>

@@ -209,6 +209,300 @@ public sealed class SePayBankHubGatewayTests
         Assert.DoesNotContain(names, name => name.Contains("ApiKey", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_Valid201WithTransactionId_ReturnsSuccess()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 201,
+                "message": "success",
+                "data": {
+                    "transaction_id": "tx_mock_12345",
+                    "reference_number": "REF12345",
+                    "transaction_date": "2026-10-25T01:00:00Z",
+                    "amount": 100000,
+                    "transfer_type": "credit"
+                }
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.Created, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.True(result.Success);
+        Assert.Equal("tx_mock_12345", result.ProviderTransactionId);
+        Assert.Equal("REF12345", result.ReferenceNumber);
+        Assert.Equal(100000m, result.Amount);
+        Assert.Equal("Credit", result.Direction);
+        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.NotNull(result.RawResponseData);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_MissingTransactionId_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 201,
+                "message": "success",
+                "data": {
+                    "reference_number": "REF12345",
+                    "amount": 100000
+                }
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.Created, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("missing_provider_transaction_id", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_EmptyTransactionId_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 201,
+                "message": "success",
+                "data": {
+                    "transaction_id": "   ",
+                    "amount": 100000
+                }
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.Created, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("missing_provider_transaction_id", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_AmountMismatch_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 201,
+                "message": "success",
+                "data": {
+                    "transaction_id": "tx_mock_12345",
+                    "amount": 50000,
+                    "transfer_type": "credit"
+                }
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.Created, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_amount_mismatch", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_DirectionMismatch_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 201,
+                "message": "success",
+                "data": {
+                    "transaction_id": "tx_mock_12345",
+                    "amount": 100000,
+                    "transfer_type": "debit"
+                }
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.Created, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_direction_mismatch", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_Http200WithErrorCodeInEnvelope_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            var body = """
+            {
+                "code": 400,
+                "message": "bank_account_not_found"
+            }
+            """;
+            return Task.FromResult(Json(HttpStatusCode.OK, body));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_business_error", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task CreateSandboxTransactionAsync_Http4xx_ReturnsDefinitiveFailure(HttpStatusCode status)
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            return Task.FromResult(Json(status, """{"error":"client_error"}"""));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_rejected", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.RequestTimeout)]
+    public async Task CreateSandboxTransactionAsync_Http5xxOrTimeout_ReturnsTimeoutOrUnknown(HttpStatusCode status)
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            return Task.FromResult(Json(status, """{"error":"server_error"}"""));
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_timeout", result.ErrorCode);
+        Assert.True(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_NetworkException_ReturnsTimeoutOrUnknown()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            throw new HttpRequestException("Connection refused");
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_network_error", result.ErrorCode);
+        Assert.True(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_TaskCanceledTimeout_ReturnsTimeoutOrUnknown()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            throw new TaskCanceledException("Operation timed out");
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("provider_timeout", result.ErrorCode);
+        Assert.True(result.IsTimeoutOrUnknown);
+    }
+
+    [Fact]
+    public async Task CreateSandboxTransactionAsync_InvalidJson_ReturnsFailure()
+    {
+        var handler = new CallbackHttpHandler((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/v1/token")
+                return Task.FromResult(Json(HttpStatusCode.Created, """{"access_token":"test-token","ttl":600}"""));
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("<html>502 Bad Gateway</html>", Encoding.UTF8, "text/html")
+            });
+        });
+        using var gateway = Gateway(Options(), handler);
+
+        var result = await gateway.CreateSandboxTransactionAsync(
+            "acc_123", BankTransactionDirection.Credit, 100000, "Test withdrawal", default);
+
+        Assert.False(result.Success);
+        Assert.Equal("invalid_provider_json", result.ErrorCode);
+        Assert.False(result.IsTimeoutOrUnknown);
+    }
+
     private static SePayBankHubGateway Gateway(
         SePayBankHubOptions options,
         HttpMessageHandler handler,

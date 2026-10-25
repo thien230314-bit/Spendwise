@@ -110,6 +110,13 @@ public sealed class CreateWalletWithdrawalCommandHandler(
             && item.Status == BankConnectionStatus.Active, cancellationToken)
             ?? throw BankingErrors.ConnectionNotFound();
 
+        if (connection.AccountEnvironment == SePayAccountEnvironment.TestMode)
+        {
+            throw new ConflictException(
+                "SEPAY_SANDBOX_ACCOUNT_IDENTITY_MAPPING_BLOCKED",
+                "Tài khoản liên kết từ SePay TestMode không thể dùng cho Bank Hub withdrawal do chưa xác minh định danh.");
+        }
+
         if (string.IsNullOrWhiteSpace(connection.ExternalAccountId))
         {
             throw new ConflictException("invalid_bank_account_identity", "Tài khoản ngân hàng liên kết thiếu định danh hợp lệ.");

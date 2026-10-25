@@ -337,7 +337,7 @@ public sealed class BankLinkingAndWalletGuardTests
         {
             UserId = user.Id,
             Provider = BankProvider.SePayBankHub,
-            AccountEnvironment = SePayAccountEnvironment.TestMode,
+            AccountEnvironment = SePayAccountEnvironment.BankHub,
             ExternalAccountId = "acc_wd_01",
             BankBrandName = "MBBank",
             AccountHolderName = user.FullName,
@@ -417,7 +417,7 @@ public sealed class BankLinkingAndWalletGuardTests
         {
             UserId = user.Id,
             Provider = BankProvider.SePayBankHub,
-            AccountEnvironment = SePayAccountEnvironment.TestMode,
+            AccountEnvironment = SePayAccountEnvironment.BankHub,
             ExternalAccountId = "acc_wd_timeout",
             BankBrandName = "MBBank",
             AccountHolderName = user.FullName,
@@ -506,7 +506,7 @@ public sealed class BankLinkingAndWalletGuardTests
         {
             UserId = user.Id,
             Provider = BankProvider.SePayBankHub,
-            AccountEnvironment = SePayAccountEnvironment.TestMode,
+            AccountEnvironment = SePayAccountEnvironment.BankHub,
             ExternalAccountId = "acc_wd_fail",
             BankBrandName = "MBBank",
             AccountHolderName = user.FullName,

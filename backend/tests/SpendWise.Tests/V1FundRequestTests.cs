@@ -106,17 +106,18 @@ public sealed class V1FundRequestTests
 
         await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, TargetedCorrectnessFixture.SecurityPin, default);
 
-        // 50 VND >= 20% of 200 VND (40 VND) -> Enters 24h hold
+        // Under Fixed Fund V2: Once group target is 100% funded and member has 100% contributed + CanSpend=true,
+        // expense completes immediately (no 20% threshold, no 24h cooloff hold).
         var request = new V1FundRequestInput("Expense", 50, merchant.Id, "Hotel deposit", "exp-large-1", TargetedCorrectnessFixture.SecurityPin);
-        var held = await service.CreateFundRequestAsync(member.Id, fund.Id, request, default);
+        var directSpent = await service.CreateFundRequestAsync(member.Id, fund.Id, request, default);
 
-        Assert.Equal("Pending24h", held.State);
-        Assert.Equal("Hold24h", held.ExecutionAvailability);
+        Assert.Equal("Completed", directSpent.State);
+        Assert.Equal("Executed", directSpent.ExecutionAvailability);
 
-        // Cancellation by member
-        var cancelled = await service.CancelFundRequestAsync(member.Id, held.Id, TargetedCorrectnessFixture.SecurityPin, default);
-        Assert.Equal("Cancelled", cancelled.State);
-        Assert.Equal("Cancelled", cancelled.ExecutionAvailability);
+        // Check merchant balance
+        f.Db.ChangeTracker.Clear();
+        var merchantWallet = await f.Db.Wallets.SingleAsync(w => w.OwnerUserId == merchant.Id);
+        Assert.Equal(50, merchantWallet.AvailableBalance);
     }
 
     [Fact]

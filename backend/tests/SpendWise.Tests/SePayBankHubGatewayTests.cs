@@ -273,7 +273,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("missing_provider_transaction_id", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     [Fact]
@@ -303,7 +303,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("missing_provider_transaction_id", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     [Fact]
@@ -334,7 +334,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("provider_amount_mismatch", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     [Fact]
@@ -365,7 +365,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("provider_direction_mismatch", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     [Fact]
@@ -391,7 +391,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("provider_business_error", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     [Theory]
@@ -500,7 +500,7 @@ public sealed class SePayBankHubGatewayTests
 
         Assert.False(result.Success);
         Assert.Equal("invalid_provider_json", result.ErrorCode);
-        Assert.False(result.IsTimeoutOrUnknown);
+        Assert.True(result.IsTimeoutOrUnknown);
     }
 
     private static SePayBankHubGateway Gateway(

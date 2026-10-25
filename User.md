@@ -1,3 +1,13 @@
+
+> [!IMPORTANT]
+> **CẬP NHẬT CHÍNH THỨC PHASE 1.3 — FIXED FUND V2 BUSINESS RULES (PO DECISION)**
+> 1. Bãi bỏ hoàn toàn ngưỡng 20% và trạng thái Pending24h / 24h cooloff hold đối với chi tiêu Quỹ Cố định.
+> 2. Owner chỉ có thể cấp quyền CanSpend = true cho thành viên đã hoàn thành 100% nghĩa vụ đóng góp cá nhân (RequiredVnd).
+> 3. Quyền chi thực tế (EffectiveCanSpend) được tính động: Thành viên hoàn thành 100% nghĩa vụ + Nhóm đạt 100% mục tiêu quỹ (TargetVnd) + Có quyền CanSpend + Quỹ đang hoạt động.
+> 4. Chủ quỹ (Owner) không cần cờ CanSpend, nhưng bắt buộc phải tự hoàn thành 100% nghĩa vụ cá nhân và quỹ nhóm đạt 100% mục tiêu mới được chi tiêu.
+> 5. Khi đã đạt 100% mục tiêu nhóm, các khoản chi hợp lệ sau đó làm số dư ví quỹ giảm xuống KHÔNG làm mất trạng thái hoàn thành của nhóm (so sánh tổng đóng góp hợp lệ với TargetVnd).
+> 6. Quy trình duyệt chi / rút tiền của Quỹ Tự do (Free Fund) được giữ nguyên 100%. Không áp dụng duyệt chi Owner cho Quỹ Cố định.
+
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION
 
 > CURRENT STATUS (2026-10-24, Hardened Readiness Gate v2.2): **BACKEND USER READINESS GATE PASSED (100% INTERNAL HAPPY-PATHS VERIFIED WITH PROVENANCE ENGINE & STRICT DB SAFETY)**. Full Newman audited suite executed on database `SpendWise_E2E_G4` (300/300 requests PASS, 339/339 assertions PASS, 0 failures). 208 / 208 internal User operations verified happy paths (196 SUCCESS_VERIFIED + 12 BOTH_VERIFIED); 0 NEGATIVE_ONLY; 8 approved EXTERNAL_LIVE_DEFERRED (SePay live payment gateway/webhooks; Unlink bank account verified in-process); 0 NOT_VERIFIED; 0 FAIL. Release Build: PASS (0 Warning, 0 Error). Current evidence: `POSTMAN-ENDPOINT-COVERAGE.md`, `BACKEND-USER-READINESS-REPORT.md`, `POSTMAN-API-TEST-REPORT.md`, `readiness_gate_results.json`.

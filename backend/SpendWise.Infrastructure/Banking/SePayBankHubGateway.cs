@@ -140,7 +140,7 @@ public sealed class SePayBankHubGateway(
                         ProviderStatus: "InvalidEnvelope",
                         ErrorCode: "invalid_response_envelope",
                         ErrorMessage: "Provider response root is not a JSON object.",
-                        IsTimeoutOrUnknown: false,
+                        IsTimeoutOrUnknown: true,
                         RawResponseData: responseBody);
                 }
 
@@ -159,7 +159,7 @@ public sealed class SePayBankHubGateway(
                             ProviderStatus: "BusinessError",
                             ErrorCode: "provider_business_error",
                             ErrorMessage: msg,
-                            IsTimeoutOrUnknown: false,
+                            IsTimeoutOrUnknown: true,
                             RawResponseData: responseBody);
                     }
                 }
@@ -174,7 +174,7 @@ public sealed class SePayBankHubGateway(
                         ProviderStatus: "MissingData",
                         ErrorCode: "missing_provider_data",
                         ErrorMessage: "Provider response missing mandatory 'data' object.",
-                        IsTimeoutOrUnknown: false,
+                        IsTimeoutOrUnknown: true,
                         RawResponseData: responseBody);
                 }
 
@@ -203,7 +203,7 @@ public sealed class SePayBankHubGateway(
                         ProviderStatus: "MissingTransactionId",
                         ErrorCode: "missing_provider_transaction_id",
                         ErrorMessage: "Provider response does not contain a valid non-empty transaction ID.",
-                        IsTimeoutOrUnknown: false,
+                        IsTimeoutOrUnknown: true,
                         RawResponseData: responseBody);
                 }
 
@@ -221,7 +221,7 @@ public sealed class SePayBankHubGateway(
                             ProviderStatus: "AmountMismatch",
                             ErrorCode: "provider_amount_mismatch",
                             ErrorMessage: $"Provider transaction amount {returnedAmount} does not match requested amount {amount}.",
-                            IsTimeoutOrUnknown: false,
+                            IsTimeoutOrUnknown: true,
                             RawResponseData: responseBody);
                     }
                 }
@@ -242,7 +242,7 @@ public sealed class SePayBankHubGateway(
                             ProviderStatus: "DirectionMismatch",
                             ErrorCode: "provider_direction_mismatch",
                             ErrorMessage: $"Provider transfer_type '{returnedType}' does not match expected '{expectedType}'.",
-                            IsTimeoutOrUnknown: false,
+                            IsTimeoutOrUnknown: true,
                             RawResponseData: responseBody);
                     }
                 }
@@ -290,7 +290,7 @@ public sealed class SePayBankHubGateway(
                     ProviderStatus: "InvalidJson",
                     ErrorCode: "invalid_provider_json",
                     ErrorMessage: $"Failed to parse provider response as valid JSON: {ex.Message}",
-                    IsTimeoutOrUnknown: false,
+                    IsTimeoutOrUnknown: true,
                     RawResponseData: responseBody);
             }
         }

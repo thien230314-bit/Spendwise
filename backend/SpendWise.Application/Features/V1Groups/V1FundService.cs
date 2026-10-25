@@ -24,7 +24,11 @@ public sealed record V1MemberDto(
     bool CanSpend,
     DateTime JoinedAt,
     string FullName = "",
-    string? AvatarUrl = null)
+    string? AvatarUrl = null,
+    bool EffectiveCanSpend = false,
+    bool IndividualContributionCompleted = false,
+    bool GroupFundingCompleted = false,
+    bool CanManageSpendingPermission = false)
 {
     public string DisplayName => FullName;
 }
@@ -79,20 +83,66 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
     {
         await GetAsync(userId, fundId, ct);
         var fund = await FundAsync(fundId, ct);
-        return await (
+
+        var members = await (
             from m in db.V1FundMemberships.AsNoTracking()
             join u in db.Users.AsNoTracking() on m.UserId equals u.Id
             where m.FundId == fundId && m.LeftAt == null
             orderby m.Seat
-            select new V1MemberDto(
-                m.UserId,
-                m.Seat,
-                m.UserId == fund.OwnerUserId,
-                m.CanSpend,
-                m.JoinedAt,
-                u.FullName,
-                u.AvatarUrl))
+            select new { Membership = m, User = u })
             .ToListAsync(ct);
+
+        var isFixed = fund.Kind == V1FundKind.Fixed;
+        var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, ct);
+        var obligations = (isFixed && treasury is not null)
+            ? await db.V1FundObligations.AsNoTracking().Where(o => o.FundId == fundId && o.Revision == treasury.Revision).ToListAsync(ct)
+            : new List<V1FundObligation>();
+        var paidDict = isFixed ? await ActivityPaidAsync(fundId, ct) : new Dictionary<Guid, long>();
+
+        var totalPaid = paidDict.Values.Sum();
+        var targetVnd = (treasury?.TargetVnd ?? fund.TargetVnd) ?? 0L;
+        var groupFundingCompleted = isFixed && targetVnd > 0 && totalPaid >= targetVnd;
+        var isFundActive = fund.ActivityClosedAt is null && fund.DissolvedAt is null;
+
+        var result = new List<V1MemberDto>(members.Count);
+        foreach (var row in members)
+        {
+            var isOwner = row.Membership.UserId == fund.OwnerUserId;
+            var reqVnd = obligations.FirstOrDefault(o => o.MembershipId == row.Membership.Id)?.RequiredVnd ?? 0L;
+            var userPaid = paidDict.GetValueOrDefault(row.Membership.Id);
+            var individualCompleted = !isFixed || (reqVnd > 0 && userPaid >= reqVnd);
+
+            bool effectiveCanSpend;
+            if (!isFundActive)
+            {
+                effectiveCanSpend = false;
+            }
+            else if (!isFixed)
+            {
+                effectiveCanSpend = false;
+            }
+            else
+            {
+                effectiveCanSpend = groupFundingCompleted && individualCompleted && (isOwner || row.Membership.CanSpend);
+            }
+
+            var canManage = isFixed && !isOwner && individualCompleted;
+
+            result.Add(new V1MemberDto(
+                row.Membership.UserId,
+                row.Membership.Seat,
+                isOwner,
+                row.Membership.CanSpend,
+                row.Membership.JoinedAt,
+                row.User.FullName,
+                row.User.AvatarUrl,
+                effectiveCanSpend,
+                individualCompleted,
+                groupFundingCompleted,
+                canManage));
+        }
+
+        return result;
     }
 
     public async Task<IReadOnlyList<V1ActivityDto>> ActivitiesAsync(Guid userId, Guid fundId, int page, int pageSize, CancellationToken ct)
@@ -189,9 +239,31 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var fund = await LockFundAsync(fundId, token);
             RequireOwner(fund, ownerId);
             if (fund.Kind != V1FundKind.Fixed) throw new ConflictException("fixed_fund_required", "Free funds use withdrawal approval, not direct spending permission.");
-            var changed = await db.V1FundMemberships.Where(m => m.FundId == fundId && m.UserId == memberId && m.LeftAt == null)
-                .ExecuteUpdateAsync(s => s.SetProperty(m => m.CanSpend, enabled), token);
-            if (changed != 1) throw new NotFoundException("fund_member_not_found", "Active member not found.");
+            if (memberId == fund.OwnerUserId) throw new ConflictException("owner_spending_permission_invalid", "Owner does not need spending permission and cannot be modified.");
+
+            var targetMembership = await db.V1FundMemberships.SingleOrDefaultAsync(m => m.FundId == fundId && m.UserId == memberId && m.LeftAt == null, token)
+                ?? throw new NotFoundException("fund_member_not_found", "Active member not found.");
+
+            var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, token)
+                ?? throw new ConflictException("treasury_not_found", "Fund treasury not initialized.");
+
+            var obligation = await db.V1FundObligations.AsNoTracking().SingleOrDefaultAsync(
+                o => o.FundId == fundId && o.Revision == treasury.Revision && o.MembershipId == targetMembership.Id, token);
+
+            if (obligation is null || obligation.RequiredVnd <= 0)
+            {
+                throw new ConflictException("fixed_member_obligation_missing", "Member obligation is not confirmed for the current revision.");
+            }
+
+            var paidDict = await ActivityPaidAsync(fundId, token);
+            var memberPaid = paidDict.GetValueOrDefault(targetMembership.Id);
+
+            if (memberPaid < obligation.RequiredVnd)
+            {
+                throw new ConflictException("fixed_member_contribution_incomplete", "Thành viên chưa hoàn thành 100% nghĩa vụ đóng góp hiện hành.");
+            }
+
+            targetMembership.CanSpend = enabled;
             await ActivityAsync(fundId, ownerId, "SpendingPermissionChanged", token, memberId, enabled ? "ON" : "OFF");
             await db.SaveChangesAsync(token);
             return true;

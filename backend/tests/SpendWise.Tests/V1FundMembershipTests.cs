@@ -63,11 +63,15 @@ public sealed class V1FundMembershipTests
         Assert.Equal(2, membership.Seat);
         await Assert.ThrowsAsync<ForbiddenException>(() => service.SetSpendingPermissionAsync(member.Id, fund.Id, owner.Id, true,
             TargetedCorrectnessFixture.SecurityPin, default));
+        var conf = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(100, TargetedCorrectnessFixture.SecurityPin), default);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
+        var memObligation = await f.Db.V1FundObligations.SingleAsync(o => o.FundId == fund.Id && o.Revision == conf.Revision && o.UserId == member.Id);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, memObligation.RequiredVnd, "c-mem-seed", TargetedCorrectnessFixture.SecurityPin, conf.Revision), default);
         await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, TargetedCorrectnessFixture.SecurityPin, default);
         Assert.True(await f.Db.V1FundMemberships.Where(m => m.UserId == member.Id).Select(m => m.CanSpend).SingleAsync());
         await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, false, TargetedCorrectnessFixture.SecurityPin, default);
         Assert.False(await f.Db.V1FundMemberships.Where(m => m.UserId == member.Id).Select(m => m.CanSpend).SingleAsync());
-        Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
+        Assert.Single(await f.Db.LedgerTransactions.ToListAsync());
         Assert.Equal(2, await f.Db.V1FundActivities.CountAsync(a => a.Event == "SpendingPermissionChanged"));
     }
 

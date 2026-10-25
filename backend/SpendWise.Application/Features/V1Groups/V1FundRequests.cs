@@ -96,19 +96,42 @@ public sealed partial class V1FundService
 
             var isOwner = actor == fund.OwnerUserId;
 
-            var canSpend = isOwner || await db.V1FundMemberships.AnyAsync(m => m.FundId == fundId && m.UserId == actor && m.LeftAt == null && m.CanSpend, token);
+            if (request.Kind == "Expense" && fund.Kind == V1FundKind.Fixed)
+            {
+                if (!isOwner)
+                {
+                    var hasPermission = await db.V1FundMemberships.AnyAsync(m => m.FundId == fundId && m.UserId == actor && m.LeftAt == null && m.CanSpend, token);
+                    if (!hasPermission)
+                        throw new ForbiddenException("fund_spending_permission_required", "Spending permission is required.");
+                }
 
+                var treasuryPre = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId, token)
+                    ?? throw new ConflictException("treasury_not_found", "Fund treasury not initialized.");
 
+                var myObligation = await db.V1FundObligations.AsNoTracking().SingleOrDefaultAsync(
+                    o => o.FundId == fundId && o.Revision == treasuryPre.Revision && o.MembershipId == membershipId, token);
 
-            if (request.Kind == "Expense" && fund.Kind == V1FundKind.Fixed && !canSpend)
+                if (myObligation is null || myObligation.RequiredVnd <= 0)
+                {
+                    throw new ConflictException("obligations_not_completed", "Nghĩa vụ cá nhân chưa được xác nhận trong phiên hiện hành.");
+                }
 
-                throw new ForbiddenException("fund_spending_permission_required", "Spending permission is required.");
+                var paidDict = await ActivityPaidAsync(fundId, token);
+                var myPaid = paidDict.GetValueOrDefault(membershipId);
+                if (myPaid < myObligation.RequiredVnd)
+                {
+                    throw new ConflictException("fixed_member_contribution_incomplete", "Cá nhân người yêu cầu chi chưa hoàn thành 100% nghĩa vụ đóng góp.");
+                }
 
-
+                var totalPaidContributions = paidDict.Values.Sum();
+                var targetVnd = (treasuryPre.TargetVnd ?? fund.TargetVnd) ?? 0L;
+                if (targetVnd <= 0 || totalPaidContributions < targetVnd)
+                {
+                    throw new ConflictException("fixed_group_funding_incomplete", "Quỹ Cố định chưa hoàn thành 100% mục tiêu đóng góp của nhóm.");
+                }
+            }
 
             await RequireNoActiveElectionAsync(fundId, token);
-
-
 
             var treasury = await TreasuryAsync(fund, token);
 
@@ -116,133 +139,43 @@ public sealed partial class V1FundService
 
             var treasuryAccount = await FreshAccountAsync(treasury.LedgerAccountId, token);
 
-
-
             if (request.Kind == "Expense" && (fund.Kind == V1FundKind.Fixed || isOwner))
-
             {
-
                 var destWallet = await PayoutWalletAsync(request.RecipientUserId, token);
 
-                // Verify Fixed obligations fulfilled if Fixed fund
-
                 if (fund.Kind == V1FundKind.Fixed)
-
                 {
-
-                    var availableBalance = await FixedSpendableAsync(fund, treasury, treasuryAccount, null, token);
-
-                    if (request.AmountVnd > availableBalance)
-
-                        throw new ConflictException("insufficient_fund_balance", "Amount exceeds available balance after locked excess and holds.");
-
-
-
-                    // Large expense policy: threshold 20%
-
-                    var threshold = (long)Math.Floor(await FixedWindowOpeningBalanceAsync(fundId, treasury, treasuryAccount, token) * 0.20m);
-
-                    var past24hStart = clock.UtcNow.AddHours(-24);
-
-                    var recentSpent24h = await db.V1FundRequests.AsNoTracking()
-
-                        .Where(r => r.FundId == fundId && r.Kind == "Expense" && (r.State == "Completed" || r.State == "Pending24h") && r.CreatedAt >= past24hStart)
-
+                    var holds = await db.V1FundRequests.AsNoTracking().Where(r => r.FundId == fund.Id
+                        && (r.State == "Pending24h" || r.State == "Suspended"))
                         .SumAsync(r => r.AmountVnd, token);
 
-
-
-                    if (request.AmountVnd >= threshold || (recentSpent24h + request.AmountVnd >= threshold && threshold > 0))
-
-                    {
-
-                        // Enters 24h cooloff hold
-
-                        var pendingItem = new V1FundRequest
-
-                        {
-
-                            FundId = fundId,
-                            RequestedByMembershipId = membershipId,
-
-                            RequestedByUserId = actor,
-
-                            RecipientUserId = request.RecipientUserId,
-
-                            Kind = "Expense",
-
-                            AmountVnd = request.AmountVnd,
-
-                            Purpose = purpose,
-
-                            IdempotencyKey = key,
-
-                            OwnershipRevision = fund.OwnershipRevision,
-
-                            CreatedAt = clock.UtcNow,
-
-                            State = "Pending24h"
-
-                        };
-
-                        db.V1FundRequests.Add(pendingItem);
-
-                        await ActivityAsync(fundId, actor, "ExpensePendingHold24h", token, request.RecipientUserId,
-
-                            detail: $"Khoản chi lớn {request.AmountVnd:N0} đ chờ 24 giờ để các thành viên xác nhận.",
-
-                            referenceId: pendingItem.Id);
-
-                        await db.SaveChangesAsync(token);
-
-                        return MapRequest(pendingItem);
-
-                    }
-
+                    var availableBalance = Math.Max(0, treasuryAccount.Balance - holds);
+                    if (request.AmountVnd > availableBalance)
+                        throw new ConflictException("insufficient_fund_balance", "Amount exceeds available balance after holds.");
                 }
-
                 else // Free fund expense
-
                 {
-
                     if (request.AmountVnd > treasuryAccount.Balance)
-
                         throw new ConflictException("insufficient_fund_balance", "Amount exceeds fund balance.");
-
                 }
 
-
-
-                // Direct spend execution (< 20% or Free fund authorized spend)
-
+                // Direct spend execution (No 20% limit and no 24h hold for Fixed fund under PO V2 rules)
                 var destAccount = await db.LedgerAccounts.SingleOrDefaultAsync(a => a.WalletId == destWallet.Id
-
                     && a.Type == LedgerAccountType.Wallet && a.Currency == "VND", token)
-
                     ?? throw new ConflictException("wallet_unavailable", "Recipient wallet ledger account is unavailable.");
 
                 await FreshAccountAsync(destAccount.Id, token);
 
                 var posting = await ledger.PostAsync(
-
                     treasury.LedgerAccountId,
-
                     destAccount.Id,
-
                     request.AmountVnd,
-
                     "VND",
-
                     "V1FundExpense",
-
                     fundId,
-
                     $"v1-fund-expense:{fundId:N}:{actor:N}",
-
                     key,
-
                     purpose,
-
                     token);
 
 
@@ -379,16 +312,17 @@ public sealed partial class V1FundService
 
             RequireOwner(fund, actor);
 
-            if (item.State != "AwaitingOwnerReview" && item.State != "Pending24h")
-
+            if (fund.Kind == V1FundKind.Fixed)
             {
+                throw new ConflictException("fixed_owner_review_disallowed", "Fixed fund expenses cannot be reviewed by owner.");
+            }
 
+            if (item.State != "AwaitingOwnerReview" && item.State != "Pending24h")
+            {
                 if ((approved && item.State == "Completed") || (!approved && item.State == "Rejected"))
-
                     return MapRequest(item);
 
                 throw new ConflictException("fund_request_unavailable", "Request is not awaiting review.");
-
             }
 
 

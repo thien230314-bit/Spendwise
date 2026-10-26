@@ -407,6 +407,24 @@ IF OBJECT_ID('LedgerEntries', 'U') IS NOT NULL
 IF OBJECT_ID('LedgerAccounts', 'U') IS NOT NULL
     DELETE FROM LedgerAccounts WHERE Id IN (SELECT LedgerAccountId FROM #FixtureLedgerAccountIds);
 
+-- Delete any dependent rows referencing fixture wallets before deleting wallets
+IF OBJECT_ID('V1FundContributions', 'U') IS NOT NULL
+    DELETE FROM V1FundContributions WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('WalletWithdrawals', 'U') IS NOT NULL
+    DELETE FROM WalletWithdrawals WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('WalletTopUps', 'U') IS NOT NULL
+    DELETE FROM WalletTopUps WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('GroupRefunds', 'U') IS NOT NULL
+    DELETE FROM GroupRefunds WHERE DestinationWalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('FundTransactions', 'U') IS NOT NULL
+    DELETE FROM FundTransactions WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('GroupContributions', 'U') IS NOT NULL
+    DELETE FROM GroupContributions WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('TransactionWalletAllocations', 'U') IS NOT NULL
+    DELETE FROM TransactionWalletAllocations WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+IF OBJECT_ID('TransactionCorrectionWalletAllocations', 'U') IS NOT NULL
+    DELETE FROM TransactionCorrectionWalletAllocations WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+
 IF OBJECT_ID('Wallets', 'U') IS NOT NULL
     DELETE FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 "@
@@ -1051,7 +1069,7 @@ VALUES
 
 
 
-    ('E2E00000-0000-0000-0000-000000000025', 'E2E00000-0000-0000-0000-000000000001', 'SePayBankHub', 'EXT-ACC-TEST', 'MBBank', 'Personal', 'FIXTURE USER TEST', '****9999', 'Active', 'TestMode', GETUTCDATE(), GETUTCDATE());
+    ('E2E00000-0000-0000-0000-000000000025', 'E2E00000-0000-0000-0000-000000000001', 'SePayBankHub', 'EXT-ACC-TEST', 'MBBank', 'Personal', 'FIXTURE USER TEST', '****9999', 'Inactive', 'TestMode', GETUTCDATE(), GETUTCDATE());
 
 
 
@@ -1065,7 +1083,7 @@ INSERT INTO BankTransactions (Id, UserId, BankConnectionId, Provider, ExternalTr
 
 VALUES ('E2E00000-0000-0000-0000-000000000006', 'E2E00000-0000-0000-0000-000000000001', 'E2E00000-0000-0000-0000-000000000005', 'SePayBankHub', 'EXT-TX-001', 'Credit', 500000, 'VND', GETUTCDATE(), 'Top up test', 'Webhook', GETUTCDATE(), GETUTCDATE(), GETUTCDATE());
 
-UPDATE BankConnections SET Status = 'Active', UnlinkedAt = NULL WHERE Id = 'E2E00000-0000-0000-0000-000000000025';
+-- UPDATE BankConnections SET Status = 'Active' removed to respect unique active bank per user
 
 INSERT INTO WalletTopUps (Id, UserId, BankConnectionId, WalletId, Amount, Currency, Reference, Status, ExpiresAt, CreatedAt, UpdatedAt)
 VALUES ('E2E00000-0000-0000-0000-000000000050', 'E2E00000-0000-0000-0000-000000000001', 'E2E00000-0000-0000-0000-000000000005', 'E2E00000-0000-0000-0000-000000000003', 100000, 'VND', 'SWTPE2E001', 'Pending', DATEADD(hour, 2, GETUTCDATE()), GETUTCDATE(), GETUTCDATE());
@@ -2500,7 +2518,7 @@ $conn.Close()
 
 
 
-dotnet run --project scratch/FixPolicy/FixPolicy.csproj | Out-Null
+if (Test-Path "scratch/FixPolicy/FixPolicy.csproj") { dotnet run --project scratch/FixPolicy/FixPolicy.csproj | Out-Null }
 
 
 

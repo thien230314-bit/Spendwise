@@ -1,0 +1,75 @@
+{
+  "executionIdentity": {
+    "gitCommitSha": "9eff25fd89cf17128dfd3436b2314f875dda5d77",
+    "gitBranch": "main",
+    "gitRepository": "https://github.com/thien230314-bit/Spendwise",
+    "apiBuildIdentity": "SpendWise.API .NET 10.0 Release (Assembly: SpendWise, Version=1.0.0.0)",
+    "kestrelVerifiedUrl": "http://127.0.0.1:5158",
+    "sqlServerTarget": {
+      "instance": "DESKTOP-B5KA3LT\\SQLEXPRESS02",
+      "catalog": "SpendWise_E2E_G4"
+    },
+    "retestRun": {
+      "runId": "batch2-retest-1792990466",
+      "timestamp": "2026-10-26T04:54:26.183936+00:00",
+      "scope": "Targeted Retest of 140 Failed Assertions across 112 Requests from Batch 1 Forensics"
+    },
+    "postmanArtifactHashes": {
+      "collectionPath": "backend/postman/SpendWise-User-API.postman_collection.json",
+      "environmentPath": "backend/postman/SpendWise-Test.postman_environment.json"
+    }
+  },
+  "retestExecutionSummary": {
+    "totalEvaluatedAssertions": 140,
+    "assertionsPassed": 140,
+    "assertionsFailed": 0,
+    "passRatePercent": 100.0,
+    "http5xxServerErrors": 0
+  },
+  "rootCauseClusterBreakdown": {
+    "CL-01": {
+      "name": "Missing Fixture Auth Tokens",
+      "evaluated": 77,
+      "passed": 77,
+      "failed": 0
+    },
+    "CL-02": {
+      "name": "Task 17 Active Bank Guard Enforcement",
+      "evaluated": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    "CL-03": {
+      "name": "Empty GUID Variable Cascade (Model Validation 400)",
+      "evaluated": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "CL-04": {
+      "name": "Unseeded Entity ID Cascade (404 Not Found)",
+      "evaluated": 27,
+      "passed": 27,
+      "failed": 0
+    },
+    "CL-05": {
+      "name": "State Assertion Cascade (Status 200, Value 0)",
+      "evaluated": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "CL-06": {
+      "name": "Unseeded Fixture PIN Reset Token",
+      "evaluated": 1,
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "verificationClassification": {
+    "Category_A_PostmanContractError": 0,
+    "Category_B_FixtureOrAuthError_Resolved": 140,
+    "Category_C_RealBackendBug": 0,
+    "Category_D_ProviderDependency": 0,
+    "Category_E_FrontendRequired": 0,
+    "total": 140
+  }
+}

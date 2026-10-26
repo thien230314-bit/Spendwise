@@ -276,7 +276,8 @@
                   "    pm.environment.set(\"userA_refreshToken\", data.refreshToken);",
                   "    pm.environment.set(\"userA_id\", data.user.id);",
                   "    pm.environment.set(\"userA_spendId\", data.user.spendId);",
-                  "});"
+                  "});",
+                  "if (data && data.accessToken && !pm.environment.get(\"fixture_user_token\")) { pm.environment.set(\"fixture_user_token\", data.accessToken); }"
                 ]
               }
             }
@@ -429,7 +430,8 @@
                   "    pm.environment.set(\"userB_refreshToken\", data.refreshToken);",
                   "    pm.environment.set(\"userB_id\", data.user.id);",
                   "    pm.environment.set(\"userB_spendId\", data.user.spendId);",
-                  "});"
+                  "});",
+                  "if (data && data.accessToken && !pm.environment.get(\"fixture_member_token\")) { pm.environment.set(\"fixture_member_token\", data.accessToken); }"
                 ]
               }
             }
@@ -1032,7 +1034,8 @@
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"userA_token\", data.accessToken);",
                   "    pm.environment.set(\"userA_refreshToken\", data.refreshToken);",
-                  "});"
+                  "});",
+                  "if (data && data.accessToken && !pm.environment.get(\"fixture_user_token\")) { pm.environment.set(\"fixture_user_token\", data.accessToken); }"
                 ]
               }
             }
@@ -1219,7 +1222,8 @@
                   "    const data = pm.response.json();",
                   "    pm.environment.set(\"userA_token\", data.accessToken);",
                   "    pm.environment.set(\"userA_refreshToken\", data.refreshToken);",
-                  "});"
+                  "});",
+                  "if (data && data.accessToken && !pm.environment.get(\"fixture_user_token\")) { pm.environment.set(\"fixture_user_token\", data.accessToken); }"
                 ]
               }
             }
@@ -15760,6 +15764,23 @@
           "id": "a4e0f380-2ea8-53b4-9349-eb51150cfe84"
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fallback synchronization between dynamic user tokens and fixture tokens",
+          "if (!pm.environment.get(\"fixture_user_token\") && pm.environment.get(\"userA_token\")) {",
+          "    pm.environment.set(\"fixture_user_token\", pm.environment.get(\"userA_token\"));",
+          "}",
+          "if (!pm.environment.get(\"fixture_member_token\") && pm.environment.get(\"userB_token\")) {",
+          "    pm.environment.set(\"fixture_member_token\", pm.environment.get(\"userB_token\"));",
+          "}"
+        ]
+      }
     }
   ]
 }

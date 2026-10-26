@@ -1,0 +1,117 @@
+{
+  "executionIdentity": {
+    "gitCommitSha": "9eff25fd89cf17128dfd3436b2314f875dda5d77",
+    "gitBranch": "main",
+    "gitRepository": "https://github.com/thien230314-bit/Spendwise",
+    "apiBuildIdentity": "SpendWise.API .NET 10.0 Release (Assembly: SpendWise, Version=1.0.0.0)",
+    "kestrelVerifiedUrl": "http://127.0.0.1:5158",
+    "sqlServerTarget": {
+      "instance": "DESKTOP-B5KA3LT\\SQLEXPRESS02",
+      "catalog": "SpendWise_E2E_G4"
+    },
+    "newmanRun": {
+      "runId": "1730000000000-e2e-g4-raw-evidence",
+      "timestamp": "2026-10-25T23:37:38+07:00",
+      "evidenceSource": "reports/newman/newman-results.json",
+      "evidenceSha256": "094A919FEA4F3F20E6C9E0ADCE54AEAB3FEB165E3E6028F125406A65038D522C"
+    },
+    "postmanArtifactHashes": {
+      "collectionPath": "backend/postman/SpendWise-User-API.postman_collection.json",
+      "collectionSha256": "7ED88F0B16FDD78CEDAAEBDA2B91230D9476411D391EEA246B36869E5749B35C",
+      "environmentPath": "backend/postman/SpendWise-Test.postman_environment.json",
+      "environmentSha256": "C8F6C70ADF608449348AD5A136E6469467C67B083D4AFBD36DDEB478123FC649"
+    }
+  },
+  "executionStatistics": {
+    "totalHttpRequests": 303,
+    "totalAssertions": 343,
+    "assertionsPassed": 203,
+    "assertionsFailed": 140,
+    "http5xxServerErrors": 0,
+    "httpStatusCodes": {
+      "2xx": 177,
+      "401": 55,
+      "403": 2,
+      "404": 40,
+      "409": 23,
+      "5xx": 0
+    }
+  },
+  "failedAssertionCategoryBreakdown": {
+    "Category_A_PostmanContractError": 0,
+    "Category_B_FixtureOrAuthError": 140,
+    "Category_C_RealBackendBug": 0,
+    "Category_D_ProviderDependency": 0,
+    "Category_E_FrontendRequired": 0,
+    "Category_F_InsufficientEvidence": 0,
+    "total": 140
+  },
+  "rootCauseClusterSummary": [
+    {
+      "clusterId": "CL-01",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "Missing Fixture Auth Tokens",
+      "rootCause": "Postman environment variables fixture_user_token and fixture_member_token unpopulated, resulting in missing Authorization headers on batches 1, 4, 5, 6, 7.",
+      "affectedRequests": 49,
+      "affectedAssertions": 77,
+      "severity": "P1"
+    },
+    {
+      "clusterId": "CL-02",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "Task 17 Active Bank Guard Enforcement",
+      "rootCause": "Folder 03-05 tests executed financial mutations before linking an active bank connection, correctly blocked by active_bank_required guard.",
+      "affectedRequests": 18,
+      "affectedAssertions": 18,
+      "severity": "P1"
+    },
+    {
+      "clusterId": "CL-03",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "Empty GUID Variable Cascade (Model Validation 400)",
+      "rootCause": "Empty GUIDs (destinationWalletId, sourceWalletId, linkedTransactionId, bankConnectionId) sent in request body due to failed upstream creations.",
+      "affectedRequests": 6,
+      "affectedAssertions": 6,
+      "severity": "P2"
+    },
+    {
+      "clusterId": "CL-04",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "Unseeded Entity ID Cascade (404 Not Found)",
+      "rootCause": "Downstream operations on wallets, transactions, legacy groups, or fund treasury received 404 because upstream creations failed.",
+      "affectedRequests": 27,
+      "affectedAssertions": 27,
+      "severity": "P2"
+    },
+    {
+      "clusterId": "CL-05",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "State Assertion Cascade (Status 200, Value 0)",
+      "rootCause": "Tests asserting balance > 0 or list count > 0 received 0 because upstream wallet funding / fund contributions failed.",
+      "affectedRequests": 11,
+      "affectedAssertions": 11,
+      "severity": "P2"
+    },
+    {
+      "clusterId": "CL-06",
+      "category": "B (FIXTURE_OR_AUTH_ERROR)",
+      "name": "Unseeded Fixture PIN Reset Token",
+      "rootCause": "B1-02 PIN reset request passed unseeded fixture_pin_reset_token, rejected with 401 pin_reset_token_invalid.",
+      "affectedRequests": 1,
+      "affectedAssertions": 1,
+      "severity": "P2"
+    }
+  ],
+  "openApiCoverageSummary": {
+    "totalRuntimeOpenApiOperations": 339,
+    "totalUserApiOperations": 216,
+    "totalAdminApiOperations": 123,
+    "userApiStatusBreakdown": {
+      "VERIFIED": 112,
+      "FIXTURE_BLOCKED": 88,
+      "PROVIDER_BLOCKED": 14,
+      "NEGATIVE_ONLY": 1,
+      "NOT_TESTED": 1
+    }
+  }
+}

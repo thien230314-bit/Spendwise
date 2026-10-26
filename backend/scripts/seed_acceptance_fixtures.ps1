@@ -1215,7 +1215,10 @@ Write-Host "Seeding AI Action Proposals and PIN Reset Token..."
 
 
 
-$rawToken = "E2E_PIN_RESET_SECRET_TOKEN_XYZ_12345"
+# Dynamically generate secure random PIN reset token per run (satisfies Gate 0 & CL-06)
+$tokenBytes = New-Object byte[] 48
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($tokenBytes)
+$rawToken = [System.Convert]::ToBase64String($tokenBytes)
 
 
 
@@ -1364,7 +1367,7 @@ INSERT INTO SecurityPinResetTokens (Id, UserId, Purpose, TokenHash, ExpiresAt, C
 
 
 
-VALUES ('E2E00000-0000-0000-0000-00000000000B', 'E2E00000-0000-0000-0000-000000000002', 'SelfService', '$pinTokenHash', DATEADD(day, 2, GETUTCDATE()), GETUTCDATE(), GETUTCDATE());
+VALUES ('E2E00000-0000-0000-0000-00000000000B', 'E2E00000-0000-0000-0000-000000000002', 'SelfService', '$pinTokenHash', DATEADD(minute, 15, GETUTCDATE()), GETUTCDATE(), GETUTCDATE());
 
 
 
@@ -2840,82 +2843,59 @@ $newVars = @{
 
 
 
+# Gate 0 remediation: Separate tracked template files from gitignored runtime local environment
+$runtimeEnvFiles = @(
+    "e:\source\SpendWise-final-merged\SpendWise-Test.runtime.local.json",
+    "e:\source\SpendWise-final-merged\backend\postman\SpendWise-Test.runtime.local.json"
+)
+
+$tokenKeys = @("fixture_user_token", "fixture_member_token", "fixture_pin_reset_token", "core_owner_token", "core_member_token")
+
+# 1. Update tracked environment files: only non-sensitive fixture IDs, NEVER runtime tokens!
 foreach ($envFile in $envFiles) {
-
-
-
     if (Test-Path $envFile) {
-
-
-
         $envJson = Get-Content $envFile -Raw | ConvertFrom-Json
-
-
-
         foreach ($key in $newVars.Keys) {
-
-
-
             $existing = $envJson.values | Where-Object { $_.key -eq $key }
-
-
-
+            $valToSave = if ($tokenKeys -contains $key) { "" } else { $newVars[$key] }
             if ($existing) {
-
-
-
-                $existing.value = $newVars[$key]
-
-
-
+                $existing.value = $valToSave
                 $existing.enabled = $true
-
-
-
             } else {
-
-
-
                 $envJson.values += [PSCustomObject]@{
-
-
-
                     key = $key
-
-
-
-                    value = $newVars[$key]
-
-
-
+                    value = $valToSave
                     enabled = $true
-
-
-
                 }
-
-
-
             }
-
-
-
         }
-
-
-
         $envJson | ConvertTo-Json -Depth 10 | Set-Content $envFile -Encoding UTF8
-
-
-
-        Write-Host "Updated environment at $envFile"
-
-
-
+        Write-Host "Updated sanitized tracked environment at $envFile (zero runtime secrets)"
     }
+}
 
-
-
+# 2. Write active runtime variables (including tokens) to gitignored *.local.json files
+for ($i = 0; $i -lt $envFiles.Count; $i++) {
+    $tmplFile = $envFiles[$i]
+    $runtimeFile = $runtimeEnvFiles[$i]
+    if (Test-Path $tmplFile) {
+        $envJson = Get-Content $tmplFile -Raw | ConvertFrom-Json
+        foreach ($key in $newVars.Keys) {
+            $existing = $envJson.values | Where-Object { $_.key -eq $key }
+            if ($existing) {
+                $existing.value = $newVars[$key]
+                $existing.enabled = $true
+            } else {
+                $envJson.values += [PSCustomObject]@{
+                    key = $key
+                    value = $newVars[$key]
+                    enabled = $true
+                }
+            }
+        }
+        $envJson | ConvertTo-Json -Depth 10 | Set-Content $runtimeFile -Encoding UTF8
+        Write-Host "Generated gitignored runtime environment at $runtimeFile (with active runtime tokens)"
+    }
 }
 
 

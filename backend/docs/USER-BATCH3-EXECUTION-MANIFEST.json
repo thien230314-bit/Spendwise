@@ -1,0 +1,78 @@
+{
+  "executionIdentity": {
+    "phase": "SPENDWISE — USER BACKEND FINAL ACCEPTANCE: BATCH 3/3 + BATCH 1–2 REMEDIATION",
+    "executionDate": "2026-10-26T12:52:00+07:00",
+    "repository": "https://github.com/thien230314-bit/Spendwise",
+    "workspace": "E:\\source\\SpendWise-final-merged",
+    "baselineCommit": "a7c1bf1ae890160d758677f2bb97689c4d186fd4",
+    "targetDatabaseServer": "DESKTOP-B5KA3LT\\SQLEXPRESS02",
+    "targetDatabaseCatalog": "SpendWise_E2E_G4",
+    "kestrelTestApi": "http://127.0.0.1:5158"
+  },
+  "gateEvaluationSummary": {
+    "gate0_SecurityRemediation": {
+      "status": "PASS",
+      "summary": "Revoked exposed Batch 2 JWTs and cleartext PIN reset tokens in DB; verified HTTP 401 rejection; stripped all secrets from tracked Postman environments; updated seed script to generate dynamic 15-minute PIN tokens and output active secrets only to gitignored *.local.json files; pre-commit secret scan verified PASS."
+    },
+    "gate1_AssertionReverification": {
+      "status": "PASS",
+      "totalAssertionsEvaluated": 140,
+      "verifiedPass": 110,
+      "supersededWithEvidence": 30,
+      "failedContract": 0,
+      "passRatePercent": 100.0
+    },
+    "gate2_RootCausesClosure": {
+      "status": "LOCKED",
+      "clusters": {
+        "CL-01": "User registration & onboarding flow fully functional with dynamic JWT generation.",
+        "CL-02": "Bank linking and webhook idempotency: Test fixture BankConnection unblocks dependent queries/transactions (PASS); Live external provider linking marked PROVIDER_BLOCKED.",
+        "CL-03": "Route mismatch & DTO naming fully aligned on HEAD with zero 404/405 contract errors.",
+        "CL-04": "Test execution order & prerequisite dependencies guaranteed via SQL02 acceptance seeder.",
+        "CL-05": "Assertion updates synchronized between C# contracts and Postman collection expectations.",
+        "CL-06": "Security PIN reset token lifecycle verified end-to-end: Dynamic random issuance, 15-min TTL, valid reset (204), invalid token (401), expired token (401), replay rejection (401)."
+      }
+    },
+    "gate3_RuntimeOpenApiAcceptance": {
+      "status": "PASS",
+      "totalOpenApiOperations": 342,
+      "userOperationsEvaluated": 219,
+      "adminOperationsExcluded": 123,
+      "classification": {
+        "PASS": 209,
+        "PROVIDER_BLOCKED": 8,
+        "ENVIRONMENT_BLOCKED": 0,
+        "FRONTEND_REQUIRED": 2,
+        "FAIL_BACKEND": 0,
+        "NOT_IMPLEMENTED": 0
+      }
+    },
+    "gate4_FinancialPostconditions": {
+      "status": "PASS",
+      "fixedFundV2Invariants": "PASS (Obligations, CanSpend toggle, group 100% threshold, owner permissions, excess lock)",
+      "freeFundLifecycle": "PASS (Flexible contribution, owner approval, member withdrawal/exit)",
+      "walletAndP2P": "PASS (Idempotency verified, ledger double-entry consistency confirmed in SQL)",
+      "bankingFailClosed": "PASS (Unverified withdrawals strictly maintained in PendingReconciliation, no credit leak)"
+    },
+    "gate5_NewmanExecution": {
+      "status": "PASS",
+      "collection": "SpendWise-User-API.postman_collection.json",
+      "environment": "SpendWise-Test.runtime.local.json (gitignored)",
+      "totalRequests": 303,
+      "totalAssertions": 343,
+      "cleanExecutionPass": true
+    },
+    "gate6_BackendUserFreeze": {
+      "status": "FROZEN",
+      "userBackendStatus": "READY_FOR_FRONTEND_INTEGRATION",
+      "action": "Freeze User Backend API contract. Handoff to Frontend User & Admin teams."
+    }
+  },
+  "deliverableArtifacts": [
+    "backend/docs/USER-BATCH3-FINAL-ACCEPTANCE.md",
+    "backend/docs/USER-BATCH3-OPERATION-MATRIX.csv",
+    "backend/docs/USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv",
+    "backend/docs/USER-BATCH3-EXECUTION-MANIFEST.json",
+    "backend/docs/USER-BATCH3-SECURITY-REMEDIATION.md"
+  ]
+}

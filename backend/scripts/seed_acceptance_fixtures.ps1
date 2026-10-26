@@ -176,6 +176,11 @@ SELECT Id FROM LedgerAccounts WHERE Id IN (
     'E2E00000-0000-0000-0000-00000000003A',
     'E2E00000-0000-0000-0000-0000000000CB'
 ) OR Code IN ('E2E_MAIN_01', 'E2E_MAIN_02', 'E2E_MAIN_MEMBER', 'FUND_07_TREASURY', 'FUND_08_TREASURY', 'FUND_10_TREASURY', 'REFUND_GRP_TREASURY', 'GRP_TREASURY_01', 'GRP_TREASURY_02', 'FUND_11_TREASURY');
+INSERT INTO #FixtureLedgerAccountIds (LedgerAccountId)
+SELECT DISTINCT Id FROM LedgerAccounts 
+WHERE (WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds))
+   OR OwnerUserId IN (SELECT UserId FROM #FixtureUserIds))
+  AND Id NOT IN (SELECT LedgerAccountId FROM #FixtureLedgerAccountIds);
 
 -- ==============================================================================
 -- 2. FK-ORDERED SCOPED DELETION
@@ -425,6 +430,8 @@ IF OBJECT_ID('TransactionWalletAllocations', 'U') IS NOT NULL
 IF OBJECT_ID('TransactionCorrectionWalletAllocations', 'U') IS NOT NULL
     DELETE FROM TransactionCorrectionWalletAllocations WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
 
+IF OBJECT_ID('LedgerAccounts', 'U') IS NOT NULL
+    UPDATE LedgerAccounts SET WalletId = NULL WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
 IF OBJECT_ID('Wallets', 'U') IS NOT NULL
     DELETE FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds);
 "@

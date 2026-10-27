@@ -256,12 +256,14 @@ public sealed class GetFriendsQueryHandler(ISpendWiseDbContext db)
             .ToDictionaryAsync(item => item.FriendshipId, cancellationToken);
         var common = await FriendFeatureSupport.CommonGroupsAsync(db, query.UserId, ids, cancellationToken);
 
-        return friendships.Select(item =>
+        return friendships
+            .Where(item => users.ContainsKey(item.FriendUserId))
+            .Select(item =>
             {
                 var user = users[item.FriendUserId];
-                var preference = preferences[item.Id];
+                preferences.TryGetValue(item.Id, out var preference);
                 return new FriendDto(user.Id, user.FullName, user.SpendId, user.Phone,
-                    preference.Nickname, preference.IsFavorite, item.AcceptedAt, user.AvatarUrl) { CommonGroups = common.GetValueOrDefault(user.Id) ?? [] };
+                    preference?.Nickname, preference?.IsFavorite ?? false, item.AcceptedAt, user.AvatarUrl) { CommonGroups = common.GetValueOrDefault(user.Id) ?? [] };
             })
             .OrderByDescending(item => item.IsFavorite)
             .ThenBy(item => item.Nickname ?? item.FullName, StringComparer.OrdinalIgnoreCase)

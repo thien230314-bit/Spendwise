@@ -2,6 +2,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using SpendWise.Application.Banking;
+using SpendWise.Application.Features;
+using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Features.Banking;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.BankConnections;
@@ -12,6 +15,8 @@ using SpendWise.Domain.Banking;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.Identity;
 using SpendWise.Infrastructure.Finance;
+using SpendWise.Infrastructure.Identity;
+using SpendWise.Infrastructure.Banking;
 using SpendWise.Infrastructure.Persistence;
 using SpendWise.API.Infrastructure;
 using Xunit;
@@ -472,6 +477,167 @@ public sealed class SePayTestModeBankingTests
     {
         try { return (await action(), null); }
         catch (Exception error) { return (null, error); }
+    }
+
+    [Fact]
+    public async Task Withdrawal_test_mode_creates_reservation_and_returns_processing_when_settlement_pending()
+    {
+        await using var fixture = await BankingFixture.CreateAsync();
+        var user = await fixture.AddUserAsync();
+        user.SecurityPinHash = new SecurityPinService().Hash("123456");
+        var wallet = await fixture.AddWalletAsync(user.Id);
+        wallet.AvailableBalance = 100_000m;
+        wallet.LedgerAccount.Balance = 100_000m;
+        var connection = await fixture.AddConnectionAsync(user.Id);
+        await fixture.Db.SaveChangesAsync();
+
+        var ledger = new LedgerService(fixture.Db, fixture.Clock);
+        var security = new FinancialSecurityGuard(fixture.Db, new SecurityPinService(), new AccountCredentialLockout(fixture.Db, fixture.Clock));
+        var guard = new ActiveBankGuard(fixture.Db);
+        var handler = new CreateWalletWithdrawalCommandHandler(
+            fixture.Db, new MockGateway(), ledger, fixture.Clock, security, guard, fixture.Provider);
+
+        var result = await handler.Handle(new CreateWalletWithdrawalCommand(
+            true, user.Id, new CreateWalletWithdrawalRequest(connection.Id, wallet.Id, 40_000m, "123456", "idemp-wd-01")), default);
+
+        Assert.NotNull(result);
+        Assert.Equal("Processing", result.Status);
+        Assert.Equal(40_000m, result.Amount);
+        Assert.StartsWith("SWWD", result.Reference);
+
+        // Verify reservation hold
+        var hold = await fixture.Db.LedgerAccounts.SingleAsync(a => a.Code == "SYSTEM:ReservationHold:VND");
+        Assert.Equal(40_000m, hold.Balance);
+
+        var walletLedger = await fixture.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id && a.Type == LedgerAccountType.Wallet);
+        Assert.Equal(60_000m, walletLedger.Balance);
+    }
+
+    [Fact]
+    public async Task Withdrawal_test_mode_settles_and_posts_financial_transaction_on_confirmation()
+    {
+        await using var fixture = await BankingFixture.CreateAsync();
+        var user = await fixture.AddUserAsync();
+        user.SecurityPinHash = new SecurityPinService().Hash("123456");
+        var wallet = await fixture.AddWalletAsync(user.Id);
+        wallet.AvailableBalance = 100_000m;
+        wallet.LedgerAccount.Balance = 100_000m;
+        var connection = await fixture.AddConnectionAsync(user.Id);
+        await fixture.Db.SaveChangesAsync();
+
+        var ledger = new LedgerService(fixture.Db, fixture.Clock);
+        var security = new FinancialSecurityGuard(fixture.Db, new SecurityPinService(), new AccountCredentialLockout(fixture.Db, fixture.Clock));
+        var guard = new ActiveBankGuard(fixture.Db);
+        var handler = new CreateWalletWithdrawalCommandHandler(
+            fixture.Db, new MockGateway(), ledger, fixture.Clock, security, guard, fixture.Provider);
+
+        var created = await handler.Handle(new CreateWalletWithdrawalCommand(
+            true, user.Id, new CreateWalletWithdrawalRequest(connection.Id, wallet.Id, 40_000m, "123456", "idemp-wd-02")), default);
+
+        // Add matching SePay TestMode incoming deposit
+        fixture.Provider.Transactions.Add(new SePayTestModeTransactionDto(
+            Guid.NewGuid(), ProviderAccountId, "in", 40_000m, 0, 940000m, $"SpendWise {created.Reference}", null, created.Reference, fixture.Clock.UtcNow));
+
+        var confirmHandler = new ConfirmTestModeWalletWithdrawalCommandHandler(
+            fixture.Db, fixture.Provider, ledger, fixture.Clock);
+        var completed = await confirmHandler.Handle(new ConfirmTestModeWalletWithdrawalCommand(
+            true, user.Id, created.Id), default);
+
+        Assert.Equal("Completed", completed.Status);
+        Assert.NotNull(completed.CompletedAt);
+
+        // Verify clearing account has funds
+        var clearing = await fixture.Db.LedgerAccounts.SingleAsync(a => a.Code == "SYSTEM:ExternalSettlement:VND");
+        Assert.Equal(40_000m, clearing.Balance);
+
+        // Verify financial transaction exists
+        var ft = await fixture.Db.FinancialTransactions.SingleAsync(t => t.RelatedBusinessId == created.Id);
+        Assert.Equal(FinancialTransactionType.TransferOut, ft.Type);
+        Assert.Equal(40_000m, ft.Amount);
+    }
+
+    [Fact]
+    public async Task Withdrawal_test_mode_rejects_insufficient_wallet_balance()
+    {
+        await using var fixture = await BankingFixture.CreateAsync();
+        var user = await fixture.AddUserAsync();
+        user.SecurityPinHash = new SecurityPinService().Hash("123456");
+        var wallet = await fixture.AddWalletAsync(user.Id);
+        wallet.AvailableBalance = 10_000m;
+        wallet.LedgerAccount.Balance = 10_000m;
+        var connection = await fixture.AddConnectionAsync(user.Id);
+        await fixture.Db.SaveChangesAsync();
+
+        var ledger = new LedgerService(fixture.Db, fixture.Clock);
+        var security = new FinancialSecurityGuard(fixture.Db, new SecurityPinService(), new AccountCredentialLockout(fixture.Db, fixture.Clock));
+        var guard = new ActiveBankGuard(fixture.Db);
+        var handler = new CreateWalletWithdrawalCommandHandler(
+            fixture.Db, new MockGateway(), ledger, fixture.Clock, security, guard, fixture.Provider);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(new CreateWalletWithdrawalCommand(
+            true, user.Id, new CreateWalletWithdrawalRequest(connection.Id, wallet.Id, 40_000m, "123456", "idemp-wd-03")), default));
+
+        Assert.Equal("insufficient_wallet_balance", ex.Code);
+    }
+
+    [Fact]
+    public async Task Withdrawal_test_mode_cancel_releases_reservation_hold_back_to_wallet()
+    {
+        await using var fixture = await BankingFixture.CreateAsync();
+        var user = await fixture.AddUserAsync();
+        user.SecurityPinHash = new SecurityPinService().Hash("123456");
+        var wallet = await fixture.AddWalletAsync(user.Id);
+        wallet.AvailableBalance = 100_000m;
+        wallet.LedgerAccount.Balance = 100_000m;
+        var connection = await fixture.AddConnectionAsync(user.Id);
+        await fixture.Db.SaveChangesAsync();
+
+        var ledger = new LedgerService(fixture.Db, fixture.Clock);
+        var security = new FinancialSecurityGuard(fixture.Db, new SecurityPinService(), new AccountCredentialLockout(fixture.Db, fixture.Clock));
+        var guard = new ActiveBankGuard(fixture.Db);
+        var handler = new CreateWalletWithdrawalCommandHandler(
+            fixture.Db, new MockGateway(), ledger, fixture.Clock, security, guard, fixture.Provider);
+
+        var created = await handler.Handle(new CreateWalletWithdrawalCommand(
+            true, user.Id, new CreateWalletWithdrawalRequest(connection.Id, wallet.Id, 40_000m, "123456", "idemp-wd-04")), default);
+
+        var cancelHandler = new CancelTestModeWalletWithdrawalCommandHandler(
+            fixture.Db, ledger, fixture.Clock);
+        var cancelled = await cancelHandler.Handle(new CancelTestModeWalletWithdrawalCommand(
+            true, user.Id, created.Id, "User requested cancel"), default);
+
+        Assert.Equal("Cancelled", cancelled.Status);
+
+        // Wallet balance restored to 100,000 VND
+        var walletLedger = await fixture.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wallet.Id && a.Type == LedgerAccountType.Wallet);
+        Assert.Equal(100_000m, walletLedger.Balance);
+
+        // Hold account is back to 0
+        var hold = await fixture.Db.LedgerAccounts.SingleAsync(a => a.Code == "SYSTEM:ReservationHold:VND");
+        Assert.Equal(0m, hold.Balance);
+    }
+
+    private sealed class MockGateway : IBankHubGateway
+    {
+        public Task<BankProviderLinkResult> CreateLinkAsync(BankProviderLinkRequest request, CancellationToken cancellationToken) =>
+            Task.FromResult(new BankProviderLinkResult("tok", "https://link", DateTime.UtcNow.AddHours(1)));
+        public Task<ExternalBankTransactionPage> GetTransactionsAsync(string externalBankAccountId, DateTime from, DateTime to, int page, int pageSize, CancellationToken cancellationToken) =>
+            throw new NotImplementedException();
+        public Task<SandboxTransactionResult> CreateSandboxTransactionAsync(
+            string externalBankAccountId,
+            BankTransactionDirection direction,
+            decimal amount,
+            string description,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new SandboxTransactionResult(
+                Success: true,
+                ProviderTransactionId: "sepay_tx_123",
+                ReferenceNumber: "REF-001",
+                TransactionDate: DateTime.UtcNow,
+                Amount: amount,
+                Direction: "Credit",
+                ExternalBankAccountId: externalBankAccountId,
+                ProviderStatus: "Success"));
     }
 
     private sealed class BankingFixture : IAsyncDisposable

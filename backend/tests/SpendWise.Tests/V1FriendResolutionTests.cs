@@ -34,4 +34,41 @@ public sealed class V1FriendResolutionTests
         Assert.Equal(FriendRequestStatus.Accepted, await f.Db.FriendRequests.Where(r => r.Id == request.Id).Select(r => r.Status).SingleAsync());
         Assert.Single(await f.Db.Friendships.ToListAsync());
     }
+
+    [Fact]
+    public async Task GetFriends_succeeds_when_friend_preference_is_missing()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var a = await f.AddUserAsync("UserA");
+        var b = await f.AddUserAsync("UserB");
+        var request = new FriendRequest
+        {
+            RequesterUserId = a.Id,
+            AddresseeUserId = b.Id,
+            LowerUserId = a.Id.CompareTo(b.Id) < 0 ? a.Id : b.Id,
+            HigherUserId = a.Id.CompareTo(b.Id) < 0 ? b.Id : a.Id
+        };
+        f.Db.FriendRequests.Add(request);
+        await f.Db.SaveChangesAsync();
+
+        await using (var fresh = new SpendWiseDbContext(new DbContextOptionsBuilder<SpendWiseDbContext>()
+            .UseSqlite(f.Db.Database.GetDbConnection()).Options, f.Clock))
+        {
+            await new AcceptFriendRequestCommandHandler(fresh, f.Clock, new V1FriendLimitTests.CapturingNotifications())
+                .Handle(new(b.Id, request.Id), default);
+        }
+
+        // Remove preferences to simulate legacy/uninitialized friend preferences
+        f.Db.FriendPreferences.RemoveRange(await f.Db.FriendPreferences.ToListAsync());
+        await f.Db.SaveChangesAsync();
+        Assert.Empty(await f.Db.FriendPreferences.ToListAsync());
+
+        var handler = new GetFriendsQueryHandler(f.Db);
+        var friends = await handler.Handle(new(a.Id), default);
+
+        Assert.Single(friends);
+        Assert.Equal(b.Id, friends[0].UserId);
+        Assert.Null(friends[0].Nickname);
+        Assert.False(friends[0].IsFavorite);
+    }
 }

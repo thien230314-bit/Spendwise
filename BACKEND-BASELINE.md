@@ -1,10 +1,23 @@
-# SpendWise V1.0 backend baseline — Task 16.1
+# SpendWise V1.0 Backend Baseline & Architecture Traceability
 
+> **Current Acceptance Status (2026-10-27):**  
+> **`BACKEND USER DEMO — ACCEPTED & LOCKED`**  
+> - **Core User Backend:** Full Newman E2E Suite executed with **306 requests, 343/343 assertions PASS, 0 FAIL, exit code 0** on database `SpendWise_E2E_G4`.  
+> - **SePay Test Mode Sandbox:** Bank linking, Top-Up DEMO, and Withdrawal DEMO completed and verified with double-entry ledger settlement and zero double-posting.  
+> - **Biometric Authentication:** WebAuthn / FIDO2 Level 2 cryptographic backend verified with 27/27 Security Tests PASS (100%) and 14/14 Financial Integration Tests PASS (100%). Status: `BIOMETRIC BACKEND — ACCEPTED; DEVICE E2E PENDING`.  
+> - **Bank Ownership:** Relational and API ownership verified (User A VPBank `****0001`, User B TPBank `****0002`).  
+> - **Phase Admin Status:** Preparing for Backend Admin Phase. Historical Admin baseline (141 requests, 227 assertions PASS from Task G5) retained below.
+
+---
+
+## 1. Historical Architecture & Baseline Progression
+
+### Task 16.1 — Approved PO Business Decisions
 Date: 2026-10-20 (Asia/Saigon). Baseline: `98fde85f46887c4f101e6871387cd881a2d3514c`; main; clean workspace. Tasks 11–16 establish implementation history and incremental gap closure. Task 16.1 implements and verifies 4 approved Product Owner business decisions.
 
 Current Task 17 core status: **CORE BUSINESS LOGIC READY FOR EXTERNAL API CHECK**. A1 remains LOCKED; A2.3 approved two-level restriction policy is IMPLEMENTED / VERIFIED. Current evidence and exact limits: `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`. All Task 16.x results below are historical. This status does not certify external providers, production deployment or full E2E. Roles remain User and one active system Admin across five areas; SuperAdmin remains disabled.
 
-Final hardening2026-10-20: **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**. Evidence: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`. Free Fund membership-episode refund/withdrawal and stale request admission fixed; Pkcs pinned9.0.21, current NuGet audit clean; final Release build0 errors/0 warnings. Task17 and Task16 counts remain historical. No Full Newman/provider/UI/Production migration in this pass; Codex completes this task under the latest instruction, without agent transfer.
+Final hardening 2026-10-20: **CORE USER & ADMIN READY FOR EXTERNAL API VERIFICATION**. Evidence: `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`. Free Fund membership-episode refund/withdrawal and stale request admission fixed; Pkcs pinned 9.0.21, current NuGet audit clean; final Release build 0 errors / 0 warnings. Task 17 and Task 16 counts remain historical. No Full Newman/provider/UI/Production migration in this pass; Codex completes this task under the latest instruction, without agent transfer.
 
 Task 16.1 confirms full regression and E2E verification across all systems:
 - Release build: 6 projects compiled cleanly with 0 errors.
@@ -79,7 +92,6 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
 - Targeted Test Suite: 84/84 PASS (SePayTestModeBankingTests, SePayBankHubGatewayTests, SePayTestModeAccountReaderTests, BankHubApplicationTests).
 - Documentation: Created backend/docs/ANTIGRAVITY-SEPAY-G2-VERIFICATION.md; updated User.md and Admin.md.
 
-
 ## Task G3 — SMTP Email Real Delivery & Expo Push Notifications Verification
 - Release Build: 6 projects compiled cleanly: 0 errors, 0 warnings.
 - SMTP Live Delivery Verified:
@@ -93,7 +105,6 @@ SQL01 must not be accessed. All integration and Newman runs used isolated fixtur
   - Physical Mobile Delivery: Accurately recorded as DEVICE_DELIVERY_NOT_VERIFIED due to lack of connected physical mobile device in workspace.
 - Targeted Test Suite: 188 / 188 PASS (Email, OTP, Mobile Push Token management, Notification mapping).
 - Documentation: Created backend/docs/ANTIGRAVITY-SMTP-EXPO-G3-VERIFICATION.md; updated User.md, Admin.md, and BACKEND-BASELINE.md.
-
 
 ## Task G4 — Fresh SQL02 Database & Full Postman E2E Final Acceptance
 - Target SQL Server: DESKTOP-B5KA3LT\SQLEXPRESS02 (Zero access to SQL01).

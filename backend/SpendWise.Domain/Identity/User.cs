@@ -54,6 +54,7 @@ public sealed class User : BaseEntity
     public List<BankConnection> BankConnections { get; set; } = [];
     public List<BankLinkSession> BankLinkSessions { get; set; } = [];
     public List<BankTransaction> BankTransactions { get; set; } = [];
+    public List<UserPasskeyCredential> PasskeyCredentials { get; set; } = [];
 }
 
 // OTP email chỉ lưu HMAC, purpose và trạng thái sử dụng; không lưu mã tám chữ số.

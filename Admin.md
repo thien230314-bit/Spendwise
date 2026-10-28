@@ -1,89 +1,135 @@
-# SpendWise V1.0 — Admin backend contract (Task 16.1)
+# SPENDWISE V1.0 — ADMIN BACKEND CONTRACT & OPERATING SPECIFICATION
 
-Updated 2026-10-20, Task G5 Final Security & E2E Acceptance: **CORE BACKEND SECURITY & E2E ACCEPTANCE PASSED**. Current evidence: `backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md`. Full Newman E2E suite executed on pristine database `SpendWise_E2E_G4` (141/141 requests PASS, 227/227 assertions PASS across ADM-01 through ADM-05). All A1-A5 administrative contracts, rate limiters, session revocation, and security boundaries verified on SQL Server. Provider and physical mobile device delivery boundaries documented.
+> **Current Phase Status (2026-10-27):**  
+> **`PREPARING FOR PHASE BACKEND ADMIN (USER DEMO LOCKED)`**  
+> - **Backend User Status:** Đã nghiệm thu và KHÓA CHỨC NĂNG (`BACKEND USER DEMO — ACCEPTED & LOCKED`, 306 requests, 343/343 assertions PASS).  
+> - **Backend Admin Status:** **CHƯA KIỂM THỬ LẠI SAU CÁC THAY ĐỔI MỚI (PENDING RE-VERIFICATION)**. Không đánh đồng việc Backend User đã nghiệm thu với việc Phase Admin đã hoàn tất.  
+> - **Bằng chứng Nghiệm thu Lịch sử (Historical Acceptance Evidence):** Đợt kiểm thử Full Newman E2E toàn diện ngày 2026-10-20 trên database `SpendWise_E2E_G4` (141/141 requests PASS, 227/227 assertions PASS) được ghi nhận tại [`backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md`](./backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md). Cần phân biệt rõ: con số 141 requests / 227 assertions này là của **bộ kiểm thử tích hợp E2E toàn trình (Full E2E suite)** kết hợp các luồng User liên hoàn và các thao tác kiểm chứng Admin ADM-01 đến ADM-05, tuyệt đối không phải toàn bộ 141 test là Admin-only. Đây là bằng chứng lịch sử (historical baseline), không phải lượt chạy mới.  
+> - **Nhiệm vụ trọng tâm Phase Admin tiếp theo:** Re-verify toàn bộ các test cases thực sự thuộc 5 phân hệ Admin (ADM-01 đến ADM-05), bảo đảm tương thích tuyệt đối với các thay đổi mới nhất về Bank Ownership, Passkeys/WebAuthn, và Fixed Fund V2.
 
-Final hardening2026-10-20: evidence hiện hành `backend/docs/CODEX-USER-ADMIN-FINAL-HARDENING.md`. Product Owner yêu cầu Codex hoàn tất, không chuyển agent trong lượt này. Năm khu vực Admin giữ nguyên quyền/scope; không có thao tác chỉnh số dư hoặc SuperAdmin. Request quỹ mới gắn membership episode, không duyệt lại request của episode đã kết thúc; legacy pending request thiếu ID và có membership đã rời bị chặn duyệt, không tự gán episode. Dispute/hold/case authorization giữ nguyên và có targeted regression. Pkcs được pin9.0.21 để sửa advisory, không mở rộng chức năng/recovery role.
+---
 
-## Roles and access
+## 1. VAI TRÒ VÀ RANH GIỚI BẢO MẬT (ROLES & SECURITY BOUNDARIES)
 
-V1.0 has User and exactly one active system Admin. The Admin manages five areas below. A fund Owner is a User with authority inside that fund, never a platform Admin. There is no SuperAdmin product, login, escalation workflow or role-management screen.
+### 1.1. Chính sách Quản trị viên duy nhất (Single Admin Policy)
+- Hệ thống SpendWise V1.0 thiết lập **duy nhất một tài khoản Quản trị viên hệ thống hoạt động** (`SystemRole.Admin`).
+- **Tuyệt đối không có vai trò `SuperAdmin`:** Không có endpoint đăng nhập SuperAdmin, không có quy trình leo thang quyền hạn (escalation), và không có giao diện quản lý phân quyền Admin. Mọi yêu cầu đăng nhập với vai trò SuperAdmin đều bị chặn dứt khoát với mã lỗi `account_unavailable` (HTTP 403).
+- **Phân định ranh giới Chủ quỹ (Fund Owner) và Quản trị viên (System Admin):**
+  - Chủ quỹ (`Fund Owner`) là một người dùng thông thường (`SystemRole.User`) có quyền hạn điều hành bên trong một Quỹ Nhóm cụ thể; hoàn toàn **không có bất kỳ quyền hạn Admin hệ thống nào**.
+  - Quản trị viên hệ thống (`Admin`) không tự ý can thiệp hoặc thay đổi số dư quỹ nhóm trừ khi có yêu cầu xử lý khiếu nại/tranh chấp hợp lệ được ghi nhận qua Case hồ sơ.
 
-Legacy enum values/migrations remain for data compatibility. SuperAdmin login returns403 `account_unavailable`; platform permissions deny that role. Legacy role-assignment endpoints do not grant a supported onboarding path. Do not create another Admin or change historical records to satisfy tests. Existing role cardinality checks are retained; production account provisioning is an authorized operational procedure, not registration.
+### 1.2. Ranh giới truy cập thông tin nhạy cảm theo Hồ sơ hỗ trợ (Case-Scoped Access)
+- Tài khoản Admin phải đáp ứng đồng thời 5 điều kiện: vai trò `Admin`, trạng thái `Active`, email đã xác thực, không bị yêu cầu đổi mật khẩu (`MustChangePassword = false`), và phiên hoạt động hợp lệ.
+- **Nguyên tắc truy cập nhạy cảm (Zero Unbounded Reads):**
+  - Admin **không có quyền đọc toàn cục** dữ liệu tài chính, số dư ví, danh sách bạn bè hay lịch sử giao dịch cá nhân của người dùng.
+  - Mọi thao tác tra cứu hồ sơ người dùng, phiên thiết bị, nhóm quỹ, hoặc lịch sử giao dịch **bắt buộc phải gắn liền với một Hồ sơ hỗ trợ đang hoạt động (`active SupportCase`)** được phân công trực tiếp cho Admin đó (`POST /api/v1/admin/support/{caseId}/users/{userId}/...`).
+  - Mỗi truy cập nhạy cảm đều được ghi nhận dấu vết kiểm toán (Audit Trail) không thể đảo ngược kèm lý do nghiệp vụ bắt buộc (`reason`).
+- **Bảo mật tuyệt đối:** Admin không bao giờ được nhìn thấy mật khẩu thô, mã PIN, mã OTP, khóa bí mật sinh trắc học, hoặc token JWT của người dùng. Admin tuyệt đối không có quyền tự ý sửa đổi số dư tài khoản sổ cái (`LedgerAccount.Balance`).
 
-Admin APIs validate current database role, account status, verified email, password-change requirement and active session. Sensitive case reads require an active assigned case linked to the target User, a reason and audit evidence; listing users does not authorize global access to their financial details. PIN applies where specified by the request DTO. Failed authorization must not reveal another User's records.
+---
 
-## ADM-01 — Dashboard
+## 2. NĂM NHÓM CHỨC NĂNG ADMIN CHUẨN HÓA (ADM-01 ĐẾN ADM-05)
 
-Canonical root: GET `/api/v1/admin/overview` with optional `date`. Related GET routes: `/tasks`, `/sources/{metric}`, `/alerts`, `/activity`. Legacy `/api/admin/dashboard` and `/api/admin/reports` are compatibility projections.
+### ADM-01 — Dashboard & Báo cáo Tổng quan (Overview)
+- **Tuyến đường chuẩn (Canonical Root):** `GET /api/v1/admin/overview` (hỗ trợ tham số `date`).
+- **Các tuyến đường chi tiết:**
+  - `GET /api/v1/admin/tasks`: Danh sách các tác vụ quản trị cần xử lý.
+  - `GET /api/v1/admin/sources/{metric}`: Chỉ số thống kê tăng trưởng người dùng, số lượng quỹ tạo mới, khối lượng giao dịch.
+  - `GET /api/v1/admin/alerts`: Cảnh báo hệ thống và dấu hiệu bất thường.
+  - `GET /api/v1/admin/activity`: Nhật ký hoạt động quản trị gần nhất.
+  - *Tương thích ngược:* `GET /api/admin/dashboard` và `/api/admin/reports` đóng vai trò là các projection tương thích.
+- **Quy tắc an toàn:**
+  - Thống kê tổng hợp số lượng người dùng, quỹ nhóm, vụ việc khiếu nại và khối lượng giao dịch từ dữ liệu thật.
+  - Ranh giới ngày làm việc tính chuẩn theo múi giờ Việt Nam (UTC+7).
+  - Nghiêm cấm đếm trùng (double-counting) các giao dịch phản chiếu (mirrored financial transactions).
+  - Số liệu tổng quan không cấp quyền truy cập chi tiết vào dữ liệu người dùng nếu không có Case được chỉ định.
 
-Reports aggregate Users, group/fund creation, cases and ledger status/volume from persisted data. Vietnam business-day boundaries are explicit. Mirrored financial histories must not double-count money. Drill-down retains assigned-case scope; aggregate totals do not grant unrestricted detail reads.
+### ADM-02 — Quản lý Người dùng & Chế tài Tài khoản (User Management)
+- **Tra cứu người dùng:** `POST /api/v1/admin/users/search` (phân trang, lọc theo trạng thái).
+- **Truy cập chi tiết theo Case hỗ trợ:**
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/restrictions`
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions`
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/groups`
+  - `POST /api/v1/admin/support/{caseId}/users/{userId}/history`
+- **Áp dụng chế tài tài khoản (`PUT /api/v1/admin/support/{caseId}/users/{userId}/status`):**
+  - Payload yêu cầu: `{ "status": "Active|Restricted|Locked", "reason": "Lý do cụ thể", "securityPin": "<admin-pin-6-so>" }`.
+  - Thực thi nguyên tử trong transaction: cập nhật trạng thái, thu hồi phiên làm việc, ghi nhận nhật ký kiểm toán (`AuditLog`), và gửi thông báo cảnh báo bảo mật (`SecurityAlert`).
+  - **Hai cấp độ chế tài tài khoản:**
+    - **Cấp độ 1 — Hạn chế tài chính (`UserStatus.Restricted`):** Chặn toàn bộ lệnh ghi nợ tiền ra (chuyển tiền ví, P2P gửi đi, chi tiêu, nộp quỹ nhóm, rút tiền); **vẫn cho phép đăng nhập, làm mới token, đọc số dư/hồ sơ, gửi yêu cầu hỗ trợ và nhận tiền vào (inbound P2P credits / refunds)**.
+    - **Cấp độ 2 — Khóa tài khoản (`UserStatus.Locked`):** Thu hồi ngay lập tức toàn bộ phiên hoạt động và refresh token. Chặn hoàn toàn đăng nhập (`HTTP 403 account_unavailable`), chặn làm mới token. Khi Admin mở khóa (`Active`), người dùng bắt buộc phải đăng nhập lại từ đầu (không thể phục hồi phiên cũ).
+  - Không thể áp dụng chế tài lên tài khoản Admin đồng cấp hoặc tài khoản đã xóa/vô hiệu hóa vĩnh viễn.
 
-Status: A1 remains functional Backend LOCKED (4/4), subject to actual regression results. Task14 does not promote the baseline.
+### ADM-03 — Hỗ trợ Khách hàng & Giải quyết Tranh chấp (Support & Disputes)
+- **Tiếp nhận khiếu nại:** Người dùng gửi yêu cầu qua `/api/cases/support` và `/api/cases/disputes`.
+- **Xử lý quản trị (`/api/v1/admin/support`):**
+  - `POST /api/v1/admin/support/tickets/search`: Tìm kiếm danh sách yêu cầu.
+  - `POST /api/v1/admin/support/assigned`: Danh sách yêu cầu được phân công cho Admin.
+  - `POST /api/v1/admin/support/{caseId}/assign`: Tự nhận hoặc phân công hồ sơ.
+  - `POST /api/v1/admin/support/{caseId}/request-info`: Yêu cầu người dùng bổ sung thông tin (`WaitingForUser`).
+  - `POST /api/v1/admin/support/{caseId}/dossier`: Hồ sơ bằng chứng đầy đủ của vụ việc.
+  - `POST /api/v1/admin/support/{caseId}/resolve`: Đóng/giải quyết vụ việc thông thường (`Resolved` / `Rejected`).
+- **Quy trình Xử lý Tranh chấp Chi tiêu Quỹ (ADM-03 & Fixed Fund V2):**
+  - **Khoản chi đã hoàn tất (`Completed`):** Trong kiến trúc Fixed Fund V2, chi tiêu hợp lệ được giải ngân tức thì (không có trạng thái tạm giữ `Pending24h` hay tự động chuyển sang `Suspended`). Khi thành viên báo cáo bất thường về một khoản chi đã `Completed`, hệ thống **bắt buộc phải tạo Hồ sơ Hỗ trợ / Tranh chấp (`SupportCase` / `Dispute`)** qua `/api/cases/support` hoặc `/api/cases/disputes`. Admin tiếp nhận hồ sơ, tra cứu dữ liệu kế toán (`POST /api/v1/admin/support/{caseId}/funds/{fundId}/finance/Expenses`) và hồ sơ bằng chứng. **Admin tuyệt đối không tự ý đảo ngược bút toán kế toán (no arbitrary reverse posting)** của các giao dịch đã hoàn tất mà không thông qua quy trình hòa giải hoặc bồi hoàn được phê duyệt.
+  - **Luồng xử lý tranh chấp giao dịch chưa hoàn tất (nếu có yêu cầu tạm hoãn / pending):** Đối với các yêu cầu chi tiêu chưa hoàn tất hoặc bị tạm hoãn xem xét (`POST /api/v1/admin/support/disputes/{requestId}/resolve`):
+    - *Báo cáo hợp lệ (`!IsRejected`):* Hủy yêu cầu chi tiêu (`Cancelled`), giải phóng số tiền bảo lưu hoàn trả về số dư khả dụng của quỹ nhóm, đánh dấu SupportCase `Resolved`, ghi log kiểm toán và gửi thông báo cho toàn bộ thành viên quỹ.
+    - *Báo cáo không hợp lệ (`IsRejected`):* Bác bỏ khiếu nại, đánh dấu SupportCase `Rejected`, tiếp tục tiến trình xử lý chi tiêu thông thường.
 
-## ADM-02 — User Management
+### ADM-04 — Quản lý Thông báo Hệ thống (Notifications)
+- **Truy vấn thông báo:**
+  - `POST /api/v1/admin/notifications/search`: Lịch sử thông báo hệ thống.
+  - `POST /api/v1/admin/notifications/delivery-history`: Lịch sử phát thông báo.
+  - `POST /api/v1/admin/notifications/failures`: Danh sách thông báo gửi thất bại để xử lý lại.
+  - `POST /api/v1/admin/notifications/templates`: Quản lý mẫu thông báo chuẩn.
+- **Phát sóng thông báo toàn hệ thống (System Broadcasts):**
+  - `POST /api/v1/system/broadcasts`: Tạo thông báo phát sóng mới.
+  - `POST /api/v1/system/broadcasts/{id}/publish`: Phát hành thông báo (yêu cầu mã PIN Admin).
+  - `POST /api/v1/system/broadcasts/{id}/cancel`: Hủy thông báo chưa phát.
+  - `GET /api/v1/system/broadcasts/{id}/status`: Kiểm tra tiến độ gửi thông báo.
+- **Bảo mật:** Dữ liệu thông báo tuyệt đối không hiển thị mã OTP hoặc token khôi phục mật khẩu.
 
-POST `/api/v1/admin/users/search` provides paginated ordinary-user search. Scoped POST routes under `/api/v1/admin/support/{caseId}/users/{userId}`: `/profile`, `/sessions`, `/restrictions`, `/revoke-sessions`, `/groups`, `/friends`, `/history`.
+### ADM-05 — Giám sát & Bảo trì Hệ thống (System Operations & Maintenance)
+- **Tuyến đường chuẩn:** `/api/v1/system/maintenance`.
+  - `GET /api/v1/system/maintenance`: Xem trạng thái bảo trì hiện tại.
+  - `POST /api/v1/system/maintenance`: Lập lịch kế hoạch bảo trì.
+  - `POST /api/v1/system/maintenance/{id}/emergency`: Kích hoạt bảo trì khẩn cấp.
+  - `POST /api/v1/system/maintenance/{id}/extend`: Gia hạn thời gian bảo trì.
+  - `POST /api/v1/system/maintenance/{id}/close`: Đóng bảo trì và mở lại hệ thống.
+- **Cơ chế Cổng An toàn Sổ cái (`V1LedgerMaintenanceSafety`):**
+  - Trước khi cho phép mở lại hệ thống sau bảo trì, hệ thống tự động kiểm tra nghiêm ngặt tính toàn vẹn tài chính:
+    1. Không có giao dịch sổ cái nào đang ở trạng thái `Processing` hoặc `Pending`.
+    2. Tổng số dư hiển thị của toàn bộ ví phải khớp 100% với tài khoản sổ cái tương ứng (`wallet.AvailableBalance == account.Balance`).
+    3. Tổng phát sinh Nợ phải bằng tổng phát sinh Có trên toàn bộ giao dịch sổ cái.
+    4. Mọi bất thường sẽ chặn ngay lập tức việc mở lại cổng tài chính, kích hoạt cảnh báo đỏ cho quản trị viên.
 
-PUT `/api/v1/admin/support/{caseId}/users/{userId}/status` accepts `{ "status": "Active|Restricted|Locked", "reason": "required rationale", "securityPin": "<six-digit-admin-pin>" }`. Requires an active case assigned to the authenticated Admin and linked to the ordinary User. Status, lock-time session/refresh revocation, audit and SecurityAlert notification commit atomically. Repeating the current status adds no new status-change notification. Locked sessions stay revoked after unlock; a fresh login is required. Suspended/Deleted accounts and administrative peers cannot be changed through this command. Task 17 verifies this approved policy including inbound P2P and refunds.
+---
 
-Read or restrict only within the authorized active support case. Session revocation prevents reuse; account restrictions do not transfer fund ownership or erase financial entitlements. No password/PIN/OTP/hash/token is exposed to Admin. No arbitrary ledger balance editing.
+## 3. DANH MỤC MÃ LỖI VÀ XỬ LÝ LỖI ADMIN (ERROR CODES)
 
-Status: A2.3 APPROVED / IMPLEMENTED / VERIFIED; actual HTTP/SQL02 and session evidence is in the Task 17 report.
-- Level 1 — Financial Restriction (`UserStatus.Restricted`): blocks outbound debit transfers/expenses/fund contributions/fund requests; preserves login, token refresh, read-only balance/profile, support intake, and inbound credits/refunds.
-- Level 2 — Account Lock (`UserStatus.Locked`): immediate session revocation, 403 `account_unavailable` on login, token refresh blocked. Reversible by Admin.
+| Mã lỗi (Code) | HTTP Status | Ý nghĩa nghiệp vụ |
+|---|---|---|
+| `unauthorized` | 401 | Thiếu Bearer Token hoặc token đã hết hạn |
+| `forbidden` | 403 | Tài khoản không có vai trò `Admin` |
+| `account_unavailable` | 403 | Tài khoản Admin bị vô hiệu hóa hoặc cố tình dùng vai trò SuperAdmin |
+| `admin_must_change_password` | 403 | Admin bắt buộc phải đổi mật khẩu khởi tạo trước khi thao tác |
+| `case_required` | 400 | Thao tác tra cứu nhạy cảm thiếu mã Case hồ sơ hỗ trợ |
+| `case_not_found` | 404 | Không tìm thấy hồ sơ hỗ trợ tương ứng |
+| `case_not_assigned_to_caller` | 403 | Hồ sơ hỗ trợ chưa được phân công cho Admin hiện tại |
+| `invalid_admin_pin` | 400 | Mã PIN quản trị viên không chính xác |
+| `disputed_request_not_suspended` | 409 | Yêu cầu chi tiêu không ở trạng thái chờ/tạm treo hợp lệ để xử lý tranh chấp trực tiếp |
+| `maintenance_safety_gate_failed` | 409 | Sổ cái kế toán chưa cân bằng, không thể đóng cổng bảo trì |
 
-## ADM-03 — Support / Disputes
+---
 
-User intake remains `/api/cases/support` and `/api/cases/disputes`. Admin canonical root `/api/v1/admin/support`: POST `/tickets/search`, `/assigned`, `/{caseId}/assign`, `/{caseId}/request-info`, `/{caseId}/dossier`, `/{caseId}/resolve`, `/templates`, `/{caseId}/reply-template`, and dispute resolution route `/disputes/{requestId}/resolve`. Additional case detail/accounts/actions and assignment routes live in `V1AdministrationController`.
+## 4. KẾ HOẠCH THỰC THI CHO PHASE BACKEND ADMIN
 
-State transitions include New, Assigned/InProgress, WaitingForUser, Resolved/Rejected/Closed as allowed by the implementation. User replies and case history persist. Resolve/reject requires the current operator's valid scope and rationale; closed cases cannot authorize fresh sensitive reads. Transaction/fund investigation APIs remain case-bound and read-only unless a specific approved financial command exists. Support resolution is not a generic payout API.
-
-The legacy `/{caseId}/escalate` route is retained only as a disabled compatibility surface; it must not create SuperAdmin work. Do not restore old escalation menus or use old Admin requirements to expand scope.
-
-Status: IMPLEMENTED support and dispute resolution workflow with related regression coverage.
-- Dispute Resolution endpoint: POST `/api/v1/admin/support/disputes/{requestId}/resolve`.
-  - Valid report (`!IsRejected`): Cancels suspended expense (`Cancelled`), releases hold to fund available balance, marks SupportCase `Resolved`, records audit log and notifies fund members.
-  - Invalid report (`IsRejected`): Unsuspends expense back to `Pending24h` retaining remaining timer, marks SupportCase `Rejected`, records audit log and notifies reporter.
-
-## ADM-04 — Notifications
-
-POST `/api/v1/admin/notifications/search`, `/delivery-history`, `/failures`, `/templates`, `/maintenance-overview`. Case and recipient scoping applies to notification/detail queries. Templates and delivery status do not grant read access to raw OTP/recovery content.
-
-Approved system broadcast routes: POST `/api/v1/system/broadcasts`, `/{id}/publish`, `/{id}/cancel`, `/{id}/status`, protected by maintenance permission and PIN/request safeguards. Existing drafts, recipient snapshots and publication state are preserved.
-
-Status: IMPLEMENTED internal notifications/outbox; Task G3 verified Gmail SMTP real inbox delivery and OTP extraction to external mailbox via disposable inbox (`swk64oznds@maxxspace.com`), confirming STARTTLS, TLS 1.3, AUTH LOGIN (235) and inbox receipt. Expo Push API contract and error handling verified; physical mobile device delivery remains `DEVICE_DELIVERY_NOT_VERIFIED` (requires connected mobile device with registered token).
-
-## ADM-05 — Maintenance
-
-Canonical root `/api/v1/system/maintenance`: GET status; POST create; POST `/{id}/reminders`, `/emergency`, `/{id}/extend`, `/{id}/review`, `/{id}/cancel`, `/{id}/close`; PUT `/{id}`. Read permissions and write permissions follow controller policies and current session checks. User status is also exposed via `/api/system/maintenance`.
-
-Maintenance gates protect money/group operations and preserve committed ledger history. Reopening uses `V1LedgerMaintenanceSafety` inside exclusive maintenance admission: no pending ledger/processing transfers, wallet/account equality, account balances equal posted net entries (including original reversed postings), and positive balanced entries in one currency per posting. Any inconsistency keeps maintenance closed to financial traffic; no success is simulated. Schedule, reminders, reschedule, activation, emergency admission, extend, review and close have targeted HTTP/SQL02 evidence. Deployment and live-provider reconciliation are not certified by these tests.
-
-Status: PARTIAL where deployment safety evidence/configuration is unavailable; production activation NOT RUN.
-
-## Verification and operating boundary
-
-Task 16.2 covers Backend Adversarial Audit, Financial Bug Fixes, and Real API Acceptance. No Frontend/Mobile work, SQL01 access, production migration, credential reset or live Gemini/SePay call is authorized.
-- Release Build: 0 errors, 16 warnings.
-- Non-SQL Tests: 1,063 / 1,063 PASS (includes 6 audit tests in Task16_2_AdversarialAuditTests.cs and 7 tests in Task16_1_ApprovedDecisionsTests.cs).
-- SQL02 Integration Tests: 179 / 179 PASS on SpendWise_Test_Runner.
-- Newman E2E Suite: 105 / 105 requests PASS, 177 / 177 assertions PASS on SpendWise_E2E_Test.
-- Decision 1 (Dispute Resolution): Auto-assigned investigation, atomic resolution inside WithCaseAsync transaction boundary, 0 VND ledger leak, guarded against non-suspended requests (ConflictException: disputed_request_not_suspended).
-- Decision 2 (Account Restrictions): Level 1 Financial Restriction (debits blocked, read preserved) vs Level 2 Account Lock (login blocked, sessions revoked).
-- Decision 3 (Rejoin Entitlements): Fresh episode with 0 VND carryover. Equal split and remainder distribution guarded against zero-entitlement members.
-- Decision 4 (Election Governance): Default policy parameters, winner rejection, electorate snapshot, and activity evidence enforcement.
-- Task 16.3 Core Backend Stabilization: Dispute atomicity and state guards verified; email test isolation hardened. Historical SePay capability wording is superseded by the 2026-10-20 External API audit below: linking adapter is not authenticated acceptance; IPN ingestion is not wallet credit. Historical tests used SQL02 (`DESKTOP-B5KA3LT\SQLEXPRESS02`), zero SQL01 access.
-
-## Task 17 — bổ sung Product Owner
-
-Theme Light/Dark/System và VI/EN là bắt buộc cho V1.0. API preferences là dữ liệu của tài khoản đang đăng nhập, không mở quyền Admin sửa tùy chọn của người khác. Backend có kiểm chứng lưu/đọc/đổi tài khoản/fresh login; UI vẫn FRONTEND PENDING. Core Newman và các provider được phân loại riêng trong `backend/docs/CODEX-TASK17-CORE-CLOSURE.md`; không dùng Postman để xác nhận theme/bản dịch UI. Giữ nguyên chính sách nạp toàn bộ sau provider xác nhận; không coi SePay Test Mode là chứng nhận balance/debit của API thật.
-
-## External API audit — 2026-10-20
-
-Evidence: [CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md](backend/docs/CODEX-EXTERNAL-API-CAPABILITY-AUDIT.md). Chỉ kiểm tra source/docs và kết nối provider an toàn; không thay đổi Core, policy hoặc cấu hình deployment.
-
-- Gmail Development: SMTP_CONFIGURATION_PRESENT, SMTP_CONNECTION_VERIFIED (TLS1.3), SMTP_AUTH_VERIFIED (235), DELIVERY_NOT_TESTED. Outbox/internal delivery status không chứng minh inbox. Không gửi email/OTP trong audit.
-- Expo là push adapter hiện có, delivery disabled; empty receipt lookup200 không chứng minh credentials project hay device delivery. Native client/platform credentials còn PENDING; enhanced security bearer chưa được adapter cấu hình. Admin broadcast/outbox không được gắn live push VERIFIED từ kết quả này.
-- Gemini dùng chung provider cho User/Admin: key metadata 200, model đã được chuyển sang `gemini-3.5-flash-lite` (Free Tier). AUTH_VERIFIED; INFERENCE_VERIFIED qua single synthetic smoke test (không phát sinh chi phí). UI Frontend cho Chat AI vẫn chờ kiểm thử tích hợp.
-- SePay TestMode account/history GET200 xác nhận đọc Sandbox v2. Bank Hub CREDENTIALS_REQUIRED; số dư cá nhân thời gian thực và authorized debit UNSUPPORTED trên tài khoản bán lẻ. Ví tuân thủ nghiêm ngặt All-or-Nothing top-up (không nạp một phần); sai lệch chuyển khoản lưu BankTransaction để Admin đối soát qua ADM-03/ADM-04. Rút tiền PAYOUT_PROVIDER_REQUIRED áp dụng quy trình Ledger Hold và Admin đối soát trước khi giải phóng/hoàn tác.
-- Không truy cập SQL01 hoặc database khác, không gửi thông báo/giao dịch tiền, không thay settings. **Full Newman E2E NOT RUN; FRONTEND UI NOT YET VERIFIED**. Không dùng audit này để promote kết quả E2E hoặc production readiness.
+1. **Bước 1 — Audit lại Test Suite Admin:**
+   - Bóc tách và so chiếu số lượng requests thực sự thuộc phạm vi Admin (ADM-01 đến ADM-05) với controllers C# hiện hành (phân biệt rõ ràng với 141 requests của bộ Full E2E tích hợp lịch sử).
+   - Chuẩn bị environment và dynamic test runId riêng biệt trên database `SpendWise_E2E_G4`.
+2. **Bước 2 — Xác minh tính tương thích ngược (Regression Check):**
+   - Đảm bảo các thay đổi mới nhất về `BankConnections` (Ownership restoration) và `Passkeys` không làm hỏng các luồng Admin tra cứu User sessions/history.
+   - Xác minh các quy tắc Fixed Fund V2 (chi tiêu tức thời, bãi bỏ 20%/Pending24h) đồng bộ chính xác với API hỗ trợ ADM-03.
+3. **Bước 3 — Thực thi Newman Run cho Phase Admin:**
+   - Chạy bộ test kiểm thử Admin chuyên biệt theo phạm vi ADM-01 đến ADM-05.
+   - Thu thập raw JSON report và lập bảng nghiệm thu chính thức cho Phase Admin.

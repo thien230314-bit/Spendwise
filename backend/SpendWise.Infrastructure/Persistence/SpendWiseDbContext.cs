@@ -38,6 +38,9 @@ public sealed class SpendWiseDbContext(DbContextOptions<SpendWiseDbContext> opti
     public DbSet<SpendWise.Domain.V1Groups.V1FundActivity> V1FundActivities => Set<SpendWise.Domain.V1Groups.V1FundActivity>();
     public DbSet<SpendWise.Domain.V1Groups.V1FundCodeCounter> V1FundCodeCounters => Set<SpendWise.Domain.V1Groups.V1FundCodeCounter>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserPasskeyCredential> UserPasskeyCredentials => Set<UserPasskeyCredential>();
+    public DbSet<PasskeyChallenge> PasskeyChallenges => Set<PasskeyChallenge>();
+    public DbSet<TransactionAuthorization> TransactionAuthorizations => Set<TransactionAuthorization>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();

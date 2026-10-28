@@ -18,17 +18,17 @@
 **CÓ, ĐÃ XÁC MINH BẰNG HTTP THẬT VÀ ĐỐI CHIẾU CONTROLLER C#:**
 1. **`PUT /api/wallets/{id}`:**
    - *Mã cũ trong matrix:* `201` (Sai lệch).
-   - *Source C#:* [`WalletsController.cs` L58-L64](file:///E:/source/SpendWise-final-merged/backend/SpendWise/Controllers/WalletsController.cs#L58-L64) trả về `WalletDto` (ASP.NET Core chuẩn hóa `200 OK`).
+   - *Source C#:* [`WalletsController.cs` L58-L64](../SpendWise/Controllers/WalletsController.cs#L58-L64) trả về `WalletDto` (ASP.NET Core chuẩn hóa `200 OK`).
    - *HTTP Thực tế:* Gửi `PUT /api/wallets/e2e00000-0000-0000-0000-000000000023` $\rightarrow$ **`HTTP 200 OK`**, Body trả về `{"id": "...", "name": "Updated Savings Wallet Real HTTP", "type": "savings"}`.
    - *Trạng thái sửa đổi:* **`VERIFIED_PASS`** (Actual 200 matches Expected 200).
 2. **`PATCH /api/transactions/{id}`:**
    - *Mã cũ trong matrix:* `201` (Sai lệch).
-   - *Source C#:* [`TransactionsController.cs` L98-L108](file:///E:/source/SpendWise-final-merged/backend/SpendWise/Controllers/TransactionsController.cs#L98-L108) trả về `TransactionDto` (ASP.NET Core chuẩn hóa `200 OK`).
+   - *Source C#:* [`TransactionsController.cs` L98-L108](../SpendWise/Controllers/TransactionsController.cs#L98-L108) trả về `TransactionDto` (ASP.NET Core chuẩn hóa `200 OK`).
    - *HTTP Thực tế:* Gửi `PATCH /api/transactions/8e5f7c3b-2d22-41de-adfb-57f002a780a1` $\rightarrow$ **`HTTP 200 OK`**, Body trả về `{"id": "...", "description": "Corrected Description Real HTTP", "amount": 10000.0}`.
    - *Trạng thái sửa đổi:* **`VERIFIED_PASS`** (Actual 200 matches Expected 200).
 3. **`DELETE /api/wallets/{id}`:**
    - *Mã cũ trong matrix:* `201` (Sai lệch).
-   - *Source C#:* [`WalletsController.cs` L68-L78](file:///E:/source/SpendWise-final-merged/backend/SpendWise/Controllers/WalletsController.cs#L68-L78) trả về `NoContent()` (`HTTP 204`).
+   - *Source C#:* [`WalletsController.cs` L68-L78](../SpendWise/Controllers/WalletsController.cs#L68-L78) trả về `NoContent()` (`HTTP 204`).
    - *HTTP Thực tế:* Gửi `DELETE /api/wallets/6da35199-0ea5-495d-af2b-0b676ccf65fb` $\rightarrow$ **`HTTP 204 NoContent`**, Body rỗng (0 bytes).
    - *Trạng thái sửa đổi:* **`VERIFIED_PASS`** (Actual 204 matches Expected 204).
 
@@ -48,7 +48,7 @@
 ---
 
 ### Q4: Full Newman cuối có bao nhiêu assertions PASS / FAIL thực tế?
-Từ file kết quả gốc máy đọc được [`reports/newman/batch3-newman-results.json`](file:///E:/source/SpendWise-final-merged/reports/newman/batch3-newman-results.json) (SHA256: `c047494a04713e6774ad40e5d31e7fc470daa1cc772f5297f9ffa4cf02f1f7fb`):
+Từ file kết quả gốc máy đọc được `reports/newman/batch3-newman-results.json` (lưu trữ nội bộ; SHA256: `c047494a04713e6774ad40e5d31e7fc470daa1cc772f5297f9ffa4cf02f1f7fb`):
 - **Tổng HTTP Requests:** 303 (Thất bại HTTP mạng: 0).
 - **Tổng Assertions:** 343 assertions.
 - **Assertions Passed:** **275 assertions (80.17%)**.
@@ -75,7 +75,7 @@ Từ file kết quả gốc máy đọc được [`reports/newman/batch3-newman-
 
 ### Q6: Hai Mobile Push APIs đã kiểm thử HTTP chưa?
 **ĐÃ KIỂM THỬ TRỌN VẸN VÀ PASS 7/7 KỊCH BẢN THỰC TẾ:**
-Đã thực thi qua script [`scratch/test_mobile_push_api.py`](file:///E:/source/SpendWise-final-merged/scratch/test_mobile_push_api.py):
+Đã thực thi qua script kiểm thử tự động nội bộ `scratch/test_mobile_push_api.py`:
 1. **Xác thực danh tính (Auth):** Request nặc danh $\rightarrow$ **`HTTP 401 Unauthorized`** (PASS).
 2. **Kiểm tra định dạng Token:** Token không đúng chuẩn Expo $\rightarrow$ **`HTTP 400 invalid_input`** (PASS).
 3. **Đăng ký thiết bị (User A):** `PUT /api/mobile/push/installations/{id}` với `ExpoPushToken[...]` $\rightarrow$ **`HTTP 204 NoContent`** (PASS).
@@ -103,7 +103,7 @@ Các API này phụ thuộc trực tiếp vào dịch vụ đối tác thanh to�
 ---
 
 ### Q8: Bao nhiêu operations chưa đủ coverage?
-**0 operations (0.0%)**: Toàn bộ 219 operations trong OpenAPI User đều được map và có bằng chứng cụ thể trong [`backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv).
+**0 operations (0.0%)**: Toàn bộ 219 operations trong OpenAPI User đều được map và có bằng chứng cụ thể trong [`backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv`](./USER-FINAL-OPERATION-EVIDENCE.csv).
 
 ---
 
@@ -136,10 +136,10 @@ Các API này phụ thuộc trực tiếp vào dịch vụ đối tác thanh to�
 | **Postman Collection SHA256**| `8012787f4aa0ecfa9f9d9c3aedcbb9d02c72ca547c030274c60ddd620cd54a3d` |
 | **Committed Env SHA256** | `c7b9be6117a54a852968e44dd653defb9a5f62f6d44fd3dbeb4c1d46e65db597` |
 | **Raw Newman Report SHA256**| `c047494a04713e6774ad40e5d31e7fc470daa1cc772f5297f9ffa4cf02f1f7fb` |
-| **Final Verdict Report** | [`backend/docs/USER-FINAL-INDEPENDENT-E2E-VERDICT.md`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-FINAL-INDEPENDENT-E2E-VERDICT.md) |
-| **Final Operation Evidence** | [`backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv) |
-| **Final Assertion Evidence** | [`backend/docs/USER-FINAL-ASSERTION-EVIDENCE.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-FINAL-ASSERTION-EVIDENCE.csv) |
-| **Final Execution Manifest** | [`backend/docs/USER-FINAL-EXECUTION-MANIFEST.json`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-FINAL-EXECUTION-MANIFEST.json) |
+| **Final Verdict Report** | [`backend/docs/USER-FINAL-INDEPENDENT-E2E-VERDICT.md`](./USER-FINAL-INDEPENDENT-E2E-VERDICT.md) |
+| **Final Operation Evidence** | [`backend/docs/USER-FINAL-OPERATION-EVIDENCE.csv`](./USER-FINAL-OPERATION-EVIDENCE.csv) |
+| **Final Assertion Evidence** | [`backend/docs/USER-FINAL-ASSERTION-EVIDENCE.csv`](./USER-FINAL-ASSERTION-EVIDENCE.csv) |
+| **Final Execution Manifest** | [`backend/docs/USER-FINAL-EXECUTION-MANIFEST.json`](./USER-FINAL-EXECUTION-MANIFEST.json) |
 
 ---
 

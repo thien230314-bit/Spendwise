@@ -20,16 +20,16 @@
 Trong quá trình rà soát đối chiếu giữa source code Backend và tài liệu `USER-FRONTEND-API-ALIGNMENT.md`:
 
 1. **Payload Confirm Đổi Email:**
-   - *Thực tế Backend:* [`ConfirmChangeEmailCommand.cs`](file:///E:/source/SpendWise-final-merged/backend/SpendWise.Application/Features/Users/Commands/ConfirmChangeEmail/ConfirmChangeEmailCommand.cs) định nghĩa `public sealed record ConfirmChangeEmailRequest(string Otp);`.
+   - *Thực tế Backend:* [`ConfirmChangeEmailCommand.cs`](../SpendWise.Application/Features/Users/Commands/ConfirmChangeEmail/ConfirmChangeEmailCommand.cs) định nghĩa `public sealed record ConfirmChangeEmailRequest(string Otp);`.
    - *Khắc phục:* Đã cập nhật tài liệu chính xác thành `{ "otp": "..." }` thay vì `{ "newEmail": "...", "token": "..." }`.
 2. **Trường Thời gian Kết bạn trong `FriendDto`:**
-   - *Thực tế Backend:* [`FriendContracts.cs`](file:///E:/source/SpendWise-final-merged/backend/SpendWise.Application/Social/FriendContracts.cs) định nghĩa trường là `DateTime FriendsSince`.
+   - *Thực tế Backend:* [`FriendContracts.cs`](../SpendWise.Application/Social/FriendContracts.cs) định nghĩa trường là `DateTime FriendsSince`.
    - *Khắc phục:* Đã sửa mẫu JSON trong tài liệu thành `"friendsSince": "2026-10-22T04:45:00Z"` (không phải `acceptedAt`).
 3. **Thuộc tính Thành viên Quỹ trong `V1MemberDto`:**
-   - *Thực tế Backend:* [`V1FundService.cs`](file:///E:/source/SpendWise-final-merged/backend/SpendWise.Application/Features/V1Groups/V1FundService.cs) chứa các thuộc tính `UserId`, `Seat`, `IsOwner`, `CanSpend`, `JoinedAt`, `FullName`, `AvatarUrl`. Không có trường `LeftAt` (thành viên đã rời quỹ không nằm trong danh sách active members của `MembersAsync`).
+   - *Thực tế Backend:* [`V1FundService.cs`](../SpendWise.Application/Features/V1Groups/V1FundService.cs) chứa các thuộc tính `UserId`, `Seat`, `IsOwner`, `CanSpend`, `JoinedAt`, `FullName`, `AvatarUrl`. Không có trường `LeftAt` (thành viên đã rời quỹ không nằm trong danh sách active members của `MembersAsync`).
    - *Khắc phục:* Đã đồng bộ JSON mẫu trong tài liệu sang `isOwner: true` và loại bỏ `leftAt`.
 4. **Quy tắc Tìm kiếm Danh bạ Chính xác (`GET /api/friends/search`):**
-   - *Thực tế Backend:* [`FriendFeature.cs`](file:///E:/source/SpendWise-final-merged/backend/SpendWise.Application/Features/Friends/FriendFeature.cs) hỗ trợ `kind` là `null`, `"auto"`, `"email"`, `"phone"`, `"spendId"`.
+   - *Thực tế Backend:* [`FriendFeature.cs`](../SpendWise.Application/Features/Friends/FriendFeature.cs) hỗ trợ `kind` là `null`, `"auto"`, `"email"`, `"phone"`, `"spendId"`.
    - *Chính sách bảo mật thực tế:*
      - Khi tìm theo `spendId`: `Phone` trả về `null` trừ khi đã là `FRIENDS`.
      - Khi tìm theo số điện thoại (người dùng đã biết trước số điện thoại): Trả về số điện thoại xác nhận người dùng tìm đúng.

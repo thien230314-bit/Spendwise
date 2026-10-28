@@ -36,6 +36,9 @@ public interface ISpendWiseDbContext
     DbSet<SpendWise.Domain.V1Groups.V1FundActivity> V1FundActivities { get; }
     DbSet<SpendWise.Domain.V1Groups.V1FundCodeCounter> V1FundCodeCounters { get; }
     DbSet<User> Users { get; }
+    DbSet<UserPasskeyCredential> UserPasskeyCredentials { get; }
+    DbSet<PasskeyChallenge> PasskeyChallenges { get; }
+    DbSet<TransactionAuthorization> TransactionAuthorizations { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<UserSession> UserSessions { get; }
     DbSet<PasswordResetToken> PasswordResetTokens { get; }

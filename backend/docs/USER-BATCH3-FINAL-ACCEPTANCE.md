@@ -55,7 +55,7 @@ Automated HTTP tests confirmed immediate rejection on Kestrel:
    - Active runtime tokens output strictly to `SpendWise-Test.runtime.local.json` and `backend/postman/SpendWise-Test.runtime.local.json` (gitignored via `*.local.json`).
 3. Automated pre-commit secret scan: **PASS (Zero secrets in git diff)**.
 
-Full documentation: [`backend/docs/USER-BATCH3-SECURITY-REMEDIATION.md`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-SECURITY-REMEDIATION.md).
+Full documentation: [`backend/docs/USER-BATCH3-SECURITY-REMEDIATION.md`](./USER-BATCH3-SECURITY-REMEDIATION.md).
 
 ---
 
@@ -73,7 +73,7 @@ All 140 assertions from `USER-BATCH1-FAILURE-MATRIX.csv` were re-tested against 
 | **CL-06** (PIN Reset Token) | 1 | 1 | 0 | Token lifecycle verified (Dynamic generation, 15-min TTL, No replay). |
 | **TOTAL** | **140** | **110 (78.6%)** | **30 (21.4%)** | **100% Contract Conformance** |
 
-Full line-by-line mapping: [`backend/docs/USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv).
+Full line-by-line mapping: [`backend/docs/USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv`](./USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv).
 
 ---
 
@@ -136,7 +136,7 @@ From Kestrel `/openapi/v1.json`, exactly 342 total OpenAPI operations were ident
 | **NOT_IMPLEMENTED** | **0** | **0.0%** | Zero unimplemented stubs. |
 | **TOTAL** | **219** | **100.0%** | **Complete User API Surface Covered** |
 
-Full matrix: [`backend/docs/USER-BATCH3-OPERATION-MATRIX.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-OPERATION-MATRIX.csv).
+Full matrix: [`backend/docs/USER-BATCH3-OPERATION-MATRIX.csv`](./USER-BATCH3-OPERATION-MATRIX.csv).
 
 ---
 
@@ -173,9 +173,9 @@ Full matrix: [`backend/docs/USER-BATCH3-OPERATION-MATRIX.csv`](file:///E:/source
 With the completion of Batch 3/3:
 1. **User Backend Contract is FROZEN:** No further structural changes to User DTOs, routes, or business logic.
 2. **Handoff Artifacts Delivered:**
-   - [`USER-BATCH3-FINAL-ACCEPTANCE.md`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-FINAL-ACCEPTANCE.md)
-   - [`USER-BATCH3-OPERATION-MATRIX.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-OPERATION-MATRIX.csv)
-   - [`USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv)
-   - [`USER-BATCH3-EXECUTION-MANIFEST.json`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-EXECUTION-MANIFEST.json)
-   - [`USER-BATCH3-SECURITY-REMEDIATION.md`](file:///E:/source/SpendWise-final-merged/backend/docs/USER-BATCH3-SECURITY-REMEDIATION.md)
+   - [`USER-BATCH3-FINAL-ACCEPTANCE.md`](./USER-BATCH3-FINAL-ACCEPTANCE.md)
+   - [`USER-BATCH3-OPERATION-MATRIX.csv`](./USER-BATCH3-OPERATION-MATRIX.csv)
+   - [`USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv`](./USER-BATCH3-FAILURE-AND-BLOCKER-MATRIX.csv)
+   - [`USER-BATCH3-EXECUTION-MANIFEST.json`](./USER-BATCH3-EXECUTION-MANIFEST.json)
+   - [`USER-BATCH3-SECURITY-REMEDIATION.md`](./USER-BATCH3-SECURITY-REMEDIATION.md)
 3. **Next Steps:** Proceed to Frontend User and Frontend Admin integration. External provider live testing to follow provider credential provisioning.

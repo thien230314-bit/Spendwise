@@ -546,18 +546,72 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
 ```
 - **Response `201 Created`:** `GroupDto`.
 
-#### 2. `POST /api/groups/{id}/members`
-- **Mô tả:** Thêm thành viên vào nhóm qua SpendId hoặc Email/SĐT.
+#### 2. `POST /api/groups/{groupId}/invites`
+- **Mô tả:** Chủ nhóm (`Owner`) gửi lời mời tham gia nhóm cho người dùng khác (yêu cầu hai bên đã là bạn bè được chấp thuận, người được mời chưa quá giới hạn 10 nhóm hoạt động).
 - **Quyền:** Chủ nhóm (`Owner`).
 - **Request Body:**
 ```json
 {
-  "identifier": "SPEND_654321"
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }
 ```
-- **Response `201 Created`:** `GroupMemberDto`.
+- **Response `200 OK`:**
+```json
+{
+  "id": "uuid-invite",
+  "groupId": "uuid-group",
+  "groupName": "Nhà Trọ 402",
+  "invitedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "Pending",
+  "expiresAt": "2026-11-05T08:00:00Z",
+  "token": "hex-token-string"
+}
+```
+- **Lỗi thường gặp:** `404 NotFound` (`group_not_found`, `user_not_found`), `409 Conflict` (`already_member`, `active_group_limit`).
 
-#### 3. `POST /api/v1/funds/{id}/contributions`
+#### 3. `GET /api/groups/invites`
+- **Mô tả:** Người dùng xem danh sách các lời mời vào nhóm đang chờ xử lý của chính mình.
+- **Quyền:** User (`Active`).
+- **Response `200 OK`:**
+```json
+[
+  {
+    "id": "uuid-invite",
+    "groupId": "uuid-group",
+    "groupName": "Nhà Trọ 402",
+    "invitedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "status": "Pending",
+    "expiresAt": "2026-11-05T08:00:00Z",
+    "token": "hex-token-string"
+  }
+]
+```
+
+#### 4. `POST /api/groups/invites/{inviteId}/accept?token={token}`
+- **Mô tả:** Người dùng chấp thuận lời mời vào nhóm bằng `inviteId` và `token` tương ứng. Tự động thêm người dùng vào danh sách thành viên nhóm.
+- **Quyền:** User được mời (`Active`).
+- **Query Params:** `token=hex-token-string` (bắt buộc).
+- **Response `200 OK`:** Trả về chi tiết `GroupDto` của nhóm vừa gia nhập.
+- **Lỗi thường gặp:** `404 NotFound` (`invite_not_found`, `group_not_found`), `409 Conflict` (`invite_unavailable`, `already_member`, `active_group_limit`, `group_unavailable`), `403 Forbidden` (`group_member_ineligible`).
+
+#### 5. `POST /api/groups/invites/{inviteId}/reject`
+- **Mô tả:** Người dùng từ chối lời mời vào nhóm.
+- **Quyền:** User được mời (`Active`).
+- **Response `200 OK`:**
+```json
+{
+  "id": "uuid-invite",
+  "groupId": "uuid-group",
+  "groupName": "Nhà Trọ 402",
+  "invitedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "Rejected",
+  "expiresAt": "2026-11-05T08:00:00Z",
+  "token": "hex-token-string"
+}
+```
+- **Lỗi thường gặp:** `404 NotFound` (`invite_not_found`), `409 Conflict` (`invite_unavailable`).
+
+#### 6. `POST /api/v1/funds/{id}/contributions`
 - **Mô tả:** Nộp tiền vào Quỹ Cố định V2 từ ví chính của thành viên.
 - **Quyền:** Thành viên quỹ (`Active`). Yêu cầu mã PIN 6 số.
 - **Request Body:**
@@ -570,7 +624,7 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
 ```
 - **Response `200 OK`**
 
-#### 4. `GET /api/v1/funds/{id}/contribution-allocation`
+#### 7. `GET /api/v1/funds/{id}/contribution-allocation`
 - **Mô tả:** Lấy thông tin phân bổ nghĩa vụ đóng góp và hạn mức chi tiêu khả dụng cá nhân (`CanSpend`).
 - **Quyền:** Thành viên quỹ.
 - **Response `200 OK`:**
@@ -587,7 +641,7 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
 }
 ```
 
-#### 5. `POST /api/v1/funds/{id}/activity-proposals`
+#### 8. `POST /api/v1/funds/{id}/activity-proposals`
 - **Mô tả:** Tạo đề xuất hoạt động / chi tiêu chung từ quỹ nhóm.
 - **Quyền:** Thành viên quỹ.
 - **Request Body:**
@@ -600,7 +654,7 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
 ```
 - **Response `201 Created`:** `V1ActivityProposalDto`.
 
-#### 6. `POST /api/v1/funds/activity-proposals/{id}/settle`
+#### 9. `POST /api/v1/funds/activity-proposals/{id}/settle`
 - **Mô tả:** Quyết toán đề xuất hoạt động (Chủ quỹ phê duyệt hoặc từ chối).
 - **Quyền:** Chủ quỹ (`Owner`). Yêu cầu mã PIN 6 số.
 - **Request Body:**

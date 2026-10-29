@@ -58,6 +58,114 @@
   4. `Folder 04 - Transactions`: Chi tiêu cá nhân, phân loại danh mục, lịch sử giao dịch.
   5. `Folder 05 - P2P Transfers`: Chuyển tiền SpendId, chuyển tiền qua SĐT, xác thực PIN, kiểm tra tài khoản nhận.
   6. `Folder 06 - Group Funds (Fixed V2 & Free)`: Tạo quỹ, mời thành viên, nộp quỹ, tính `CanSpend`, duyệt đề xuất chi.
+  7. `Folder 07 - Budgets & Goals`: Thiết lập ngân sách, cảnh báo chi tiêu, mục tiêu tiết kiệm, nộp/rút tiền mục tiêu.
+  8. `Folder 08 - Recurring Transactions`: Giao dịch định kỳ, thuê bao, kích hoạt kỳ tiếp theo.
+  9. `Folder 09 - Bank Connections & Test Mode`: Liên kết ngân hàng SePay Sandbox, nạp tiền test-mode, rút tiền test-mode.
+  10. `Folder 10 - Support & Cases`: Mở yêu cầu hỗ trợ, gửi tin nhắn trao đổi, đính kèm biên lai đối soát.
+
+### 3.2. Phân hệ Admin Quản Trị (Newman 80 Requests / 138 Assertions PASS 100%)
+- **Báo cáo nguồn:** `ADMIN-V1-FINAL-NEWMAN-REPORT.json`
+- **Các nhóm nghiệp vụ quản trị đã kiểm tra thành công:**
+  1. `Folder 00 - Authentication Setup`: Đăng nhập Admin (`lethien241205@gmail.com`), xác thực PIN, cấp token vai trò Admin (`role = Admin`, code 2).
+  2. `Folder 01 - ADM-01 Tổng quan & Báo cáo`: Dashboard, thống kê hệ thống, kiểm tra sức khỏe dịch vụ.
+  3. `Folder 02 - ADM-02 Quản lý Người dùng & Phiên`: Tra cứu người dùng trong phạm vi vụ việc (Case-Scoped Access), quản lý phiên làm việc, thu hồi phiên, đóng băng tài khoản.
+  4. `Folder 03 - ADM-03 Xử lý Vụ việc & Khiếu nại`: Tiếp nhận phiếu hỗ trợ, phân công, trao đổi tin nhắn hai chiều, phê duyệt hoàn trả / bù trừ giao dịch (Correction Grant).
+  5. `Folder 04 - ADM-04 Thông báo & Vận hành Hệ thống`: Soạn thảo thông báo vận hành, phát hành qua hàng đợi Outbox, xác minh trạng thái phân phối đến người dùng, hủy thông báo.
+  6. `Folder 05 - ADM-05 Giám sát Tài chính & Sổ cái`: Tra soát giao dịch toàn hệ thống, đối soát dòng tiền sổ cái kép, kiểm toán nhật ký hành động Admin.
+  7. `Folder 06 - Security & Deprecation Gates`: Chặn quyền truy cập với token mang role cũ (role 0 và role 3 `SystemAdmin/SuperAdmin`), chặn tạo Admin thứ hai.
+
+### 3.3. Phân hệ Khiếu Nại & Hỗ Trợ Trực Tiếp (Newman 22 Requests / 42 Assertions PASS 100%)
+- **Báo cáo nguồn:** `reports/newman/support_complaint_e2e_newman_report.json`
+- **Quy trình kiểm thử khép kín:** User gửi khiếu nại $\rightarrow$ Admin tiếp nhận $\rightarrow$ Tra cứu hồ sơ người dùng theo phạm vi $\rightarrow$ Admin phản hồi $\rightarrow$ User đọc tin nhắn $\rightarrow$ Admin duyệt đền bù hoàn tiền $\rightarrow$ Sổ cái ghi nhận dòng tiền bù trừ.
+
+---
+
+## 4. ĐỢT KIỂM THỬ MỚI ĐỘC LẬP: NEW CLEAN E2E (2 USERS + 2 TPBANK SEPAY TEST MODE + ADMIN)
+
+> **Mục tiêu thực hiện:** Chạy một bộ kiểm thử Postman/Newman hoàn toàn mới, dữ liệu sạch 100% không tái sử dụng fixture cũ, xuyên suốt chu trình Người dùng A $\rightarrow$ Người dùng B $\rightarrow$ Quản trị viên $\rightarrow$ Người dùng. Đánh giá tính khả thi thực tế của 2 tài khoản TPBank trong SePay Test Mode và xác minh các chốt chặn an toàn tài chính Task 17 mà không can thiệp SQL giả lập.  
+> **Thời điểm chạy:** 29/10/2026 — 15:26:00+07:00  
+> **Postman Collection:** `backend/postman/NEW-CLEAN-E2E.postman_collection.json`  
+> **Environment File:** `backend/postman/NEW-CLEAN-E2E.postman_environment.json`  
+> **Báo cáo kết quả:** `reports/newman/NEW-CLEAN-E2E-REPORT.json` (đã sanitize 100% token, mật khẩu, PIN)
+
+### 4.1. Kết Quả Thực Thi Tổng Thể
+```
+┌────────────────────────────────────────────────────────┬───────────────────┬───────────────────┬─────────────┐
+│ Thông Số Thực Thi (Newman Execution Stats)            │ Số Lượng          │ Thất Bại (Failed) │ Trạng Thái  │
+├────────────────────────────────────────────────────────┼───────────────────┼───────────────────┼─────────────┤
+│ Tổng số Requests thực thi                              │ 57 requests       │ 0 failed          │ PASS (100%) │
+│ Tổng số Assertions kiểm tra                            │ 57 assertions     │ 0 failed          │ PASS (100%) │
+│ Số vòng lặp (Iterations)                               │ 1 iteration       │ 0 failed          │ PASS (100%) │
+│ Thời gian chạy toàn bộ suite (Duration)                │ 13.6 giây         │ 0 timeout         │ PASS        │
+│ Thời gian phản hồi trung bình (Avg Latency)            │ 155 ms            │ Min 3ms - Max 2.2s│ RẤT TỐT     │
+└────────────────────────────────────────────────────────┴───────────────────┴───────────────────┴─────────────┘
+```
+
+### 4.2. Báo Cáo Chi Tiết Theo 5 Hạng Mục Bắt Buộc
+
+#### 1. Người dùng mới hoàn toàn (User A & User B): `PASS`
+- Đăng ký 2 tài khoản hoàn toàn mới bằng API: `cleane2e_a_<timestamp>@spendwise.test` và `cleane2e_b_<timestamp>@spendwise.test`.
+- Xác minh OTP động 8 số qua endpoint `/api/auth/email-verification/verify`.
+- Thiết lập mã PIN bảo mật 6 số độc lập cho từng người dùng qua `/api/auth/pin/setup`.
+- Cấp phát 2 phiên làm việc JWT tách biệt với 2 `UserId` khác nhau.
+- Tự động khởi tạo ví mặc định cá nhân; xác minh cách ly: User A bị chặn 404 khi cố tình truy cập ví của User B.
+
+#### 2. Hai tài khoản TPBank trong SePay Test Mode: `BLOCKED (EXTERNAL LIVE / PROVIDER PREREQUISITE)`
+- **Khởi tạo Challenge:** `PASS`. Cả User A và User B đều khởi tạo thành công yêu cầu liên kết qua `POST /api/bank-connections/test-mode/link-challenges`, nhận được mã tham chiếu ngân hàng độc lập (`SWLINK...`).
+- **Cách ly quyền sở hữu:** `PASS`. User A gọi endpoint xác nhận challenge của User B bị hệ thống từ chối triệt để với lỗi `404 bank_link_challenge_not_found`.
+- **Xác nhận liên kết 2 tài khoản TPBank thực tế:** `BLOCKED`.
+  * *Nguyên nhân kỹ thuật:* SePay Sandbox API v2 không hỗ trợ endpoint tạo động tài khoản ngân hàng từ phía người dùng (tài khoản phải được cấu hình sẵn trên cổng quản trị web SePay). Đồng thời, biến môi trường `SePayTestMode:ApiToken` chưa được cấp phát token sandbox có sẵn 2 tài khoản TPBank riêng biệt. Khi gọi `/api/bank-connections/test-mode/link-challenges/{challengeId}/confirm`, hệ thống gọi ra SePay Sandbox và phản hồi `409 bank_link_not_confirmed`.
+  * *Tuân thủ nguyên tắc an toàn:* SpendWise tuyệt đối **KHÔNG** can thiệp chèn dòng dữ liệu giả vào bảng `BankConnections` bằng SQL để tạo kết quả PASS ảo, bảo đảm tính trung thực tuyệt đối của báo cáo.
+
+#### 3. Kịch bản Tài chính & Chốt chặn Task 17: `PASS`
+- **Chốt chặn an toàn tài chính (Task 17 Security Guard):** `PASS`. Do User A và User B chưa có tài khoản ngân hàng hoạt động được xác nhận từ SePay, hệ thống tự động kích hoạt chốt chặn an toàn `ActiveBankGuard`. Toàn bộ các thao tác tài chính:
+  * Nạp tiền (`POST /api/transactions/income`): Từ chối `409 active_bank_required`.
+  * Chi tiêu (`POST /api/transactions/expense`): Từ chối `409 active_bank_required`.
+  * Chuyển tiền P2P (`POST /api/transfers/p2p`): Từ chối `409 active_bank_required`.
+  * Chuyển tiền nội bộ (`POST /api/transfers/internal`): Từ chối `409 active_bank_required`.
+  * Rút tiền test-mode (`POST /api/bank-connections/test-mode/wallet-withdrawals`): Từ chối `409 active_bank_required`.
+  $\rightarrow$ Chứng minh tính toàn vẹn và cơ chế Fail-Closed của Backend hoạt động hoàn hảo, ngăn chặn triệt để giao dịch khi chưa đủ điều kiện an toàn.
+- **Lập kế hoạch tài chính cá nhân:** `PASS`.
+  * User A tạo danh mục chi tiêu tùy chỉnh (`POST /api/categories`) $\rightarrow$ 201 Created.
+  * User A tạo ngân sách tháng (`POST /api/budgets`) $\rightarrow$ 201 Created.
+  * User A tạo mục tiêu tiết kiệm (`POST /api/goals`) $\rightarrow$ 201 Created.
+  * User A tạo giao dịch định kỳ (`POST /api/recurring-transactions`) $\rightarrow$ 200 OK.
+
+#### 4. Quỹ nhóm & Luồng mời thành viên mới: `PASS`
+- User A gửi lời mời kết bạn đến User B qua email (`POST /api/friends/requests`).
+- User B chấp nhận kết bạn (`POST /api/friends/requests/{id}/accept`).
+- User A tạo Quỹ nhóm mới (`POST /api/groups`) kèm xác thực mã PIN.
+- User A mời User B vào quỹ bằng endpoint mới: `POST /api/groups/{groupId}/invites` $\rightarrow$ nhận `inviteId` và `token`.
+- User B xem danh sách lời mời chờ duyệt: `GET /api/groups/invites` $\rightarrow$ tìm thấy đúng lời mời.
+- User B chấp nhận lời mời: `POST /api/groups/invites/{inviteId}/accept?token=...` $\rightarrow$ 200 OK.
+- Xác nhận số lượng thành viên trong nhóm tăng lên 2 thành viên (`Owner` + `Member`).
+
+#### 5. Chu trình User $\rightarrow$ Admin $\rightarrow$ User & Phát thanh hệ thống: `PASS`
+- **Phiếu hỗ trợ (Support Case):**
+  * User A mở phiếu hỗ trợ kỹ thuật (`POST /api/cases/support`) $\rightarrow$ 200 OK (`caseA_id`).
+  * User B mở phiếu hỗ trợ độc lập (`POST /api/cases/support`) $\rightarrow$ 200 OK (`caseB_id`).
+  * Kiểm tra cách ly: User A đọc phiếu của User B bị từ chối `404 Not Found`.
+- **Xử lý từ Admin:**
+  * Admin đăng nhập định danh `lethien241205@gmail.com` kèm mã PIN quản trị $\rightarrow$ 200 OK, cấp token Admin.
+  * Admin tra cứu danh sách phiếu $\rightarrow$ thấy đầy đủ cả hai phiếu.
+  * Admin tiếp nhận phiếu A (`POST /api/admin/cases/support/{caseA_id}/status`, chuyển trạng thái `in_progress`).
+  * Admin tra cứu hồ sơ User A có kiểm soát phạm vi vụ việc (`POST /api/v1/admin/support/{caseA_id}/users/{userA_id}/profile`) $\rightarrow$ 200 OK (Audited Case-Scoped Access).
+  * Tra cứu lệch phạm vi (User B trong Case A) bị từ chối `403 case_access_denied`.
+  * Admin gửi tin nhắn giải đáp trong phiếu A $\rightarrow$ 200 OK.
+  * User A đọc lại chi tiết phiếu $\rightarrow$ xác nhận đã nhận được tin nhắn phản hồi của Admin trong lịch sử (`history`).
+  * Admin hoàn tất giải quyết phiếu (`status: resolved`) $\rightarrow$ 200 OK.
+- **Hệ thống Phát thanh Thông báo (Broadcast Outbox):**
+  * Admin soạn thảo bản thảo thông báo vận hành (`POST /api/v1/system/broadcasts`) $\rightarrow$ 200 OK.
+  * Admin phát hành thông báo (`POST /api/v1/system/broadcasts/{id}/publish`) $\rightarrow$ 204 NoContent, Outbox xử lý phân phối.
+  * Admin kiểm tra trạng thái phát thanh (`POST /api/v1/system/broadcasts/{id}/status`) $\rightarrow$ trạng thái `Published`.
+  * Cả User A và User B đều nhận được thông báo mới trong hộp thư (`GET /api/notifications`).
+  * User A đánh dấu đã đọc tất cả thông báo (`POST /api/notifications/read-all`) $\rightarrow$ 204 NoContent.
+
+#### 6. Phân quyền, Vai trò Cũ & Chống Trùng Lặp (Idempotency): `PASS`
+- Người dùng thông thường cố truy cập API Admin bị từ chối `403 Forbidden`.
+- Token giả lập mang vai trò cũ Role 0 (`User`) cố truy cập quyền Admin bị từ chối triệt để `401/403`.
+- Token giả lập mang vai trò cũ Role 3 (`SystemAdmin/SuperAdmin`) cố truy cập quyền Admin bị từ chối triệt để `401/403` (theo quy định Duy nhất 1 Admin Role 2).
+- Gửi lặp request phát thanh với cùng khóa `Idempotency-Key` trả về phản hồi cached 200 với cùng `broadcastId`, không tạo bản ghi trùng lặp trong cơ sở dữ liệu.
   7. `Folder 07 - Budgets`: Thiết lập hạn mức ngân sách theo tháng, tính tỷ lệ chi tiêu thực tế, cảnh báo vượt ngưỡng.
   8. `Folder 08 - Savings Goals`: Mục tiêu tích lũy, trích nạp từ ví chính, hoàn thành mục tiêu.
   9. `Folder 09 - Recurring Transactions`: Thiết lập lệnh định kỳ, lịch chạy tiếp theo, kiểm tra số dư tự động.

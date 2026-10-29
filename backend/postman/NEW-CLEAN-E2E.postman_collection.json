@@ -1,0 +1,2514 @@
+{
+  "info": {
+    "_postman_id": "clean-e2e-2users-2tpbank-admin-v1",
+    "name": "SpendWise-Clean-E2E-2Users-2TPBank-Admin",
+    "description": "New Clean E2E Test Suite: Fresh Users A & B + SePay Test Mode Banking (TPBank 2-Account Evaluation) + Task 17 Financial Security Guards + Group Collaboration + User->Admin->User Incident Lifecycle + Security Gates. Database: SQL02 (SpendWise_E2E_G4).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Fresh User Provisioning & Authentication",
+      "item": [
+        {
+          "name": "01.1 - Register User A (Fresh Dynamic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Fresh Clean User A\",\n  \"email\": \"{{userA_email}}\",\n  \"phone\": \"{{userA_phone}}\",\n  \"password\": \"{{default_password}}\",\n  \"confirmPassword\": \"{{default_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.1: Register User A returns 200 with EMAIL_VERIFICATION_REQUIRED', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('EMAIL_VERIFICATION_REQUIRED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.2 - Verify Registration OTP User A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userA_email}}\",\n  \"otp\": \"{{static_otp}}\",\n  \"deviceName\": \"CleanE2E-Runner\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/email-verification/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.2: Verify OTP User A returns 200 and challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('userA_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.3 - Setup Security PIN User A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userA_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "setup"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.3: PIN Setup User A returns 200, JWT token and User ID', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.expect(json.user.id).to.be.a('string');",
+                  "  pm.environment.set('userA_token', json.accessToken);",
+                  "  pm.environment.set('userA_id', json.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.4 - Register User B (Fresh Dynamic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Fresh Clean User B\",\n  \"email\": \"{{userB_email}}\",\n  \"phone\": \"{{userB_phone}}\",\n  \"password\": \"{{default_password}}\",\n  \"confirmPassword\": \"{{default_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.4: Register User B returns 200 with EMAIL_VERIFICATION_REQUIRED', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('EMAIL_VERIFICATION_REQUIRED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.5 - Verify Registration OTP User B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userB_email}}\",\n  \"otp\": \"{{static_otp}}\",\n  \"deviceName\": \"CleanE2E-Runner\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/email-verification/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.5: Verify OTP User B returns 200 and challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('userB_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.6 - Setup Security PIN User B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{userB_challengeToken}}\",\n  \"pin\": \"{{default_pin}}\",\n  \"confirmPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "setup"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.6: PIN Setup User B returns 200, JWT token and User ID', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.expect(json.user.id).to.be.a('string');",
+                  "  pm.expect(json.user.id).to.not.eql(pm.environment.get('userA_id'));",
+                  "  pm.environment.set('userB_token', json.accessToken);",
+                  "  pm.environment.set('userB_id', json.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.7 - Get User A Default Wallets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.7: User A Wallets returns 200 with default wallet', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.length).to.be.at.least(1);",
+                  "  pm.environment.set('userA_walletId', json[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.8 - Get User B Default Wallets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.8: User B Wallets returns 200 with distinct wallet', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.length).to.be.at.least(1);",
+                  "  pm.expect(json[0].id).to.not.eql(pm.environment.get('userA_walletId'));",
+                  "  pm.environment.set('userB_walletId', json[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.9 - Verify Isolation: User A Cannot Access User B Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets/{{userB_walletId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets",
+                "{{userB_walletId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('01.9: User A accessing User B wallet is denied (403 or 404)', function () {",
+                  "  pm.expect([403, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - SePay Test Mode Banking (TPBank 2-Account Evaluation)",
+      "item": [
+        {
+          "name": "02.1 - User A Start Test Mode Bank Link Challenge (TPBank Account 1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.1: User A Start Link Challenge returns 200 with challengeId & SWLINK reference', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeId).to.be.a('string');",
+                  "  pm.expect(json.reference).to.match(/^SWLINK/);",
+                  "  pm.environment.set('userA_bankChallengeId', json.challengeId);",
+                  "  pm.environment.set('userA_bankRef', json.reference);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.2 - User B Start Test Mode Bank Link Challenge (TPBank Account 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.2: User B Start Link Challenge returns 200 with distinct challengeId & SWLINK reference', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeId).to.be.a('string');",
+                  "  pm.expect(json.challengeId).to.not.eql(pm.environment.get('userA_bankChallengeId'));",
+                  "  pm.expect(json.reference).to.match(/^SWLINK/);",
+                  "  pm.expect(json.reference).to.not.eql(pm.environment.get('userA_bankRef'));",
+                  "  pm.environment.set('userB_bankChallengeId', json.challengeId);",
+                  "  pm.environment.set('userB_bankRef', json.reference);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.3 - Cross-User Isolation: User A Cannot Confirm User B Challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges/{{userB_bankChallengeId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges",
+                "{{userB_bankChallengeId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.3: User A confirming User B challenge returns 404 bank_link_challenge_not_found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('bank_link_challenge_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.4 - Cross-User Isolation: User B Cannot Confirm User A Challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges/{{userA_bankChallengeId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges",
+                "{{userA_bankChallengeId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.4: User B confirming User A challenge returns 404 bank_link_challenge_not_found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('bank_link_challenge_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.5 - User A Confirm Test Mode Challenge (Enforces Live Provider Requirement)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/link-challenges/{{userA_bankChallengeId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "link-challenges",
+                "{{userA_bankChallengeId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.5: Confirming challenge without matching remote transaction strictly rejects (409 or 503)', function () {",
+                  "  pm.expect([409, 503]).to.include(pm.response.code);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(['bank_link_not_confirmed', 'sepay_test_mode_not_configured', 'sepay_test_mode_provider_unavailable']).to.include(json.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.6 - User A Query Linked Accounts (Accurate Empty List)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/linked-accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "linked-accounts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.6: Query linked accounts returns 200 with empty list (no fabricated SQL rows)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.7 - User A Attempt Top-up Without Linked Bank Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankConnectionId\": \"00000000-0000-0000-0000-000000000001\",\n  \"walletId\": \"{{userA_walletId}}\",\n  \"amount\": 500000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-top-ups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('02.7: Top-up without linked bank connection is denied (404 or 409)', function () {",
+                  "  pm.expect([404, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Task 17 Financial Security Guards & Planning",
+      "item": [
+        {
+          "name": "03.1 - User A Create Custom Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Living Expenses 1793262331878\",\n  \"kind\": \"Expense\",\n  \"icon\": \"home\",\n  \"color\": \"#4A90E2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.1: Create category returns 201 with categoryId', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('customCatId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.2 - Task 17 Guard: Income Mutation Without Active Bank Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_walletId}}\",\n  \"categoryId\": \"{{customCatId}}\",\n  \"amount\": 1000000,\n  \"description\": \"Task 17 Income Guard Check\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/income",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "income"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.2: Income mutation without active bank strictly returns 409 active_bank_required', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('active_bank_required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.3 - Task 17 Guard: Expense Mutation Without Active Bank Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_walletId}}\",\n  \"categoryId\": \"{{customCatId}}\",\n  \"amount\": 50000,\n  \"description\": \"Task 17 Expense Guard Check\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/expense",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "expense"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.3: Expense mutation without active bank strictly returns 409 active_bank_required', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('active_bank_required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.4 - Task 17 Guard: P2P Transfer Without Active Bank Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"description\": \"Task 17 P2P Guard Check\",\n  \"idempotencyKey\": \"p2p-guard-1793262331878\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.4: P2P transfer without active bank strictly returns 409 active_bank_required', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('active_bank_required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.5 - Task 17 Guard: Internal Transfer Without Active Bank Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"destinationWalletId\": \"{{userA_walletId}}\",\n  \"amount\": 50000,\n  \"description\": \"Task 17 Internal Transfer Guard Check\",\n  \"idempotencyKey\": \"internal-guard-1793262331878\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/internal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "internal"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.5: Internal transfer without active bank strictly returns 409 active_bank_required', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('active_bank_required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.6 - Task 17 Guard: Withdrawal Without Active Bank Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankConnectionId\": \"00000000-0000-0000-0000-000000000001\",\n  \"walletId\": \"{{userA_walletId}}\",\n  \"amount\": 200000,\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"wdr-1793262331878\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.6: Withdrawal without active bank strictly returns 409 active_bank_required', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('active_bank_required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.7 - User A Create Monthly Budget",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{customCatId}}\",\n  \"year\": 2026,\n  \"month\": 10,\n  \"limitAmount\": 2500000,\n  \"alertsEnabled\": true,\n  \"rollover\": false,\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.7: Create budget returns 201 with budgetId', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.limitAmount).to.eql(2500000);",
+                  "  pm.environment.set('budgetId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.8 - User A Get Budget Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "budgets",
+                "{{budgetId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.8: Get budget details returns 200 with correct values', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.environment.get('budgetId'));",
+                  "  pm.expect(json.remainingAmount).to.eql(2500000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.9 - User A Create Savings Goal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Fund 1793262331878\",\n  \"targetAmount\": 15000000,\n  \"targetDate\": \"2026-12-31T00:00:00Z\",\n  \"iconName\": \"shield\",\n  \"colorHex\": \"#2ECC71\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "goals"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.9: Create goal returns 200 or 201 with goalId', function () {",
+                  "  pm.expect([200, 201]).to.include(pm.response.code);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.targetAmount).to.eql(15000000);",
+                  "  pm.environment.set('goalId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.10 - User A Get Goal Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/goals/{{goalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "goals",
+                "{{goalId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.10: Get goal details returns 200 with correct values', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.environment.get('goalId'));",
+                  "  pm.expect(json.targetAmount).to.eql(15000000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.11 - User A Create Recurring Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletId\": \"{{userA_walletId}}\",\n  \"categoryId\": \"{{customCatId}}\",\n  \"kind\": \"Expense\",\n  \"amount\": 180000,\n  \"title\": \"Cloud Backup\",\n  \"description\": \"Monthly cloud storage subscription\",\n  \"frequency\": \"Monthly\",\n  \"nextRunAt\": \"2026-11-01T00:00:00Z\",\n  \"isSubscription\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/recurring-transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recurring-transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.11: Create recurring transaction returns 200 with recurringId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.amount).to.eql(180000);",
+                  "  pm.environment.set('recurringId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.12 - User A List Recurring Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recurring-transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recurring-transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('03.12: List recurring transactions returns 200 containing new recurring definition', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  var found = json.find(function(r) { return r.id === pm.environment.get('recurringId'); });",
+                  "  pm.expect(found).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Group Fund Invitation & Collaboration Flow",
+      "item": [
+        {
+          "name": "04.1 - User A Send Friend Request to User B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": \"{{userB_email}}\",\n  \"contactKind\": \"email\",\n  \"message\": \"Connect for group fund management\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.1: Send friend request returns 200 with requestId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('friendReqId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.2 - User B Accept Friend Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests/{{friendReqId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "friends",
+                "requests",
+                "{{friendReqId}}",
+                "accept"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.2: Accept friend request returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.3 - User A Create Group Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Clean Collab Group 1793262331878\",\n  \"description\": \"Collaborative financial group\",\n  \"type\": \"Friends\",\n  \"currency\": \"VND\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.3: Create group fund returns 200 with groupId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('groupId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.4 - User A Invite User B to Group Fund (New Endpoint)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userB_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupId}}/invites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupId}}",
+                "invites"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.4: Invite member returns 200 with inviteId & token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.token).to.be.a('string');",
+                  "  pm.environment.set('groupInviteId', json.id);",
+                  "  pm.environment.set('groupInviteToken', json.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.5 - User B Query Pending Group Invites (New Endpoint)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/invites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "invites"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.5: Query invites returns 200 containing inviteId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  var found = json.find(function(inv) { return inv.id === pm.environment.get('groupInviteId'); });",
+                  "  pm.expect(found).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.6 - User B Accept Group Invite (New Endpoint)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/invites/{{groupInviteId}}/accept?token={{groupInviteToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "invites",
+                "{{groupInviteId}}",
+                "accept"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{groupInviteToken}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.6: Accept group invite returns 200 with updated GroupDto', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.environment.get('groupId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.7 - User A Verify Group Membership Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('04.7: Group details returns 200 with exactly 2 members', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.members.length).to.eql(2);",
+                  "  var memberB = json.members.find(function(m) { return m.userId === pm.environment.get('userB_id'); });",
+                  "  pm.expect(memberB).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - User -> Admin -> User Incident & Broadcast Lifecycle",
+      "item": [
+        {
+          "name": "05.1 - User A Submit Support Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on bank sync 1793262331878\",\n  \"description\": \"User A inquiry regarding banking test connection\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.1: Create support case User A returns 200 with caseId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('supportCaseAId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.2 - User B Submit Independent Support Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on wallet limits 1793262331878\",\n  \"description\": \"User B independent inquiry\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.2: Create support case User B returns 200 with caseId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.id).to.not.eql(pm.environment.get('supportCaseAId'));",
+                  "  pm.environment.set('supportCaseBId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.3 - Cross-User Isolation: User A Cannot Read User B Case",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support/{{supportCaseBId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support",
+                "{{supportCaseBId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.3: User A reading User B support case returns 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.4 - Admin Login (Password Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.4: Admin Login returns 200 with challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('admin_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.5 - Admin Verify PIN (Role Admin Access Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeToken\": \"{{admin_challengeToken}}\",\n  \"pin\": \"{{admin_pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.5: Admin PIN verify returns 200 and accessToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.environment.set('admin_token', json.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.6 - Admin Search Support Cases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.6: Admin list cases returns 200 containing both cases', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  var foundA = json.find(function(c) { return c.id === pm.environment.get('supportCaseAId'); });",
+                  "  var foundB = json.find(function(c) { return c.id === pm.environment.get('supportCaseBId'); });",
+                  "  pm.expect(foundA).to.not.be.undefined;",
+                  "  pm.expect(foundB).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.7 - Admin Claim Case A (in_progress Status)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"message\": \"Admin accepted case for audit investigation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support/{{supportCaseAId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support",
+                "{{supportCaseAId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.7: Admin claim case returns 200 with status in_progress', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('in_progress');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.8 - Admin Case-Scoped User Profile Lookup (Audited)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Tra cuu ho so nguoi dung phuc vu ho tro case\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/{{supportCaseAId}}/users/{{userA_id}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "{{supportCaseAId}}",
+                "users",
+                "{{userA_id}}",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.8: Case-scoped profile lookup returns 200 for linked user', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.user.id).to.eql(pm.environment.get('userA_id'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.9 - Negative Security: Admin Case-Scoped User Mismatch Denied",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Attempting out-of-scope lookup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/support/{{supportCaseAId}}/users/{{userB_id}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "{{supportCaseAId}}",
+                "users",
+                "{{userB_id}}",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.9: Out-of-scope user lookup is denied (400 or 403)', function () {",
+                  "  pm.expect([400, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.10 - Admin Reply to Support Case A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Admin has verified the system settings and resolved your inquiry.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support/{{supportCaseAId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support",
+                "{{supportCaseAId}}",
+                "messages"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.10: Admin reply returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.11 - User A Read Case Details & Admin Response Message",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support/{{supportCaseAId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support",
+                "{{supportCaseAId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.11: User A gets case details with Admin message in history', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.history).to.be.an('array');",
+                  "  var adminMsg = json.history.find(function(h) { return h.message && h.message.includes('Admin has verified'); });",
+                  "  pm.expect(adminMsg).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.12 - Admin Resolve Case A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\",\n  \"message\": \"Inquiry successfully resolved and completed.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support/{{supportCaseAId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support",
+                "{{supportCaseAId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.12: Admin resolve case returns 200 with resolved status', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('resolved');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.13 - Admin Draft System Broadcast",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793262331878\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793262331878\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/system/broadcasts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "broadcasts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.13: Draft broadcast returns 200 with broadcastId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('broadcastId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.14 - Admin Publish System Broadcast (Outbox Execution)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledFor\": null,\n  \"expectedRevision\": 1,\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Publishing operational notice\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/system/broadcasts/{{broadcastId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "broadcasts",
+                "{{broadcastId}}",
+                "publish"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.14: Publish broadcast returns 200 or 204', function () {",
+                  "  pm.expect([200, 204]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.15 - Admin Verify Broadcast Delivery Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Check distribution progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/system/broadcasts/{{broadcastId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "broadcasts",
+                "{{broadcastId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.15: Broadcast status returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(['Published', 'Completed']).to.include(json.state);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.16 - User A Receives Broadcast Notification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.16: User A receives notifications containing broadcast', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array');",
+                  "  var found = json.find(function(n) { return n.title && n.title.includes('Scheduled Maintenance'); });",
+                  "  pm.expect(found).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.17 - User B Receives Broadcast Notification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.17: User B receives notifications containing broadcast', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array');",
+                  "  var found = json.find(function(n) { return n.title && n.title.includes('Scheduled Maintenance'); });",
+                  "  pm.expect(found).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.18 - User A Marks Notifications Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read-all"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('05.18: Mark notifications read returns 200 or 204', function () {",
+                  "  pm.expect([200, 204]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Security Gates & Boundary Verification",
+      "item": [
+        {
+          "name": "06.1 - Non-Admin User Token Denied Admin Cases API",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('06.1: Non-admin token accessing Admin API returns 403 Forbidden', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.2 - Legacy Role 0 (Normal User) Token Denied Admin Privileges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{legacy_role0_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('06.2: Token with legacy Role 0 strictly denied Admin access (401 or 403)', function () {",
+                  "  pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.3 - Legacy Role 3 (SystemAdmin/SuperAdmin) Token Denied Admin Privileges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{legacy_role3_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('06.3: Token with legacy Role 3 strictly denied Admin access (401 or 403)', function () {",
+                  "  pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.4 - Idempotency Verification: Repeat Request Returns Original Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793262331878\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793262331878\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/system/broadcasts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "broadcasts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('06.4: Repeated request with identical Idempotency-Key returns cached 200 with same broadcastId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.environment.get('broadcastId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

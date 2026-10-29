@@ -1,168 +1,383 @@
-# SPENDWISE V1.0 — ADMIN BACKEND CONTRACT & OPERATING SPECIFICATION
+# SPENDWISE V1.0 — ĐẶC TẢ NGHIỆP VỤ QUẢN TRỊ ADMIN VÀ VẬN HÀNH HỆ THỐNG
 
-> **Thời điểm xác nhận nghiệm thu:** 29/10/2026 — 12:28:00+07:00  
-> **Trạng thái cốt lõi:** `BACKEND ADMIN V1.0 — LOCKED & VERIFIED 100% PASS (80/80 REQUESTS, 138/138 ASSERTIONS, 0 FAIL)`  
-> **Bộ kiểm thử Hỗ trợ & Khiếu nại:** `SUPPORT & DIRECT COMPLAINT E2E — 22/22 REQUESTS, 42/42 ASSERTIONS PASS (100%)`  
-> **Môi trường nghiệm thu:** Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02` / `SpendWise_E2E_G4` (SQL02 cách ly tuyệt đối, không kết nối SQL01).  
-> **Báo cáo kiểm thử chính thức:** [`ADMIN-V1-FINAL-NEWMAN-REPORT.json`](./ADMIN-V1-FINAL-NEWMAN-REPORT.json) và [`reports/newman/support_complaint_e2e_newman_report.json`](./reports/newman/support_complaint_e2e_newman_report.json).  
-> **Ranh giới công nghệ:**
-> - **Backend Admin Core:** Đã kiểm thử tự động toàn diện đủ 5 nhóm lớn, 21 chức năng quản trị (ADM-01 đến ADM-05), cơ chế kiểm soát truy cập thông tin nhạy cảm theo Hồ sơ điều tra (`Case-Scoped Access`), 22 chốt bảo mật (SEC-01 $\rightarrow$ SEC-22), và vòng đời phát hành thông báo Broadcast đa kênh.
-> - **Chính sách Quản trị viên độc tôn:** Duy nhất tài khoản `lethien241205@gmail.com` với vai trò `SystemRole.Admin = 2` được cấp quyền truy cập. Các vai trò legacy `SystemAdmin = 0` và `SuperAdmin = 3` bị từ chối triệt để ngay cả khi token mang chữ ký hợp lệ (`403 Forbidden` `legacy_role_rejected`).
-> - **Dịch vụ Ngoại vi (Gemini AI & SePay):** Nghiệm thu theo **Phương án B (Telemetry, Giám sát vận hành & Sandbox Test Mode)**. Cổng nạp/rút tiền thật và hạn ngạch trực tiếp không giới hạn của bên thứ ba được bảo lưu trạng thái `NOT VERIFIED (BY SAFETY POLICY)`.
+> **Phiên bản:** V1.0 (Production Candidate)  
+> **Phạm vi tài liệu:** Thuần đặc tả nghiệp vụ quản trị, 21 chức năng vận hành (5 nhóm), API contracts, kiểm soát truy cập và ranh giới hệ thống ngoại vi.  
+> **Trạng thái Backend:** Đã khóa nghiệp vụ (Backend Admin Locked), 100% endpoint được kiểm thử hồi quy tự động.
 
 ---
 
-## 1. VAI TRÒ VÀ RANH GIỚI BẢO MẬT (ROLES & SECURITY BOUNDARIES)
+## 1. NGUYÊN TẮC BẢO MẬT & PHÂN QUYỀN QUẢN TRỊ (SECURITY RULES)
 
 ### 1.1. Chính sách Quản trị viên duy nhất (Single Admin Policy)
-- Hệ thống SpendWise V1.0 thiết lập **duy nhất một tài khoản Quản trị viên hệ thống hoạt động**:
-  - **Email:** `lethien241205@gmail.com`
-  - **Role:** `SystemRole.Admin = 2`
-  - **User ID:** `A6D30123-AE6E-43B1-A3D3-0185FF8A46EC`
-- **Loại bỏ hoàn toàn SuperAdmin & SystemAdmin:**
-  - Tuyệt đối không còn quyền SuperAdmin trên hệ thống. Mọi nỗ lực gọi endpoint nâng cấp quản trị viên hoặc cấp Admin thứ hai (`/api/v1/admin/operators/*`) đều bị vô hiệu hóa với mã lỗi `403 Forbidden` (`operator_management_disabled`).
-  - Mọi JWT token mang claim role 0 hoặc 3 đều bị chặn ngay tại middleware với lỗi `legacy_role_rejected`.
-- **Phân định ranh giới Chủ quỹ (Fund Owner) và Quản trị viên (Admin):**
-  - Chủ quỹ (`Fund Owner`) là người dùng thông thường (`SystemRole.User`) có quyền quản trị trong quỹ mình sở hữu; hoàn toàn **không có quyền Admin hệ thống**.
-  - Quản trị viên hệ thống không can thiệp số dư cá nhân hoặc quỹ nhóm nếu không có hồ sơ khiếu nại hợp lệ.
+1. **Duy nhất một tài khoản Quản trị viên hệ thống:**
+   - **Tài khoản định danh:** `lethien241205@gmail.com`
+   - **Vai trò:** `SystemRole.Admin = 2`
+   - Khóa duy nhất ở cấp độ cơ sở dữ liệu và logic ứng dụng: Ngăn chặn tuyệt đối việc tạo tài khoản Admin thứ hai (`403 Forbidden` `operator_management_disabled`).
+2. **Loại bỏ triệt để các vai trò kế thừa (Legacy Roles Elimination):**
+   - Các vai trò cũ `SystemAdmin = 0` và `SuperAdmin = 3` bị từ chối quyền quản trị ngay tại tầng lọc bảo mật (`AdminSecurityGuard`), bất kể token JWT có chữ ký hợp lệ hay không (`403 Forbidden` `legacy_role_rejected`).
+3. **Bảo mật đa lớp cho Admin:**
+   - Đăng nhập yêu cầu Mật khẩu quản trị + Mã PIN Admin chuyên biệt (`AdminPin`).
+   - Mọi thao tác nhạy cảm (khóa người dùng, hoàn tiền khiếu nại, phát hành broadcast) đều yêu cầu xác thực lại mã PIN quản trị.
 
-### 1.2. Ranh giới truy cập nhạy cảm theo Hồ sơ hỗ trợ (Case-Scoped Access)
-- **Nguyên tắc không đọc tự do (Zero Unbounded Reads):**
-  - Admin **không có quyền đọc toàn cục** dữ liệu số dư ví, danh sách bạn bè, hoặc lịch sử giao dịch cá nhân của người dùng.
-  - Mọi thao tác tra cứu hồ sơ người dùng, phiên thiết bị, nhóm quỹ, hoặc lịch sử giao dịch **bắt buộc phải gắn liền với một Hồ sơ hỗ trợ đang mở (`active SupportCase`)** được phân công trực tiếp cho Admin đó:
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/restrictions`
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions`
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/groups`
-    - `POST /api/v1/admin/support/{caseId}/users/{userId}/history`
-  - Mỗi truy cập bắt buộc phải truyền lý do nghiệp vụ (`reason`) và được ghi nhật ký kiểm toán (`AuditLog`) bất biến.
-- **Bảo mật tuyệt đối:** Admin không bao giờ thấy mật khẩu thô, mã PIN, mã OTP, khóa bí mật sinh trắc học, hoặc token JWT của người dùng. Admin không có quyền sửa trực tiếp số dư tài khoản sổ cái (`LedgerAccount.Balance`).
+### 1.2. Kiểm soát Truy cập Dữ liệu Nhạy cảm theo Hồ sơ Hỗ trợ (Case-Scoped Access)
+1. **Nguyên tắc không đọc dữ liệu tùy tiện (Zero Unbounded Access):**
+   - Admin không có quyền truy cập tùy tiện vào số dư chi tiết, danh sách bạn bè hay lịch sử giao dịch cá nhân của người dùng nếu không có yêu cầu nghiệp vụ rõ ràng.
+   - Thao tác xem hồ sơ, xem phiên đăng nhập, xem quỹ nhóm hoặc lịch sử tài chính của người dùng **bắt buộc phải gắn liền với một Hồ sơ hỗ trợ / khiếu nại đang hoạt động (`active SupportCase`)** và truyền lý do điều tra (`reason`):
+     - `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
+     - `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`
+     - `POST /api/v1/admin/support/{caseId}/users/{userId}/groups`
+     - `POST /api/v1/admin/support/{caseId}/users/{userId}/history`
+2. **Nhật ký kiểm toán bất biến (Immutable Audit Trail):**
+   - Mọi hành động của Admin được ghi nhận vào bảng `AdminAuditLogs`: thời điểm (`UtcTimestamp`), địa chỉ IP, User-Agent, hành động (`Action`), đối tượng tác động (`TargetEntity`), dữ liệu trước và sau thao tác (`BeforeState`, `AfterState`).
+   - Admin không có quyền sửa hoặc xóa bản ghi Audit Log.
 
 ---
 
-## 2. NĂM NHÓM CHỨC NĂNG ADMIN V1.0 (21 CHỨC NĂNG TỔNG THỂ)
+## 2. MA TRẬN 21 CHỨC NĂNG QUẢN TRỊ ADMIN THEO 5 NHÓM
 
+| Mã CN | Nhóm Chức Năng | Tên Chức Năng | Mục Tiêu & Nghiệp Vụ Chính | API Endpoint |
+|---|---|---|---|---|
+| **ADM-01** | Nhóm 1: Tổng quan & Vận hành | 1. Thống kê Dashboard Vận hành | Thống kê số lượng người dùng, số vụ việc chờ xử lý, cảnh báo hệ thống | `GET /api/v1/admin/operations/dashboard` |
+| **ADM-02** | Nhóm 1: Tổng quan & Vận hành | 2. Tổng hợp Quỹ & Giao dịch | Giám sát tổng biến động dòng tiền, quỹ nhóm đang hoạt động | `GET /api/v1/admin/operations/funds-summary` |
+| **ADM-03** | Nhóm 1: Tổng quan & Vận hành | 3. Quản lý Tác vụ Vận hành | Theo dõi hàng đợi tác vụ nền, trạng thái Outbox Processor | `GET /api/v1/admin/operations/tasks` |
+| **ADM-04** | Nhóm 1: Tổng quan & Vận hành | 4. Cảnh báo Hệ thống Tức thời | Cảnh báo khi có giao dịch bất thường, ngưỡng lỗi hệ thống | `GET /api/v1/admin/operations/alerts` |
+| **ADM-05** | Nhóm 2: Quản lý Người dùng | 5. Tra cứu & Phân trang Người dùng | Tìm kiếm theo Email, SĐT, SpendId, lọc theo trạng thái | `GET /api/v1/admin/users` |
+| **ADM-06** | Nhóm 2: Quản lý Người dùng | 6. Xem Hồ sơ Người dùng (Case-Scoped) | Xem thông tin định danh và số dư gắn với mã hồ sơ hỗ trợ | `POST /api/v1/admin/support/{caseId}/users/{userId}/profile` |
+| **ADM-07** | Nhóm 2: Quản lý Người dùng | 7. Xem Danh sách Phiên (Case-Scoped) | Xem danh sách thiết bị và phiên đăng nhập của người dùng | `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions` |
+| **ADM-08** | Nhóm 2: Quản lý Người dùng | 8. Thu hồi Phiên (Revoke Sessions) | Cưỡng chế đăng xuất tất cả phiên của người dùng có dấu hiệu rủi ro | `POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions` |
+| **ADM-09** | Nhóm 2: Quản lý Người dùng | 9. Điều chỉnh Trạng thái Người dùng | Chuyển trạng thái giữa `Active`, `Restricted` và `Locked` | `PUT /api/v1/admin/users/{userId}/status` |
+| **ADM-10** | Nhóm 2: Quản lý Người dùng | 10. Đặt lại Mật khẩu / PIN An toàn | Kích hoạt gửi email khôi phục mật khẩu hoặc đặt lại PIN an toàn | `POST /api/v1/admin/users/{userId}/reset-pin` |
+| **ADM-11** | Nhóm 3: Giám sát Sổ cái & GD | 11. Giám sát Bảng cân đối Sổ cái | Kiểm tra tính bất biến $\sum \text{Debit} = \sum \text{Credit}$ trên toàn hệ thống | `GET /api/v1/admin/ledger/trial-balance` |
+| **ADM-12** | Nhóm 3: Giám sát Sổ cái & GD | 12. Tra cứu Giao dịch Toàn hệ thống | Tra cứu, đối soát giao dịch tài chính, lọc theo trạng thái và thời gian | `GET /api/v1/admin/transactions` |
+| **ADM-13** | Nhóm 3: Giám sát Sổ cái & GD | 13. Nhật ký Kiểm toán (Audit Logs) | Truy vết lịch sử mọi thao tác quản trị, không thể chỉnh sửa | `GET /api/v1/admin/audit-logs` |
+| **ADM-14** | Nhóm 4: Hỗ trợ & Khiếu nại | 14. Tiếp nhận & Phân loại Hồ sơ | Xem danh sách khiếu nại/hỗ trợ, lọc theo trạng thái (`Pending`, `InReview`) | `GET /api/v1/admin/support` |
+| **ADM-15** | Nhóm 4: Hỗ trợ & Khiếu nại | 15. Chi tiết Hồ sơ & Lịch sử Trao đổi | Xem nội dung khiếu nại, giao dịch liên quan và lịch sử tin nhắn | `GET /api/v1/admin/support/{caseId}` |
+| **ADM-16** | Nhóm 4: Hỗ trợ & Khiếu nại | 16. Phản hồi Người dùng | Gửi phản hồi chính thức hoặc yêu cầu bổ sung bằng chứng từ Admin | `POST /api/v1/admin/support/{caseId}/messages` |
+| **ADM-17** | Nhóm 4: Hỗ trợ & Khiếu nại | 17. Phê duyệt Khiếu nại (`Resolved`) | Chấp thuận khiếu nại, kích hoạt hoàn tiền hoặc điều chỉnh trạng thái | `POST /api/v1/admin/support/{caseId}/resolve` |
+| **ADM-18** | Nhóm 4: Hỗ trợ & Khiếu nại | 18. Từ chối Khiếu nại (`Rejected`) | Bác bỏ khiếu nại, nêu rõ căn cứ và lý do từ chối chính thức | `POST /api/v1/admin/support/{caseId}/reject` |
+| **ADM-19** | Nhóm 5: Truyền thông & Ngoại vi | 19. Phát hành Thông báo Broadcast | Soạn và phát hành thông báo toàn hệ sinh thái theo chu trình Outbox | `POST /api/v1/admin/broadcasts` |
+| **ADM-20** | Nhóm 5: Truyền thông & Ngoại vi | 20. Giám sát Vận hành Trợ lý Gemini AI | Đo lường số request, latency, tỷ lệ thành công và chuyển mạch fallback | `GET /api/v1/admin/system/gemini/monitoring` |
+| **ADM-21** | Nhóm 5: Truyền thông & Ngoại vi | 21. Giám sát Webhook Ngân hàng SePay | Giám sát trạng thái kết nối IPN, đối soát sandbox, cảnh báo giao dịch ảo | `GET /api/v1/admin/system/sepay/monitoring` |
+
+---
+
+## 3. CHI TIẾT API CONTRACT PHÂN HỆ QUẢN TRỊ ADMIN
+
+Header bắt buộc cho mọi Admin API:
+```http
+Content-Type: application/json
+Authorization: Bearer <admin_access_token>
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                            HỆ THỐNG QUẢN TRỊ SPENDWISE V1.0                                │
-├──────────────────────────┬──────────────────────────┬───────────────────────────────────────┤
-│ ADM-01: TỔNG QUAN        │ ADM-02: QUẢN LÝ USER     │ ADM-03: HỖ TRỢ & KHIẾU NẠI            │
-│ 1.1 Thống kê Dashboard   │ 2.1 Tra cứu & Phân trang │ 3.1 Tiếp nhận & Phân loại Hồ sơ       │
-│ 1.2 Tổng hợp Quỹ & GD    │ 2.2 Xem Hồ sơ theo Case  │ 3.2 Xem Chi tiết & Lịch sử Trao đổi   │
-│ 1.3 Quản lý Tác vụ       │ 2.3 Xem Phiên theo Case  │ 3.3 Phản hồi & Yêu cầu Bổ sung        │
-│ 1.4 Cảnh báo Hệ thống    │ 2.3b Thu hồi Phiên (All) │ 3.4 Cập nhật Trạng thái Hồ sơ         │
-│                          │ 2.4 Đổi Trạng thái User  │ 3.5 Luồng Xử lý Khiếu nại Trực tiếp   │
-├──────────────────────────┴──────────────────────────┼───────────────────────────────────────┤
-│ ADM-04: THÔNG BÁO VẬN HÀNH                          │ ADM-05: HỆ THỐNG & NGOẠI VI           │
-│ 4.1 Lịch sử Chuyển phát theo Case                   │ 5.1 Giám sát Sức khỏe Toàn diện       │
-│ 4.2 Báo cáo Hàng đợi Outbox                         │ 5.2 Giám sát Trợ lý Gemini AI         │
-│ 4.3 Danh mục Mẫu Thông báo Chuẩn                    │ 5.3 Giám sát Cổng Ngân hàng SePay     │
-│ 4.4 Soạn & Phát hành Broadcast (Full Lifecycle)     │ 5.4 Quản lý Chế độ Bảo trì            │
-│                                                     │ 5.5 Nhật ký Kiểm toán & Feature Flags │
-└─────────────────────────────────────────────────────┴───────────────────────────────────────┘
+
+### 3.1. Nhóm 1: Tổng quan & Vận hành Hệ thống (Operations & Dashboard)
+
+#### `GET /api/v1/admin/operations/dashboard`
+- **Mô tả:** Trả về các chỉ số vận hành tổng quan: tổng số tài khoản (`Active`, `Restricted`, `Locked`), số vụ hỗ trợ đang chờ (`PendingSupportCases`), tỷ lệ lỗi giao dịch trong 24 giờ qua.
+- **Quyền:** Admin duy nhất (`SystemRole.Admin = 2`).
+- **Response `200 OK`:**
+```json
+{
+  "totalUsers": 1250,
+  "activeUsers": 1210,
+  "restrictedUsers": 25,
+  "lockedUsers": 15,
+  "pendingSupportCases": 8,
+  "systemHealthStatus": "Healthy",
+  "lastUpdated": "2026-10-29T14:45:00Z"
+}
 ```
 
-### ADM-01: Tổng quan Hệ thống (System Overview & Dashboards)
-- **ADM-01.1 — Thống kê User & Trạng thái Dashboard (`GET /api/admin/dashboard`):** Trả về tổng người dùng, số lượng active, số lượng locked, tổng số dư toàn hệ thống và các chỉ số tài chính trọng yếu.
-- **ADM-01.2 — Tổng hợp Giao dịch & Quỹ nhóm Overview (`GET /api/v1/admin/overview`):** Báo cáo số lượng giao dịch, biến động quỹ nhóm trong ngày làm việc theo giờ Việt Nam (UTC+7).
-- **ADM-01.3 — Quản lý Tác vụ Vận hành (`GET /api/v1/admin/overview/tasks`):** Danh sách các tác vụ cần phê duyệt, hồ sơ khiếu nại chờ xử lý, phân trang tiêu chuẩn.
-- **ADM-01.4 — Cảnh báo Hệ thống & Hoạt động Gần đây (`GET /api/v1/admin/overview/alerts`):** Dòng sự kiện cảnh báo bảo mật thời gian thực, sự cố phát sinh và hoạt động bất thường.
-
-### ADM-02: Quản lý Người dùng & Chế tài Tài khoản (User Management)
-- **ADM-02.1 — Tra cứu & Phân trang (`GET /api/admin/users?search=...`):** Tìm kiếm người dùng theo Email, Tên, Số điện thoại hoặc SpendId, phân trang dữ liệu.
-- **ADM-02.2 — Xem Hồ sơ Chi tiết theo Case (`POST /api/v1/admin/support/{caseId}/users/{userId}/profile`):** Trả về hồ sơ che phủ thông tin nhạy cảm (Masked Email/Phone), danh sách ví liên kết và trạng thái hiện tại.
-- **ADM-02.3 — Xem Phiên Đăng nhập theo Case (`POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`):** Liệt kê các phiên làm việc, thiết bị và IP của người dùng trong phạm vi điều tra.
-- **ADM-02.3b — Thu hồi Toàn bộ Phiên Làm việc (`POST /api/admin/users/{userId}/revoke-sessions`):** Vô hiệu hóa ngay lập tức toàn bộ refresh token và phiên thiết bị của người dùng, trả `204 NoContent`.
-- **ADM-02.4 — Áp dụng Chế tài Tài khoản (`PUT /api/admin/users/{userId}/status`):**
-  - Yêu cầu: `adminPin` (Mã PIN của Admin), `status`, `reason`.
-  - **Hai mức độ chế tài:**
-    - `UserStatus.Restricted`: Chặn lệnh ghi nợ tiền ra (`403 account_restricted`), vẫn cho phép đọc số dư, liên hệ hỗ trợ và nhận tiền vào.
-    - `UserStatus.Locked`: Thu hồi phiên tức thì, chặn đăng nhập và refresh token (`403 account_unavailable`). Sau khi mở khóa (`Active`), người dùng phải đăng nhập lại từ đầu.
-
-### ADM-03: Hỗ trợ Khách hàng & Khiếu nại Giao dịch (Support & Complaints)
-- **ADM-03.1 — Tiếp nhận & Phân loại Hồ sơ (`GET /api/admin/cases/support`):** Đọc danh sách phiếu hỗ trợ và khiếu nại của hệ thống với các bộ lọc trạng thái (`open`, `in_progress`, `resolved`, `rejected`).
-- **ADM-03.2 — Chi tiết Hồ sơ & Lịch sử Trao đổi (`GET /api/admin/cases/support/{id}`):** Xem toàn bộ nội dung khiếu nại, giao dịch liên quan (`linkedTransactionId`), biên lai đối soát và lịch sử tin nhắn.
-- **ADM-03.3 — Phản hồi & Yêu cầu Bổ sung Thông tin (`POST /api/admin/cases/support/{id}/messages`):** Gửi thông điệp phản hồi từ Admin đến người dùng.
-- **ADM-03.4 — Cập nhật Tiến độ & Kết luận Hồ sơ (`POST /api/admin/cases/support/{id}/status`):** Chuyển trạng thái hồ sơ sang `in_progress`, `need_more_info`, `resolved`, hoặc `rejected`.
-- **ADM-03.5 — Luồng Xử lý Khiếu nại Giao dịch Trực tiếp (Full E2E):** Chuỗi liên hoàn từ lúc User tạo khiếu nại giao dịch $\rightarrow$ Admin tiếp nhận điều tra $\rightarrow$ Admin yêu cầu bổ sung $\rightarrow$ User phản hồi $\rightarrow$ Admin giải quyết $\rightarrow$ User nhận thông báo kết quả.
-- *Quy tắc an toàn:* Endpoint tạo Dispute độc lập cũ (`POST /api/cases/disputes`) bị chặn với mã `400 Bad Request` (`dispute_workflow_deprecated`), toàn bộ dữ liệu lịch sử được bảo tồn an toàn.
-
-### ADM-04: Quản lý Thông báo Vận hành (Notifications & Broadcasts)
-- **ADM-04.1 — Lịch sử Chuyển phát Thông báo theo Case (`POST /api/v1/admin/notifications/delivery-history`):** Truy vết các thông báo hệ thống đã phát cho người dùng trong phạm vi điều tra.
-- **ADM-04.2 — Báo cáo Trạng thái Hàng đợi Outbox (`GET /api/admin/health`):** Giám sát hàng đợi tin nhắn `OutboxMessages` (số lượng tin chờ xử lý, số lượng tin lỗi).
-- **ADM-04.3 — Danh mục Mẫu Thông báo Chuẩn (`POST /api/v1/admin/notifications/templates`):** Danh sách các template thông báo chuẩn hóa có sẵn trong hệ thống.
-- **ADM-04.4 — Vòng đời Phát hành Thông báo Broadcast Toàn diện (Full E2E Lifecycle):**
-  1. Admin soạn thảo thông báo dạng nháp (`status: "Draft"`).
-  2. Admin phát hành thông báo tức thời (`POST /api/v1/system/broadcasts/{id}/publish`) kèm `adminPin`.
-  3. Worker chuyển phát qua Outbox Queue thành công.
-  4. Người dùng mở ứng dụng và nhận thông báo trong hộp thư (`GET /api/notifications`).
-  5. Người dùng đánh dấu đã đọc (`POST /api/notifications/{id}/read` trả `204 NoContent`).
-  6. Admin kiểm tra trạng thái broadcast: xác nhận số lượt người dùng đã đọc $\ge 1$.
-
-### ADM-05: Hệ thống & Giám sát Ngoại vi (System Health & Integration Monitoring)
-- **ADM-05.1 — Giám sát Sức khỏe Toàn diện (`GET /api/admin/health`):** Báo cáo trạng thái hoạt động của Web API, Microsoft SQL Server, SignalR Hub, Background Workers và Outbox Queue.
-- **ADM-05.2 — Giám sát & Telemetry Trí tuệ Nhân tạo Gemini AI:**
-  - Báo cáo telemetry thời gian thực qua `GET /api/admin/health`.
-  - Fallback an toàn `SpendWisePolicy`: Khi gặp sự cố mạng hoặc cạn kiệt hạn ngạch, hệ thống tự động chuyển sang chính sách nội bộ thông minh, bảo toàn trải nghiệm người dùng với độ trễ tối ưu.
-  - Quản lý phiên hội thoại và bộ nhớ ngữ cảnh qua `POST /api/admin/ai/chat`.
-- **ADM-05.3 — Giám sát Cổng Thanh toán SePay Sandbox:**
-  - Giám sát trạng thái tích hợp qua `GET /api/admin/integrations/sepay/status`.
-  - Hiển thị đúng thực tế Sandbox (`configured: false, ipnConfigured: false`).
-  - Đối soát giao dịch mô phỏng qua `GET /api/admin/bank-integration/reconciliation`.
-  - Giám sát webhook events ngân hàng qua `GET /api/admin/bank-integration/events`.
-- **ADM-05.4 — Quản lý Chế độ Bảo trì Hệ thống (`GET /api/system/maintenance`, `POST /api/v1/system/maintenance/toggle`):** Kiểm tra và kích hoạt cờ bảo trì toàn hệ thống khi nâng cấp hạ tầng.
-- **ADM-05.5 — Nhật ký Kiểm toán & Quản trị Cờ Tính năng:**
-  - `GET /api/admin/audit-logs`: Luồng nhật ký bất biến ghi nhận toàn bộ thao tác quản trị.
-  - `GET /api/admin/feature-flags`: Danh mục và trạng thái các cờ tính năng hệ thống.
+#### `GET /api/v1/admin/operations/alerts`
+- **Mô tả:** Danh sách các cảnh báo an ninh vận hành (đăng nhập thất bại hàng loạt, lỗi webhook SePay, lỗi kết nối Gemini AI).
+- **Response `200 OK`:** Danh sách bản ghi cảnh báo kèm cấp độ rủi ro (`Info`, `Warning`, `Critical`).
 
 ---
 
-## 3. BẢNG CONTRACT API ADMIN CHI TIẾT & MÃ LỖI
+### 3.2. Nhóm 2: Quản lý Người dùng & Trạng thái (User Governance)
 
-| Phân Hệ | Method | Tuyến Đường (Route) | Yêu Cầu Header / Payload | Trạng Thái Thành Công | Mã Lỗi & Ý Nghĩa |
-|---|:---:|---|---|:---:|---|
-| **ADM-01** | `GET` | `/api/admin/dashboard` | Bearer Admin | `200 OK` | `403 Forbidden` (User thường không được truy cập) |
-| | `GET` | `/api/v1/admin/overview` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| | `GET` | `/api/v1/admin/overview/tasks` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| | `GET` | `/api/v1/admin/overview/alerts` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| **ADM-02** | `GET` | `/api/admin/users` | Bearer Admin (Query: `search, page, pageSize`) | `200 OK` | `401 Unauthorized` |
-| | `POST`| `/api/v1/admin/support/{caseId}/users/{userId}/profile` | Bearer Admin + `{ reason: "Điều tra" }` | `200 OK` | `404 CaseNotFound / UserNotFound` |
-| | `POST`| `/api/v1/admin/support/{caseId}/users/{userId}/sessions` | Bearer Admin + `{ reason: "Kiểm tra phiên" }` | `200 OK` | `400 MissingReason` |
-| | `POST`| `/api/admin/users/{userId}/revoke-sessions` | Bearer Admin | `204 NoContent` | `404 UserNotFound` |
-| | `PUT` | `/api/admin/users/{userId}/status` | Bearer Admin + `{ status, reason, adminPin }` | `200 OK` | `400 InvalidAdminPin`, `403 CannotSanctionAdmin` |
-| **ADM-03** | `GET` | `/api/admin/cases/support` | Bearer Admin (Query: `status, category, page`) | `200 OK` | `401 Unauthorized` |
-| | `GET` | `/api/admin/cases/support/{id}` | Bearer Admin | `200 OK` | `404 CaseNotFound` |
-| | `POST`| `/api/admin/cases/support/{id}/messages` | Bearer Admin + `{ message: "Phản hồi" }` | `200 OK` | `404 CaseNotFound` |
-| | `POST`| `/api/admin/cases/support/{id}/status` | Bearer Admin + `{ status: "resolved", resolutionNote }` | `200 OK` | `400 InvalidStatusTransition` |
-| | `GET` | `/api/admin/cases/disputes` | Bearer Admin | `200 OK` | Danh mục chỉ đọc hồ sơ lịch sử |
-| **ADM-04** | `POST`| `/api/v1/admin/notifications/delivery-history` | Bearer Admin + `{ reason: "Audit" }` | `200 OK` | `400 MissingReason` |
-| | `POST`| `/api/v1/admin/notifications/templates` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| | `POST`| `/api/v1/system/broadcasts` | Bearer Admin + `{ title, message, targetRoles }` | `201 Created` | `400 InvalidBroadcast` |
-| | `POST`| `/api/v1/system/broadcasts/{id}/publish` | Bearer Admin + `{ adminPin }` | `200 OK` | `400 InvalidAdminPin`, `409 AlreadyPublished` |
-| | `GET` | `/api/v1/system/broadcasts/{id}/status` | Bearer Admin | `200 OK` | `404 BroadcastNotFound` |
-| **ADM-05** | `GET` | `/api/admin/health` | Bearer Admin | `200 OK` | Báo cáo chi tiết component health |
-| | `POST`| `/api/admin/ai/chat` | Bearer Admin + `{ message: "Kiểm tra" }` | `200 OK` | `503 AiUnavailable` (tự động fallback) |
-| | `GET` | `/api/admin/integrations/sepay/status` | Bearer Admin | `200 OK` | Báo cáo sandbox status |
-| | `GET` | `/api/admin/bank-integration/reconciliation` | Bearer Admin | `200 OK` | Đối soát giao dịch ngân hàng |
-| | `GET` | `/api/admin/bank-integration/events` | Bearer Admin | `200 OK` | Nhật ký webhook events |
-| | `GET` | `/api/system/maintenance` | Anonymous / Bearer | `200 OK` | `{ isUnderMaintenance: false }` |
-| | `GET` | `/api/admin/audit-logs` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| | `GET` | `/api/admin/feature-flags` | Bearer Admin | `200 OK` | `401 Unauthorized` |
-| **Legacy** | `ALL` | `/api/v1/admin/operators/*` | Mọi token | `403 Forbidden` | `operator_management_disabled` |
-| | `POST`| `/api/cases/disputes` | Mọi token | `400 Bad Request` | `dispute_workflow_deprecated` |
+#### `GET /api/v1/admin/users`
+- **Mô tả:** Danh sách người dùng có phân trang và bộ lọc tìm kiếm.
+- **Query Params:** `searchTerm=nguyen&status=Active&page=1&pageSize=20`
+- **Response `200 OK`:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid-user-1",
+      "email": "user1@example.com",
+      "fullName": "Nguyen Van A",
+      "phone": "0912345678",
+      "spendId": "SPEND_123456",
+      "status": "Active",
+      "createdAt": "2026-10-20T08:00:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+#### `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
+- **Mô tả:** Xem chi tiết hồ sơ người dùng trong phạm vi vụ việc hỗ trợ đang thụ lý.
+- **Request Body:**
+```json
+{
+  "reason": "Điều tra khiếu nại chuyển tiền sai số dư"
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "userId": "uuid-user-1",
+  "fullName": "Nguyen Van A",
+  "email": "user1@example.com",
+  "status": "Active",
+  "totalBalance": 5000000.00,
+  "walletsCount": 2,
+  "linkedBankAccounts": [
+    {
+      "bankCode": "MB",
+      "accountNumberMasked": "******5678",
+      "accountHolderName": "NGUYEN VAN A"
+    }
+  ]
+}
+```
+- **Mã lỗi:** `400 BadRequest` (`invalid_case_id_or_unassigned`), `403 Forbidden` (`unauthorized_case_scope`).
+
+#### `PUT /api/v1/admin/users/{userId}/status`
+- **Mô tả:** Cập nhật trạng thái tài khoản người dùng (`Active`, `Restricted`, `Locked`).
+- **Quy tắc:**
+  - Nếu chuyển sang `Locked`: Tự động thu hồi tức thời toàn bộ phiên (`UserSessions`) và Refresh Token (`RevokedAt = Now`).
+  - Nếu chuyển sang `Restricted`: Người dùng bị chặn toàn bộ lệnh rút tiền, chuyển tiền, nộp quỹ.
+- **Request Body:**
+```json
+{
+  "status": "Locked",
+  "reason": "Tài khoản có dấu hiệu gian lận theo hồ sơ CASE-1092",
+  "adminPin": "{ adminPin }"
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "userId": "uuid-user-1",
+  "previousStatus": "Active",
+  "currentStatus": "Locked",
+  "updatedAt": "2026-10-29T14:50:00Z"
+}
+```
+- **Mã lỗi:** `400 BadRequest` (`invalid_admin_pin`), `404 NotFound` (`user_not_found`).
+
+#### `POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions`
+- **Mô tả:** Cưỡng chế đăng xuất toàn bộ thiết bị đang đăng nhập của người dùng.
+- **Request Body:**
+```json
+{
+  "reason": "Khách hàng báo mất điện thoại yêu cầu bảo vệ số dư"
+}
+```
+- **Response `200 OK`:** `{ "revokedSessionsCount": 3, "status": "Success" }`
 
 ---
 
-## 4. HƯỚNG DẪN TRIỂN KHAI FRONTEND ADMIN CHO CODEX
+### 3.3. Nhóm 3: Giám sát Tài chính & Sổ cái Kép (Financial & Ledger Monitoring)
 
-1. **Giao diện Quản trị Chuyên biệt:**
-   - Xây dựng layout Admin riêng biệt (Admin Portal Layout), có Sidebar điều hướng đủ 5 nhóm chức năng: Tổng quan, Người dùng, Hỗ trợ/Khiếu nại, Thông báo vận hành, Giám sát hệ thống.
-   - Không tích hợp màn hình quản lý Operator hay phân quyền Admin cấp cao; hệ thống chỉ có 1 Admin duy nhất.
-2. **Xử lý Mã PIN Quản trị (`adminPin`):**
-   - Các thao tác nhạy cảm (Khóa/Mở khóa người dùng, Phát hành thông báo Broadcast toàn hệ thống, Kích hoạt chế độ bảo trì) yêu cầu popup nhập mã PIN 6 số của Admin trước khi gửi request.
-3. **Luồng Điều tra theo Case Hồ sơ (Scoped Investigation Modal):**
-   - Khi Admin xem hồ sơ người dùng từ danh sách User, nếu truy cập vào các tab nhạy cảm (Lịch sử giao dịch, Phiên hoạt động, Nhóm quỹ), hiển thị modal yêu cầu chọn một `Hồ sơ Hỗ trợ đang mở (SupportCase)` và nhập `Lý do điều tra (reason)`.
-4. **Giám sát Trạng thái Thực tế:**
-   - Trên trang Giám sát Tích hợp SePay, hiển thị rõ ràng nhãn `Môi trường Thử nghiệm Sandbox (Test Mode)`, không hiển thị trạng thái kết nối cổng thanh toán tiền thật khi chưa cấu hình.
-   - Trên trang Trợ lý Gemini AI, hiển thị thẻ telemetry chỉ số thành công, độ trễ phản hồi và trạng thái chế độ dự phòng `SpendWisePolicy Fallback`.
+#### `GET /api/v1/admin/ledger/trial-balance`
+- **Mô tả:** Bảng cân đối thử sổ cái kế toán kép toàn hệ thống. Xác minh tính cân bằng tuyệt đối giữa Nợ và Có.
+- **Response `200 OK`:**
+```json
+{
+  "totalDebit": 15820000000.00,
+  "totalCredit": 15820000000.00,
+  "isBalanced": true,
+  "variance": 0.00,
+  "checkedAt": "2026-10-29T14:52:00Z"
+}
+```
+
+#### `GET /api/v1/admin/transactions`
+- **Mô tả:** Tra cứu danh sách giao dịch tài chính toàn hệ thống.
+- **Query Params:** `type=Transfer&status=Completed&page=1&pageSize=50`
+- **Response `200 OK`:** Danh sách giao dịch tài chính có phân trang.
+
+#### `GET /api/v1/admin/audit-logs`
+- **Mô tả:** Báo cáo nhật ký kiểm toán hành động quản trị.
+- **Query Params:** `page=1&pageSize=50&action=ChangeUserStatus`
+- **Response `200 OK`:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid-log-1",
+      "adminEmail": "lethien241205@gmail.com",
+      "action": "ChangeUserStatus",
+      "targetEntity": "User:uuid-user-1",
+      "details": "Changed status from Active to Locked. Reason: Fraud report",
+      "ipAddress": "127.0.0.1",
+      "timestamp": "2026-10-29T14:50:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3.4. Nhóm 4: Xử lý Hỗ trợ & Khiếu nại Trực tiếp (Support & Dispute Governance)
+
+#### `GET /api/v1/admin/support`
+- **Mô tả:** Lấy danh sách các yêu cầu hỗ trợ / khiếu nại của người dùng.
+- **Query Params:** `status=Pending&page=1&pageSize=20`
+- **Response `200 OK`:** Danh sách hồ sơ hỗ trợ.
+
+#### `GET /api/v1/admin/support/{caseId}`
+- **Mô tả:** Xem chi tiết một hồ sơ hỗ trợ: thông tin người khiếu nại, giao dịch liên quan, lịch sử đối thoại.
+- **Response `200 OK`:**
+```json
+{
+  "caseId": "uuid-case-1092",
+  "status": "InReview",
+  "userId": "uuid-user-1",
+  "userFullName": "Nguyen Van A",
+  "transactionId": "uuid-tx-disputed",
+  "title": "Chuyển tiền bị trừ 2 lần",
+  "category": "TransactionIssue",
+  "messages": [
+    {
+      "senderType": "User",
+      "message": "Giao dịch lúc 14:02 bị timeout nhưng tài khoản trừ tiền 2 lần",
+      "createdAt": "2026-10-29T14:40:00Z"
+    }
+  ],
+  "createdAt": "2026-10-29T14:40:00Z"
+}
+```
+
+#### `POST /api/v1/admin/support/{caseId}/messages`
+- **Mô tả:** Gửi tin nhắn phản hồi từ Admin tới người dùng trong hồ sơ.
+- **Request Body:**
+```json
+{
+  "message": "Bộ phận kỹ thuật đã kiểm tra bản ghi sổ cái. Chúng tôi xác nhận giao dịch bị timeout và tiến hành hoàn tiền."
+}
+```
+- **Response `200 OK`**
+
+#### `POST /api/v1/admin/support/{caseId}/resolve`
+- **Mô tả:** Phê duyệt giải quyết khiếu nại. Kích hoạt hoàn tiền tự động vào ví người dùng nếu có chỉ định.
+- **Request Body:**
+```json
+{
+  "resolutionNote": "Hoàn trả 250.000 VNĐ do lỗi mạng giao dịch kép",
+  "refundAmount": 250000.00,
+  "adminPin": "{ adminPin }"
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "caseId": "uuid-case-1092",
+  "status": "Resolved",
+  "refundStatus": "Completed",
+  "resolvedAt": "2026-10-29T14:55:00Z"
+}
+```
+
+#### `POST /api/v1/admin/support/{caseId}/reject`
+- **Mô tả:** Từ chối khiếu nại với lý do căn cứ rõ ràng.
+- **Request Body:**
+```json
+{
+  "reason": "Giao dịch đã được ngân hàng thụ hưởng xác nhận thành công và người nhận đã rút tiền.",
+  "adminPin": "{ adminPin }"
+}
+```
+- **Response `200 OK`:** `{ "caseId": "uuid-case-1092", "status": "Rejected" }`
+
+---
+
+### 3.5. Nhóm 5: Truyền thông Hệ thống & Giám sát Ngoại vi (Broadcast & External API Monitoring)
+
+#### `POST /api/v1/admin/broadcasts`
+- **Mô tả:** Tạo và phát hành thông báo toàn hệ sinh thái.
+- **Vòng đời chuẩn:**
+  1. Admin tạo bản ghi trạng thái `Draft` hoặc `Published`.
+  2. Outbox Processor nhận diện bản ghi `Published`, phân phối vào hộp thư In-App của từng người dùng (`Active`).
+  3. Cập nhật trạng thái `Delivered/Completed` kèm số lượng người dùng thực tế đã nhận (`deliveredCount`). Tuyệt đối không coi trạng thái `Scheduled` hoặc `persisted = 0` là đã gửi thành công.
+- **Request Body:**
+```json
+{
+  "title": "Bảo trì nâng cấp hệ thống",
+  "content": "SpendWise sẽ bảo trì nâng cấp cụm máy chủ từ 01:00 đến 03:00 sáng ngày 30/10/2026.",
+  "targetAudience": "AllUsers",
+  "priority": "High",
+  "adminPin": "{ adminPin }"
+}
+```
+- **Response `201 Created`:**
+```json
+{
+  "broadcastId": "uuid-broadcast",
+  "status": "Published",
+  "targetCount": 1210,
+  "publishedAt": "2026-10-29T15:00:00Z"
+}
+```
+
+#### `GET /api/v1/admin/system/gemini/monitoring`
+- **Mô tả:** Bảng điều khiển telemetry Trợ lý Tài chính Gemini AI theo **Phương án B**.
+- **Chỉ số đo lường:**
+  - Tổng số request trong ngày.
+  - Tỷ lệ thành công (`SuccessRate`).
+  - Thời gian phản hồi trung bình (`AverageLatencyMs`).
+  - Số lần chuyển mạch an toàn sang chính sách nội bộ (`FallbackCount` - `SpendWisePolicy`).
+  - Hạn ngạch và cảnh báo lỗi quota (`QuotaExceededAlert`).
+- **Response `200 OK`:**
+```json
+{
+  "provider": "Gemini_1.5_Flash",
+  "status": "Configured",
+  "environment": "Sandbox/Production",
+  "totalRequestsToday": 342,
+  "successfulRequests": 338,
+  "failedRequests": 4,
+  "averageLatencyMs": 850,
+  "fallbackActivations": 4,
+  "quotaAlert": false,
+  "lastSuccessAt": "2026-10-29T14:48:12Z",
+  "lastFailureAt": "2026-10-29T11:20:05Z",
+  "lastFailureReason": "rate_limit_exceeded"
+}
+```
+
+#### `GET /api/v1/admin/system/sepay/monitoring`
+- **Mô tả:** Bảng điều khiển giám sát cổng ngân hàng SePay BankHub.
+- **Chính sách an toàn:** Chỉ giám sát hoạt động webhook IPN và môi trường Sandbox. Báo `NOT VERIFIED (EXTERNAL LIVE)` nếu chưa có traffic ngân hàng thực tế.
+- **Response `200 OK`:**
+```json
+{
+  "gateway": "SePayBankHub",
+  "mode": "Sandbox",
+  "ipnConfigured": true,
+  "webhookEndpointStatus": "Listening",
+  "totalIpnReceived": 89,
+  "matchedDeposits": 89,
+  "unmatchedIpn": 0,
+  "lastIpnReceivedAt": "2026-10-29T14:35:10Z",
+  "realMoneyTransferStatus": "NOT_VERIFIED_BY_SAFETY_POLICY"
+}
+```
+
+---
+
+## 4. RANH GIỚI VẬN HÀNH & HỆ THỐNG NGOẠI VI (EXTERNAL BOUNDARIES)
+
+1. **Ranh giới Gemini AI:**
+   - Backend hỗ trợ kết nối trực tiếp Google Gemini API qua cấu hình `Gemini:ApiKey`.
+   - Khi API bên ngoài vượt hạn ngạch (429 Quota Exceeded) hoặc lỗi mạng, hệ thống tự động kích hoạt **Fallback Policy** (`SpendWisePolicy`) trả về câu trả lời phân tích dựa trên tập quy tắc nội bộ, bảo đảm ứng dụng không bao giờ bị gián đoạn hoạt động.
+   - Hạn ngạch vô hạn và lưu lượng sống (Live Traffic) thuộc phạm vi quản trị tài khoản Google Cloud của doanh nghiệp.
+2. **Ranh giới SePay BankHub:**
+   - Hệ thống V1.0 chạy hoàn toàn trên môi trường kiểm thử Sandbox.
+   - Cơ chế xác thực chữ ký Webhook HMAC bảo đảm tiền gửi chỉ được ghi có khi nhận đúng gói tin mã hóa từ cổng thanh toán.
+   - Tuyệt đối không thử nghiệm chuyển tiền thật trên tài khoản sản xuất khi chưa hoàn tất kiểm toán an ninh ngân hàng độc lập.

@@ -127,30 +127,49 @@ Authorization: Bearer <admin_access_token>
 ]
 ```
 
-#### ADM-06: Xem Hồ sơ Người dùng (Case-Scoped Access - CaseScopedUserProfileResult)
+#### ADM-06: Xem Hồ sơ Người dùng (Case-Scoped Access - A2Profile)
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
-- **Mô tả:** Xem chi tiết thông tin và tài sản người dùng gắn liền với vụ việc hỗ trợ đang thụ lý. Trả về đúng hợp đồng `CaseScopedUserProfileResult`.
-- **Request Body:**
+- **Mô tả:** Xem chi tiết thông tin và tài sản ví người dùng gắn liền với vụ việc hỗ trợ đang thụ lý. Controller `AdminA2Controller` trả về cấu trúc `A2Profile` (gồm đối tượng `User`, `CaseId` và mảng ví đang hoạt động `Wallets`).
+- **Quyền:** Admin Role 2 (`OperationsRead`).
+- **Request Body (`A2ReasonRequest`):**
 ```json
 {
   "reason": "Điều tra khiếu nại chuyển tiền sai số dư hồ sơ CASE-891"
 }
 ```
-- **Response `200 OK` (`CaseScopedUserProfileResult`):**
+- **Response `200 OK` (`A2Profile`):**
 ```json
 {
-  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "email": "user@example.com",
-  "fullName": "Nguyen Van A",
-  "phoneNumber": "0912345678",
-  "status": "Active",
-  "role": "User",
-  "createdAt": "2026-10-20T08:00:00Z",
-  "totalBalance": 5000000.00,
-  "walletsCount": 2,
-  "accessAuditLogged": true
+  "user": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "spendId": "SPEND_9921",
+    "displayName": "Nguyen Van A",
+    "maskedEmail": "u***@example.com",
+    "status": "Active",
+    "createdAt": "2026-10-20T08:00:00Z"
+  },
+  "caseId": "c43a8401-2742-4260-bf0c-16652e944e9a",
+  "wallets": [
+    {
+      "id": "0acc5688-857e-48b2-b60f-03718ed265cf",
+      "type": "Main",
+      "status": "Active",
+      "currency": "VND",
+      "availableBalance": 32000.00
+    },
+    {
+      "id": "e7101f2a-e334-44ab-9d34-a6f322aa5467",
+      "type": "Savings",
+      "status": "Active",
+      "currency": "VND",
+      "availableBalance": 25000.00
+    }
+  ]
 }
 ```
+
+> [!NOTE]
+> Phân biệt rõ endpoint này với `POST /api/v1/admin/support/{caseId}/user-profile` trả `ScopedUserProfile`. Endpoint `AdminA2Controller.Profile` trả về đúng chuẩn `A2Profile` với đối tượng người dùng đã mask email và danh sách ví kèm số dư khả dụng thực tế.
 
 #### ADM-07: Xem Danh sách Phiên & Quan hệ (Case-Scoped Access)
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`

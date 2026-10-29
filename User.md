@@ -480,59 +480,76 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
 ### 3.5. Kết nối Ngân hàng & Nạp rút Test Mode (SePay Test Mode & Bank Connections)
 
 #### 1. `POST /api/bank-connections/test-mode/link-challenges`
-- **Mô tả:** Tạo challenge liên kết tài khoản ngân hàng SePay Test Mode. Trả về mã tham chiếu `SWLINK...` và thời gian hết hạn (15 phút).
+- **Mô tả:** Khởi tạo challenge liên kết tài khoản ngân hàng SePay Test Mode. Backend tự sinh mã tham chiếu `SWLINK...` ngẫu nhiên và đặt hạn 10 phút. Không yêu cầu Request Body.
 - **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "bankCode": "TPBank",
-  "accountNumber": "000000000005",
-  "accountHolderName": "HO BAO Q"
-}
-```
-- **Response `200 OK`:**
+- **Request Body:** Không có (empty body).
+- **Response `200 OK` (`TestModeBankLinkChallengeDto`):**
 ```json
 {
   "challengeId": "122e2a32-8f1d-4731-8732-f1c2ba35d20e",
-  "transferCode": "SWLINKE4692D413102266B361F179D",
-  "expiresAtUtc": "2026-10-29T10:45:00Z"
+  "reference": "SWLINKE4692D413102266B361F179D",
+  "expiresAt": "2026-10-29T10:40:00Z",
+  "instruction": "Tạo một giao dịch tiền ra trên SePay Test Mode với nội dung chứa mã SWLINKE4692D413102266B361F179D, sau đó xác nhận liên kết."
 }
 ```
 
 #### 2. `POST /api/bank-connections/test-mode/link-challenges/{challengeId}/confirm`
 - **Mô tả:** Xác nhận liên kết tài khoản ngân hàng sau khi đã chuyển tiền mô phỏng mang mã `SWLINK...` trên cổng SePay Test Mode.
 - **Quyền:** User (`Active`).
-- **Response `200 OK`:** `BankConnectionDto` với trạng thái `Active`.
+- **Response `200 OK` (`BankConnectionDto`):**
+```json
+{
+  "id": "122e2a32-8f1d-4731-8732-f1c2ba35d20e",
+  "bankName": "TPBank",
+  "maskedAccountNumber": "****0005",
+  "accountType": "individual",
+  "status": "Active"
+}
+```
 
 #### 3. `GET /api/bank-connections/test-mode/linked-accounts`
 - **Mô tả:** Danh sách các tài khoản ngân hàng Test Mode đã liên kết và đang hoạt động (`Active`) của người dùng hiện tại.
 - **Quyền:** User (`Active`).
-- **Response `200 OK`:** Mảng `BankConnectionDto` (kèm `bankConnectionId`, `bankName`, `maskedAccountNumber`, `status`).
+- **Response `200 OK`:** Mảng `TestModeLinkedAccountDto` (chứa `bankConnectionId`, `bankName`, `maskedAccountNumber`, `accountType`, `status`, `accumulatedBalance`).
 
 #### 4. `POST /api/bank-connections/test-mode/wallet-top-ups`
-- **Mô tả:** Tạo yêu cầu nạp tiền vào ví qua cổng SePay Test Mode. Trả về thông tin chuyển khoản VietQR và mã tham chiếu `SWTP...`.
+- **Mô tả:** Tạo yêu cầu nạp tiền vào ví qua cổng SePay Test Mode. Backend kiểm tra không có top-up Pending còn hiệu lực, sau đó sinh mã tham chiếu `SWTP...` với thời hạn 15 phút.
 - **Quyền:** User (`Active`).
-- **Request Body:**
+- **Request Body (`CreateWalletTopUpRequest`):**
 ```json
 {
   "bankConnectionId": "122e2a32-8f1d-4731-8732-f1c2ba35d20e",
   "walletId": "0acc5688-857e-48b2-b60f-03718ed265cf",
-  "amount": 50000.00,
-  "securityPin": "123456",
-  "idempotencyKey": "topup-uuid-1234"
+  "amount": 50000.00
 }
 ```
-- **Response `200 OK`:** `TestModeWalletTopUpDto` (status: `Pending`, reference: `SWTP...`).
+- **Response `200 OK` (`WalletTopUpDto`):**
+```json
+{
+  "id": "61072bdd-7f79-4845-ab9b-acf87c7411cf",
+  "bankConnectionId": "122e2a32-8f1d-4731-8732-f1c2ba35d20e",
+  "walletId": "0acc5688-857e-48b2-b60f-03718ed265cf",
+  "amount": 50000.00,
+  "currency": "VND",
+  "maskedAccountNumber": "****0005",
+  "reference": "SWTP26F1BCEED82D3C55C44FFA34",
+  "status": "Pending",
+  "expiresAt": "2026-10-29T13:46:20Z",
+  "completedAt": null,
+  "financialTransactionId": null,
+  "instruction": "Tạo giao dịch tiền ra đúng 50000 VND trên SePay Test Mode và nhập mã SWTP26F1BCEED82D3C55C44FFA34."
+}
+```
 
 #### 5. `POST /api/bank-connections/test-mode/wallet-top-ups/{id}/confirm`
-- **Mô tả:** Xác nhận nạp tiền Test Mode. Backend kiểm tra giao dịch tiền vào khớp mã tham chiếu từ SePay Provider API. Trả về `409 wallet_top_up_pending` nếu SePay chưa ghi nhận giao dịch.
+- **Mô tả:** Xác nhận nạp tiền Test Mode. Backend kiểm tra giao dịch tiền ra khỏi tài khoản ngân hàng khớp mã tham chiếu `SWTP...` từ SePay Provider API. Trả về `409 wallet_top_up_pending` nếu SePay chưa ghi nhận giao dịch.
 - **Quyền:** User (`Active`).
-- **Response `200 OK`:** `TestModeWalletTopUpDto` (`status`: "Completed").
+- **Response `200 OK`:** `WalletTopUpDto` (`status`: "Completed").
 
 #### 6. `POST /api/bank-connections/test-mode/wallet-withdrawals`
 - **Mô tả:** Tạo lệnh rút tiền từ ví về tài khoản ngân hàng liên kết. Backend thực hiện đặt cọc tạm giữ (`SYSTEM:ReservationHold:VND`) và giảm số dư khả dụng ví ngay lập tức để bảo vệ thanh khoản.
 - **Quyền:** User (`Active`).
-- **Request Body:**
+- **Request Body (`CreateWalletWithdrawalRequest`):**
 ```json
 {
   "bankConnectionId": "d84eaae8-a640-452d-921d-a01334026cab",
@@ -542,7 +559,20 @@ X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển t
   "idempotencyKey": "withdrawal-uuid-5678"
 }
 ```
-- **Response `200 OK`:** `TestModeWalletWithdrawalDto` (status: `Processing`, reference: `SWWD...`).
+- **Response `200 OK` (`WalletWithdrawalDto`):**
+```json
+{
+  "id": "23fea2cf-4792-4a59-bbc1-bdd9e09817c7",
+  "bankConnectionId": "d84eaae8-a640-452d-921d-a01334026cab",
+  "walletId": "06cfe562-67d4-41fb-8fec-87057b9ea30c",
+  "amount": 15000.00,
+  "status": "Processing",
+  "maskedAccountNumber": "****0004",
+  "reference": "SWWD7F044D73DF59FBF8597D77DE",
+  "createdAt": "2026-10-29T10:45:00Z",
+  "completedAt": null
+}
+```
 
 #### 7. `POST /api/bank-connections/test-mode/wallet-withdrawals/{id}/confirm`
 - **Mô tả:** Xác nhận giải ngân lệnh rút tiền sau khi SePay đã chuyển tiền thành công ra tài khoản ngân hàng đích.

@@ -706,7 +706,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Living Expenses 1793262331878\",\n  \"kind\": \"Expense\",\n  \"icon\": \"home\",\n  \"color\": \"#4A90E2\"\n}"
+              "raw": "{\n  \"name\": \"Living Expenses 1793270766978\",\n  \"kind\": \"Expense\",\n  \"icon\": \"home\",\n  \"color\": \"#4A90E2\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/categories",
@@ -844,7 +844,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"description\": \"Task 17 P2P Guard Check\",\n  \"idempotencyKey\": \"p2p-guard-1793262331878\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"recipientUserId\": \"{{userB_id}}\",\n  \"amount\": 100000,\n  \"description\": \"Task 17 P2P Guard Check\",\n  \"idempotencyKey\": \"p2p-guard-1793270766978\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/transfers/p2p",
@@ -890,7 +890,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"destinationWalletId\": \"{{userA_walletId}}\",\n  \"amount\": 50000,\n  \"description\": \"Task 17 Internal Transfer Guard Check\",\n  \"idempotencyKey\": \"internal-guard-1793262331878\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+              "raw": "{\n  \"sourceWalletId\": \"{{userA_walletId}}\",\n  \"destinationWalletId\": \"{{userA_walletId}}\",\n  \"amount\": 50000,\n  \"description\": \"Task 17 Internal Transfer Guard Check\",\n  \"idempotencyKey\": \"internal-guard-1793270766978\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/transfers/internal",
@@ -936,7 +936,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bankConnectionId\": \"00000000-0000-0000-0000-000000000001\",\n  \"walletId\": \"{{userA_walletId}}\",\n  \"amount\": 200000,\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"wdr-1793262331878\"\n}"
+              "raw": "{\n  \"bankConnectionId\": \"00000000-0000-0000-0000-000000000001\",\n  \"walletId\": \"{{userA_walletId}}\",\n  \"amount\": 200000,\n  \"securityPin\": \"{{default_pin}}\",\n  \"idempotencyKey\": \"wdr-1793270766978\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals",
@@ -1069,7 +1069,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Emergency Fund 1793262331878\",\n  \"targetAmount\": 15000000,\n  \"targetDate\": \"2026-12-31T00:00:00Z\",\n  \"iconName\": \"shield\",\n  \"colorHex\": \"#2ECC71\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+              "raw": "{\n  \"name\": \"Emergency Fund 1793270766978\",\n  \"targetAmount\": 15000000,\n  \"targetDate\": \"2026-12-31T00:00:00Z\",\n  \"iconName\": \"shield\",\n  \"colorHex\": \"#2ECC71\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/goals",
@@ -1330,7 +1330,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Clean Collab Group 1793262331878\",\n  \"description\": \"Collaborative financial group\",\n  \"type\": \"Friends\",\n  \"currency\": \"VND\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
+              "raw": "{\n  \"name\": \"Clean Collab Group 1793270766978\",\n  \"description\": \"Collaborative financial group\",\n  \"type\": \"Friends\",\n  \"currency\": \"VND\",\n  \"securityPin\": \"{{default_pin}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/groups",
@@ -1556,7 +1556,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on bank sync 1793262331878\",\n  \"description\": \"User A inquiry regarding banking test connection\"\n}"
+              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on bank sync 1793270766978\",\n  \"description\": \"User A inquiry regarding banking test connection\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/cases/support",
@@ -1603,7 +1603,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on wallet limits 1793262331878\",\n  \"description\": \"User B independent inquiry\"\n}"
+              "raw": "{\n  \"category\": \"general\",\n  \"priority\": \"Normal\",\n  \"subject\": \"Inquiry on wallet limits 1793270766978\",\n  \"description\": \"User B independent inquiry\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/cases/support",
@@ -2103,7 +2103,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793262331878\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793262331878\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
+              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793270766978\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793270766978\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/system/broadcasts",
@@ -2477,7 +2477,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793262331878\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793262331878\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
+              "raw": "{\n  \"type\": \"Operational\",\n  \"targetRole\": \"User\",\n  \"title\": \"Scheduled Maintenance Notice 1793270766978\",\n  \"message\": \"System maintenance window scheduled for tonight.\",\n  \"idempotencyKey\": \"adm-bcast-1793270766978\",\n  \"securityPin\": \"{{admin_pin}}\",\n  \"reason\": \"Operational announcement\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/system/broadcasts",

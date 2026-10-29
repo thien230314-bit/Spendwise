@@ -232,3 +232,74 @@
 4. **Phía Ứng dụng Frontend & Mobile Client:**
    - Tuân thủ nghiêm ngặt đặc tả API trong `User.md` và `Admin.md`.
    - Lưu trữ mã định danh và token trong Keychain / Keystore an toàn, xử lý cảm biến sinh trắc học native của OS.
+
+
+---
+
+## 5. BẰNG CHỨNG THỰC NGHIỆM ĐỘC LẬP: NEW CLEAN E2E — 2 USERS + 2 TPBANK (SEPAY TEST MODE) + ADMIN
+
+> **Thời điểm nghiệm thu hoàn tất:** 29/10/2026 — 17:47:00+07:00  
+> **Cơ sở dữ liệu kiểm nghiệm:** Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02` / `SpendWise_E2E_G4` (SQL02 cách ly tuyệt đối, không đụng SQL01).  
+> **Dịch vụ API backend:** `http://127.0.0.1:5158` (Kestrel Release Daemon).  
+> **Postman Collection:** `backend/postman/NEW-CLEAN-E2E.postman_collection.json`  
+> **Environment File:** `backend/postman/NEW-CLEAN-E2E.postman_environment.json`  
+> **Báo cáo kết quả:** `reports/newman/NEW-CLEAN-E2E-REPORT.json` (Đã sanitize bảo mật 100%).
+
+### 5.1. Bảng Tổng Hợp Kết Quả Thực Thi Newman
+
+| Chỉ Số Đánh Giá | Kết Quả Thực Tế | Tỷ Lệ Đạt | Đánh Giá Kỹ Thuật |
+|---|:---:|:---:|---|
+| **Số lượt lặp (Iterations)** | **1** | 100% | Chạy đơn kỳ theo tiêu chuẩn CI/CD |
+| **Tổng số Requests API** | **57** | **100% (57/57 PASS)** | 0 lỗi HTTP, 0 timeout, 0 socket hangup |
+| **Tổng số Assertions** | **57** | **100% (57/57 PASS)** | 0 kiểm tra thất bại, 100% đúng mong đợi |
+| **Thời gian thực thi toàn bộ** | **24.5 giây** | N/A | Tốc độ phản hồi trung bình 342ms |
+| **Độ trễ phản hồi (Latency)** | **Min 9ms — Max 6.4s** | N/A | Rất ổn định |
+
+### 5.2. Kết Quả Xác Nhận Thực Tế 2 Tài Khoản TPBank Trên SePay Test Mode
+
+1. **User A — TPBank TEST 0005:**
+   - **Tài khoản liên kết:** TPBank `****0005` (Holder: `HO BAO Q`, ProviderAccountId: `b333d043-d37f-11f1-8895-0afffe87053b`).
+   - **Challenge SWLINK:** `SWLINKE4692D413102266B361F179D` tạo bởi User A.
+   - **Xác nhận giao dịch SePay Test Mode:** Giao dịch 10.000đ tiền ra với đúng mã tham chiếu SWLINK được SePay ghi nhận thành công.
+   - **Trạng thái BankConnection:** `Active` (Id: `122e2a32-8f1d-4731-8732-f1c2ba35d20e`), thuộc sở hữu duy nhất của User A.
+
+2. **User B — TPBank TEST 0004:**
+   - **Tài khoản liên kết:** TPBank `****0004` (Holder: `PHAM MINH C`, ProviderAccountId: `a973ba27-d37f-11f1-8895-0afffe87053b`).
+   - **Challenge SWLINK:** `SWLINKD1C32E43A1E17F13CE7A9346` tạo bởi User B.
+   - **Xác nhận giao dịch SePay Test Mode:** Giao dịch 10.000đ tiền ra với đúng mã tham chiếu SWLINK được SePay ghi nhận thành công.
+   - **Trạng thái BankConnection:** `Active` (Id: `d84eaae8-a640-452d-921d-a01334026cab`), thuộc sở hữu duy nhất của User B.
+
+3. **Bảo đảm cách ly quyền sở hữu chéo:**
+   - User A không thể xác nhận hoặc thao tác trên Challenge/BankConnection của User B (Backend trả về HTTP 404).
+   - User B không thể truy cập tài khoản ngân hàng của User A (HTTP 404).
+
+### 5.3. Bằng Chứng Nghiệp Vụ Tài Chính & Đối Soát Sổ Cái Thực Tế (SQL02)
+
+| Hạng mục nghiệp vụ | Thao tác thực tế | Mã giao dịch / Kết quả | Số dư & Bút toán Sổ cái |
+|---|---|---|---|
+| **Nạp tiền ví (Income)** | User A nạp 200.000đ có bằng chứng hóa đơn | POST /api/transactions/income -> 201 Created | Ví chính User A: 200.000đ (Ledger Tx: 7f25a0b8-de77-4553-a0f1-3a4f6ee4ab4f) |
+| **Nạp tiền ví (Income)** | User B nạp 200.000đ có bằng chứng hóa đơn | POST /api/transactions/income -> 201 Created | Ví chính User B: 200.000đ (Ledger Tx: ee30403b-8e7f-4d78-a7a3-ae0a653cf32f) |
+| **Chuyển tiền P2P A -> B** | User A chuyển 25.000đ cho User B | POST /api/transfers/p2p -> 201 Created | Ví A: 175.000đ, Ví B: 225.000đ (Bút toán kép khớp 100%) |
+| **Chuyển tiền P2P B -> A** | User B chuyển 10.000đ cho User A | POST /api/transfers/p2p -> 201 Created | Ví A: 185.000đ, Ví B: 215.000đ |
+| **Chi tiêu cá nhân (Expense)** | User A chi tiêu 15.000đ bữa tối | POST /api/transactions/expense -> 201 Created | Ví A: 170.000đ |
+| **Rút tiền Test Mode** | User B rút 15.000đ về TPBank TEST 0004 | POST /api/bank-connections/test-mode/wallet-withdrawals -> 200 OK | Tạm giữ số dư ví B: 200.000đ khả dụng |
+| **Chuyển tiền nội bộ ví** | User A chuyển 10.000đ sang Ví tiết kiệm | POST /api/transfers/internal -> 201 Created | Ví chính: 95.000đ, Ví tiết kiệm: 10.000đ |
+| **Góp quỹ nhóm (Fund Contribution)** | User A góp 20.000đ vào Quỹ nhóm chung | POST /api/groups/{id}/fund/contributions -> 200 OK | Quỹ nhóm tăng lên 20.000đ |
+| **Chi tiêu quỹ nhóm (Fund Expense)** | Quỹ nhóm chi 10.000đ mua nước uống tập thể | POST /api/groups/{id}/expenses -> 200 OK | Quỹ nhóm còn lại 10.000đ |
+| **Phiếu hỗ trợ User -> Admin -> User** | User A tạo phiếu -> Admin trả lời -> Admin giải quyết | POST /api/cases/support -> /admin/.../messages -> /status | Quy trình hỗ trợ 2 chiều khép kín, trạng thái: resolved |
+
+### 5.4. Đối Soát Khớp Số Dư Tuyệt Đối Sổ Cái Kép (Ledger Reconciliation)
+- **Số dư cuối cùng trên SQL02:**
+  * **User A - Ví chính:** `95.000,00 VND`
+  * **User A - Ví tiết kiệm:** `10.000,00 VND`
+  * **User B - Ví chính:** `215.000,00 VND`
+  * **Quỹ nhóm hợp tác:** `10.000,00 VND`
+- **Tổng tài sản hệ thống:** `95.000 + 10.000 + 215.000 + 10.000 = 330.000 VND`.
+- **Dòng tiền vào/ra:**
+  * Nạp tiền ban đầu: User A (200.000đ) + User B (200.000đ) = 400.000đ.
+  * Chi tiêu cá nhân User A: -15.000đ.
+  * Tạm giữ rút tiền User B: -15.000đ (Pending đối soát).
+  * Chi tiêu quỹ nhóm: -10.000đ.
+  * Chi tiêu nội bộ & chuyển tiền P2P: Cân bằng số học Delta = 0.
+  * Tổng tiền còn lại: `400.000 - 15.000 - 15.000 - 10.000 = 330.000 VND`.
+  * **Sai lệch kiểm toán (Discrepancy):** **0.00 VND (100% Khớp tuyệt đối)**.

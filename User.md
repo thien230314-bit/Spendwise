@@ -44,7 +44,7 @@ SpendWise là ứng dụng di động hỗ trợ quản lý tài chính cá nhâ
 | `Admin = 2` | UI quản trị riêng, không được dùng để giả vai trò User trong nghiệp vụ tài chính |
 | `SystemAdmin = 0`, `SuperAdmin = 3` | Legacy, không cấp quyền hoặc hiển thị UI Admin |
 
-**Sitemap UI User:** Đăng ký/OTP → Đăng nhập/PIN/Passkey → Home → Ví/Giao dịch → Ngân sách/Mục tiêu/Định kỳ → Nhóm quỹ (Owner/Member) → Ngân hàng demo → AI Assistant → Thông báo → Hỗ trợ/Khiếu nại → Hồ sơ/Cài đặt/Bảo mật.
+**Sitemap UI User:** Onboarding/OTP/Login/PIN/Passkey → Home/Dashboard → Hồ sơ & bảo mật → Bạn bè → Ví/Giao dịch/Danh mục/Chứng từ → Chuyển tiền (nội bộ/P2P/ngân hàng theo quyền) → Ngân sách/Mục tiêu/Định kỳ/Phân loại tự động → Quỹ Fixed/Free (Member/Owner) → Ngân hàng/SePay Demo → AI Assistant → Thông báo/Push → Hỗ trợ/Khiếu nại → Cài đặt. Các API nhóm legacy chỉ đưa vào UI khi xác nhận phạm vi.
 
 **Không chỉ ẩn nút UI:** Backend luôn xác thực ownership, trạng thái User và role. Frontend xử lý `401`, `403`, `409`, lỗi PIN và trường hợp phiên hết hạn bằng UX phù hợp.
 
@@ -294,3 +294,49 @@ Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bả
 - Chỉ dùng dữ liệu động và DTO từ API đang chạy. Dữ liệu minh họa/fixture trong tài liệu không phải dữ liệu sản phẩm.
 - Không biến sandbox thành thanh toán tiền thật, không giả lập một giao dịch tài chính đã thành công.
 - Ưu tiên kiểm tra API của Backend local đã nghiệm thu và trạng thái đồng bộ GitHub trước khi kết nối UI.
+
+
+## 9. PHỤ LỤC KIỂM KÊ ĐỦ NHÓM TÍNH NĂNG USER THEO NEWMAN 306 REQUESTS
+
+**Nguồn kiểm tra:** reports/newman/backend-user-final-verified.json (306 requests, 343 assertions PASS ngày 27/10/2026). Đây là baseline lịch sử, KHÔNG chứng minh tất cả route vẫn giữ nguyên trên Backend local sửa ngày 29/10. Đặc biệt create Dispute độc lập trong baseline đã bị ngừng; không dùng test cũ để đưa lại giao diện tạo Dispute.
+
+| Nhóm tính năng | Luồng hoạt động và quyền của User | API đại diện |
+|---|---|---|
+| Trang chủ | Xem chỉ số cá nhân và trạng thái tài chính; không hiện dữ liệu User khác | GET /api/dashboard |
+| Đăng ký & xác thực | Đăng ký → OTP → tạo PIN → login nhận challenge → PIN verify → session JWT/refresh; logout, đổi/quên mật khẩu, reset PIN | /api/auth/*, /api/security-pin/* |
+| Hồ sơ & tài khoản | Xem hồ sơ, avatar, theme/ngôn ngữ, đổi email qua OTP, quản lý/thu hồi sessions, gửi khôi phục tài khoản | /api/users/me/*, /api/account-recovery |
+| Bạn bè | Tìm theo email/SpendId, khám phá, mời → chấp nhận/từ chối/hủy → xem bạn bè → yêu thích → hủy kết bạn | /api/friends/* |
+| Ví | Tự có ví mặc định, tạo ví Savings/Emergency, xem số dư, đổi tên, đóng ví đủ điều kiện (tối đa 3 ví active) | /api/wallets/* |
+| Danh mục | Danh mục hệ thống và tự tạo; xem, sửa, lưu trữ/xóa theo quyền | /api/categories/* |
+| Chứng từ | Upload và tải minh chứng; bảo vệ ownership; hỗ trợ file trong hồ sơ Case | /api/evidence/*, /api/cases/attachments/* |
+| Thu/chi & lịch sử | Ghi nhận thu/chi; một khoản chi có thể phân bổ nhiều ví; xem chi tiết, lọc, sửa mô tả hoặc chỉnh khoản chi theo quy tắc | /api/transactions/* |
+| Chuyển tiền | Chuyển giữa ví của mình hoặc P2P; baseline còn có tìm người nhận bank-direct → tạo lệnh → xác nhận → xem lịch sử | /api/transfers/* |
+| Ngân sách | Tạo, theo dõi mức dùng, chỉnh giới hạn, xóa; cập nhật theo khoản chi thực tế | /api/budgets/* |
+| Mục tiêu | Tạo, xem tiến độ, góp/rút, chỉnh, xóa khi hợp lệ | /api/goals/* |
+| Giao dịch định kỳ | Tạo, xem, sửa, tạm dừng, tiếp tục, thực hiện kỳ, xóa | /api/recurring-transactions/* |
+| Tự phân loại | Tạo, xem, sửa và xóa quy tắc phân loại theo từ khóa giao dịch | /api/transaction-rules/* |
+| Ngân hàng liên kết | Xem, tạo link/challenge demo, xác nhận, hủy liên kết; không truy cập bank connection người khác | /api/bank-connections/* |
+| SePay Test Mode | Nạp: Pending → đối soát hợp lệ → Completed. Rút: Processing/hold → đối soát → Completed, lịch sử | /api/bank-connections/test-mode/* |
+| Giao dịch ngân hàng | Xem danh sách/chi tiết và phân loại lại giao dịch của tài khoản hợp lệ | /api/bank-transactions/* |
+| AI Assistant | Tạo/danh sách/sửa/xóa cuộc hội thoại, chat, upload/download tệp; xem action proposal → xác nhận execute hoặc cancel | /api/ai/* |
+| Thông báo & Push | Xem/tìm/đọc/xóa thông báo, sửa tùy chọn, đăng ký/hủy push installation | /api/notifications/*, /api/mobile/push/installations/* |
+| Hỗ trợ/Khiếu nại | Tạo SupportCase → Admin xử lý → User trao đổi/đính kèm → xem trạng thái kết quả; quỹ báo cáo khoản chi qua SupportCase | /api/cases/support/*, /api/v1/funds/requests/{id}/report |
+| Trạng thái hệ thống | Xem thông báo hệ thống và tình trạng maintenance | /api/system/announcements/active, /api/system/maintenance |
+
+### 9.1. Quỹ nhóm — 3 phạm vi phải phân biệt
+
+**Fixed Fund V2:** Owner tạo quỹ → mời thành viên → thành viên chấp nhận → Owner xác nhận nghĩa vụ đóng góp → các thành viên góp tiền → quỹ đạt 100% mục tiêu → Owner chỉ cấp CanSpend cho người đã góp đủ → EffectiveCanSpend được xác định theo trạng thái thực tế → chi hợp lệ tức thời → xem hoạt động/tài chính. Owner tự chi cũng phải góp đủ. Báo cáo khoản chi bất thường tạo SupportCase, không đảo Ledger hoặc tạo Dispute mới.
+
+**Free Fund:** Owner tạo/mời → các thành viên tự nguyện góp → thành viên tạo yêu cầu chi/rút → Owner duyệt/từ chối → xem tài chính/hoàn tiền dự kiến → rời quỹ theo điều kiện.
+
+**Governance V1 trong baseline:** Có API lời mời/review, chuyển quyền Owner, activity proposal/voting/settlement, bầu cử chủ quỹ (ứng cử, bỏ phiếu, nhận/từ chối), rời quỹ, kick, dissolve. Cần xác nhận quy tắc Backend local cuối trước khi mở UI cho từng nghiệp vụ; không khôi phục cơ chế Pending24h hay tạm giữ tranh chấp đã bị bỏ.
+
+**Legacy groups (tương thích, /api/groups/*):** Có tạo/sửa nhóm, mời/nhận lời, chuyển Owner, gắn bank receiving, đóng quỹ, thu tiền theo đợt, yêu cầu thanh toán, chi phí, activity log, xin giải thể, bỏ phiếu, xử lý hoàn trả và hoàn tất giải thể. Các route này đã xuất hiện trong suite User 27/10 nhưng KHÔNG được tự động xem là menu quỹ V1 mới; chỉ dựng màn hình nếu được Product Owner chọn giữ tương thích.
+
+### 9.2. Quyền, dữ liệu và giới hạn
+
+- User Active chỉ xem/sửa dữ liệu của mình; Fund Owner có thêm quyền trong quỹ mình sở hữu, không thành Admin hệ thống.
+- Restricted vẫn được đăng nhập/đọc/nhận inbound hợp lệ/gửi SupportCase, nhưng không thể ghi nợ tiền ra. Locked không login/refresh, token cũ bị thu hồi.
+- SystemAdmin (0), SuperAdmin (3) bị vô hiệu quyền; Admin (2) có giao diện riêng và không thể tự ý sửa Ledger hoặc xem tài chính cá nhân không theo Case-scoped.
+- Các bước tạo Dispute độc lập trong User E2E 27/10 là lịch sử: Backend local mới trả dispute_workflow_deprecated; UI V1 KHÔNG có form tạo mới. Chỉ xem lịch sử khi API cho phép.
+- Không gọi Gemini live, SePay real money, email/push external hoặc sinh trắc học thiết bị thật là đã xác minh khi chưa có chứng cứ. Không hardcode fixture dữ liệu test.

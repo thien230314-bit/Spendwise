@@ -1,11 +1,11 @@
 # SPENDWISE V1.0 — ADMIN BACKEND CONTRACT & OPERATING SPECIFICATION
 
-> **Current Phase Status (2026-10-27):**  
-> **`PREPARING FOR PHASE BACKEND ADMIN (USER DEMO LOCKED)`**  
+> **Frontend handoff update: 2026-10-29 — based on latest local Admin E2E audit.**  
+> **`ADMIN CORE E2E PASSED — 80/80 requests, 138/138 assertions; Support User ↔ Admin 22/22 requests, 42/42 assertions.`**  
 > - **Backend User Status:** Đã nghiệm thu và KHÓA CHỨC NĂNG (`BACKEND USER DEMO — ACCEPTED & LOCKED`, 306 requests, 343/343 assertions PASS).  
-> - **Backend Admin Status:** **CHƯA KIỂM THỬ LẠI SAU CÁC THAY ĐỔI MỚI (PENDING RE-VERIFICATION)**. Không đánh đồng việc Backend User đã nghiệm thu với việc Phase Admin đã hoàn tất.  
+> - **Backend Admin Status:** Bộ kiểm thử Admin local cuối ngày 29/10/2026 đã PASS; .NET targeted 82/82 PASS. **Chưa tuyên bố toàn bộ Backend User regression đã chạy lại sau thay đổi Admin** (bộ 306/343 là baseline 27/10). Gemini/SePay real-provider và giao dịch tiền thật không nằm trong phạm vi đã xác minh.  
 > - **Bằng chứng Nghiệm thu Lịch sử (Historical Acceptance Evidence):** Đợt kiểm thử Full Newman E2E toàn diện ngày 2026-10-20 trên database `SpendWise_E2E_G4` (141/141 requests PASS, 227/227 assertions PASS) được ghi nhận tại [`backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md`](./backend/docs/ANTIGRAVITY-G5-FINAL-BACKEND-SECURITY-ACCEPTANCE.md). Cần phân biệt rõ: con số 141 requests / 227 assertions này là của **bộ kiểm thử tích hợp E2E toàn trình (Full E2E suite)** kết hợp các luồng User liên hoàn và các thao tác kiểm chứng Admin ADM-01 đến ADM-05, tuyệt đối không phải toàn bộ 141 test là Admin-only. Đây là bằng chứng lịch sử (historical baseline), không phải lượt chạy mới.  
-> - **Nhiệm vụ trọng tâm Phase Admin tiếp theo:** Re-verify toàn bộ các test cases thực sự thuộc 5 phân hệ Admin (ADM-01 đến ADM-05), bảo đảm tương thích tuyệt đối với các thay đổi mới nhất về Bank Ownership, Passkeys/WebAuthn, và Fixed Fund V2.
+> - **Mục đích hiện tại:** Định nghĩa chính xác UI Admin V1.0, 5 phân hệ/21 chức năng, quyền truy cập, route và vòng đời tương tác để Codex triển khai Frontend. Các chỉnh sửa Backend Admin mới nhất còn **ở workspace local, chưa push lên GitHub `main`** tại thời điểm tài liệu được cập nhật.
 
 ---
 
@@ -13,9 +13,9 @@
 
 ### 1.1. Chính sách Quản trị viên duy nhất (Single Admin Policy)
 - Hệ thống SpendWise V1.0 thiết lập **duy nhất một tài khoản Quản trị viên hệ thống hoạt động** (`SystemRole.Admin`).
-- **Tuyệt đối không có vai trò `SuperAdmin`:** Không có endpoint đăng nhập SuperAdmin, không có quy trình leo thang quyền hạn (escalation), và không có giao diện quản lý phân quyền Admin. Mọi yêu cầu đăng nhập với vai trò SuperAdmin đều bị chặn dứt khoát với mã lỗi `account_unavailable` (HTTP 403).
+- **Chỉ `SystemRole.Admin = 2` được phép quản trị.** Giá trị legacy `SystemAdmin = 0`, `SuperAdmin = 3` không được cấp quyền Admin hoặc đăng nhập để sử dụng tính năng. Không xây UI quản trị operator hay cấp Admin thứ hai. Code local đã bổ sung guard; E2E 0/3 trả 401, chưa coi đây là bằng chứng kiểm thử token legacy được ký hợp lệ.
 - **Phân định ranh giới Chủ quỹ (Fund Owner) và Quản trị viên (System Admin):**
-  - Chủ quỹ (`Fund Owner`) là một người dùng thông thường (`SystemRole.User`) có quyền hạn điều hành bên trong một Quỹ Nhóm cụ thể; hoàn toàn **không có bất kỳ quyền hạn Admin hệ thống nào**.
+  - Chủ quỹ (`Fund Owner`) là một người dùng thông thường (`SystemRole.User`) có quyền điều hành **quỹ mình sở hữu**; hoàn toàn **không có quyền Admin hệ thống**.
   - Quản trị viên hệ thống (`Admin`) không tự ý can thiệp hoặc thay đổi số dư quỹ nhóm trừ khi có yêu cầu xử lý khiếu nại/tranh chấp hợp lệ được ghi nhận qua Case hồ sơ.
 
 ### 1.2. Ranh giới truy cập thông tin nhạy cảm theo Hồ sơ hỗ trợ (Case-Scoped Access)
@@ -32,11 +32,7 @@
 
 ### ADM-01 — Dashboard & Báo cáo Tổng quan (Overview)
 - **Tuyến đường chuẩn (Canonical Root):** `GET /api/v1/admin/overview` (hỗ trợ tham số `date`).
-- **Các tuyến đường chi tiết:**
-  - `GET /api/v1/admin/tasks`: Danh sách các tác vụ quản trị cần xử lý.
-  - `GET /api/v1/admin/sources/{metric}`: Chỉ số thống kê tăng trưởng người dùng, số lượng quỹ tạo mới, khối lượng giao dịch.
-  - `GET /api/v1/admin/alerts`: Cảnh báo hệ thống và dấu hiệu bất thường.
-  - `GET /api/v1/admin/activity`: Nhật ký hoạt động quản trị gần nhất.
+- **Tuyến đường đã kiểm thử:** `GET /api/v1/admin/overview/tasks` (công việc), `GET /api/v1/admin/overview/alerts` (cảnh báo). Các route nguồn dữ liệu/hoạt động khác chỉ đưa vào UI nếu có trong API của Backend triển khai.
   - *Tương thích ngược:* `GET /api/admin/dashboard` và `/api/admin/reports` đóng vai trò là các projection tương thích.
 - **Quy tắc an toàn:**
   - Thống kê tổng hợp số lượng người dùng, quỹ nhóm, vụ việc khiếu nại và khối lượng giao dịch từ dữ liệu thật.
@@ -45,7 +41,7 @@
   - Số liệu tổng quan không cấp quyền truy cập chi tiết vào dữ liệu người dùng nếu không có Case được chỉ định.
 
 ### ADM-02 — Quản lý Người dùng & Chế tài Tài khoản (User Management)
-- **Tra cứu người dùng:** `POST /api/v1/admin/users/search` (phân trang, lọc theo trạng thái).
+- **Tra cứu người dùng:** `GET /api/admin/users?search={keyword}&page={page}&pageSize={pageSize}` (tìm kiếm, phân trang, lọc trạng thái theo API thực tế).
 - **Truy cập chi tiết theo Case hỗ trợ:**
   - `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
   - `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`
@@ -53,8 +49,8 @@
   - `POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions`
   - `POST /api/v1/admin/support/{caseId}/users/{userId}/groups`
   - `POST /api/v1/admin/support/{caseId}/users/{userId}/history`
-- **Áp dụng chế tài tài khoản (`PUT /api/v1/admin/support/{caseId}/users/{userId}/status`):**
-  - Payload yêu cầu: `{ "status": "Active|Restricted|Locked", "reason": "Lý do cụ thể", "securityPin": "<admin-pin-6-so>" }`.
+- **Áp dụng chế tài tài khoản (`PUT /api/admin/users/{userId}/status`):**
+  - Payload yêu cầu: `{ "status": "Active|Restricted|Locked", "reason": "Lý do cụ thể", "adminPin": "<admin-pin-6-so>" }`.
   - Thực thi nguyên tử trong transaction: cập nhật trạng thái, thu hồi phiên làm việc, ghi nhận nhật ký kiểm toán (`AuditLog`), và gửi thông báo cảnh báo bảo mật (`SecurityAlert`).
   - **Hai cấp độ chế tài tài khoản:**
     - **Cấp độ 1 — Hạn chế tài chính (`UserStatus.Restricted`):** Chặn toàn bộ lệnh ghi nợ tiền ra (chuyển tiền ví, P2P gửi đi, chi tiêu, nộp quỹ nhóm, rút tiền); **vẫn cho phép đăng nhập, làm mới token, đọc số dư/hồ sơ, gửi yêu cầu hỗ trợ và nhận tiền vào (inbound P2P credits / refunds)**.
@@ -62,19 +58,11 @@
   - Không thể áp dụng chế tài lên tài khoản Admin đồng cấp hoặc tài khoản đã xóa/vô hiệu hóa vĩnh viễn.
 
 ### ADM-03 — Hỗ trợ Khách hàng & Giải quyết Tranh chấp (Support & Disputes)
-- **Tiếp nhận khiếu nại:** Người dùng gửi yêu cầu qua `/api/cases/support` và `/api/cases/disputes`.
-- **Xử lý quản trị (`/api/v1/admin/support`):**
-  - `POST /api/v1/admin/support/tickets/search`: Tìm kiếm danh sách yêu cầu.
-  - `POST /api/v1/admin/support/assigned`: Danh sách yêu cầu được phân công cho Admin.
-  - `POST /api/v1/admin/support/{caseId}/assign`: Tự nhận hoặc phân công hồ sơ.
-  - `POST /api/v1/admin/support/{caseId}/request-info`: Yêu cầu người dùng bổ sung thông tin (`WaitingForUser`).
-  - `POST /api/v1/admin/support/{caseId}/dossier`: Hồ sơ bằng chứng đầy đủ của vụ việc.
-  - `POST /api/v1/admin/support/{caseId}/resolve`: Đóng/giải quyết vụ việc thông thường (`Resolved` / `Rejected`).
-- **Quy trình Xử lý Tranh chấp Chi tiêu Quỹ (ADM-03 & Fixed Fund V2):**
-  - **Khoản chi đã hoàn tất (`Completed`):** Trong kiến trúc Fixed Fund V2, chi tiêu hợp lệ được giải ngân tức thì (không có trạng thái tạm giữ `Pending24h` hay tự động chuyển sang `Suspended`). Khi thành viên báo cáo bất thường về một khoản chi đã `Completed`, hệ thống **bắt buộc phải tạo Hồ sơ Hỗ trợ / Tranh chấp (`SupportCase` / `Dispute`)** qua `/api/cases/support` hoặc `/api/cases/disputes`. Admin tiếp nhận hồ sơ, tra cứu dữ liệu kế toán (`POST /api/v1/admin/support/{caseId}/funds/{fundId}/finance/Expenses`) và hồ sơ bằng chứng. **Admin tuyệt đối không tự ý đảo ngược bút toán kế toán (no arbitrary reverse posting)** của các giao dịch đã hoàn tất mà không thông qua quy trình hòa giải hoặc bồi hoàn được phê duyệt.
-  - **Luồng xử lý tranh chấp giao dịch chưa hoàn tất (nếu có yêu cầu tạm hoãn / pending):** Đối với các yêu cầu chi tiêu chưa hoàn tất hoặc bị tạm hoãn xem xét (`POST /api/v1/admin/support/disputes/{requestId}/resolve`):
-    - *Báo cáo hợp lệ (`!IsRejected`):* Hủy yêu cầu chi tiêu (`Cancelled`), giải phóng số tiền bảo lưu hoàn trả về số dư khả dụng của quỹ nhóm, đánh dấu SupportCase `Resolved`, ghi log kiểm toán và gửi thông báo cho toàn bộ thành viên quỹ.
-    - *Báo cáo không hợp lệ (`IsRejected`):* Bác bỏ khiếu nại, đánh dấu SupportCase `Rejected`, tiếp tục tiến trình xử lý chi tiêu thông thường.
+- **Tiếp nhận Hỗ trợ/Khiếu nại trực tiếp:** User gọi `POST /api/cases/support`, với `category = general` hoặc `complaint_transaction` theo trường hợp. Không tạo Dispute độc lập mới: `POST /api/cases/disputes` → `400 dispute_workflow_deprecated`; dữ liệu Dispute lịch sử vẫn được đọc.
+- **API thực tế Admin Support:** `GET /api/admin/cases/support` (danh sách), `GET /api/admin/cases/support/{id}` (chi tiết), `POST /api/admin/cases/support/{id}/messages` (phản hồi), `POST /api/admin/cases/support/{id}/status` (cập nhật/giải quyết). Khi điều tra dữ liệu nhạy cảm cần **SupportCase đang hoạt động, được phân công**, kèm `reason` cho các endpoint scoped.
+- **Luồng UI:** User mở yêu cầu → Admin xem/tiếp nhận → Admin phản hồi hoặc yêu cầu bổ sung → User trả lời → Admin `resolved`/`rejected` → User đọc kết quả và notification.
+- **Fixed Fund V2:** `POST /api/v1/funds/requests/{id}/report` tạo SupportCase khi báo cáo chi tiêu quỹ bất thường. Admin đọc hồ sơ theo scope; **không tự đảo bút toán, không tự hoàn tiền**, không khôi phục quy trình Dispute/Pending24h cũ.
+- **Lịch sử:** `GET /api/admin/cases/disputes` chỉ dành cho hồ sơ legacy nếu được Backend hỗ trợ; không có màn hình tạo mới.
 
 ### ADM-04 — Quản lý Thông báo Hệ thống (Notifications)
 - **Truy vấn thông báo:**
@@ -86,7 +74,7 @@
   - `POST /api/v1/system/broadcasts`: Tạo thông báo phát sóng mới.
   - `POST /api/v1/system/broadcasts/{id}/publish`: Phát hành thông báo (yêu cầu mã PIN Admin).
   - `POST /api/v1/system/broadcasts/{id}/cancel`: Hủy thông báo chưa phát.
-  - `GET /api/v1/system/broadcasts/{id}/status`: Kiểm tra tiến độ gửi thông báo.
+  - `POST /api/v1/system/broadcasts/{id}/status`: Kiểm tra tiến độ gửi thông báo.
 - **Bảo mật:** Dữ liệu thông báo tuyệt đối không hiển thị mã OTP hoặc token khôi phục mật khẩu.
 
 ### ADM-05 — Giám sát & Bảo trì Hệ thống (System Operations & Maintenance)
@@ -105,6 +93,30 @@
 
 ---
 
+## 2B. SITEMAP, 21 CHỨC NĂNG & ĐIỀU KIỆN UI ADMIN V1.0
+
+| Phân hệ | Chức năng và màn hình UI | API chính đã kiểm thử |
+|---|---|---|
+| **ADM-01 (4)** | Dashboard tổng quan; overview; tasks; alerts | `GET /api/admin/dashboard`, `GET /api/v1/admin/overview`, `/overview/tasks`, `/overview/alerts` |
+| **ADM-02 (4)** | User list/search; hồ sơ Case-scoped; xem session; đổi Active/Restricted/Locked và revoke sessions | `GET /api/admin/users`, `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`, `.../sessions`, `PUT /api/admin/users/{id}/status`, `POST /api/admin/users/{id}/revoke-sessions` |
+| **ADM-03 (4 + flow)** | Hàng đợi support; chi tiết/lịch sử; phản hồi; cập nhật trạng thái; chuỗi User↔Admin | `GET /api/admin/cases/support`, `GET .../{id}`, `POST .../{id}/messages`, `POST .../{id}/status` |
+| **ADM-04 (4)** | Lịch sử delivery; Outbox health; templates; Broadcast draft → publish → User inbox/read → Admin read count | `POST /api/v1/admin/notifications/delivery-history`, `GET /api/admin/health`, `POST /api/v1/admin/notifications/templates`, `POST /api/v1/system/broadcasts` |
+| **ADM-05 (5)** | Health; AI/Gemini telemetry; SePay status/reconciliation/events; maintenance; audit logs/feature flags | `GET /api/admin/health`, `POST /api/admin/ai/chat`, `GET /api/admin/integrations/sepay/status`, `GET /api/system/maintenance`, `GET /api/admin/audit-logs` |
+
+**Xác thực:** `POST /api/auth/login` (nhận challengeToken) → `POST /api/auth/pin/verify` (nhận JWT) → gọi API với Bearer. Mọi thay đổi trạng thái User truyền **`adminPin`**; Broadcast dùng **`securityPin`**. Không hardcode PIN hay tài khoản test trong frontend.
+
+**Lưu ý quyền:** Admin chỉ 1 tài khoản, không UI tạo Admin thứ hai. User không vào API/Admin UI. Fund Owner là quyền User trong quỹ. Legacy role 0/3 không vào Admin. Các màn chi tiết tài chính/case phải tuân thủ scope + reason + audit; không tạo màn hình đọc toàn bộ lịch sử giao dịch cá nhân nếu API không cấp phép.
+
+**Restricted:** chặn ghi nợ, vẫn login/đọc/nhận tiền/gửi Support. **Locked:** chặn login/refresh, phiên cũ hết hiệu lực, mở khóa phải login lại. Admin có thể revoke sessions nhưng không được sửa trực tiếp Ledger hoặc số dư.
+
+**Thông báo:** Một Broadcast chỉ coi là phát thành công khi User nhận trong `GET /api/notifications`, có thể `POST /api/notifications/{id}/read`, và Admin thấy read count > 0. Không coi `Scheduled` hay queue enabled đồng nghĩa đã phát thành công.
+
+**Telemetry trung thực:** Gemini `Configured`/fallback `SpendWisePolicy` không chứng minh Live Gemini; SePay ở SQL02 `configured: false, ipnConfigured: false`, webhook/provider live chưa được xác minh. UI hiển thị trạng thái thật, không tô nhãn connected/live sai.
+
+**Ranh giới repo:** Local Backend acceptance mới nhất: Admin Newman 80/138 PASS; Support 22/42 PASS, .NET targeted 82/82 PASS. User 306/343 là baseline 27/10, **chưa phải regression chạy lại sau thay đổi local**. GitHub `main` có thể chưa chứa diff Backend local, Codex không được xem route chưa tồn tại trên server đang chạy là đã triển khai. Khi tích hợp, kiểm tra response/DTO tại API thật trước.
+
+---
+
 ## 3. DANH MỤC MÃ LỖI VÀ XỬ LÝ LỖI ADMIN (ERROR CODES)
 
 | Mã lỗi (Code) | HTTP Status | Ý nghĩa nghiệp vụ |
@@ -117,19 +129,15 @@
 | `case_not_found` | 404 | Không tìm thấy hồ sơ hỗ trợ tương ứng |
 | `case_not_assigned_to_caller` | 403 | Hồ sơ hỗ trợ chưa được phân công cho Admin hiện tại |
 | `invalid_admin_pin` | 400 | Mã PIN quản trị viên không chính xác |
-| `disputed_request_not_suspended` | 409 | Yêu cầu chi tiêu không ở trạng thái chờ/tạm treo hợp lệ để xử lý tranh chấp trực tiếp |
+| `dispute_workflow_deprecated` | 400 | Không cho tạo Dispute độc lập mới (lịch sử cũ vẫn đọc được) |
 | `maintenance_safety_gate_failed` | 409 | Sổ cái kế toán chưa cân bằng, không thể đóng cổng bảo trì |
 
 ---
 
-## 4. KẾ HOẠCH THỰC THI CHO PHASE BACKEND ADMIN
+## 4. HƯỚNG DẪN TÍCH HỢP FRONTEND CHO CODEX
 
-1. **Bước 1 — Audit lại Test Suite Admin:**
-   - Bóc tách và so chiếu số lượng requests thực sự thuộc phạm vi Admin (ADM-01 đến ADM-05) với controllers C# hiện hành (phân biệt rõ ràng với 141 requests của bộ Full E2E tích hợp lịch sử).
-   - Chuẩn bị environment và dynamic test runId riêng biệt trên database `SpendWise_E2E_G4`.
-2. **Bước 2 — Xác minh tính tương thích ngược (Regression Check):**
-   - Đảm bảo các thay đổi mới nhất về `BankConnections` (Ownership restoration) và `Passkeys` không làm hỏng các luồng Admin tra cứu User sessions/history.
-   - Xác minh các quy tắc Fixed Fund V2 (chi tiêu tức thời, bãi bỏ 20%/Pending24h) đồng bộ chính xác với API hỗ trợ ADM-03.
-3. **Bước 3 — Thực thi Newman Run cho Phase Admin:**
-   - Chạy bộ test kiểm thử Admin chuyên biệt theo phạm vi ADM-01 đến ADM-05.
-   - Thu thập raw JSON report và lập bảng nghiệm thu chính thức cho Phase Admin.
+1. Dùng bảng sitemap và API ở mục 2B cho 5 menu Admin; không sinh menu SuperAdmin/Operators hay mở Dispute mới.
+2. Xây client API typed, error/loading/empty states, auth token/PIN flow, các modal xác nhận thay đổi trạng thái và Broadcast.
+3. Không hardcode response mẫu hoặc hiển thị số dư/lịch sử giao dịch User ngoài quyền Case-scoped; mọi mutation cần reason và xác nhận phù hợp.
+4. Theo API đang chạy ở workspace đã nghiệm thu. Cập nhật đồng bộ Backend local → GitHub hoặc kết nối đúng endpoint trước khi kiểm thử UI.
+5. Không thay đổi Backend/User Ledger để phù hợp với giả định của UI; điều chỉnh UI theo contract thực tế.

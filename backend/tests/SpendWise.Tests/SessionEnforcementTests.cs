@@ -141,7 +141,7 @@ public sealed class SessionEnforcementTests
     {
         // Arrange: tài khoản Active có hai session và hai refresh token.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Lock target");
         await AddTwoCredentialsAsync(fixture, target.Id, "lock");
         fixture.Db.ChangeTracker.Clear();
@@ -165,7 +165,7 @@ public sealed class SessionEnforcementTests
     {
         // Arrange: tài khoản Active có thông tin đăng nhập còn hiệu lực.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Restrict target");
         await AddTwoCredentialsAsync(fixture, target.Id, "restrict");
         fixture.Db.ChangeTracker.Clear();
@@ -189,7 +189,7 @@ public sealed class SessionEnforcementTests
     {
         // Arrange: khóa tài khoản một lần để ghi thời điểm revoke vào session và token.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Reactivate target");
         var session = await fixture.AddSessionAsync(target.Id);
         var refresh = await fixture.AddRefreshTokenAsync(target.Id, "reactivate-token");

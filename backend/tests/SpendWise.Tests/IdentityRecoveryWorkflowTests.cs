@@ -97,7 +97,7 @@ public sealed class IdentityRecoveryWorkflowTests
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var pins = new SecurityPinService();
         var passwords = new PasswordService();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         admin.SecurityPinHash = pins.Hash("123456");
         var target = await fixture.AddUserAsync("Reset target");
         target.PasswordHash = passwords.Hash("PreviousPass1");
@@ -148,7 +148,7 @@ public sealed class IdentityRecoveryWorkflowTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var pins = new SecurityPinService();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         admin.SecurityPinHash = pins.Hash("123456");
         var target = await fixture.AddUserAsync("PIN reset target");
         target.SecurityPinHash = pins.Hash("222222");
@@ -224,7 +224,7 @@ public sealed class IdentityRecoveryWorkflowTests
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync(new FixedClock(reviewedAt));
         var pins = new SecurityPinService();
         var passwords = new PasswordService();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         admin.SecurityPinHash = pins.Hash("123456");
         var target = await fixture.AddUserAsync("Recovery target");
         target.Phone = "0987654321";
@@ -301,7 +301,7 @@ public sealed class IdentityRecoveryWorkflowTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var pins = new SecurityPinService();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         admin.SecurityPinHash = pins.Hash("123456");
         var recovery = new AccountRecoveryRequest
         {

@@ -131,7 +131,7 @@ public sealed class UpdateAdminCaseCommandHandler(
                 CaseId = current.Id,
                 ActorId = command.AdminId,
                 ActorDisplayNameSnapshot = adminName,
-                ActorRole = "SystemAdmin",
+                ActorRole = "Admin",
                 Action = next == CaseStatus.WaitingForUser ? "request_info" : "status_change",
                 Message = message,
                 OldStatus = oldStatus,

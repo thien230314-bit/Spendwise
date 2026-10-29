@@ -188,8 +188,11 @@ builder.Services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
+        "Admin",
+        policy => policy.RequireRole("Admin"));
+    options.AddPolicy(
         "SystemAdmin",
-        policy => policy.RequireRole("SystemAdmin"));
+        policy => policy.RequireRole("Admin"));
     options.AddPolicy(
         "User",
         policy => policy.RequireRole("User"));

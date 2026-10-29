@@ -263,7 +263,7 @@ public sealed class AdminBankTransactionApiTests
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
         var user = await db.Users.SingleAsync(item => item.Id == userId);
-        user.SystemRole = SystemRole.SystemAdmin;
+        user.SystemRole = SystemRole.Admin;
         await db.SaveChangesAsync();
     }
 

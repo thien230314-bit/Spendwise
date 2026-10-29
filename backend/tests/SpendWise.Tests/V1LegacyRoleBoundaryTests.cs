@@ -29,7 +29,7 @@ public sealed class V1LegacyRoleBoundaryTests
     public async Task Legacy_operator_cannot_mutate_V1_privileged_accounts(SystemRole role, string action, bool stale)
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
-        var actor = await f.AddUserAsync("Legacy operator", role: SystemRole.SystemAdmin);
+        var actor = await f.AddUserAsync("Admin operator", role: SystemRole.Admin);
         var target = await f.AddUserAsync("V1 operator", role: stale ? SystemRole.User : role);
         if (stale) await f.Db.Users.Where(u => u.Id == target.Id).ExecuteUpdateAsync(s => s.SetProperty(u => u.SystemRole, role));
         var passwordHash = target.PasswordHash; var pinHash = target.SecurityPinHash;

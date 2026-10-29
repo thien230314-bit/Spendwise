@@ -42,13 +42,13 @@ public sealed class AdminSecurityGuard(
         Guid adminId,
         string suppliedPin,
         CancellationToken cancellationToken,
-        SystemRole requiredRole = SystemRole.SystemAdmin)
+        SystemRole requiredRole = SystemRole.Admin)
     {
         var pin = InputBoundary.SecurityPin(suppliedPin, "Admin PIN");
         var admin = await db.Users
             .AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == adminId
-                && item.SystemRole == requiredRole
+                && item.SystemRole == SystemRole.Admin
                 && item.Status == UserStatus.Active,
                 cancellationToken);
         if (admin is null)

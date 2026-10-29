@@ -23,7 +23,8 @@ public sealed class CreateSupportCaseCommandHandler(
         // Tạo hồ sơ hỗ trợ gắn với người dùng và giao dịch liên quan nếu có.
         var category = InputBoundary.RequiredText(command.Request.Category, 80, "Support category").ToLowerInvariant();
         var allowedCategories = new[] { "system_error", "account", "banking_sepay", "transaction_edit", "other",
-            "transaction", "feature_request", "general" };
+            "transaction", "feature_request", "general", "complaint", "complaint_transaction", "complaint_banking",
+            "complaint_fund", "complaint_account", "v1funddispute" };
         if (!allowedCategories.Contains(category))
         {
             throw new AppException("invalid_support_category", "Support category is invalid.");

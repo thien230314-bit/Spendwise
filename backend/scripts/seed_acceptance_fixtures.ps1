@@ -608,6 +608,10 @@ DELETE FROM EvidenceAttachments WHERE OwnerUserId IN (SELECT UserId FROM #Fixtur
 
 -- Open Banking
 
+IF OBJECT_ID('WalletWithdrawals', 'U') IS NOT NULL
+
+DELETE FROM WalletWithdrawals WHERE BankConnectionId IN (SELECT Id FROM BankConnections WHERE UserId IN (SELECT UserId FROM #FixtureUserIds)) OR WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+
 IF OBJECT_ID('WalletTopUps', 'U') IS NOT NULL
 
 DELETE FROM WalletTopUps WHERE UserId IN (SELECT UserId FROM #FixtureUserIds);
@@ -703,6 +707,10 @@ IF OBJECT_ID('WalletWithdrawals', 'U') IS NOT NULL
 DELETE FROM WalletWithdrawals WHERE WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds))
 
 OR FinancialTransactionId IN (SELECT Id FROM FinancialTransactions WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
+
+IF OBJECT_ID('WalletWithdrawals', 'U') IS NOT NULL
+
+DELETE FROM WalletWithdrawals WHERE BankConnectionId IN (SELECT Id FROM BankConnections WHERE UserId IN (SELECT UserId FROM #FixtureUserIds)) OR WalletId IN (SELECT Id FROM Wallets WHERE OwnerUserId IN (SELECT UserId FROM #FixtureUserIds));
 
 IF OBJECT_ID('WalletTopUps', 'U') IS NOT NULL
 

@@ -32,7 +32,7 @@ public sealed class V1AdministrationController(ScopedCaseProfileReader profiles,
     [Authorize(Policy = V1Authorization.OperationsRead)]
     public Task<IReadOnlyList<V1CaseTaskDto>> Queue(OperatorDirectoryRequest request, CancellationToken ct) => cases.QueueAsync(User, request.Reason, request.Page, request.PageSize, ct);
     [HttpPut("support/{caseId:guid}/assignment")]
-    [Authorize(Policy = V1Authorization.ManageOrdinaryAdmins)]
+    [Authorize(Policy = V1Authorization.OperationsRead)]
     public async Task<IActionResult> Assign(Guid caseId, CaseAssignmentRequest request, CancellationToken ct)
     { await cases.AssignAsync(User, caseId, request.AdminId, request.SecurityPin, request.Reason, ct); return NoContent(); }
 

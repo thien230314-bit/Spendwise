@@ -18,9 +18,9 @@ public sealed class V1CaseAssignment(ISpendWiseDbContext db, PlatformPermissionS
     public async Task AssignAsync(ClaimsPrincipal principal, Guid caseId, Guid operatorId, string pin, string reason, CancellationToken ct)
     {
         var purpose = InputBoundary.RequiredText(reason, 1000, "Reason"); AdminAuditWriter.RequireReason(purpose);
-        if (!await permissions.HasAsync(principal, PlatformPermission.ManageOrdinaryAdmins, ct)) throw new ForbiddenException("permission_denied", "SuperAdmin required.");
+        if (!await permissions.HasAsync(principal, PlatformPermission.OperationsRead, ct)) throw new ForbiddenException("permission_denied", "Admin permission required.");
         var actor = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        await security.VerifyAsync(actor, pin, ct, SystemRole.SuperAdmin);
+        await security.VerifyAsync(actor, pin, ct, SystemRole.Admin);
         await db.ExecuteInTransactionAsync(async token =>
         {
             var subject = await db.SupportCases.AsNoTracking().Where(c => c.Id == caseId).Select(c => (Guid?)c.LinkedUserId).SingleOrDefaultAsync(token)
@@ -31,7 +31,7 @@ public sealed class V1CaseAssignment(ISpendWiseDbContext db, PlatformPermissionS
             if (await db.UserSessions.Where(s => s.Id == session && s.UserId == actor && s.RevokedAt == null)
                     .ExecuteUpdateAsync(s => s.SetProperty(s => s.RevokedAt, s => s.RevokedAt), token) != 1)
                 throw new ForbiddenException("permission_denied", "Operator session revoked.");
-            if (!await permissions.HasAsync(principal, PlatformPermission.ManageOrdinaryAdmins, token)) throw new ForbiddenException("permission_denied", "Operator permission changed.");
+            if (!await permissions.HasAsync(principal, PlatformPermission.OperationsRead, token)) throw new ForbiddenException("permission_denied", "Admin permission changed.");
             if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == operatorId && u.SystemRole == SystemRole.Admin
                     && u.Status == UserStatus.Active && u.EmailVerifiedAt != null && !u.MustChangePassword, token))
                 throw new ConflictException("operator_not_ready", "An active ordinary Admin is required.");
@@ -46,7 +46,7 @@ public sealed class V1CaseAssignment(ISpendWiseDbContext db, PlatformPermissionS
             await db.SupportCases.Where(c => c.Id == caseId).ExecuteUpdateAsync(s => s.SetProperty(c => c.AssignedAdminId, (Guid?)operatorId), token);
             var actorName = await db.Users.AsNoTracking().Where(u => u.Id == actor).Select(u => u.FullName).SingleAsync(token);
             db.CaseHistories.Add(new CaseHistory { CaseId = caseId, CaseKind = CaseKind.Support, ActorId = actor,
-                ActorRole = "SuperAdmin", ActorDisplayNameSnapshot = actorName, Action = "V1Assigned", Message = purpose });
+                ActorRole = "Admin", ActorDisplayNameSnapshot = actorName, Action = "V1Assigned", Message = purpose });
             audit.Add(actor, "V1_CASE_ASSIGNED", "SupportCase", caseId.ToString(), purpose, new { Previous = ticket.AssignedAdminId, AssignedAdminId = operatorId });
             await db.SaveChangesAsync(token);
             await notifications.CreateAsync(operatorId, "AdminTaskAssigned", "Case assigned", "A support case was assigned to you.", new { CaseId = caseId }, token);

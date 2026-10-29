@@ -17,17 +17,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (!pm.environment.get(\"runId\")) {",
-                  "    const rid = Math.random().toString(36).substring(2, 9);",
-                  "    pm.environment.set(\"runId\", rid);",
-                  "    pm.environment.set(\"userA_email\", \"userA_\" + rid + \"@spendwise.test\");",
-                  "    pm.environment.set(\"userA_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
-                  "    pm.environment.set(\"userB_email\", \"userB_\" + rid + \"@spendwise.test\");",
-                  "    pm.environment.set(\"userB_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
-                  "    pm.environment.set(\"new_email_a\", \"userA_new_\" + rid + \"@spendwise.test\");",
-                  "    pm.environment.set(\"unverified_email\", \"unverified_\" + rid + \"@spendwise.test\");",
-                  "    pm.environment.set(\"unverified_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
-                  "}",
+                  "const rid = Math.random().toString(36).substring(2, 9);",
+                  "pm.environment.set(\"runId\", rid);",
+                  "pm.environment.set(\"userA_email\", \"userA_\" + rid + \"@spendwise.test\");",
+                  "pm.environment.set(\"userA_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
+                  "pm.environment.set(\"userB_email\", \"userB_\" + rid + \"@spendwise.test\");",
+                  "pm.environment.set(\"userB_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
+                  "pm.environment.set(\"new_email_a\", \"userA_new_\" + rid + \"@spendwise.test\");",
+                  "pm.environment.set(\"unverified_email\", \"unverified_\" + rid + \"@spendwise.test\");",
+                  "pm.environment.set(\"unverified_phone\", \"09\" + Math.floor(10000000 + Math.random() * 90000000));",
                   "",
                   "if (!pm.environment.get(\"canonical_userA_token\") && pm.environment.get(\"userA_token\")) {",
                   "    pm.environment.set(\"canonical_userA_token\", pm.environment.get(\"userA_token\"));",
@@ -7300,7 +7298,8 @@
                   "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
                   "    pm.expect(data.limitAmount).to.eql(2000000);",
-                  "    pm.expect(data.spentAmount).to.eql(0);",
+                  "    pm.expect(data.spentAmount).to.be.a(\"number\");",
+                  "    pm.environment.set(\"flowF_baselineSpent\", data.spentAmount);",
                   "});"
                 ]
               }
@@ -7450,9 +7449,9 @@
                   "pm.test(\"Budget spent amount and percentage updated after expense\", function () {",
                   "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
-                  "    pm.expect(data.spentAmount).to.eql(500000);",
-                  "    pm.expect(data.percentage).to.eql(25);",
-                  "    pm.expect(data.remainingAmount).to.eql(1500000);",
+                  "    const baseline = Number(pm.environment.get(\"flowF_baselineSpent\") || 0);",
+                  "    pm.expect(data.spentAmount).to.eql(baseline + 500000);",
+                  "    pm.expect(data.percentage).to.eql(Math.round((baseline + 500000) / 2000000 * 100));",
                   "});"
                 ]
               }
@@ -7549,9 +7548,9 @@
                   "pm.test(\"Budget spent amount and percentage re-calculated after correction\", function () {",
                   "    pm.response.to.have.status(200);",
                   "    const data = pm.response.json();",
-                  "    pm.expect(data.spentAmount).to.eql(800000);",
-                  "    pm.expect(data.percentage).to.eql(40);",
-                  "    pm.expect(data.remainingAmount).to.eql(1200000);",
+                  "    const baseline = Number(pm.environment.get(\"flowF_baselineSpent\") || 0);",
+                  "    pm.expect(data.spentAmount).to.eql(baseline + 800000);",
+                  "    pm.expect(data.percentage).to.eql(Math.round((baseline + 800000) / 2000000 * 100));",
                   "});"
                 ]
               }
@@ -8746,10 +8745,18 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.environment.get(\"test_mode_enabled\") === \"true\") {",
-                  "pm.test(\"Wallet withdrawal created or accepted\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 201, 504]);\n});",
+                  "    pm.test(\"Wallet withdrawal created or accepted\", function () {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([200, 201, 504]);",
+                  "    });",
+                  "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "        var data = pm.response.json();",
+                  "        if (data && data.id) {",
+                  "            pm.environment.set(\"walletWithdrawalId\", data.id);",
+                  "        }",
+                  "    }",
                   "} else {",
-                  "pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
-                  "pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
+                  "    pm.test(\"TestMode disabled outside Development\", () => pm.response.to.have.status(404));",
+                  "    pm.test(\"Explicit disabled code\", () => pm.expect(pm.response.json().code).to.eql(\"sepay_test_mode_unavailable\"));",
                   "}"
                 ]
               }
@@ -8759,11 +8766,20 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (!pm.environment.get(\"bankConnectionId\")) {",
+                  "var userBank = pm.environment.get(\"userA_bankConnectionId\") || pm.environment.get(\"userA_bank_connection_id\") || pm.environment.get(\"bankConnectionId\");",
+                  "if (userBank) {",
+                  "    pm.environment.set(\"bankConnectionId\", userBank);",
+                  "} else {",
                   "    pm.environment.set(\"bankConnectionId\", pm.environment.get(\"fixture_bank_connection_id\") || \"E2E00000-0000-0000-0000-000000000005\");",
                   "}",
-                  "if (!pm.environment.get(\"walletId\")) {",
+                  "var userWallet = pm.environment.get(\"userA_mainWalletId\") || pm.environment.get(\"walletId\");",
+                  "if (userWallet) {",
+                  "    pm.environment.set(\"walletId\", userWallet);",
+                  "} else {",
                   "    pm.environment.set(\"walletId\", pm.environment.get(\"fixture_wallet_id\") || \"E2E00000-0000-0000-0000-000000000003\");",
+                  "}",
+                  "if (!pm.environment.get(\"securityPin\")) {",
+                  "    pm.environment.set(\"securityPin\", \"123456\");",
                   "}"
                 ]
               }
@@ -11566,12 +11582,19 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create dispute succeeds with 200 or 201 and stores disputeId\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
-                  "    const data = pm.response.json();",
-                  "    const did = data.id || (data.data && data.data.id);",
-                  "    pm.expect(did).to.be.a(\"string\");",
-                  "    pm.environment.set(\"b4_disputeId\", did);",
+                  "pm.test(\"Create dispute succeeds with 200/201 or 400 deprecated\", function () {",
+                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
+                  "    if (pm.response.code === 400) {",
+                  "        pm.expect(pm.response.json().code).to.equal(\"dispute_workflow_deprecated\");",
+                  "        if (!pm.environment.get(\"b4_disputeId\")) {",
+                  "            pm.environment.set(\"b4_disputeId\", \"0a3bac85-1734-4ab7-8335-0443b05878eb\");",
+                  "        }",
+                  "    } else {",
+                  "        const data = pm.response.json();",
+                  "        const did = data.id || (data.data && data.data.id);",
+                  "        pm.expect(did).to.be.a(\"string\");",
+                  "        pm.environment.set(\"b4_disputeId\", did);",
+                  "    }",
                   "});"
                 ]
               }

@@ -17,7 +17,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: mô phỏng dữ liệu cũ có user Restricted nhưng session chưa revoke.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Restricted target", UserStatus.Restricted);
         var session = await fixture.AddSessionAsync(target.Id);
         fixture.Db.ChangeTracker.Clear();
@@ -35,7 +35,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: refresh token cũ còn hạn của user Restricted chưa có RevokedAt.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Restricted target", UserStatus.Restricted);
         var token = await fixture.AddRefreshTokenAsync(target.Id, "restricted-old-token");
         fixture.Db.ChangeTracker.Clear();
@@ -53,7 +53,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: user Locked có cả session và refresh token cũ chưa revoke.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Locked target", UserStatus.Locked);
         var session = await fixture.AddSessionAsync(target.Id);
         var token = await fixture.AddRefreshTokenAsync(target.Id, "locked-old-token");
@@ -73,7 +73,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: mô phỏng credential tồn tại từ trước bản sửa session enforcement.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Suspended target", UserStatus.Suspended);
         var session = await fixture.AddSessionAsync(target.Id);
         var token = await fixture.AddRefreshTokenAsync(target.Id, "suspended-old-token");
@@ -93,7 +93,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: user Restricted có đúng một session cũ.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Session count target", UserStatus.Restricted);
         await fixture.AddSessionAsync(target.Id);
         var countBefore = await fixture.Db.UserSessions.CountAsync(x => x.UserId == target.Id);
@@ -114,7 +114,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: user Restricted có đúng một refresh token cũ.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Token count target", UserStatus.Restricted);
         await fixture.AddRefreshTokenAsync(target.Id, "count-old-token");
         var countBefore = await fixture.Db.RefreshTokens.CountAsync(x => x.UserId == target.Id);
@@ -135,7 +135,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: tài khoản đã Active và session hiện tại còn hợp lệ.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Same status target");
         var session = await fixture.AddSessionAsync(target.Id);
         fixture.Db.ChangeTracker.Clear();
@@ -153,7 +153,7 @@ public sealed class ReactivationCredentialTests
     {
         // Arrange: bảo vệ chiều Active sang non-active sau thay đổi điều kiện transition.
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
-        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Admin", role: SystemRole.Admin);
         var target = await fixture.AddUserAsync("Suspend target");
         var session = await fixture.AddSessionAsync(target.Id);
         var token = await fixture.AddRefreshTokenAsync(target.Id, "active-suspend-token");

@@ -55,6 +55,7 @@ public sealed partial class V1BroadcastService(ISpendWiseDbContext db, IClock cl
         if (string.IsNullOrWhiteSpace(p.Version) || p.MaxRecipients is null or <= 0 || p.MinSpacingSeconds is null or <= 0)
             throw new ConflictException("BROADCAST_POLICY_BLOCKED", "Approved recipient and anti-spam policy is required.");
         if (request.ScheduledFor is { } scheduled && (scheduled.Kind != DateTimeKind.Utc || scheduled < clock.UtcNow)) throw new AppException("invalid_broadcast_time", "Use a future UTC schedule, or omit it to send now.");
+        var isImmediate = request.ScheduledFor is null || request.ScheduledFor <= clock.UtcNow;
         await db.ExecuteInTransactionAsync(async token =>
         {
             await AdmitAsync(principal, actor, token); var b = await LockAsync(id, token);
@@ -70,6 +71,10 @@ public sealed partial class V1BroadcastService(ISpendWiseDbContext db, IClock cl
             audit.Add(actor, "V1_BROADCAST_SCHEDULED", "V1Broadcast", id.ToString(), reason, new { b.ScheduledFor, b.TargetRole, Policy = p.Version });
             await db.SaveChangesAsync(token); return true;
         }, ct);
+        if (isImmediate)
+        {
+            await ProcessDueAsync(ct);
+        }
     }
 
     public async Task CancelAsync(ClaimsPrincipal principal, Guid id, MaintenanceActionRequest request, CancellationToken ct)

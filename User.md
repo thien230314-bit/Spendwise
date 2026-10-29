@@ -1,15 +1,12 @@
-# SPENDWISE — USER MOBILE PRODUCT SPECIFICATION & BACKEND API CONTRACT
+# SPENDWISE V1.0 — USER MOBILE SPECIFICATION & BACKEND API CONTRACT
 
-> **Nghiệm thu User baseline: 2026-10-27; hướng dẫn UI cập nhật: 2026-10-29.**  
-> **`USER BASELINE — ACCEPTED`** (306 requests/343 assertions là lượt chạy lịch sử; chưa chứng minh đã chạy lại trên mọi thay đổi Backend Admin sau đó).  
-> - **Full Newman E2E Suite (Backend User Demo Baseline):** **306 requests, 343/343 assertions PASS, 0 FAIL, Exit Code 0**.  
-> - **Bằng chứng Nghiệm thu (User Demo Locked):** [`reports/newman/backend-user-final-verified-summary.md`](./reports/newman/backend-user-final-verified-summary.md), [`reports/newman/backend-user-final-lock.md`](./reports/newman/backend-user-final-lock.md) (file raw execution JSON `backend-user-final-verified.json` lưu trữ nội bộ).  
-> - **Baseline Tested Commit SHA:** `5ce3ab8ff02adf2dd267bcbb03f41627bed37f98` (cùng các commit hardening sở hữu ngân hàng và bảo mật sinh trắc học tiếp theo).  
-> - **Môi trường nghiệm thu:** API Kestrel Release (`http://127.0.0.1:5158`) kết nối SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02`, Database `SpendWise_E2E_G4`.  
-> - **Phân định ranh giới nghiệm thu & Module Sinh trắc học mới:**  
->   1. **Backend User Demo:** Toàn bộ nghiệp vụ quản lý ví, thu chi cá nhân, ngân sách, mục tiêu, giao dịch định kỳ, quỹ Nhóm Cố định V2 & Tự do, phân quyền dữ liệu, idempotency, sổ cái kép và SePay Test Mode Sandbox (Nạp/Rút Demo) đã được nghiệm thu và **KHÓA CHỨC NĂNG (LOCKED)**.  
->   2. **Module Sinh trắc học mới (WebAuthn / Passkeys & Transaction Authorizations):** Là feature bảo mật mới được bổ sung sau mốc khóa User, được xác thực độc lập 100% qua test suite chuyên dụng ([`reports/biometric/biometric-final-acceptance.md`](./reports/biometric/biometric-final-acceptance.md), [`reports/biometric/biometric-implementation-summary.md`](./reports/biometric/biometric-implementation-summary.md); kèm file raw test results JSON 27/27 security PASS và 14/14 integration PASS lưu trữ nội bộ). Module này cung cấp cơ chế ký mật mã WebAuthn Level 2 phía Backend; **tuyệt đối không ghi nhận sinh trắc học phần cứng (Hardware Biometric trên thiết bị thật) đã nghiệm thu**, vì việc truy cập Secure Enclave / Keystore vật lý sẽ được thực hiện khi đóng gói ứng dụng native ở giai đoạn sau.  
->   3. **Cổng thanh toán & Thiết bị ngoài:** SePay Live payout, SMTP production và giao diện người dùng Mobile thật chưa nằm trong phạm vi nghiệm thu.
+> **Thời điểm xác nhận nghiệm thu:** 29/10/2026 — 12:26:00+07:00  
+> **Trạng thái cốt lõi:** `BACKEND USER V1.0 — LOCKED & VERIFIED 100% PASS (306/306 REQUESTS, 343/343 ASSERTIONS, 0 FAIL)`  
+> **Môi trường nghiệm thu:** ASP.NET Core 10 Release Kestrel (`http://127.0.0.1:5158`) kết nối Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02`, Database `SpendWise_E2E_G4` (SQL02 cách ly tuyệt đối, không kết nối SQL01).  
+> **Báo cáo kiểm thử chính thức:** [`reports/newman/backend-user-final-verified-20261029.json`](./reports/newman/backend-user-final-verified-20261029.json) và [`reports/newman/backend-user-final-verified.json`](./reports/newman/backend-user-final-verified.json).  
+> **Ranh giới công nghệ:**
+> - **Backend Core:** Đã kiểm thử tự động toàn diện qua Postman/Newman và xUnit; bảo đảm toàn vẹn sổ cái kế toán kép, phân quyền dữ liệu cá nhân, giới hạn ví, quy tắc quỹ nhóm Fixed V2/Free và chu trình Hỗ trợ/Khiếu nại trực tiếp.
+> - **Frontend-Only / Pending UI E2E:** Các yếu tố trực quan (Giao diện Sáng/Tối/Hệ thống, Ngôn ngữ Tiếng Việt/Tiếng Anh trên UI, Hoạt ảnh chuyển động, Layout responsive và cảm biến sinh trắc học phần cứng native Face ID/Vân tay) thuộc phạm vi triển khai của ứng dụng Mobile/Frontend. Backend đã kiểm thử thành công các API lưu/đọc tùy chọn giao diện (`PUT /api/users/me/preferences`) và xác thực mật mã WebAuthn Level 2.
 
 ---
 
@@ -19,324 +16,204 @@
 SpendWise là ứng dụng di động hỗ trợ quản lý tài chính cá nhân thông minh và quản lý quỹ nhóm minh bạch, tin cậy:
 1. **Quản lý tài chính cá nhân:** Theo dõi dòng tiền thu/chi tức thời, phân loại danh mục, lập ngân sách chi tiêu, lập mục tiêu tích lũy và giao dịch định kỳ với độ toàn vẹn sổ cái kế toán kép (Double-Entry Ledger).
 2. **Quản lý quỹ nhóm minh bạch:**
-   - **Quỹ Cố định (Fixed Fund V2):** Mô hình góp quỹ theo nghĩa vụ bằng nhau hoặc tùy biến, quy tắc chi tiêu động nghiêm ngặt không giữ chỗ giả tạo (đã loại bỏ ngưỡng 20% và Pending24h).
-   - **Quỹ Tự do (Free Fund):** Mô hình quỹ linh hoạt theo phong cách Quỹ Nhóm hiện đại, hỗ trợ góp tự nguyện, gửi yêu cầu chi tiêu/rút tiền có sự phê duyệt của Chủ quỹ (Owner).
+   - **Quỹ Cố định (Fixed Fund V2):** Mô hình góp quỹ theo nghĩa vụ bằng nhau hoặc tùy biến, quy tắc chi tiêu động nghiêm ngặt không giữ chỗ giả tạo (đã loại bỏ ngưỡng 20% và trạng thái tạm giữ Pending24h).
+   - **Quỹ Tự do (Free Fund):** Mô hình quỹ linh hoạt theo phong cách Quỹ Nhóm hiện đại, hỗ trợ góp tự nguyện, gửi yêu cầu chi tiêu/rút vốn có sự phê duyệt của Chủ quỹ (Owner).
 3. **Trải nghiệm người dùng:** Giao diện trực quan, hỗ trợ 3 chủ đề (`light`, `dark`, `system`) và 2 ngôn ngữ (`vi-VN`, `en-US`), phân biệt rõ ràng trạng thái giao dịch (`Pending`, `Processing`, `Completed`, `Failed`).
 
 ### 1.2. Ranh giới kiến trúc & Nguyên tắc bảo mật
 - **Nền tảng Backend:** ASP.NET Core (.NET 10 Kestrel) kiến trúc Clean Architecture: Domain Entities $\rightarrow$ Application CQRS Handlers $\rightarrow$ Infrastructure EF Core $\rightarrow$ API Controllers.
-- **Ranh giới Actor:** `SystemRole.User = 1` là User, `SystemRole.Admin = 2` là Admin hệ thống duy nhất. `SystemAdmin = 0` và `SuperAdmin = 3` là giá trị legacy bị chặn quyền hoạt động. `Fund Owner` vẫn là User, chỉ quản lý quỹ mình sở hữu, không có quyền Admin hệ thống.
-- **Bảo mật giao dịch:** Mọi lệnh ghi biến động số dư yêu cầu mã PIN bảo mật 6 số (`SecurityPin`) hoặc chữ ký sinh trắc học phần cứng (`WebAuthn / FIDO2 Level 2`). Khóa chống trùng lặp (`IdempotencyKey`) và phạm vi (`IdempotencyScope`) bảo đảm tính bất biến (idempotent) tuyệt đối, không double-posting.
-
----
-
-> [!IMPORTANT]
-> **HƯỚNG DẪN CODEX / FRONTEND:** File này là đặc tả UI User. Backend Admin/Dispute/role đã thay đổi trên **workspace local** nhưng chưa được push lên GitHub `main` trong lượt kiểm toán cuối. Khi tích hợp cần kiểm tra method/route/DTO ở API đang chạy; không coi code `main` cũ là hợp đồng đã triển khai. SePay real money và Gemini live provider chưa được xác minh đầy đủ.
+- **Ranh giới Actor:** `SystemRole.User = 1` là User thường, `SystemRole.Admin = 2` là Admin hệ thống duy nhất. `SystemAdmin = 0` và `SuperAdmin = 3` là các giá trị legacy bị chặn quyền hoàn toàn. `Fund Owner` vẫn là User, chỉ có quyền trong phạm vi quỹ mình sở hữu, không có quyền Admin hệ thống.
+- **Bảo mật giao dịch:** Mọi lệnh ghi biến động số dư yêu cầu mã PIN bảo mật 6 số (`SecurityPin`) hoặc chữ ký sinh trắc học WebAuthn Level 2. Khóa chống trùng lặp (`IdempotencyKey`) và phạm vi (`IdempotencyScope`) bảo đảm tính bất biến (idempotent) tuyệt đối, không double-posting.
 
 ### 1.3. Bảng phân quyền và trạng thái tài khoản cho giao diện
 
-| Actor / trạng thái | Quyền và hành vi UI |
-|---|---|
-| `User` / `Active` | Dashboard cá nhân, ví, giao dịch, chuyển tiền, ngân sách, mục tiêu, định kỳ, nhóm quỹ, ngân hàng demo, AI, thông báo, hỗ trợ/khiếu nại, hồ sơ |
-| `User` / `Restricted` | Đăng nhập và đọc dữ liệu, nhận tiền hợp lệ, gửi SupportCase; **không được ghi nợ tiền ra** (`403 account_restricted`) |
-| `User` / `Locked` | Chặn login/refresh, thu hồi phiên. Sau khi mở khóa phải đăng nhập lại; không tạo màn hình giao dịch khi đã bị khóa |
-| `Fund Owner` | User có quyền duyệt/cấp quyền và quản lý thành viên trong quỹ sở hữu, **không** có quyền Admin hệ thống |
-| `Admin = 2` | UI quản trị riêng, không được dùng để giả vai trò User trong nghiệp vụ tài chính |
-| `SystemAdmin = 0`, `SuperAdmin = 3` | Legacy, không cấp quyền hoặc hiển thị UI Admin |
-
-**Sitemap UI User:** Onboarding/OTP/Login/PIN/Passkey → Home/Dashboard → Hồ sơ & bảo mật → Bạn bè → Ví/Giao dịch/Danh mục/Chứng từ → Chuyển tiền (nội bộ/P2P/ngân hàng theo quyền) → Ngân sách/Mục tiêu/Định kỳ/Phân loại tự động → Quỹ Fixed/Free (Member/Owner) → Ngân hàng/SePay Demo → AI Assistant → Thông báo/Push → Hỗ trợ/Khiếu nại → Cài đặt. Các API nhóm legacy chỉ đưa vào UI khi xác nhận phạm vi.
-
-**Không chỉ ẩn nút UI:** Backend luôn xác thực ownership, trạng thái User và role. Frontend xử lý `401`, `403`, `409`, lỗi PIN và trường hợp phiên hết hạn bằng UX phù hợp.
-
----
-## 2. XÁC THỰC, TÀI KHOẢN & SINH TRẮC HỌC (AUTHENTICATION & SECURITY)
-
-### 2.1. Chu trình xác thực người dùng cơ bản
-1. **Đăng ký (`POST /api/auth/register`):** Nhận email, mật khẩu mạnh (tối thiểu 8 ký tự, chữ hoa, chữ thường, số, ký tự đặc biệt), họ tên. Hệ thống phát hành `EmailVerificationToken` và gửi OTP 6 số qua email.
-2. **Xác thực Email (`POST /api/auth/email-verification/verify`):** Nhập mã OTP. Kích hoạt tài khoản (`EmailVerifiedAt != null`). Môi trường TEST sử dụng OTP cấu hình an toàn.
-3. **Thiết lập mã PIN (`POST /api/auth/pin/setup`):** Thiết lập mã PIN bảo mật 6 chữ số dùng cho các thao tác tài chính. Mã PIN được băm an toàn (`SecurityPinHash`).
-4. **Đăng nhập (`POST /api/auth/login`):** Nhận diện qua Email hoặc SpendId (`identifier`) và mật khẩu. Trả về `challengeToken` để xác nhận mã PIN (`POST /api/auth/pin/verify`). Sau khi xác nhận PIN, hệ thống cấp phát cặp JWT:
-   - `accessToken`: Hạn dùng ngắn (15 phút), chứa `sub` (UserId), `email`, `role`, `sid` (SessionId).
-   - `refreshToken`: Hạn dùng dài (30 ngày), lưu trữ trong `UserSessions` để cấp mới token.
-5. **Đổi mật khẩu / Khôi phục mật khẩu:** `/api/auth/change-password`, `/api/auth/forgot-password`, `/api/auth/reset-password`.
-6. **Quản lý phiên hoạt động (`/api/auth/sessions`):** Liệt kê các phiên thiết bị đang hoạt động; thu hồi phiên cụ thể (`DELETE /api/auth/sessions/{id}`) hoặc toàn bộ phiên khác (`POST /api/auth/sessions/revoke-others`).
-
-### 2.2. Sinh trắc học & Passkey Backend (WebAuthn / FIDO2 Level 2)
-Backend SpendWise hỗ trợ đầy đủ chuẩn W3C WebAuthn / FIDO2 Level 2 bảo mật Zero-Knowledge:
-- **Thuật toán hỗ trợ:** `ES256` (ECDSA P-256 / SHA-256, chuẩn của Apple Secure Enclave & Android Keystore) và `RS256`.
-- **Lưu trữ Zero-Knowledge:** Backend **chỉ lưu trữ khóa công khai SPKI Base64** trong bảng `UserPasskeyCredentials`. Tuyệt đối không lưu trữ khóa riêng tư (Private Key) hay dữ liệu khuôn mặt/vân tay thô.
-- **Xác minh chữ ký & Tính toàn vẹn:**
-  - `clientDataJSON`: Kiểm tra `type` (`webauthn.get` / `webauthn.create`), đối soát `challenge`, và xác thực `origin` tin cậy.
-  - `authenticatorData`: Đối soát hash SHA-256 của `rpId` (`spendwise.test`), cờ hiện diện `UP = 1`, và **bắt buộc cờ xác thực người dùng `UV = 1`** cho mọi giao dịch tài chính.
-  - Chống phát lại & nhân bản: Challenge chỉ sử dụng 1 lần; theo dõi số đếm `signCount` ngăn chặn credential cloning (counter rollback rejection).
-- **Bộ API Passkey / Biometric:**
-  - `POST /api/auth/passkeys/register/options`: Cấp phát challenge đăng ký passkey mới.
-  - `POST /api/auth/passkeys/register/verify`: Xác minh khóa công khai và kích hoạt passkey thiết bị.
-  - `POST /api/auth/passkeys/login/options`: Cấp phát challenge đăng nhập nhanh bằng sinh trắc học.
-  - `POST /api/auth/passkeys/login/verify`: Xác minh chữ ký sinh trắc học, cấp phát trực tiếp phiên JWT hợp lệ.
-  - `GET /api/auth/passkeys`: Danh sách các passkey/thiết bị đã liên kết của người dùng.
-  - `DELETE /api/auth/passkeys/{id}`: Thu hồi ngay lập tức passkey đã đăng ký.
-
-### 2.3. Ranh giới Sinh trắc học Demo (Frontend UI vs Backend Cryptography)
-> [!IMPORTANT]
-> **QUY ĐỊNH PHẠM VI SINH TRẮC HỌC DEMO (GOOGLE AI STUDIO & MOBILE CLIENT):**
-> 1. Giao diện Frontend phát triển trên Google AI Studio trình diễn Face ID / Vân tay là **DEMO SIMULATION**.
-> 2. Quá trình quét sinh trắc học trên UI là hoạt ảnh trình diễn (animation & mockup prompt), **không yêu cầu và không phải bằng chứng đã tương tác với cảm biến phần cứng thật của iPhone/Android**.
-> 3. Tuyệt đối **không được ghi nhận trạng thái "Hardware Biometric Verified"** trên hệ thống và **không được gửi cờ giả mạo kiểu `biometricVerified: true`** để vượt qua các lớp bảo mật backend.
-> 4. Khi thực hiện xác thực giao dịch tài chính bằng sinh trắc học qua API backend, Client bắt buộc phải tuân thủ luồng ký mật mã (Cryptographic Authorization) chuẩn: lấy challenge từ backend $\rightarrow$ ký bằng private key hợp lệ $\rightarrow$ gửi `signature`, `clientDataJSON`, `authenticatorData` về endpoint `/api/transaction-authorizations/verify`.
+| Actor / Trạng Thái | Quyền Hạn và Hành Vi Giao Diện (UI UX) | Backend Enforcement (HTTP Code) |
+|---|---|:---:|
+| **`User` / `Active`** | Toàn quyền sử dụng Dashboard, ví cá nhân, thu chi, chuyển tiền, ngân sách, mục tiêu, định kỳ, quỹ nhóm, SePay sandbox, AI assistant, thông báo, hỗ trợ/khiếu nại, hồ sơ. | `200 OK` / `201 Created` / `204 NoContent` |
+| **`User` / `Restricted`** | Đăng nhập và đọc dữ liệu, xem số dư, nhận tiền P2P hợp lệ, gửi SupportCase; **bị chặn toàn bộ lệnh ghi nợ tiền ra** (rút tiền, chuyển tiền, nộp quỹ, chi tiêu). | `403 Forbidden` (`account_restricted`) |
+| **`User` / `Locked`** | Bị thu hồi toàn bộ phiên hoạt động. **Chặn hoàn toàn đăng nhập và refresh token**. Khi Admin mở khóa (`Active`), bắt buộc phải đăng nhập lại từ đầu. | `403 Forbidden` (`account_unavailable`) / `401 Unauthorized` |
+| **`Fund Owner`** | Là User có quyền điều hành trong quỹ mình sở hữu (chốt định mức, cấp quyền `CanSpend`, duyệt chi/rút quỹ tự do). **Không có quyền Admin hệ thống**. | Theo quyền hạn Quỹ (`fund_owner_required`) |
+| **`Admin = 2`** | UI Quản trị riêng biệt, không dùng tài khoản Admin để giao dịch tài chính người dùng. | Theo phân hệ Admin |
+| **`Legacy (0, 3)`** | Không được cấp quyền, chặn truy cập ngay từ tầng xác thực. | `403 Forbidden` (`legacy_role_rejected`) |
 
 ---
 
-## 3. QUẢN LÝ VÍ & NGHIỆP VỤ TÀI CHÍNH CÁ NHÂN (FINANCE & WALLET)
+## 2. DANH SÁCH MÀN HÌNH & HÀNH TRÌNH NGƯỜI DÙNG (USER JOURNEYS)
 
-### 3.1. Giới hạn và Phân loại Ví cá nhân
-Mỗi người dùng được quản lý tối đa **3 ví cá nhân hoạt động đồng thời** (`WalletLimit: 3`):
-1. **Ví Mặc định (Default Spending Wallet):** Tạo tự động khi kích hoạt tài khoản, dùng cho chi tiêu sinh hoạt thường ngày.
-2. **Ví Tiết kiệm (Savings Wallet):** Ví tích lũy dành cho các mục tiêu cá nhân.
-3. **Ví Khẩn cấp (Emergency Wallet):** Ví dự phòng tài chính.
-- *Quy tắc an toàn:* Cố gắng tạo ví thứ 4 sẽ bị từ chối ngay lập tức với mã lỗi `wallet_limit_reached` (HTTP 409).
-- *Đóng ví:* Chỉ được đóng ví phụ khi số dư khả dụng bằng 0 và không có giao dịch đang giữ chỗ.
+### 2.1. Danh mục màn hình Mobile Client
 
-### 3.2. Ràng buộc An toàn Ngân hàng (`IActiveBankGuard` Fail-Closed)
-Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bảo vệ bởi `IActiveBankGuard`:
-- Người dùng **bắt buộc phải có ít nhất một tài khoản ngân hàng ở trạng thái Active (`Status == Active`)** mới được thực hiện các thao tác: mở ví mới, nạp tiền, rút tiền, chuyển tiền nội bộ giữa các ví, chuyển tiền P2P, tạo khoản thu/chi cá nhân, đóng góp quỹ nhóm.
-- Nếu chưa liên kết hoặc đã hủy liên kết ngân hàng, API trả về `active_bank_required` (HTTP 409).
+1. **Nhóm Xác thực & Onboarding:**
+   - `SCR-AUTH-01`: Màn hình Giới thiệu & Onboarding.
+   - `SCR-AUTH-02`: Đăng ký tài khoản (`POST /api/auth/register`).
+   - `SCR-AUTH-03`: Xác thực OTP Email (`POST /api/auth/email-verification/verify`).
+   - `SCR-AUTH-04`: Thiết lập mã PIN 6 chữ số lần đầu (`POST /api/auth/pin/setup`).
+   - `SCR-AUTH-05`: Đăng nhập Email/SpendId & Mật khẩu (`POST /api/auth/login`).
+   - `SCR-AUTH-06`: Xác thực mã PIN để hoàn tất đăng nhập (`POST /api/auth/pin/verify`).
+   - `SCR-AUTH-07`: Quên mật khẩu & Đặt lại mật khẩu (`/forgot-password`, `/reset-password`).
+   - `SCR-AUTH-08`: Quên / Đặt lại mã PIN (`/api/security-pin/request-reset`, `/api/security-pin/reset`).
+   - `SCR-AUTH-09`: Đăng nhập nhanh bằng Passkey / Sinh trắc học (`/api/auth/passkeys/login/*`).
 
-### 3.3. Thu nhập, Chi tiêu & Chuyển tiền nội bộ
-- **Ghi nhận Thu nhập (`POST /api/transactions/income`):** Tăng số dư khả dụng ví, hạch toán ghi có sổ cái, gắn danh mục thu nhập.
-- **Ghi nhận Chi tiêu (`POST /api/transactions/expenses`):** Trừ số dư khả dụng ví, kiểm tra số dư không âm, hạch toán ghi nợ sổ cái, kiểm tra hạn mức ngân sách tháng.
-- **Chi tiêu đa ví (`POST /api/transactions/expenses/multi-wallet`):** Phân bổ một khoản chi tiêu lớn từ nhiều ví cá nhân trong cùng một giao dịch nguyên tử.
-- **Chuyển tiền giữa các ví cá nhân (`POST /api/transfers/internal`):**
-  - Chuyển tiền từ Ví A sang Ví B của cùng một người dùng.
-  - Yêu cầu xác thực `SecurityPin` hoặc chữ ký sinh trắc học.
-  - Hạch toán đồng thời Có tài khoản nguồn và Nợ tài khoản đích, hạch toán loại `InternalTransfer` (không làm sai lệch báo cáo Thu nhập / Chi tiêu tổng thể).
-- **Chuyển tiền P2P (`POST /api/transfers/p2p`):**
-  - Chuyển tiền sang ví người dùng SpendWise khác qua Email, Số điện thoại hoặc SpendId.
-  - Ngăn chặn tuyệt đối chuyển tiền cho chính mình (`self_transfer`, HTTP 400).
-  - Kiểm tra `IActiveBankGuard` của cả người gửi và người nhận.
-  - Yêu cầu `SecurityPin` hoặc Biometric Authorization; hạch toán `TransferOut` cho người gửi và `TransferIn` cho người nhận.
+2. **Nhóm Trang chủ & Tài chính Cá nhân:**
+   - `SCR-HOME-01`: Trang chủ / Dashboard tổng quan số dư các ví, thu chi gần đây, ngân sách tháng (`GET /api/dashboard`).
+   - `SCR-WALLET-01`: Danh sách ví cá nhân (Ví mặc định, Tiết kiệm, Khẩn cấp — tối đa 3 ví) (`GET /api/wallets`).
+   - `SCR-WALLET-02`: Mở thêm ví phụ / Đổi tên ví / Đóng ví số dư 0 (`POST/PUT/DELETE /api/wallets`).
+   - `SCR-TX-01`: Tạo khoản thu nhập (`POST /api/transactions/income`).
+   - `SCR-TX-02`: Tạo khoản chi tiêu đơn ví (`POST /api/transactions/expenses`).
+   - `SCR-TX-03`: Tạo khoản chi tiêu đa ví (`POST /api/transactions/expenses/multi-wallet`).
+   - `SCR-TX-04`: Lịch sử giao dịch, tìm kiếm, lọc theo danh mục / thời gian (`GET /api/transactions`).
+   - `SCR-TX-05`: Chi tiết giao dịch, sửa ghi chú, xem chứng từ hóa đơn (`PATCH /api/transactions/{id}`, `/api/evidence/*`).
+   - `SCR-TRANSFER-01`: Chuyển tiền nội bộ giữa các ví cá nhân (`POST /api/transfers/internal`).
+   - `SCR-TRANSFER-02`: Chuyển tiền P2P sang người dùng SpendWise khác (`POST /api/transfers/p2p`).
 
-### 3.4. Kế hoạch tài chính: Ngân sách, Mục tiêu & Giao dịch định kỳ
-- **Ngân sách chi tiêu (`/api/budgets`):** Thiết lập hạn mức chi tiêu theo tháng và theo danh mục (Category). Cảnh báo khi chi tiêu chạm ngưỡng 80% và 100%.
-- **Mục tiêu tích lũy (`/api/goals`):** Đặt mục tiêu số tiền và thời hạn. Nộp tiền vào mục tiêu (`/contribute`) hoặc rút về ví (`/withdraw`).
-- **Giao dịch định kỳ (`/api/recurring-transactions`):** Lập lịch tự động ghi nhận thu/chi theo chu kỳ ngày, tuần, tháng.
-- **Quy tắc phân loại tự động (`/api/transaction-rules`):** Tự động gán danh mục dựa trên từ khóa mô tả giao dịch.
+3. **Nhóm Kế hoạch Tài chính:**
+   - `SCR-PLAN-01`: Quản lý ngân sách chi tiêu tháng theo danh mục (`GET/POST/PUT/DELETE /api/budgets`).
+   - `SCR-PLAN-02`: Quản lý mục tiêu tích lũy, nộp tiền/rút tiền mục tiêu (`GET/POST /api/goals`, `/contribute`, `/withdraw`).
+   - `SCR-PLAN-03`: Lập lịch giao dịch định kỳ, tạm dừng/tiếp tục (`GET/POST /api/recurring-transactions`).
+   - `SCR-PLAN-04`: Quy tắc phân loại chi tiêu tự động theo từ khóa (`GET/POST /api/transaction-rules`).
 
----
+4. **Nhóm Quỹ Nhóm (Group Funds):**
+   - `SCR-FUND-01`: Danh sách quỹ đang tham gia & Khám phá quỹ (`GET /api/v1/funds`).
+   - `SCR-FUND-02`: Tạo quỹ nhóm mới (Cố định Fixed Fund V2 hoặc Tự do Free Fund) (`POST /api/v1/funds`).
+   - `SCR-FUND-03`: Chi tiết quỹ nhóm (Số dư, tổng đóng góp, danh sách thành viên, trạng thái mục tiêu).
+   - `SCR-FUND-04`: Đóng góp quỹ nhóm (PIN/WebAuthn) (`POST /api/v1/funds/{id}/contributions`).
+   - `SCR-FUND-05`: Quản lý thành viên & Cấp quyền chi tiêu `CanSpend` (Chủ quỹ) (`PUT .../spending-permission`).
+   - `SCR-FUND-06`: Tạo yêu cầu chi tiêu từ quỹ (`POST /api/v1/funds/{id}/requests`).
+   - `SCR-FUND-07`: Báo cáo khoản chi bất thường (Tạo SupportCase gửi Admin) (`POST .../requests/{id}/report`).
+   - `SCR-FUND-08`: Rút vốn / Rời quỹ tự do có tính toán hoàn tiền (`POST .../refund-preview`, `.../leave`).
+   - `SCR-FUND-09`: Đề xuất hoạt động quỹ & Bỏ phiếu (Governance V1) (`/activity-proposals`, `/vote`, `/settle`).
+   - `SCR-FUND-10`: Bầu cử Chủ quỹ mới (Ứng cử, Bỏ phiếu, Nhận/Từ chối quyền) (`/elections/*`).
 
-## 4. QUỸ NHÓM: QUỸ CỐ ĐỊNH V2 & QUỸ TỰ DO (GROUP FUNDS)
+5. **Nhóm Bạn bè & Ngân hàng:**
+   - `SCR-FRIEND-01`: Danh sách bạn bè, tìm kiếm qua SpendId/Email (`GET /api/friends`).
+   - `SCR-FRIEND-02`: Gửi lời mời kết bạn, Chấp nhận/Từ chối lời mời (`POST /api/friends/requests/*`).
+   - `SCR-BANK-01`: Quản lý liên kết tài khoản ngân hàng (`GET/POST/DELETE /api/bank-connections`).
+   - `SCR-BANK-02`: Nạp tiền Sandbox SePay Test Mode (`POST /api/bank-connections/test-mode/wallet-top-ups`).
+   - `SCR-BANK-03`: Rút tiền Sandbox SePay Test Mode về ngân hàng (`POST /api/bank-connections/test-mode/wallet-withdrawals`).
 
-### 4.1. Quỹ Cố định V2 (Fixed Fund V2) — Quy tắc nghiệp vụ chuẩn hóa
-> [!IMPORTANT]
-> **ĐỒNG BỘ QUYẾT ĐỊNH PRODUCT OWNER CHO FIXED FUND V2:**
-> 1. **Bãi bỏ hoàn toàn ngưỡng 20% và trạng thái Pending24h:** Không còn cơ chế tạm giữ 24 giờ hay giới hạn lũy kế 20% như phiên bản cũ. Các khoản chi hợp lệ được thực thi tức thời.
-> 2. **Cấp quyền chi tiêu (`CanSpend`):** Chủ quỹ (Owner) chỉ có quyền cấp cờ `CanSpend = true` cho thành viên đã **hoàn thành 100% nghĩa vụ đóng góp cá nhân** (`RequiredVnd`).
-> 3. **Quyền chi thực tế (`EffectiveCanSpend`):** Được hệ thống tính toán động dựa trên 4 điều kiện bắt buộc:
->    - Thành viên đã đóng đủ 100% nghĩa vụ cá nhân.
->    - Quỹ nhóm đã đạt 100% mục tiêu ban đầu (`TargetVnd`).
->    - Thành viên đã được cấp quyền `CanSpend`.
->    - Quỹ đang ở trạng thái Hoạt động (`Active`), tuân thủ các quy tắc governance và điều kiện chi tiêu của quỹ (báo cáo chi tiêu đã hoàn thành không tự đảo giao dịch).
-> 4. **Quyền chi của Chủ quỹ (Owner):** Chủ quỹ không cần cờ `CanSpend`, nhưng **bắt buộc phải tự đóng đủ 100% nghĩa vụ của mình và quỹ phải đạt 100% mục tiêu nhóm** mới được chi tiêu.
-> 5. **Bảo toàn trạng thái hoàn thành:** Khi quỹ đã đạt 100% mục tiêu, các khoản chi hợp lệ làm giảm số dư tiền mặt trong ví quỹ **KHÔNG làm mất trạng thái hoàn thành của nhóm** (hệ thống so sánh tổng đóng góp lịch sử hợp lệ với `TargetVnd`).
-> 6. **Báo cáo khoản chi bất thường (`POST /api/v1/funds/requests/{id}/report`):** Tạo `SupportCase` Khiếu nại gửi Admin điều tra, không tạo Dispute độc lập mới; **tuyệt đối không tự động đảo ngược tiền (no auto-clawback)** và không can thiệp vào bút toán sổ cái của khoản chi đã hoàn tất.
+6. **Nhóm Trợ lý AI, Thông báo & Hỗ trợ:**
+   - `SCR-AI-01`: Trò chuyện với Trợ lý AI tài chính cá nhân (`POST /api/ai/conversations`, `/chat`).
+   - `SCR-AI-02`: Xem và xác nhận thực thi đề xuất hành động từ AI (`GET /api/ai/action-proposals`, `/execute`).
+   - `SCR-NOTIF-01`: Hộp thư thông báo hệ thống, Broadcast từ Admin, đánh dấu đã đọc (`/api/notifications/*`).
+   - `SCR-NOTIF-02`: Tùy chọn kênh thông báo In-App / Email / Push (`/api/notifications/preferences`).
+   - `SCR-SUPP-01`: Danh sách hồ sơ Hỗ trợ / Khiếu nại cá nhân (`GET /api/cases/support`).
+   - `SCR-SUPP-02`: Tạo phiếu Hỗ trợ / Khiếu nại giao dịch trực tiếp gửi Admin (`POST /api/cases/support`).
+   - `SCR-SUPP-03`: Chi tiết phiếu hỗ trợ, gửi phản hồi trao đổi, đính kèm biên lai (`/api/cases/support/{id}/messages`).
 
-### 4.2. Quỹ Tự do (Free Fund)
-- Không áp đặt nghĩa vụ đóng góp cố định; các thành viên tự nguyện đóng góp theo nhu cầu.
-- Mọi yêu cầu chi tiêu hoặc rút tiền từ thành viên đều phải được Chủ quỹ (Owner) xem xét và phê duyệt (`/review`).
-- Rút tiền giải tán hoặc rút vốn cá nhân được tính toán dựa trên tỷ lệ đóng góp ròng lịch sử của từng thành viên qua thuật toán hoàn tiền chuẩn (`/refund-preview`).
-
----
-
-## 5. SEPAY TEST MODE SANDBOX: NẠP & RÚT TIỀN DEMO
-
-### 5.1. Bản chất Môi trường Demo SePay Sandbox
-- Hệ thống SpendWise kết nối với môi trường **SePay Test Mode Sandbox** (`userapi-sandbox.sepay.vn/v2`), không sử dụng tiền thật và không liên kết cổng thanh toán thật.
-- **Phân định quyền sở hữu tài khoản ngân hàng TEST đã nghiệm thu:**
-  - **User A (`23838232-9E4F-436A-B900-9E93E612D1D4`):** Sở hữu liên kết **VPBank TEST `****0001`** (`BankConnectionId: 8B5E9450-44C6-481F-80A7-551FC6817054`).
-  - **User B (`3A8B3FD7-3AF2-46AB-8FA2-BD43D6B1E67A`):** Sở hữu liên kết **TPBank TEST `****0002`** (`BankConnectionId: E9E1753B-552C-4E8F-83CA-D796AA62BFCE`).
-  - Cô lập tuyệt đối: User A không thể nạp/rút qua TPBank của User B (API chặn trả về `404 ConnectionNotFound`), và ngược lại.
-
-### 5.2. Luồng Nạp tiền DEMO (Top-Up)
-1. User chọn số tiền nạp từ ngân hàng liên kết vào ví SpendWise.
-2. Backend tạo `WalletTopUp` trạng thái `Pending` với mã tham chiếu duy nhất dạng `SWTP...`.
-3. Khi SePay Sandbox ghi nhận giao dịch mô phỏng (Tiền ra khỏi ngân hàng TEST) với đúng mã tham chiếu và số tiền $\rightarrow$ Backend chuyển trạng thái `Completed`, hạch toán ghi có ví người dùng.
-4. *Quy tắc an toàn:* Biometric intent confirmation không tự ý cộng tiền vào ví nếu chưa có đối soát giao dịch sandbox hợp lệ.
-
-### 5.3. Luồng Rút tiền DEMO (Withdrawal) & Bằng chứng Nghiệm thu Khóa
-1. **Khởi tạo & Tạm giữ (Hold Reservation):**
-   - User yêu cầu rút tiền về ngân hàng liên kết kèm mã PIN hoặc WebAuthn assertion.
-   - Hệ thống tạo `WalletWithdrawal` trạng thái `Processing` với mã tham chiếu `SWWD...`.
-   - Ngay lập tức khấu trừ số dư khả dụng trong ví SpendWise và hạch toán chuyển tiền vào tài khoản tạm giữ hệ thống `SYSTEM:ReservationHold:VND`.
-2. **Đối soát & Tất toán (Settlement):**
-   - SePay Sandbox ghi nhận giao dịch tiền vào tài khoản ngân hàng TEST tương ứng.
-   - Hệ thống đối soát thành công: chuyển `WalletWithdrawal` sang `Completed`, tất toán từ `SYSTEM:ReservationHold:VND` sang tài khoản quyết toán ngoài `SYSTEM:ExternalSettlement:VND`.
-   - Net biến động trên tài khoản tạm giữ bằng đúng `0 VND`.
-3. **Bằng chứng Nghiệm thu Khóa (User B + TPBank TEST):**
-   - **Giao dịch ID:** `5F89A5D9-A160-4242-B595-25DA35063411`.
-   - **Mã tham chiếu:** `SWWD3EEBA411C767A510FB7BD57C`.
-   - **Số tiền rút:** `50.000 VND`.
-   - **Biến động số dư TPBank TEST:** Tăng chính xác từ `150.000 VND` lên `200.000 VND` (xác nhận từ SePay Sandbox API).
-   - **Biến động số dư ví SpendWise User B:** Giảm từ `4.875.000 VND` xuống `4.825.000 VND`.
-   - **Trạng thái:** `Completed`, replay protection PASS, không double-debiting.
+7. **Nhóm Cài đặt & Bảo mật:**
+   - `SCR-SET-01`: Hồ sơ cá nhân, đổi ảnh đại diện, đổi SpendId (`GET/PUT /api/users/me`, `/avatar`).
+   - `SCR-SET-02`: Cài đặt giao diện (Chủ đề Sáng/Tối/Hệ thống, Ngôn ngữ Tiếng Việt/English) (`PUT /api/users/me/preferences`).
+   - `SCR-SET-03`: Đổi mật khẩu đăng nhập & Đổi mã PIN bảo mật (`/change-password`, `PUT /api/security-pin`).
+   - `SCR-SET-04`: Quản lý thiết bị Passkeys / Sinh trắc học WebAuthn (`/api/auth/passkeys/*`).
+   - `SCR-SET-05`: Danh sách phiên đăng nhập hoạt động, thu hồi phiên từ xa (`/api/auth/sessions/*`).
 
 ---
 
-## 5B. HỖ TRỢ/KHIẾU NẠI, THÔNG BÁO VÀ AI ASSISTANT
+## 3. CÁC QUY TẮC NGHIỆP VỤ BẮT BUỘC (BUSINESS INVARIANTS)
 
-### 5B.1. Luồng Hỗ trợ/Khiếu nại trực tiếp cho Admin
+### 3.1. Ràng buộc Ví cá nhân & An toàn Ngân hàng (`IActiveBankGuard`)
+- Mỗi tài khoản tối đa **3 ví cá nhân hoạt động đồng thời** (`WalletLimit = 3`). Cố gắng tạo ví thứ 4 trả về `409 Conflict` (`wallet_limit_reached`).
+- Chỉ được đóng ví phụ khi số dư khả dụng bằng 0 và không có giao dịch đang giữ chỗ (`409 wallet_not_empty`).
+- **Fail-Closed Bank Guard:** Mọi thao tác ghi nợ hoặc biến động tiền mặt bắt buộc người dùng phải có ít nhất 1 tài khoản ngân hàng ở trạng thái `Active`. Chưa có hoặc đã hủy liên kết trả về `409 Conflict` (`active_bank_required`).
 
-- `POST /api/cases/support`: User tạo hồ sơ với `category`, `priority`, `subject`, `description`; `linkedTransactionId` tùy chọn nếu có giao dịch hợp lệ của User. Danh mục ví dụ: `general`, `complaint_transaction`. Không bắt buộc đi qua Gemini.
-- `GET /api/cases/support`: danh sách Case của User. `GET /api/cases/support/{id}`: chi tiết, trạng thái, lịch sử và tệp.
-- `POST /api/cases/support/{id}/messages`: User bổ sung thông tin hoặc trả lời Admin; có API multipart riêng nếu đính kèm file.
-- Luồng UI: User gửi → Admin tiếp nhận → Admin phản hồi/yêu cầu thông tin → User bổ sung → Admin `resolved`/`rejected` → User đọc phản hồi và thông báo.
-- `POST /api/v1/funds/requests/{id}/report`: báo cáo chi tiêu quỹ bất thường, tạo **SupportCase** để Admin điều tra, **không tự hoàn tiền, không tự sửa Ledger**.
-- `POST /api/cases/disputes` đã deprecated trong Backend local, trả `400 dispute_workflow_deprecated`. **Không thiết kế form tạo Tranh chấp độc lập mới.** Hồ sơ Dispute lịch sử chỉ hiển thị read-only theo API còn hỗ trợ.
+### 3.2. Quỹ Cố định V2 (Fixed Fund V2)
+- **Bãi bỏ hoàn toàn ngưỡng 20% và trạng thái Pending24h:** Các khoản chi hợp lệ được thực thi tức thời.
+- **Cấp quyền chi tiêu (`CanSpend`):** Chủ quỹ (Owner) chỉ được cấp cờ `CanSpend = true` cho thành viên đã đóng đủ 100% nghĩa vụ cá nhân (`RequiredVnd`).
+- **Quyền chi thực tế (`EffectiveCanSpend`):** Được hệ thống tính toán động dựa trên 4 điều kiện:
+  1. Thành viên đã đóng đủ 100% nghĩa vụ cá nhân.
+  2. Quỹ nhóm đã đạt 100% mục tiêu ban đầu (`TargetVnd`).
+  3. Thành viên đã được cấp cờ `CanSpend = true`.
+  4. Quỹ đang ở trạng thái Hoạt động (`Active`).
+- **Bảo toàn trạng thái hoàn thành:** Khi quỹ đã đạt 100% mục tiêu, các khoản chi hợp lệ làm giảm tiền mặt trong ví quỹ **KHÔNG làm mất trạng thái hoàn thành của nhóm**.
+- **Báo cáo khoản chi bất thường (`POST /api/v1/funds/requests/{id}/report`):** Tạo `SupportCase` gửi Admin điều tra; **tuyệt đối không tự động đảo ngược tiền (no auto-clawback)** và không tự can thiệp vào bút toán sổ cái.
 
-### 5B.2. Hộp thư thông báo User
+### 3.3. Hỗ trợ & Khiếu nại Trực tiếp (Direct Support & Complaints)
+- **Không ép buộc qua AI:** Người dùng được phép gửi trực tiếp Khiếu nại giao dịch (`category = complaint_transaction`) hoặc Yêu cầu hỗ trợ kỹ thuật (`category = general`) tới Admin qua `POST /api/cases/support`.
+- **Dừng tạo Dispute độc lập:** Endpoint cũ `POST /api/cases/disputes` trả về `400 Bad Request` (`dispute_workflow_deprecated`). Toàn bộ hồ sơ tranh chấp lịch sử được bảo tồn ở chế độ chỉ đọc.
 
-- `GET /api/notifications`: danh sách; `POST /api/notifications/{id}/read`: đọc một; `POST /api/notifications/read-all`: đọc tất cả.
-- `GET /api/notifications/preferences`, `PUT /api/notifications/preferences`: thiết lập nhận thông báo.
-- User nhận được broadcast từ Admin; hiển thị unread count, detail, trạng thái loading/empty/error. Không đánh đồng in-app delivered với email/push delivered.
-
-### 5B.3. AI Assistant
-
-- AI hỗ trợ tư vấn và gợi ý; **không thay thế** việc User gửi Khiếu nại trực tiếp và không tự thực thi hành động ghi nợ chỉ bằng nội dung chat.
-- Các công cụ AI tạo hành động nhạy cảm cần xác nhận và authorization ở Backend; không dùng UI simulation để vượt qua PIN/WebAuthn.
-- Endpoint/DTO AI User phải đối chiếu Controller đang chạy khi tích hợp, không tự sáng tạo endpoint dựa trên ảnh UI.
-
----
-## 6. DANH MỤC API USER CHI TIẾT (API CONTRACT)
-
-| Phân hệ | Phương thức | Tuyến đường (Route) | Yêu cầu xác thực | Mô tả nghiệp vụ |
-|---|---|---|---|---|
-| **Auth** | `POST` | `/api/auth/register` | Anonymous | Đăng ký tài khoản, phát hành challenge OTP |
-| | `POST` | `/api/auth/email-verification/verify` | Anonymous | Xác minh OTP email |
-| | `POST` | `/api/auth/pin/setup` | Bearer Token | Thiết lập mã PIN bảo mật 6 số |
-| | `POST` | `/api/auth/login` | Anonymous | Đăng nhập tài khoản, trả challengeToken |
-| | `POST` | `/api/auth/pin/verify` | Anonymous (Challenge) | Xác nhận PIN, phát hành cặp JWT Access/Refresh |
-| | `POST` | `/api/auth/refresh` | Anonymous | Làm mới access token từ refresh token |
-| | `POST` | `/api/auth/logout` | Bearer Token | Đăng xuất, hủy phiên hoạt động hiện hành |
-| | `GET` | `/api/auth/sessions` | Bearer Token | Danh sách phiên hoạt động |
-| | `DELETE` | `/api/auth/sessions/{id}` | Bearer Token | Thu hồi một phiên cụ thể |
-| **Passkeys** | `POST` | `/api/auth/passkeys/register/options` | Bearer Token | Tạo challenge đăng ký WebAuthn |
-| | `POST` | `/api/auth/passkeys/register/verify` | Bearer Token | Xác minh khóa công khai và kích hoạt passkey |
-| | `POST` | `/api/auth/passkeys/login/options` | Anonymous | Cấp challenge đăng nhập sinh trắc học |
-| | `POST` | `/api/auth/passkeys/login/verify` | Anonymous | Xác minh assertion, đăng nhập cấp JWT |
-| | `GET` | `/api/auth/passkeys` | Bearer Token | Danh sách passkey của tài khoản |
-| | `DELETE` | `/api/auth/passkeys/{id}` | Bearer Token | Thu hồi passkey |
-| **Biometric Tx**| `POST` | `/api/transaction-authorizations/options` | Bearer Token | Chuẩn bị intent tài chính và cấp challenge |
-| | `POST` | `/api/transaction-authorizations/verify` | Bearer Token | Ký assertion sinh trắc (UV=1) & tất toán |
-| **Profile** | `GET` | `/api/users/me` | Bearer Token | Lấy hồ sơ tài khoản và tùy chọn giao diện |
-| | `PUT` | `/api/users/me/preferences` | Bearer Token | Đổi theme (`light|dark|system`) và ngôn ngữ |
-| | `POST` | `/api/users/me/avatar` | Bearer Token | Tải lên ảnh đại diện |
-| **Wallets** | `GET` | `/api/wallets` | Bearer Token | Danh sách ví cá nhân (tối đa 3 ví) |
-| | `POST` | `/api/wallets` | Bearer + BankGuard | Mở thêm ví phụ (Savings / Emergency) |
-| | `PUT` | `/api/wallets/{id}` | Bearer Token | Cập nhật tên ví |
-| | `DELETE` | `/api/wallets/{id}` | Bearer Token | Đóng ví phụ khi số dư = 0 |
-| **Finance** | `POST` | `/api/transactions/income` | Bearer + BankGuard | Ghi nhận thu nhập vào ví |
-| | `POST` | `/api/transactions/expenses` | Bearer + BankGuard | Ghi nhận chi tiêu từ ví |
-| | `POST` | `/api/transactions/expenses/multi-wallet` | Bearer + BankGuard | Ghi nhận chi tiêu trừ nhiều ví |
-| | `GET` | `/api/transactions` | Bearer Token | Danh sách lịch sử giao dịch |
-| | `PATCH` | `/api/transactions/{id}` | Bearer Token | Sửa ghi chú/mô tả giao dịch |
-| | `POST` | `/api/transfers/internal` | Bearer + PIN/Bio | Chuyển tiền giữa các ví cá nhân |
-| | `POST` | `/api/transfers/p2p` | Bearer + PIN/Bio | Chuyển tiền P2P sang người dùng khác |
-| **Planning** | `GET` / `POST` | `/api/budgets` | Bearer Token | Quản lý hạn mức ngân sách tháng |
-| | `GET` / `POST` | `/api/goals` | Bearer Token | Quản lý mục tiêu tài chính |
-| | `POST` | `/api/goals/{id}/contribute` | Bearer + PIN | Nộp tiền vào mục tiêu |
-| | `POST` | `/api/goals/{id}/withdraw` | Bearer + PIN | Rút tiền từ mục tiêu về ví |
-| | `GET` / `POST` | `/api/recurring-transactions` | Bearer Token | Quản lý giao dịch định kỳ |
-| **Fixed Fund** | `POST` | `/api/v1/funds` | Bearer Token | Tạo quỹ nhóm mới (Fixed max 30) |
-| | `POST` | `/api/v1/funds/{id}/obligations/confirm`| Bearer (Owner) | Chốt định mức đóng góp nhóm |
-| | `POST` | `/api/v1/funds/{id}/contributions` | Bearer + PIN/Bio | Đóng góp tiền vào quỹ cố định |
-| | `PUT` | `/api/v1/funds/{id}/members/{userId}/spending-permission` | Bearer (Owner) | Cấp quyền CanSpend khi thành viên đạt 100% |
-| | `POST` | `/api/v1/funds/{id}/requests` | Bearer + EffectiveCanSpend | Chi tiêu tức thì từ quỹ cố định |
-| | `POST` | `/api/v1/funds/requests/{id}/report`| Bearer (Member) | Báo cáo chi tiêu bất thường (tạo SupportCase) |
-| **Free Fund** | `POST` | `/api/v1/funds/requests/{requestId}/review` | Bearer (Owner) | Duyệt/Từ chối chi tiêu hoặc rút vốn |
-| | `POST` | `/api/v1/funds/{id}/refund-preview` | Bearer Token | Xem trước số tiền nhận lại khi rời quỹ |
-| | `POST` | `/api/v1/funds/{id}/leave` | Bearer + PIN | Rút lui khỏi quỹ tự do |
-| **Hỗ trợ/Khiếu nại** | `POST` | `/api/cases/support` | Bearer User | Tạo Case trực tiếp gửi Admin |
-| | `GET` | `/api/cases/support` | Bearer User | Danh sách Case của chính User |
-| | `GET` | `/api/cases/support/{id}` | Bearer Case Owner | Chi tiết/lịch sử |
-| | `POST` | `/api/cases/support/{id}/messages` | Bearer Case Owner | Phản hồi/bổ sung thông tin |
-| | `POST` | `/api/cases/disputes` | Bearer User | **Deprecated 400**; không thiết kế tạo mới |
-| **Thông báo** | `GET` | `/api/notifications` | Bearer User | Inbox |
-| | `POST` | `/api/notifications/{id}/read` | Bearer User | Đánh dấu đã đọc |
-| | `POST` | `/api/notifications/read-all` | Bearer User | Đọc tất cả |
-| | `GET` / `PUT` | `/api/notifications/preferences` | Bearer User | Cấu hình nhận thông báo |
-| **SePay Demo** | `GET` | `/api/bank-connections` | Bearer Token | Xem liên kết ngân hàng của tài khoản |
-| | `POST` | `/api/bank-connections/test-mode/wallet-withdrawals` | Bearer + PIN/Bio | Khởi tạo rút tiền DEMO về ngân hàng TEST |
-| | `GET` | `/api/bank-connections/test-mode/wallet-withdrawals` | Bearer Token | Danh sách lịch sử yêu cầu rút tiền |
-| | `POST` | `/api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile` | Bearer Token | Đối soát tất toán rút tiền sandbox |
+### 3.4. Quản lý Phiên & Thu hồi (Session Management & Revocation)
+- `POST /api/users/me/sessions/revoke-all` hoặc `DELETE /api/users/me/sessions`: Thu hồi ngay lập tức toàn bộ phiên làm việc của người dùng (`204 NoContent`).
+- Mọi token cũ sau khi bị thu hồi sẽ nhận mã lỗi `401 Unauthorized`.
 
 ---
 
-## 7. HƯỚNG DẪN TÍCH HỢP CHO FRONTEND (GOOGLE AI STUDIO & MOBILE)
+## 4. BẢNG DANH MỤC API USER CHI TIẾT & CONTRACT DTO
 
-1. **Quản lý Token & Làm mới phiên tự động:**
-   - Lưu trữ `accessToken` trong bộ nhớ ứng dụng và `refreshToken` trong Secure Storage.
-   - Khi API trả về `HTTP 401 unauthorized`, tự động gọi `POST /api/auth/refresh` với `refreshToken`. Nếu thất bại, điều hướng về màn hình Đăng nhập.
-2. **Hiển thị Sinh trắc học Demo trên giao diện:**
-   - Màn hình Face ID / Vân tay hiển thị dialog trực quan cho người dùng theo thiết kế Demo Simulation của Frontend Google AI Studio (hoạt ảnh quét sinh trắc học trình diễn).
-   - **Quy tắc đăng nhập và xác thực API:** Để đăng nhập vào hệ thống hoặc thực hiện giao dịch qua API thực tế, Client phải sử dụng thông tin đăng nhập/mã PIN hợp lệ (`POST /api/auth/login`, `POST /api/auth/pin/verify`) hoặc WebAuthn credential đã đăng ký hợp lệ được ký mật mã từ client (`POST /api/auth/passkeys/login`), tuyệt đối không dùng shared demo private key hay cặp khóa mẫu sinh sẵn.
-3. **Xác nhận giao dịch tài chính lớn:**
-   - Với giao dịch chuyển tiền, rút tiền hoặc đóng quỹ: hiển thị popup tóm tắt (Số tiền, Người nhận, Phí 0đ).
-   - Yêu cầu người dùng xác nhận bằng Mã PIN 6 số hoặc Xác thực Sinh trắc học.
-   - Nếu chọn Sinh trắc học: gọi `POST /api/transaction-authorizations/options` lấy challenge $\rightarrow$ ký assertion $\rightarrow$ gọi `/verify`.
-4. **Xử lý trạng thái Nạp/Rút SePay Sandbox:**
-   - Sau khi tạo lệnh rút tiền thành công, trạng thái ban đầu là `Processing` (tiền trong ví đã được trừ/giữ chỗ).
-   - Hiển thị badge màu cam `Đang xử lý đối soát ngân hàng`.
-   - Cho phép người dùng bấm `Kiểm tra đối soát` (gọi endpoint `/reconcile`) hoặc chờ đối soát hoàn tất để chuyển sang badge màu xanh `Completed` (Đã chuyển về ngân hàng).
+| Phân Hệ | Method | Tuyến Đường (Route) | Quyền & Header | Request DTO Tóm Tắt | Trạng Thái Thành Công | Mã Lỗi Phổ Biến |
+|---|:---:|---|---|---|:---:|---|
+| **Auth** | `POST` | `/api/auth/register` | Anonymous | `{ email, password, fullName }` | `200 OK` | `409 duplicate_email` |
+| | `POST` | `/api/auth/email-verification/verify` | Anonymous | `{ email, otp }` | `200 OK` | `400 invalid_otp` |
+| | `POST` | `/api/auth/pin/setup` | Bearer TempToken | `{ pin: "123456" }` | `200 OK` | `400 weak_pin` |
+| | `POST` | `/api/auth/login` | Anonymous | `{ identifier, password, deviceName }` | `200 OK` | `401 wrong_password`, `403 account_unavailable` |
+| | `POST` | `/api/auth/pin/verify` | Anonymous | `{ challengeToken, pin, deviceName }` | `200 OK` | `401 pin_invalid`, `403 pin_locked` |
+| | `POST` | `/api/auth/refresh` | Anonymous | `{ refreshToken, deviceName }` | `200 OK` | `401 invalid_token` |
+| | `GET` | `/api/auth/sessions` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `DELETE`| `/api/auth/sessions/{id}` | Bearer User | Không có | `204 NoContent` | `404 session_not_found` |
+| | `DELETE`| `/api/users/me/sessions` | Bearer User | Không có | `204 NoContent` | `401 unauthorized` |
+| **Passkeys** | `POST` | `/api/auth/passkeys/register/options` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `POST` | `/api/auth/passkeys/register/verify` | Bearer User | `{ id, rawId, response: { clientDataJSON, attestationObject } }` | `200 OK` | `400 invalid_attestation` |
+| | `POST` | `/api/auth/passkeys/login/options` | Anonymous | `{ identifier }` | `200 OK` | `404 user_not_found` |
+| | `POST` | `/api/auth/passkeys/login/verify` | Anonymous | `{ id, rawId, response: { clientDataJSON, authenticatorData, signature, userHandle } }` | `200 OK` | `401 passkey_invalid` |
+| **Profile** | `GET` | `/api/users/me` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `PUT` | `/api/users/me/preferences` | Bearer User | `{ theme: "dark", language: "vi-VN" }` | `200 OK` | `400 invalid_preference` |
+| | `POST` | `/api/users/me/avatar` | Bearer User | Multipart `file` | `200 OK` | `400 file_too_large` |
+| **Ví (Wallets)** | `GET` | `/api/wallets` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `POST` | `/api/wallets` | Bearer User | `{ name: "Ví Tiết Kiệm", type: "Savings" }` | `201 Created` | `409 wallet_limit_reached`, `active_bank_required` |
+| | `PUT` | `/api/wallets/{id}` | Bearer User | `{ name: "Tên Mới" }` | `200 OK` | `404 wallet_not_found` |
+| | `DELETE`| `/api/wallets/{id}` | Bearer User | Không có | `204 NoContent` | `409 wallet_not_empty` |
+| **Thu/Chi** | `POST` | `/api/transactions/income` | Bearer User | `{ walletId, amount, categoryId, description }` | `200 OK` | `409 active_bank_required` |
+| | `POST` | `/api/transactions/expenses` | Bearer User | `{ walletId, amount, categoryId, description }` | `200 OK` | `400 insufficient_balance` |
+| | `POST` | `/api/transactions/expenses/multi-wallet` | Bearer User | `{ amount, categoryId, description, allocations: [{ walletId, amount }] }` | `200 OK` | `400 allocation_mismatch` |
+| | `GET` | `/api/transactions` | Bearer User | Query: `page, pageSize, categoryId, fromDate, toDate` | `200 OK` | `401 unauthorized` |
+| | `PATCH` | `/api/transactions/{id}` | Bearer User | `{ description: "Ghi chú mới" }` | `200 OK` | `404 transaction_not_found` |
+| **Chuyển tiền**| `POST` | `/api/transfers/internal` | Bearer User | `{ sourceWalletId, destinationWalletId, amount, securityPin }` | `200 OK` | `401 pin_invalid`, `403 account_restricted` |
+| | `POST` | `/api/transfers/p2p` | Bearer User | `{ recipientIdentifier, sourceWalletId, amount, note, securityPin }` | `200 OK` | `400 self_transfer`, `404 recipient_not_found` |
+| **Kế hoạch** | `GET/POST`| `/api/budgets` | Bearer User | `{ categoryId, amount, year, month }` | `200 OK` | `409 budget_exists` |
+| | `GET/POST`| `/api/goals` | Bearer User | `{ name, targetAmount, targetDate, walletId }` | `200 OK` | `400 invalid_target` |
+| | `POST` | `/api/goals/{id}/contribute`| Bearer User | `{ amount, walletId, securityPin }` | `200 OK` | `400 insufficient_balance` |
+| | `POST` | `/api/goals/{id}/withdraw` | Bearer User | `{ amount, walletId, securityPin }` | `200 OK` | `400 exceed_accumulated` |
+| | `GET/POST`| `/api/recurring-transactions` | Bearer User | `{ walletId, categoryId, amount, frequency, startDate }` | `200 OK` | `400 invalid_frequency` |
+| | `POST` | `/api/recurring-transactions/{id}/occurrences/{occId}/record` | Bearer User | `{ actualAmount, securityPin }` | `200 OK` | `409 occurrence_already_recorded` |
+| **Quỹ Nhóm V1** | `POST` | `/api/v1/funds` | Bearer User | `{ name, targetVnd, fundType: "Fixed\|Free" }` | `201 Created` | `409 active_group_limit` |
+| | `POST` | `/api/v1/funds/{id}/obligations/confirm` | Bearer (Owner) | `{ individualRequiredVnd: 500000 }` | `200 OK` | `403 fund_owner_required` |
+| | `POST` | `/api/v1/funds/{id}/contributions` | Bearer Member | `{ amount: 500000, walletId, securityPin }` | `200 OK` | `400 insufficient_balance` |
+| | `PUT` | `/api/v1/funds/{id}/members/{userId}/spending-permission` | Bearer (Owner) | `{ canSpend: true }` | `200 OK` | `400 contribution_not_completed` |
+| | `POST` | `/api/v1/funds/{id}/requests` | Bearer Member | `{ amount, description, idempotencyKey }` | `200 OK` | `403 spending_permission_denied` |
+| | `POST` | `/api/v1/funds/requests/{id}/report` | Bearer Member | `{ reason: "Báo cáo chi tiêu bất thường" }` | `200 OK` | `404 fund_not_found` |
+| | `POST` | `/api/v1/funds/{id}/activity-proposals` | Bearer Member | `{ targetVnd: 1000000, idempotencyKey, securityPin }` | `200 OK` | `409 activity_transition_in_progress` |
+| | `POST` | `/api/v1/funds/activity-proposals/{id}/settle` | Bearer (Owner) | `{ securityPin }` | `200 OK` | `409 activity_not_approved` |
+| | `POST` | `/api/v1/funds/elections/{id}/accept` | Bearer Winner | `{ securityPin }` | `200 OK` | `404 election_not_found` |
+| | `POST` | `/api/v1/funds/elections/{id}/reject` | Bearer Winner | `{ reason, securityPin }` | `200 OK` | `400 election_already_finished` |
+| **Hỗ trợ / Khiếu nại** | `POST` | `/api/cases/support` | Bearer User | `{ category, priority, subject, description, linkedTransactionId }` | `200 OK` | `400 invalid_category` |
+| | `GET` | `/api/cases/support` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `GET` | `/api/cases/support/{id}` | Bearer User | Không có | `200 OK` | `404 case_not_found` |
+| | `POST` | `/api/cases/support/{id}/messages` | Bearer User | `{ message: "Nội dung phản hồi" }` | `200 OK` | `404 case_not_found` |
+| | `POST` | `/api/cases/disputes` | Bearer User | `{ transactionId, reason }` | `400 Bad Request` | `dispute_workflow_deprecated` |
+| **Thông báo** | `GET` | `/api/notifications` | Bearer User | Query: `unreadOnly, page, pageSize` | `200 OK` | `401 unauthorized` |
+| | `POST` | `/api/notifications/{id}/read` | Bearer User | Không có | `204 NoContent` | `404 notification_not_found` |
+| | `POST` | `/api/notifications/read-all` | Bearer User | Không có | `204 NoContent` | `401 unauthorized` |
+| | `GET/PUT`| `/api/notifications/preferences` | Bearer User | `{ inAppEnabled, emailEnabled, pushEnabled }` | `200 OK` | `400 invalid_preference` |
+| **AI Assistant**| `POST` | `/api/ai/conversations` | Bearer User | `{ title: "Tư vấn tài chính" }` | `201 Created` | `401 unauthorized` |
+| | `POST` | `/api/ai/conversations/{id}/chat` | Bearer User | `{ message: "Tôi nên tiết kiệm thế nào?" }` | `200 OK` | `503 ai_unavailable` |
+| | `POST` | `/api/ai/action-proposals/{id}/execute` | Bearer User | `{ confirmed: true, securityPin }` | `200 OK` | `409 ai_action_not_pending` |
+| **SePay Sandbox**| `GET` | `/api/bank-connections` | Bearer User | Không có | `200 OK` | `401 unauthorized` |
+| | `POST` | `/api/bank-connections/test-mode/wallet-top-ups` | Bearer User | `{ bankConnectionId, amount: 100000 }` | `200 OK` | `404 connection_not_found` |
+| | `POST` | `/api/bank-connections/test-mode/wallet-withdrawals` | Bearer User | `{ bankConnectionId, amount: 50000, securityPin }` | `200 OK` | `400 insufficient_balance` |
+| | `POST` | `/api/bank-connections/test-mode/wallet-withdrawals/{id}/reconcile` | Bearer User | Không có | `200 OK` | `404 withdrawal_not_found` |
 
-## 8. Nguyên tắc triển khai UI User cho Codex
+---
 
-- Chỉ dựng màn hình/route cho role thực sự có quyền. Fund Owner là quyền trong quỹ, không tạo màn Admin thứ hai.
-- Với `Restricted`, vẫn cho người dùng xem dữ liệu và liên hệ Support; chặn thao tác ghi nợ. Với `Locked`, điều hướng về màn hình khóa/đăng nhập theo lỗi Backend.
-- Chỉ dùng dữ liệu động và DTO từ API đang chạy. Dữ liệu minh họa/fixture trong tài liệu không phải dữ liệu sản phẩm.
-- Không biến sandbox thành thanh toán tiền thật, không giả lập một giao dịch tài chính đã thành công.
-- Ưu tiên kiểm tra API của Backend local đã nghiệm thu và trạng thái đồng bộ GitHub trước khi kết nối UI.
+## 5. PHÂN ĐỊNH RANH GIỚI FRONTEND-ONLY VÀ HƯỚNG DẪN TÍCH HỢP
 
+### 5.1. Các hạng mục FRONTEND-ONLY / PENDING UI E2E
+Các tính năng sau đây bắt buộc phải có màn hình UI thiết bị thật hoặc native application wrapper mới kiểm chứng hoàn chỉnh:
+1. **Giao diện Chủ đề (Theme):** Hiển thị màu sắc `light`, `dark`, hoặc theo chế độ hệ điều hành `system`. Backend cung cấp API lưu trữ preference (`PUT /api/users/me/preferences`), Frontend tự chịu trách nhiệm render CSS / Theme Provider.
+2. **Ngôn ngữ (Localization):** Chuyển đổi hiển thị từ ngữ giữa Tiếng Việt (`vi-VN`) và Tiếng Anh (`en-US`) trên giao diện người dùng. Backend xử lý chuẩn format số tiền VND và UTC timestamp.
+3. **Responsive, Navigation & Animations:** Điều hướng màn hình (Stack/Tab navigation), chuyển cảnh, animation quét vân tay/khuôn mặt mockup trên Google AI Studio.
+4. **Cảm biến Sinh trắc học Phần cứng Native:** Việc tương tác trực tiếp với Secure Enclave (iOS) hoặc Android BiometricPrompt Keystore chỉ có thể thực hiện khi đóng gói ứng dụng native (React Native / Flutter / Swift / Kotlin). Backend đã sẵn sàng và nghiệm thu chuẩn W3C WebAuthn Level 2.
 
-## 9. PHỤ LỤC KIỂM KÊ ĐỦ NHÓM TÍNH NĂNG USER THEO NEWMAN 306 REQUESTS
-
-**Nguồn kiểm tra:** reports/newman/backend-user-final-verified.json (306 requests, 343 assertions PASS ngày 27/10/2026). Đây là baseline lịch sử, KHÔNG chứng minh tất cả route vẫn giữ nguyên trên Backend local sửa ngày 29/10. Đặc biệt create Dispute độc lập trong baseline đã bị ngừng; không dùng test cũ để đưa lại giao diện tạo Dispute.
-
-| Nhóm tính năng | Luồng hoạt động và quyền của User | API đại diện |
-|---|---|---|
-| Trang chủ | Xem chỉ số cá nhân và trạng thái tài chính; không hiện dữ liệu User khác | GET /api/dashboard |
-| Đăng ký & xác thực | Đăng ký → OTP → tạo PIN → login nhận challenge → PIN verify → session JWT/refresh; logout, đổi/quên mật khẩu, reset PIN | /api/auth/*, /api/security-pin/* |
-| Hồ sơ & tài khoản | Xem hồ sơ, avatar, theme/ngôn ngữ, đổi email qua OTP, quản lý/thu hồi sessions, gửi khôi phục tài khoản | /api/users/me/*, /api/account-recovery |
-| Bạn bè | Tìm theo email/SpendId, khám phá, mời → chấp nhận/từ chối/hủy → xem bạn bè → yêu thích → hủy kết bạn | /api/friends/* |
-| Ví | Tự có ví mặc định, tạo ví Savings/Emergency, xem số dư, đổi tên, đóng ví đủ điều kiện (tối đa 3 ví active) | /api/wallets/* |
-| Danh mục | Danh mục hệ thống và tự tạo; xem, sửa, lưu trữ/xóa theo quyền | /api/categories/* |
-| Chứng từ | Upload và tải minh chứng; bảo vệ ownership; hỗ trợ file trong hồ sơ Case | /api/evidence/*, /api/cases/attachments/* |
-| Thu/chi & lịch sử | Ghi nhận thu/chi; một khoản chi có thể phân bổ nhiều ví; xem chi tiết, lọc, sửa mô tả hoặc chỉnh khoản chi theo quy tắc | /api/transactions/* |
-| Chuyển tiền | Chuyển giữa ví của mình hoặc P2P; baseline còn có tìm người nhận bank-direct → tạo lệnh → xác nhận → xem lịch sử | /api/transfers/* |
-| Ngân sách | Tạo, theo dõi mức dùng, chỉnh giới hạn, xóa; cập nhật theo khoản chi thực tế | /api/budgets/* |
-| Mục tiêu | Tạo, xem tiến độ, góp/rút, chỉnh, xóa khi hợp lệ | /api/goals/* |
-| Giao dịch định kỳ | Tạo, xem, sửa, tạm dừng, tiếp tục, thực hiện kỳ, xóa | /api/recurring-transactions/* |
-| Tự phân loại | Tạo, xem, sửa và xóa quy tắc phân loại theo từ khóa giao dịch | /api/transaction-rules/* |
-| Ngân hàng liên kết | Xem, tạo link/challenge demo, xác nhận, hủy liên kết; không truy cập bank connection người khác | /api/bank-connections/* |
-| SePay Test Mode | Nạp: Pending → đối soát hợp lệ → Completed. Rút: Processing/hold → đối soát → Completed, lịch sử | /api/bank-connections/test-mode/* |
-| Giao dịch ngân hàng | Xem danh sách/chi tiết và phân loại lại giao dịch của tài khoản hợp lệ | /api/bank-transactions/* |
-| AI Assistant | Tạo/danh sách/sửa/xóa cuộc hội thoại, chat, upload/download tệp; xem action proposal → xác nhận execute hoặc cancel | /api/ai/* |
-| Thông báo & Push | Xem/tìm/đọc/xóa thông báo, sửa tùy chọn, đăng ký/hủy push installation | /api/notifications/*, /api/mobile/push/installations/* |
-| Hỗ trợ/Khiếu nại | Tạo SupportCase → Admin xử lý → User trao đổi/đính kèm → xem trạng thái kết quả; quỹ báo cáo khoản chi qua SupportCase | /api/cases/support/*, /api/v1/funds/requests/{id}/report |
-| Trạng thái hệ thống | Xem thông báo hệ thống và tình trạng maintenance | /api/system/announcements/active, /api/system/maintenance |
-
-### 9.1. Quỹ nhóm — 3 phạm vi phải phân biệt
-
-**Fixed Fund V2:** Owner tạo quỹ → mời thành viên → thành viên chấp nhận → Owner xác nhận nghĩa vụ đóng góp → các thành viên góp tiền → quỹ đạt 100% mục tiêu → Owner chỉ cấp CanSpend cho người đã góp đủ → EffectiveCanSpend được xác định theo trạng thái thực tế → chi hợp lệ tức thời → xem hoạt động/tài chính. Owner tự chi cũng phải góp đủ. Báo cáo khoản chi bất thường tạo SupportCase, không đảo Ledger hoặc tạo Dispute mới.
-
-**Free Fund:** Owner tạo/mời → các thành viên tự nguyện góp → thành viên tạo yêu cầu chi/rút → Owner duyệt/từ chối → xem tài chính/hoàn tiền dự kiến → rời quỹ theo điều kiện.
-
-**Governance V1 trong baseline:** Có API lời mời/review, chuyển quyền Owner, activity proposal/voting/settlement, bầu cử chủ quỹ (ứng cử, bỏ phiếu, nhận/từ chối), rời quỹ, kick, dissolve. Cần xác nhận quy tắc Backend local cuối trước khi mở UI cho từng nghiệp vụ; không khôi phục cơ chế Pending24h hay tạm giữ tranh chấp đã bị bỏ.
-
-**Legacy groups (tương thích, /api/groups/*):** Có tạo/sửa nhóm, mời/nhận lời, chuyển Owner, gắn bank receiving, đóng quỹ, thu tiền theo đợt, yêu cầu thanh toán, chi phí, activity log, xin giải thể, bỏ phiếu, xử lý hoàn trả và hoàn tất giải thể. Các route này đã xuất hiện trong suite User 27/10 nhưng KHÔNG được tự động xem là menu quỹ V1 mới; chỉ dựng màn hình nếu được Product Owner chọn giữ tương thích.
-
-### 9.2. Quyền, dữ liệu và giới hạn
-
-- User Active chỉ xem/sửa dữ liệu của mình; Fund Owner có thêm quyền trong quỹ mình sở hữu, không thành Admin hệ thống.
-- Restricted vẫn được đăng nhập/đọc/nhận inbound hợp lệ/gửi SupportCase, nhưng không thể ghi nợ tiền ra. Locked không login/refresh, token cũ bị thu hồi.
-- SystemAdmin (0), SuperAdmin (3) bị vô hiệu quyền; Admin (2) có giao diện riêng và không thể tự ý sửa Ledger hoặc xem tài chính cá nhân không theo Case-scoped.
-- Các bước tạo Dispute độc lập trong User E2E 27/10 là lịch sử: Backend local mới trả dispute_workflow_deprecated; UI V1 KHÔNG có form tạo mới. Chỉ xem lịch sử khi API cho phép.
-- Không gọi Gemini live, SePay real money, email/push external hoặc sinh trắc học thiết bị thật là đã xác minh khi chưa có chứng cứ. Không hardcode fixture dữ liệu test.
+### 5.2. Hướng dẫn Tích hợp an toàn cho Codex
+- **Quản lý Token:** Lưu trữ `accessToken` trong RAM/State, `refreshToken` trong Encrypted Storage. Tự động gọi `/api/auth/refresh` khi gặp mã `401`. Nếu refresh thất bại, chuyển hướng về màn hình đăng nhập.
+- **Xử lý Chế tài Tài khoản:**
+  - Nếu API trả về `403` với `code: "account_restricted"`: Hiển thị banner cảnh báo màu vàng "Tài khoản đang bị hạn chế giao dịch tài chính. Bạn vẫn có thể xem số dư và liên hệ Hỗ trợ". Vô hiệu hóa các nút Chuyển tiền, Chi tiêu, Rút tiền.
+  - Nếu API trả về `403` với `code: "account_unavailable"`: Đăng xuất người dùng, chuyển về màn hình thông báo "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên để được hỗ trợ".
+- **Giao dịch Sandbox SePay:** Không giả định một lệnh rút tiền là tiền thật; hiển thị rõ nhãn `Môi trường Thử nghiệm Sandbox` để tránh nhầm lẫn cho người dùng.

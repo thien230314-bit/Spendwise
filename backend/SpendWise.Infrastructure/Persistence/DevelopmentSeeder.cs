@@ -33,11 +33,11 @@ public static class DevelopmentSeeder
             User("Trần Quốc Nam", "nam@spendwise.local", "nam", password),
             User("Trần Mai Anh", "maianh@spendwise.local", "maianh", password),
             User(
-                "SpendWise System Admin",
-                "admin@spendwise.local",
-                "admin",
+                "SpendWise Administrator",
+                "lethien241205@gmail.com",
+                "lethien241205",
                 password,
-                SystemRole.SystemAdmin)
+                SystemRole.Admin)
         };
         db.Users.AddRange(users);
         await db.SaveChangesAsync(ct);
@@ -165,7 +165,7 @@ public static class DevelopmentSeeder
             NormalizedSpendId = spendId.ToUpperInvariant(),
             PasswordHash = password.Hash("Demo@12345"),
             SystemRole = role,
-            // Demo User và SystemAdmin có sẵn không đi qua registration verification.
+            // Demo User and Admin seeded without registration verification.
             EmailVerifiedAt = DateTime.UtcNow
         };
     }

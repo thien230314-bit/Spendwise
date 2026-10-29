@@ -35,7 +35,7 @@ public sealed class AdminOperationsController(IMediator mediator, ICurrentUser c
         mediator.Send(new PublishAnnouncementCommand(AdminId(), request), ct);
 
     [HttpDelete("announcements/{id:guid}")]
-    public async Task<IActionResult> Deactivate(Guid id, DeactivateAnnouncementRequest request, CancellationToken ct)
+    public async Task<IActionResult> Deactivate(Guid id, [FromBody] DeactivateAnnouncementRequest request, CancellationToken ct)
     {
         await mediator.Send(new DeactivateAnnouncementCommand(AdminId(), id, request), ct);
         return NoContent();

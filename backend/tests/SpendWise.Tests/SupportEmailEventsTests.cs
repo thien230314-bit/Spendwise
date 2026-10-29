@@ -163,7 +163,7 @@ public sealed class SupportEmailEventsTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await fixture.AddUserAsync("Resolved owner");
-        var admin = await fixture.AddUserAsync("Support admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Support admin", role: SystemRole.Admin);
         var created = await CreateCaseAsync(fixture, owner.Id);
         var workflow = Workflow(fixture);
 
@@ -197,7 +197,7 @@ public sealed class SupportEmailEventsTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await fixture.AddUserAsync("Rejected owner");
-        var admin = await fixture.AddUserAsync("Legacy admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Legacy admin", role: SystemRole.Admin);
         var created = await CreateCaseAsync(fixture, owner.Id);
         var reason = "Không đủ thông tin để xác minh yêu cầu.";
         var handler = new UpdateAdminCaseCommandHandler(
@@ -234,7 +234,7 @@ public sealed class SupportEmailEventsTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await fixture.AddUserAsync("Message owner");
-        var admin = await fixture.AddUserAsync("Message admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Message admin", role: SystemRole.Admin);
         var first = await CreateCaseAsync(fixture, owner.Id);
         var second = await CreateCaseAsync(fixture, owner.Id);
         var workflow = Workflow(fixture);
@@ -258,7 +258,7 @@ public sealed class SupportEmailEventsTests
         var owner = await fixture.AddUserAsync("Unverified decision owner");
         owner.EmailVerifiedAt = null;
         await fixture.Db.SaveChangesAsync();
-        var admin = await fixture.AddUserAsync("Decision admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Decision admin", role: SystemRole.Admin);
         var created = await CreateCaseAsync(fixture, owner.Id);
 
         var result = await Workflow(fixture).Handle(
@@ -316,7 +316,7 @@ public sealed class SupportEmailEventsTests
     {
         await using var fixture = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await fixture.AddUserAsync("Transition rollback owner");
-        var admin = await fixture.AddUserAsync("Transition rollback admin", role: SystemRole.SystemAdmin);
+        var admin = await fixture.AddUserAsync("Transition rollback admin", role: SystemRole.Admin);
         var created = await CreateCaseAsync(fixture, owner.Id);
         await fixture.Db.Database.ExecuteSqlRawAsync("""
             CREATE TRIGGER fail_support_resolution_outbox

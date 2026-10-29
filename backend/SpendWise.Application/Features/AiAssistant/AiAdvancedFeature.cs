@@ -208,7 +208,8 @@ public sealed class AiToolRegistry(ISpendWiseDbContext db, IMediator mediator, I
             "accept_friend_request" => await mediator.Send(new AcceptFriendRequestCommand(userId, RequiredGuid(args, "request_id")), cancellationToken),
             "reject_friend_request" => await mediator.Send(new RejectFriendRequestCommand(userId, RequiredGuid(args, "request_id")), cancellationToken),
             "create_support_case" => await mediator.Send(new CreateSupportCaseCommand(userId, new CreateSupportCaseRequest(
-                OptionalString(args, "category") ?? "General", OptionalString(args, "priority") ?? "Normal", null,
+                OptionalString(args, "category") ?? "general", OptionalString(args, "priority") ?? "Normal",
+                args.TryGetProperty("linked_transaction_id", out var tx) && tx.TryGetGuid(out var txGuid) ? txGuid : null,
                 RequiredString(args, "subject"), OptionalString(args, "description") ?? string.Empty)), cancellationToken),
             "reply_support_case" => await mediator.Send(new AddSupportMessageCommand(userId, false, RequiredGuid(args, "case_id"),
                 new CaseMessageRequest(RequiredString(args, "message", 4000))), cancellationToken),
@@ -289,7 +290,7 @@ public sealed class AiToolRegistry(ISpendWiseDbContext db, IMediator mediator, I
         {
             "send_friend_request" => (["contact", "message"], ["contact"]),
             "accept_friend_request" or "reject_friend_request" => (["request_id"], ["request_id"]),
-            "create_support_case" => (["subject", "description", "category", "priority"], ["subject"]),
+            "create_support_case" => (["subject", "description", "category", "priority", "linked_transaction_id"], ["subject"]),
             "reply_support_case" => (["case_id", "message"], ["case_id", "message"]),
             "create_recurring" => (["title", "description", "wallet_id", "category_id", "kind", "amount", "frequency", "next_run_at", "is_subscription"],
                 ["title", "description", "wallet_id", "category_id", "kind", "amount", "frequency", "next_run_at"]),
@@ -461,7 +462,7 @@ public sealed class AiToolRegistry(ISpendWiseDbContext db, IMediator mediator, I
         var properties = name switch
         {
             "send_friend_request" => "\"contact\":{\"type\":\"string\",\"maxLength\":160},\"message\":{\"type\":\"string\",\"maxLength\":300}",
-            "create_support_case" => "\"subject\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"description\":{\"type\":\"string\",\"maxLength\":2000},\"category\":{\"type\":\"string\",\"maxLength\":80},\"priority\":{\"type\":\"string\",\"maxLength\":40}",
+            "create_support_case" => "\"subject\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"description\":{\"type\":\"string\",\"maxLength\":2000},\"category\":{\"type\":\"string\",\"maxLength\":80},\"priority\":{\"type\":\"string\",\"maxLength\":40},\"linked_transaction_id\":{\"type\":\"string\",\"format\":\"uuid\"}",
             "search_transactions" => "\"search\":{\"type\":\"string\",\"maxLength\":160}",
             _ => $"\"{required}\":{{\"type\":\"string\",\"format\":\"uuid\"}}"
         };

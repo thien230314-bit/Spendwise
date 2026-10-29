@@ -17,8 +17,12 @@ public sealed class BusinessAccessMiddleware(RequestDelegate next)
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var path = context.Request.Path.Value ?? string.Empty;
-            if ((context.User.IsInRole("SystemAdmin") || context.User.IsInRole("Admin")
-                    || context.User.IsInRole("SuperAdmin")) && IsOrdinaryUserApi(path))
+            if (context.User.IsInRole("SystemAdmin") || context.User.IsInRole("SuperAdmin"))
+            {
+                throw new ForbiddenException("legacy_role_rejected", "Legacy administrative roles (SystemAdmin/SuperAdmin) are disabled in V1.0.");
+            }
+
+            if (context.User.IsInRole("Admin") && IsOrdinaryUserApi(path))
             {
                 throw new ForbiddenException("user_role_required", "This endpoint is available to normal users only.");
             }
@@ -52,6 +56,7 @@ public sealed class BusinessAccessMiddleware(RequestDelegate next)
         || path.StartsWith("/api/v1/admin/", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/api/v1/system/maintenance", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/api/v1/system/broadcasts", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/api/operations", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/api/security-pin", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/api/account-recovery", StringComparison.OrdinalIgnoreCase)

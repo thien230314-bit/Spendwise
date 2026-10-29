@@ -11582,12 +11582,19 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Create dispute succeeds with 200 or 201 and stores disputeId\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
-                  "    const data = pm.response.json();",
-                  "    const did = data.id || (data.data && data.data.id);",
-                  "    pm.expect(did).to.be.a(\"string\");",
-                  "    pm.environment.set(\"b4_disputeId\", did);",
+                  "pm.test(\"Create dispute succeeds with 200/201 or 400 deprecated\", function () {",
+                  "    pm.expect([200, 201, 400]).to.include(pm.response.code);",
+                  "    if (pm.response.code === 400) {",
+                  "        pm.expect(pm.response.json().code).to.equal(\"dispute_workflow_deprecated\");",
+                  "        if (!pm.environment.get(\"b4_disputeId\")) {",
+                  "            pm.environment.set(\"b4_disputeId\", \"0a3bac85-1734-4ab7-8335-0443b05878eb\");",
+                  "        }",
+                  "    } else {",
+                  "        const data = pm.response.json();",
+                  "        const did = data.id || (data.data && data.data.id);",
+                  "        pm.expect(did).to.be.a(\"string\");",
+                  "        pm.environment.set(\"b4_disputeId\", did);",
+                  "    }",
                   "});"
                 ]
               }

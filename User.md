@@ -1,7 +1,7 @@
 # SPENDWISE — USER MOBILE PRODUCT SPECIFICATION & BACKEND API CONTRACT
 
-> **Current Acceptance Status (2026-10-27):**  
-> **`BACKEND USER DEMO — ACCEPTED & LOCKED`**  
+> **Nghiệm thu User baseline: 2026-10-27; hướng dẫn UI cập nhật: 2026-10-29.**  
+> **`USER BASELINE — ACCEPTED`** (306 requests/343 assertions là lượt chạy lịch sử; chưa chứng minh đã chạy lại trên mọi thay đổi Backend Admin sau đó).  
 > - **Full Newman E2E Suite (Backend User Demo Baseline):** **306 requests, 343/343 assertions PASS, 0 FAIL, Exit Code 0**.  
 > - **Bằng chứng Nghiệm thu (User Demo Locked):** [`reports/newman/backend-user-final-verified-summary.md`](./reports/newman/backend-user-final-verified-summary.md), [`reports/newman/backend-user-final-lock.md`](./reports/newman/backend-user-final-lock.md) (file raw execution JSON `backend-user-final-verified.json` lưu trữ nội bộ).  
 > - **Baseline Tested Commit SHA:** `5ce3ab8ff02adf2dd267bcbb03f41627bed37f98` (cùng các commit hardening sở hữu ngân hàng và bảo mật sinh trắc học tiếp theo).  
@@ -25,11 +25,30 @@ SpendWise là ứng dụng di động hỗ trợ quản lý tài chính cá nhâ
 
 ### 1.2. Ranh giới kiến trúc & Nguyên tắc bảo mật
 - **Nền tảng Backend:** ASP.NET Core (.NET 10 Kestrel) kiến trúc Clean Architecture: Domain Entities $\rightarrow$ Application CQRS Handlers $\rightarrow$ Infrastructure EF Core $\rightarrow$ API Controllers.
-- **Ranh giới Actor:** Người dùng thông thường (`SystemRole.User`) chỉ thao tác qua Mobile App. Không có vai trò `SuperAdmin`. Quyền Chủ quỹ (`Fund Owner`) là vai trò nội bộ trong một quỹ nhóm cụ thể, hoàn toàn tách biệt với Admin hệ thống (`System Admin`).
+- **Ranh giới Actor:** `SystemRole.User = 1` là User, `SystemRole.Admin = 2` là Admin hệ thống duy nhất. `SystemAdmin = 0` và `SuperAdmin = 3` là giá trị legacy bị chặn quyền hoạt động. `Fund Owner` vẫn là User, chỉ quản lý quỹ mình sở hữu, không có quyền Admin hệ thống.
 - **Bảo mật giao dịch:** Mọi lệnh ghi biến động số dư yêu cầu mã PIN bảo mật 6 số (`SecurityPin`) hoặc chữ ký sinh trắc học phần cứng (`WebAuthn / FIDO2 Level 2`). Khóa chống trùng lặp (`IdempotencyKey`) và phạm vi (`IdempotencyScope`) bảo đảm tính bất biến (idempotent) tuyệt đối, không double-posting.
 
 ---
 
+> [!IMPORTANT]
+> **HƯỚNG DẪN CODEX / FRONTEND:** File này là đặc tả UI User. Backend Admin/Dispute/role đã thay đổi trên **workspace local** nhưng chưa được push lên GitHub `main` trong lượt kiểm toán cuối. Khi tích hợp cần kiểm tra method/route/DTO ở API đang chạy; không coi code `main` cũ là hợp đồng đã triển khai. SePay real money và Gemini live provider chưa được xác minh đầy đủ.
+
+### 1.3. Bảng phân quyền và trạng thái tài khoản cho giao diện
+
+| Actor / trạng thái | Quyền và hành vi UI |
+|---|---|
+| `User` / `Active` | Dashboard cá nhân, ví, giao dịch, chuyển tiền, ngân sách, mục tiêu, định kỳ, nhóm quỹ, ngân hàng demo, AI, thông báo, hỗ trợ/khiếu nại, hồ sơ |
+| `User` / `Restricted` | Đăng nhập và đọc dữ liệu, nhận tiền hợp lệ, gửi SupportCase; **không được ghi nợ tiền ra** (`403 account_restricted`) |
+| `User` / `Locked` | Chặn login/refresh, thu hồi phiên. Sau khi mở khóa phải đăng nhập lại; không tạo màn hình giao dịch khi đã bị khóa |
+| `Fund Owner` | User có quyền duyệt/cấp quyền và quản lý thành viên trong quỹ sở hữu, **không** có quyền Admin hệ thống |
+| `Admin = 2` | UI quản trị riêng, không được dùng để giả vai trò User trong nghiệp vụ tài chính |
+| `SystemAdmin = 0`, `SuperAdmin = 3` | Legacy, không cấp quyền hoặc hiển thị UI Admin |
+
+**Sitemap UI User:** Đăng ký/OTP → Đăng nhập/PIN/Passkey → Home → Ví/Giao dịch → Ngân sách/Mục tiêu/Định kỳ → Nhóm quỹ (Owner/Member) → Ngân hàng demo → AI Assistant → Thông báo → Hỗ trợ/Khiếu nại → Hồ sơ/Cài đặt/Bảo mật.
+
+**Không chỉ ẩn nút UI:** Backend luôn xác thực ownership, trạng thái User và role. Frontend xử lý `401`, `403`, `409`, lỗi PIN và trường hợp phiên hết hạn bằng UX phù hợp.
+
+---
 ## 2. XÁC THỰC, TÀI KHOẢN & SINH TRẮC HỌC (AUTHENTICATION & SECURITY)
 
 ### 2.1. Chu trình xác thực người dùng cơ bản
@@ -116,10 +135,10 @@ Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bả
 >    - Thành viên đã đóng đủ 100% nghĩa vụ cá nhân.
 >    - Quỹ nhóm đã đạt 100% mục tiêu ban đầu (`TargetVnd`).
 >    - Thành viên đã được cấp quyền `CanSpend`.
->    - Quỹ đang ở trạng thái Hoạt động (`Active`), không có cuộc bầu cử hoặc tranh chấp đang diễn ra.
+>    - Quỹ đang ở trạng thái Hoạt động (`Active`), tuân thủ các quy tắc governance và điều kiện chi tiêu của quỹ (báo cáo chi tiêu đã hoàn thành không tự đảo giao dịch).
 > 4. **Quyền chi của Chủ quỹ (Owner):** Chủ quỹ không cần cờ `CanSpend`, nhưng **bắt buộc phải tự đóng đủ 100% nghĩa vụ của mình và quỹ phải đạt 100% mục tiêu nhóm** mới được chi tiêu.
 > 5. **Bảo toàn trạng thái hoàn thành:** Khi quỹ đã đạt 100% mục tiêu, các khoản chi hợp lệ làm giảm số dư tiền mặt trong ví quỹ **KHÔNG làm mất trạng thái hoàn thành của nhóm** (hệ thống so sánh tổng đóng góp lịch sử hợp lệ với `TargetVnd`).
-> 6. **Báo cáo khoản chi bất thường (`POST /api/v1/funds/requests/{id}/report`):** Tạo `SupportCase` tranh chấp cho Admin điều tra; **tuyệt đối không tự động đảo ngược tiền (no auto-clawback)** và không can thiệp vào bút toán sổ cái của khoản chi đã hoàn tất.
+> 6. **Báo cáo khoản chi bất thường (`POST /api/v1/funds/requests/{id}/report`):** Tạo `SupportCase` Khiếu nại gửi Admin điều tra, không tạo Dispute độc lập mới; **tuyệt đối không tự động đảo ngược tiền (no auto-clawback)** và không can thiệp vào bút toán sổ cái của khoản chi đã hoàn tất.
 
 ### 4.2. Quỹ Tự do (Free Fund)
 - Không áp đặt nghĩa vụ đóng góp cố định; các thành viên tự nguyện đóng góp theo nhu cầu.
@@ -162,6 +181,30 @@ Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bả
 
 ---
 
+## 5B. HỖ TRỢ/KHIẾU NẠI, THÔNG BÁO VÀ AI ASSISTANT
+
+### 5B.1. Luồng Hỗ trợ/Khiếu nại trực tiếp cho Admin
+
+- `POST /api/cases/support`: User tạo hồ sơ với `category`, `priority`, `subject`, `description`; `linkedTransactionId` tùy chọn nếu có giao dịch hợp lệ của User. Danh mục ví dụ: `general`, `complaint_transaction`. Không bắt buộc đi qua Gemini.
+- `GET /api/cases/support`: danh sách Case của User. `GET /api/cases/support/{id}`: chi tiết, trạng thái, lịch sử và tệp.
+- `POST /api/cases/support/{id}/messages`: User bổ sung thông tin hoặc trả lời Admin; có API multipart riêng nếu đính kèm file.
+- Luồng UI: User gửi → Admin tiếp nhận → Admin phản hồi/yêu cầu thông tin → User bổ sung → Admin `resolved`/`rejected` → User đọc phản hồi và thông báo.
+- `POST /api/v1/funds/requests/{id}/report`: báo cáo chi tiêu quỹ bất thường, tạo **SupportCase** để Admin điều tra, **không tự hoàn tiền, không tự sửa Ledger**.
+- `POST /api/cases/disputes` đã deprecated trong Backend local, trả `400 dispute_workflow_deprecated`. **Không thiết kế form tạo Tranh chấp độc lập mới.** Hồ sơ Dispute lịch sử chỉ hiển thị read-only theo API còn hỗ trợ.
+
+### 5B.2. Hộp thư thông báo User
+
+- `GET /api/notifications`: danh sách; `POST /api/notifications/{id}/read`: đọc một; `POST /api/notifications/read-all`: đọc tất cả.
+- `GET /api/notifications/preferences`, `PUT /api/notifications/preferences`: thiết lập nhận thông báo.
+- User nhận được broadcast từ Admin; hiển thị unread count, detail, trạng thái loading/empty/error. Không đánh đồng in-app delivered với email/push delivered.
+
+### 5B.3. AI Assistant
+
+- AI hỗ trợ tư vấn và gợi ý; **không thay thế** việc User gửi Khiếu nại trực tiếp và không tự thực thi hành động ghi nợ chỉ bằng nội dung chat.
+- Các công cụ AI tạo hành động nhạy cảm cần xác nhận và authorization ở Backend; không dùng UI simulation để vượt qua PIN/WebAuthn.
+- Endpoint/DTO AI User phải đối chiếu Controller đang chạy khi tích hợp, không tự sáng tạo endpoint dựa trên ảnh UI.
+
+---
 ## 6. DANH MỤC API USER CHI TIẾT (API CONTRACT)
 
 | Phân hệ | Phương thức | Tuyến đường (Route) | Yêu cầu xác thực | Mô tả nghiệp vụ |
@@ -207,10 +250,19 @@ Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bả
 | | `POST` | `/api/v1/funds/{id}/contributions` | Bearer + PIN/Bio | Đóng góp tiền vào quỹ cố định |
 | | `PUT` | `/api/v1/funds/{id}/members/{userId}/spending-permission` | Bearer (Owner) | Cấp quyền CanSpend khi thành viên đạt 100% |
 | | `POST` | `/api/v1/funds/{id}/requests` | Bearer + EffectiveCanSpend | Chi tiêu tức thì từ quỹ cố định |
-| | `POST` | `/api/v1/funds/requests/{id}/report`| Bearer (Member) | Báo cáo chi tiêu bất thường (tạo dispute) |
+| | `POST` | `/api/v1/funds/requests/{id}/report`| Bearer (Member) | Báo cáo chi tiêu bất thường (tạo SupportCase) |
 | **Free Fund** | `POST` | `/api/v1/funds/requests/{requestId}/review` | Bearer (Owner) | Duyệt/Từ chối chi tiêu hoặc rút vốn |
 | | `POST` | `/api/v1/funds/{id}/refund-preview` | Bearer Token | Xem trước số tiền nhận lại khi rời quỹ |
 | | `POST` | `/api/v1/funds/{id}/leave` | Bearer + PIN | Rút lui khỏi quỹ tự do |
+| **Hỗ trợ/Khiếu nại** | `POST` | `/api/cases/support` | Bearer User | Tạo Case trực tiếp gửi Admin |
+| | `GET` | `/api/cases/support` | Bearer User | Danh sách Case của chính User |
+| | `GET` | `/api/cases/support/{id}` | Bearer Case Owner | Chi tiết/lịch sử |
+| | `POST` | `/api/cases/support/{id}/messages` | Bearer Case Owner | Phản hồi/bổ sung thông tin |
+| | `POST` | `/api/cases/disputes` | Bearer User | **Deprecated 400**; không thiết kế tạo mới |
+| **Thông báo** | `GET` | `/api/notifications` | Bearer User | Inbox |
+| | `POST` | `/api/notifications/{id}/read` | Bearer User | Đánh dấu đã đọc |
+| | `POST` | `/api/notifications/read-all` | Bearer User | Đọc tất cả |
+| | `GET` / `PUT` | `/api/notifications/preferences` | Bearer User | Cấu hình nhận thông báo |
 | **SePay Demo** | `GET` | `/api/bank-connections` | Bearer Token | Xem liên kết ngân hàng của tài khoản |
 | | `POST` | `/api/bank-connections/test-mode/wallet-withdrawals` | Bearer + PIN/Bio | Khởi tạo rút tiền DEMO về ngân hàng TEST |
 | | `GET` | `/api/bank-connections/test-mode/wallet-withdrawals` | Bearer Token | Danh sách lịch sử yêu cầu rút tiền |
@@ -234,3 +286,11 @@ Mọi biến động số dư ví (ghi có hoặc ghi nợ) đều được bả
    - Sau khi tạo lệnh rút tiền thành công, trạng thái ban đầu là `Processing` (tiền trong ví đã được trừ/giữ chỗ).
    - Hiển thị badge màu cam `Đang xử lý đối soát ngân hàng`.
    - Cho phép người dùng bấm `Kiểm tra đối soát` (gọi endpoint `/reconcile`) hoặc chờ đối soát hoàn tất để chuyển sang badge màu xanh `Completed` (Đã chuyển về ngân hàng).
+
+## 8. Nguyên tắc triển khai UI User cho Codex
+
+- Chỉ dựng màn hình/route cho role thực sự có quyền. Fund Owner là quyền trong quỹ, không tạo màn Admin thứ hai.
+- Với `Restricted`, vẫn cho người dùng xem dữ liệu và liên hệ Support; chặn thao tác ghi nợ. Với `Locked`, điều hướng về màn hình khóa/đăng nhập theo lỗi Backend.
+- Chỉ dùng dữ liệu động và DTO từ API đang chạy. Dữ liệu minh họa/fixture trong tài liệu không phải dữ liệu sản phẩm.
+- Không biến sandbox thành thanh toán tiền thật, không giả lập một giao dịch tài chính đã thành công.
+- Ưu tiên kiểm tra API của Backend local đã nghiệm thu và trạng thái đồng bộ GitHub trước khi kết nối UI.

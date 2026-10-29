@@ -127,24 +127,28 @@ Authorization: Bearer <admin_access_token>
 ]
 ```
 
-#### ADM-06: Xem Hồ sơ Người dùng (Case-Scoped Access)
+#### ADM-06: Xem Hồ sơ Người dùng (Case-Scoped Access - CaseScopedUserProfileResult)
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
-- **Mô tả:** Xem chi tiết thông tin và tài sản người dùng gắn liền với vụ việc hỗ trợ đang thụ lý.
+- **Mô tả:** Xem chi tiết thông tin và tài sản người dùng gắn liền với vụ việc hỗ trợ đang thụ lý. Trả về đúng hợp đồng `CaseScopedUserProfileResult`.
 - **Request Body:**
 ```json
 {
   "reason": "Điều tra khiếu nại chuyển tiền sai số dư hồ sơ CASE-891"
 }
 ```
-- **Response `200 OK`:**
+- **Response `200 OK` (`CaseScopedUserProfileResult`):**
 ```json
 {
   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "fullName": "Nguyen Van A",
   "email": "user@example.com",
+  "fullName": "Nguyen Van A",
+  "phoneNumber": "0912345678",
   "status": "Active",
+  "role": "User",
+  "createdAt": "2026-10-20T08:00:00Z",
   "totalBalance": 5000000.00,
-  "walletsCount": 2
+  "walletsCount": 2,
+  "accessAuditLogged": true
 }
 ```
 

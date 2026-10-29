@@ -16,10 +16,12 @@
 │ 1. Backend User Acceptance Suite (Newman)              │      306 requests │         343 / 343 │ PASS (100%) │
 │ 2. Backend Admin Acceptance Suite (Newman)             │       80 requests │         138 / 138 │ PASS (100%) │
 │ 3. Support & Direct Complaint E2E Flow (Newman)        │       22 requests │           42 / 42 │ PASS (100%) │
-│ 4. Dynamic Email Lifecycle E2E Suite (xUnit)          │          6 tests  │           32 / 32 │ PASS (100%) │
-│ 5. Targeted .NET Regression Suite (xUnit)              │         82 tests  │           82 / 82 │ PASS (100%) │
+│ 4. Financial Happy-Path Real Suite (Newman)            │       32 requests │           32 / 32 │ PASS (100%) │
+│ 5. Dynamic Email Lifecycle E2E Suite (xUnit)          │          6 tests  │           32 / 32 │ PASS (100%) │
+│ 6. Targeted .NET Regression Suite (xUnit)              │         82 tests  │           82 / 82 │ PASS (100%) │
+│ 7. SePay Test Mode Banking Security Tests (xUnit)      │         16 tests  │           16 / 16 │ PASS (100%) │
 ├────────────────────────────────────────────────────────┼───────────────────┼───────────────────┼─────────────┤
-│ TỔNG CỘNG THỰC THI                                     │ 408 reqs + 88 tst │    637 Assertions │ 0 THẤT BẠI  │
+│ TỔNG CỘNG THỰC THI                                     │ 440 reqs + 104 tst│    685 Assertions │ 0 THẤT BẠI  │
 │ KẾT QUẢ BIÊN DỊCH (`dotnet build SpendWise.API`)        │ 0 Cảnh báo        │ 0 Lỗi             │ BUILD PASS  │
 └────────────────────────────────────────────────────────┴───────────────────┴───────────────────┴─────────────┘
 ```
@@ -303,3 +305,116 @@
   * Chi tiêu nội bộ & chuyển tiền P2P: Cân bằng số học Delta = 0.
   * Tổng tiền còn lại: `400.000 - 15.000 - 15.000 - 10.000 = 330.000 VND`.
   * **Sai lệch kiểm toán (Discrepancy):** **0.00 VND (100% Khớp tuyệt đối)**.
+
+
+---
+
+## 6. BÁO CÁO ĐỐI SOÁT CHUYÊN SÂU & NGHIỆM THU TÀI CHÍNH CUỐI CÙNG (FINAL FINANCIAL ACCEPTANCE)
+
+> **Thời điểm chốt nghiệm thu:** 29/10/2026 — 20:06:00+07:00  
+> **Cơ sở dữ liệu kiểm nghiệm:** Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02` / `SpendWise_E2E_G4` (SQL02 cách ly tuyệt đối).  
+> **Dịch vụ API Backend:** `http://127.0.0.1:5158` (Kestrel Release Daemon).  
+> **Báo cáo Newman:** `reports/newman/FINANCIAL-HAPPY-PATH-E2E-REPORT.json` (32/32 assertions PASS 100%).
+
+### 6.1. Báo Cáo Đối Soát Dòng Tiền & Nguồn Gốc Số Học Khoản 30.000đ (Task 1)
+
+#### A. Bản Chất Số Học Của Khoản 30.000đ
+Trong báo cáo kiểm thử trước đó, tổng kết có ghi:
+- Tổng tiền vào (Income ban đầu): 400.000đ (User A: 200.000đ, User B: 200.000đ).
+- Tổng chi tiêu + Tạm giữ rút tiền + Chi quỹ: 40.000đ (Chi tiêu cá nhân A: 15.000đ, Tạm giữ rút tiền B: 15.000đ, Chi tiêu quỹ: 10.000đ).
+- Báo cáo ghi tổng tài sản cuối là 330.000đ, dẫn đến chênh lệch biểu kiến: $400.000 - 40.000 = 360.000 \neq 330.000$ (thiếu 30.000đ).
+
+**Kết quả kiểm tra trực tiếp trên SQL02 khẳng định:**
+1. **Nguồn gốc thứ nhất (20.000đ góp quỹ nhóm):** User A đã đóng 20.000đ vào Quỹ nhóm chung (`SharedFunds`). Tiền rời khỏi ví cá nhân của User A và đi vào tài khoản sổ cái của Quỹ nhóm (`GROUP-FUND:31dfe66ebb8a4071903342ef567ae072`). Quỹ nhóm sau đó chi 10.000đ ra ngoài (`SYSTEM:GroupExpenseClearing:VND`), do đó tài khoản quỹ nhóm còn lại đúng **10.000đ**.
+2. **Nguồn gốc thứ hai (10.000đ chuyển ví nội bộ):** User A đã chuyển 10.000đ từ Ví chính sang Ví tiết kiệm (`WALLET:e7101f2ae33444ab9d34a6f322aa5467`). Khoản tiền này nằm tại Ví tiết kiệm, không bị mất đi nhưng bị bỏ sót khi cộng gộp chỉ trên ví chính.
+3. **Chuyển tiền P2P hai chiều:** User A chuyển cho User B 25.000đ + 15.000đ = 40.000đ; User B chuyển lại cho User A 10.000đ. Dòng chuyển ròng giữa A và B là **30.000đ** (A giảm 30.000đ, B tăng 30.000đ). Dòng P2P nội bộ không làm thay đổi tổng tài sản hệ thống.
+
+#### B. Phân Định Rạch Ròi Danh Mục Tài Sản Hệ Thống (SQL02)
+- **Số dư khả dụng (Available Balance):**
+  - User A - Ví chính: 32.000,00 VND (sau bộ happy-path mới nhất)
+  - User A - Ví tiết kiệm: 25.000,00 VND
+  - User B - Ví chính: 233.000,00 VND
+- **Số dư Quỹ nhóm chung (Shared Fund):** 25.000,00 VND
+- **Số dư đang tạm giữ rút tiền (Reservation Hold):** 15.000,00 VND (Lệnh `SWWD7F044D73DF59FBF8597D77DE`, tài khoản sổ cái `SYSTEM:ReservationHold:VND`)
+- **Chi phí đã xuất khỏi hệ thống (Expense Clearing):** 45.000,00 VND (Chi cá nhân A) + 25.000,00 VND (Chi quỹ nhóm) = 70.000,00 VND.
+
+#### C. Bằng Chứng Toàn Vẹn Sổ Cái Kép (Debit = Credit)
+Truy vấn kiểm toán trên toàn bộ 30 giao dịch sổ cái ngày 29/10/2026 với hơn 60 bút toán:
+```sql
+SELECT 
+    COUNT(DISTINCT e.LedgerTransactionId) AS TotalTxCount,
+    SUM(CASE WHEN e.Direction = 'Debit' THEN e.Amount ELSE 0 END) AS AllDebit,
+    SUM(CASE WHEN e.Direction = 'Credit' THEN e.Amount ELSE 0 END) AS AllCredit
+FROM dbo.LedgerEntries e
+JOIN dbo.LedgerTransactions t ON e.LedgerTransactionId = t.Id
+WHERE t.CreatedAt >= '2026-10-29 10:00:00';
+```
+**Kết quả thực tế:**
+- **Tổng giao dịch sổ cái:** 30 transactions
+- **Tổng Nợ (Total Debit):** `658.000,00 VND`
+- **Tổng Có (Total Credit):** `658.000,00 VND`
+- **Chênh lệch Sổ cái Kép:** `0,00 VND (100% Khớp tuyệt đối)`
+- **Wallet-to-Ledger Equality:** Mọi số dư ví (`Wallets.AvailableBalance`) đều khớp 100% với số dư tài khoản sổ cái tương ứng (`LedgerAccounts.Balance`). Không phát hiện bất kỳ trường hợp double-posting nào.
+
+---
+
+### 6.2. Kết Luận Nghiệm Thu Rút Tiền SePay Test Mode (Task 2)
+
+#### A. Trạng Thái Hiện Tại
+- **Lệnh rút tiền kiểm toán:** `23fea2cf-4792-4a59-bbc1-bdd9e09817c7` (Mã tham chiếu: `SWWD7F044D73DF59FBF8597D77DE`, User B rút 15.000đ về TPBank TEST 0004).
+- **Trạng thái thực tế:** `Processing` (Số tiền 15.000đ được khóa chặt chẽ trong tài khoản tạm giữ `SYSTEM:ReservationHold:VND`).
+- **Phân loại nghiệm thu:** **`PENDING / BLOCKED (PROVIDER SETTLEMENT DEFERRED)`**.
+
+#### B. Phân Tích Kiến Trúc & Bằng Chứng Mã Nguồn
+Căn cứ mã nguồn `ConfirmTestModeWalletWithdrawalCommandHandler` (`backend/src/SpendWise.Infrastructure/Features/Banking/WalletWithdrawalFeature.cs`, line 470):
+1. **Yêu cầu an toàn nghiệp vụ (Fail-Closed):** Để hoàn tất lệnh rút tiền và giải phóng khoản giữ cọc, Backend bắt buộc phải tìm thấy một giao dịch thanh quyết toán từ cổng ngân hàng đối tác (`BankHub:SePay`) với chiều tiền `in`, số tiền đúng 15.000đ và nội dung chuyển khoản chứa mã tham chiếu `SWWD7F044D73DF59FBF8597D77DE`.
+2. **Cổng SePay Test Mode:** Chỉ hỗ trợ tạo giao dịch mô phỏng chiều vào/chiều ra trong tài khoản ngân hàng ảo, không có API tự động giải ngân chi tiền ra ngoài (outbound payout webhook) hoặc callback thanh toán tiền mặt tự động cho người dùng.
+3. **Bảo đảm an toàn tài chính đã kiểm chứng:**
+   - **Chống gian lận tiền tệ:** Khi gọi confirm khi chưa có giao dịch đối soát, Backend kiên quyết trả về `409 Conflict: wallet_withdrawal_pending ("No exact SePay settlement transaction was found yet.")`.
+   - **Chống Double-Posting:** Lặp lại yêu cầu confirm nhiều lần vẫn trả về 409 nhất quán và không phát sinh bất kỳ bút toán sổ cái nào.
+   - **Cách ly quyền sở hữu chéo:** User A gọi xác nhận lệnh rút tiền của User B bị từ chối triệt để với mã `404 Not Found`.
+   - **Kiểm thử đơn vị cách ly (.NET xUnit):** `SePayTestModeBankingTests.cs` đã mô phỏng đầy đủ luồng đối soát thành công và pass 16/16 tests (`dotnet test --filter SePayTestModeBankingTests` PASS 100%).
+
+---
+
+### 6.3. Bộ Kiểm Thử Hạnh Phúc Tài Chính Thực Tế: FINANCIAL-HAPPY-PATH-E2E (Task 3)
+
+- **Postman Collection:** `backend/postman/FINANCIAL-HAPPY-PATH-E2E.postman_collection.json`
+- **Postman Environment:** `backend/postman/FINANCIAL-HAPPY-PATH-E2E.postman_environment.json`
+- **Báo cáo kết quả:** `reports/newman/FINANCIAL-HAPPY-PATH-E2E-REPORT.json` (Đã làm sạch bí mật bảo mật)
+- **Tóm tắt kết quả thực thi:**
+  - **Số yêu cầu (Requests):** 32 / 32 requests (0 thất bại)
+  - **Số tiêu chí kiểm tra (Assertions):** 32 / 32 assertions (0 thất bại - 100% PASS)
+  - **Thời gian chạy:** 8.6 giây (Thời gian phản hồi trung bình: 186ms)
+
+#### Chi Tiết 7 Khối Nghiệp Vụ Trong Suite:
+1. **Khối 01 — Xác Thực & Quyền Sở Hữu Tài Khoản Ngân Hàng (9 requests):**
+   - Đăng nhập 2 bước User A, User B và Admin bằng Mật khẩu + PIN 6 số.
+   - Xác minh quyền sở hữu TPBank TEST 0005 của User A và TPBank TEST 0004 của User B (`Active`).
+   - Kiểm tra cách ly chéo: User A truy cập BankConnection của User B bị từ chối `404 Not Found`.
+2. **Khối 02 — Chuyển Tiền Hai Chiều & Chuyển Ví Nội Bộ (6 requests):**
+   - Chuyển P2P A $\rightarrow$ B: 10.000đ (HTTP 201 Created).
+   - Chuyển P2P B $\rightarrow$ A: 5.000đ (HTTP 201 Created).
+   - Chuyển ví nội bộ A (Ví chính $\rightarrow$ Ví tiết kiệm): 5.000đ (HTTP 201 Created).
+   - Xác minh số dư ví A phản ánh chính xác độ lệch ròng -10.000đ.
+3. **Khối 03 — Vòng Đời Quỹ Nhóm Hợp Tác (5 requests):**
+   - Tra cứu nhóm 2 thành viên đang hoạt động.
+   - User A đóng góp 10.000đ vào Quỹ chung (Ghi nhận bút toán Sổ cái).
+   - Chi tiêu 5.000đ từ Quỹ nhóm.
+   - Xác minh số dư Quỹ nhóm tăng ròng chính xác 5.000đ.
+4. **Khối 04 — Chốt Chặn An Toàn SePay Test Mode Top-Up & Withdrawal (4 requests):**
+   - Kiểm tra trạng thái nạp tiền Top-Up (bảo vệ không tạo chồng yêu cầu nạp tiền).
+   - Chặn xác nhận nạp tiền sớm khi chưa có giao dịch đối tác (`409 wallet_top_up_pending`).
+   - Chặn giải ngân rút tiền sớm khi chưa có giao dịch quyết toán (`409 wallet_withdrawal_pending`).
+   - Chặn User A xác nhận rút tiền của User B (`404 Not Found`).
+5. **Khối 05 — Chống Trùng Lặp Idempotency Replay (2 requests):**
+   - Thực thi giao dịch chuyển tiền với khóa `IdempotencyKey` cố định.
+   - Gửi lại chính xác request lần thứ hai: Backend phát hiện trong bộ nhớ đệm, trả về nguyên vẹn mã phản hồi 201 Created kèm `replayed: true`, tuyệt đối không trừ tiền lần hai hay phát sinh bút toán sổ cái kép.
+6. **Khối 06 — Giám Sát Sổ Cái Quản Trị & Phân Quyền (2 requests):**
+   - Admin tra cứu danh mục giao dịch sổ cái toàn hệ thống (`POST /api/admin/ledger/search` $\rightarrow$ 200 OK).
+   - Người dùng thông thường truy cập tra cứu sổ cái bị từ chối với `403 Forbidden`.
+7. **Khối 07 — Vòng Đời Vụ Việc Hỗ Trợ Toàn Diện User $\rightarrow$ Admin $\rightarrow$ User (4 requests):**
+   - User A mở phiếu hỗ trợ kỹ thuật (`POST /api/cases/support` $\rightarrow$ trả về caseId).
+   - Admin gửi phản hồi nghiệp vụ (`POST /api/admin/cases/support/{id}/messages` $\rightarrow$ 200 OK).
+   - Admin cập nhật giải quyết vụ việc (`POST /api/admin/cases/support/{id}/status` $\rightarrow$ trạng thái `resolved`).
+   - User A tra cứu lịch sử khiếu nại, thấy ngay trạng thái `resolved` và nội dung tin nhắn hướng dẫn của Admin.

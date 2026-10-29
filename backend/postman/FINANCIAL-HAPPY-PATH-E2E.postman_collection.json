@@ -1,0 +1,1422 @@
+{
+  "info": {
+    "_postman_id": "spendwise-financial-happy-path-e2e-v1",
+    "name": "SpendWise Financial Happy-Path Real E2E",
+    "description": "Targeted Verified E2E Suite: Real Linked TPBank 0005 (User A) & 0004 (User B) + Full Financial Happy-Path Flow + SePay Test Mode TopUp/Withdrawal + Group Fund + Admin Reconcile & Support Case Lifecycle.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Authentication & Bank Ownership Verification",
+      "item": [
+        {
+          "name": "01.1 - User A Login (Password Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\":\"{{userA_email}}\",\"password\":\"{{user_password}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.1: User A Login returns 200 with challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('userA_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.2 - User A Verify PIN (Access Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\":\"{{userA_challengeToken}}\",\"pin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.2: User A PIN verification returns 200 and accessToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.environment.set('userA_token', json.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.3 - User B Login (Password Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\":\"{{userB_email}}\",\"password\":\"{{user_password}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.3: User B Login returns 200 with challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('userB_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.4 - User B Verify PIN (Access Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\":\"{{userB_challengeToken}}\",\"pin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.4: User B PIN verification returns 200 and accessToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.environment.set('userB_token', json.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.5 - Admin Login (Password Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\":\"{{admin_email}}\",\"password\":\"{{admin_password}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.5: Admin Login returns 200 with challengeToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.challengeToken).to.be.a('string');",
+                  "  pm.environment.set('admin_challengeToken', json.challengeToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.6 - Admin Verify PIN (Role Admin Access Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\":\"{{admin_challengeToken}}\",\"pin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.6: Admin PIN verification returns 200 and accessToken', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.accessToken).to.be.a('string');",
+                  "  pm.environment.set('admin_token', json.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.7 - User A Verify Linked TPBank 0005 Ownership",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/linked-accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "linked-accounts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.7: User A linked accounts returns 200 containing TPBank 0005 Active', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array').that.is.not.empty;",
+                  "  var conn = json.find(function(c) { return c.maskedAccountNumber === '****0005'; });",
+                  "  pm.expect(conn).to.not.be.undefined;",
+                  "  pm.expect(conn.status).to.eql('Active');",
+                  "  pm.environment.set('userA_bankConnId', conn.bankConnectionId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.8 - User B Verify Linked TPBank 0004 Ownership",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/linked-accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "linked-accounts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.8: User B linked accounts returns 200 containing TPBank 0004 Active', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array').that.is.not.empty;",
+                  "  var conn = json.find(function(c) { return c.maskedAccountNumber === '****0004'; });",
+                  "  pm.expect(conn).to.not.be.undefined;",
+                  "  pm.expect(conn.status).to.eql('Active');",
+                  "  pm.environment.set('userB_bankConnId', conn.bankConnectionId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.9 - Cross-Ownership Isolation: User A Cannot Query User B Bank Connection",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/{{userB_bankConnId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "{{userB_bankConnId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('01.9: User A accessing User B BankConnection is rejected (403 or 404)', function () {",
+                  "  pm.expect([403, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Financial Operations & Two-Way Transfers",
+      "item": [
+        {
+          "name": "02.1 - User A Query Primary Wallet Balance Before Transfer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets/{{userA_primaryWalletId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets",
+                "{{userA_primaryWalletId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.1: Query User A primary wallet returns 200 and available balance', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.availableBalance).to.be.a('number');",
+                  "  pm.environment.set('userA_initial_balance', json.availableBalance);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.2 - User B Query Primary Wallet Balance Before Transfer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets/{{userB_primaryWalletId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets",
+                "{{userB_primaryWalletId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.2: Query User B primary wallet returns 200 and available balance', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.availableBalance).to.be.a('number');",
+                  "  pm.environment.set('userB_initial_balance', json.availableBalance);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.3 - P2P Transfer: User A -> User B (10,000 VND)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sourceWalletId\":\"{{userA_primaryWalletId}}\",\"recipientUserId\":\"{{userB_userId}}\",\"amount\":10000,\"description\":\"P2P Happy-Path Transfer A to B\",\"idempotencyKey\":\"p2p-a-b-happy-1793279190423\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.3: P2P Transfer A -> B returns 201 Created with Ledger Tx', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('Completed');",
+                  "  pm.expect(json.amount).to.eql(10000);",
+                  "  pm.expect(json.ledgerTransactionId).to.be.a('string');",
+                  "  pm.environment.set('lastP2pTxId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.4 - P2P Transfer: User B -> User A (5,000 VND)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sourceWalletId\":\"{{userB_primaryWalletId}}\",\"recipientUserId\":\"{{userA_userId}}\",\"amount\":5000,\"description\":\"P2P Happy-Path Return Transfer B to A\",\"idempotencyKey\":\"p2p-b-a-happy-1793279190423\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.4: P2P Transfer B -> A returns 201 Created with Ledger Tx', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('Completed');",
+                  "  pm.expect(json.amount).to.eql(5000);",
+                  "  pm.expect(json.ledgerTransactionId).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.5 - Internal Wallet Transfer: User A Primary -> Savings Wallet (5,000 VND)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sourceWalletId\":\"{{userA_primaryWalletId}}\",\"destinationWalletId\":\"{{userA_savingsWalletId}}\",\"amount\":5000,\"description\":\"Internal Wallet Savings Transfer\",\"idempotencyKey\":\"int-trf-happy-1793279190423\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/internal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "internal"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.5: Internal transfer returns 201 Created with Ledger Tx', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('Completed');",
+                  "  pm.expect(json.amount).to.eql(5000);",
+                  "  pm.expect(json.ledgerTransactionId).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.6 - User A Verify Balance Delta Post-Transfers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets/{{userA_primaryWalletId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets",
+                "{{userA_primaryWalletId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('02.6: User A primary wallet reflects net deduction (-10000 + 5000 - 5000 = -10000)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  var initial = Number(pm.environment.get('userA_initial_balance'));",
+                  "  pm.expect(json.availableBalance).to.eql(initial - 10000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Group Fund Collaboration Lifecycle",
+      "item": [
+        {
+          "name": "03.1 - Query Group Details (2 Active Members)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupFundId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupFundId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('03.1: Group details returns 200 with 2 members', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.members).to.be.an('array').with.lengthOf(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.2 - Query Shared Fund Initial Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupFundId}}/fund",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupFundId}}",
+                "fund"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('03.2: Query Shared Fund returns 200 and balance', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.balance).to.be.a('number');",
+                  "  pm.environment.set('group_initial_balance', json.balance);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.3 - User A Contribute to Shared Fund (10,000 VND)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":10000,\"purpose\":\"Dong gop quy nhom dot 2\",\"walletId\":\"{{userA_primaryWalletId}}\",\"idempotencyKey\":\"fund-contrib-happy-1793279190423\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupFundId}}/fund/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupFundId}}",
+                "fund",
+                "contributions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('03.3: Fund contribution returns 200 with Ledger Tx', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.amount).to.eql(10000);",
+                  "  pm.expect(json.ledgerTransactionId).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.4 - Group Expense from Shared Fund (5,000 VND)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Chi mua banh ngot tap the\",\"amount\":5000,\"paidByType\":\"fund\",\"category\":\"Ăn uống\",\"description\":\"Chi phi an vat nhom\",\"securityPin\":\"{{default_pin}}\",\"idempotencyKey\":\"fund-exp-happy-1793279190423\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupFundId}}/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupFundId}}",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('03.4: Group expense from fund returns 200 Recorded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('Recorded');",
+                  "  pm.expect(json.amount).to.eql(5000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.5 - Query Shared Fund Balance Delta",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupFundId}}/fund",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupFundId}}",
+                "fund"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('03.5: Shared fund balance increases by net 5,000 VND', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  var initial = Number(pm.environment.get('group_initial_balance'));",
+                  "  pm.expect(json.balance).to.eql(initial + 5000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - SePay Test Mode Top-Up & Withdrawal Invariants",
+      "item": [
+        {
+          "name": "04.1 - User A Create SePay Test Mode Top-Up Challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"bankConnectionId\":\"{{userA_bankConnId}}\",\"walletId\":\"{{userA_primaryWalletId}}\",\"amount\":50000,\"securityPin\":\"{{default_pin}}\",\"idempotencyKey\":\"topup-happy-1793279190423\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-top-ups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('04.1: Test mode top-up challenge verification (200 Pending or 409 Active Exists)', function () {",
+                  "  if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('Pending');",
+                  "    pm.expect(json.reference).to.match(/^SWTP/);",
+                  "    pm.expect(json.id).to.be.a('string');",
+                  "    pm.environment.set('topUpId', json.id);",
+                  "  } else {",
+                  "    pm.response.to.have.status(409);",
+                  "    var err = pm.response.json();",
+                  "    pm.expect(err.code).to.eql('wallet_top_up_active_exists');",
+                  "    pm.environment.set('topUpId', '1aaf2f7b-32bc-4550-b9aa-0aa9ed01e2ab');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.2 - Negative Security: Early Top-Up Confirm Without Provider Transaction Fails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-top-ups/{{topUpId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-top-ups",
+                "{{topUpId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('04.2: Confirming top-up without matching remote deposit returns 409 wallet_top_up_pending', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('wallet_top_up_pending');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.3 - Negative Security: Early Withdrawal Confirm Without Provider Settlement Fails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userB_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals/{{userB_withdrawalId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals",
+                "{{userB_withdrawalId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('04.3: Confirming withdrawal without matching remote settlement returns 409 wallet_withdrawal_pending', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('wallet_withdrawal_pending');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04.4 - Cross-User Withdrawal Confirm Strictly Denied (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank-connections/test-mode/wallet-withdrawals/{{userB_withdrawalId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank-connections",
+                "test-mode",
+                "wallet-withdrawals",
+                "{{userB_withdrawalId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('04.4: User A confirming User B withdrawal strictly returns 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.code).to.eql('wallet_withdrawal_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Financial Idempotency & Replay Protection",
+      "item": [
+        {
+          "name": "05.1 - Execute Initial Transfer With Static IdempotencyKey",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sourceWalletId\":\"{{userA_primaryWalletId}}\",\"recipientUserId\":\"{{userB_userId}}\",\"amount\":1000,\"description\":\"Idempotency Test Transfer\",\"idempotencyKey\":\"{{replay_idempotency_key}}\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('05.1: Initial P2P transfer returns 201 Created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.replayed).to.eql(false);",
+                  "  pm.environment.set('replay_p2p_id', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.2 - Replay Transfer With Exact Same IdempotencyKey (Must Return Cached 201 Without Double Posting)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sourceWalletId\":\"{{userA_primaryWalletId}}\",\"recipientUserId\":\"{{userB_userId}}\",\"amount\":1000,\"description\":\"Idempotency Test Transfer\",\"idempotencyKey\":\"{{replay_idempotency_key}}\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/p2p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers",
+                "p2p"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('05.2: Replayed P2P transfer returns cached response with replayed: true and exact same ID', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.environment.get('replay_p2p_id'));",
+                  "  pm.expect(json.replayed).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Ledger Balance Reconciliation & Double-Entry Invariants",
+      "item": [
+        {
+          "name": "06.1 - Admin Search Ledger Transactions (Audited)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"Doi soat so cai double-entry E2E Happy Path\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/ledger/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "ledger",
+                "search"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('06.1: Admin ledger search returns 200 with recorded transactions', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array').that.is.not.empty;",
+                  "  pm.environment.set('auditedLedgerTxId', json[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.2 - Non-Admin User Denied Admin Ledger Search (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"User illegal attempt to audit ledger\",\"securityPin\":\"{{default_pin}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/ledger/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "ledger",
+                "search"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('06.2: Non-admin user querying ledger search is rejected with 403 Forbidden', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - User -> Admin -> User Support Case Lifecycle",
+      "item": [
+        {
+          "name": "07.1 - User A Submit Support Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"category\":\"general\",\"priority\":\"normal\",\"subject\":\"Yeu cau ho tro doi soat giao dich TPBank E2E\",\"description\":\"User A can xac nhan chi tiet but toan so cai tren SQL02.\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('07.1: User A submit support case returns 200 with caseId', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.environment.set('happySupportCaseId', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.2 - Admin Post Reply Message to Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"message\":\"Admin da tiep nhan yeu cau va xac minh toan bo but toan so cai hop le.\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support/{{happySupportCaseId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support",
+                "{{happySupportCaseId}}",
+                "messages"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('07.2: Admin reply to support case returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.3 - Admin Resolve Support Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"resolved\",\"message\":\"Yeu cau doi soat da hoan tat thanh cong tren SQL02.\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cases/support/{{happySupportCaseId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cases",
+                "support",
+                "{{happySupportCaseId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('07.3: Admin resolve case returns 200 with status resolved', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('resolved');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.4 - User A Verify Case Status & Admin Message In History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userA_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cases/support/{{happySupportCaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cases",
+                "support",
+                "{{happySupportCaseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('07.4: User A sees case status resolved and message in history', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('resolved');",
+                  "  pm.expect(json.history).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

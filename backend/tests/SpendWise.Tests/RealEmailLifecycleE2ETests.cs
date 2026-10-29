@@ -540,11 +540,17 @@ public sealed class RealEmailLifecycleE2ETests
             "registration-welcome",
             "password-reset-verification",
             "password-reset-success",
+            "support-received",
+            "support-resolved",
+            "support-rejected",
+            "support-info-request",
+            "support-fund-investigation",
+            "welcome-back",
+            "new-device-login",
+            "security-pin-reset",
             "email-change-verification",
             "email-change-notice",
-            "security-pin-reset",
-            "support-resolved",
-            "support-rejected"
+            "generic"
         };
 
         foreach (var tmpl in templates)
@@ -556,14 +562,25 @@ public sealed class RealEmailLifecycleE2ETests
                 ["Otp"] = "12345678",
                 ["Minutes"] = "10",
                 ["Token"] = "token123",
-                ["ActionUrl"] = "https://spendwise.test",
+                ["ActionUrl"] = "https://spendwise.test/action",
                 ["ActionText"] = "Xác nhận",
                 ["OldEmail"] = "old@spendwise.local",
                 ["NewEmail"] = "new@spendwise.local",
                 ["ChangedAt"] = DateTime.UtcNow.ToString("O"),
                 ["TicketNumber"] = "SW-TEST-001",
                 ["Subject"] = "Test Subject",
-                ["ResolutionNote"] = "Resolved cleanly"
+                ["SubmittedAt"] = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
+                ["Status"] = "Đang xử lý",
+                ["Message"] = "Nội dung giải quyết hỗ trợ",
+                ["ResolutionNote"] = "Resolved cleanly",
+                ["RequiredDocuments"] = "Sao kê ngân hàng MB",
+                ["Note"] = "Ghi chú bổ sung",
+                ["FundName"] = "Quỹ Thử Nghiệm",
+                ["CurrentPhase"] = "Đối soát kế toán",
+                ["LoginTime"] = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
+                ["DeviceName"] = "iPhone 15 Pro",
+                ["BrowserInfo"] = "Safari 17.0",
+                ["IpAddress"] = "127.0.0.1"
             });
 
             Assert.False(string.IsNullOrWhiteSpace(rendered.HtmlBody), $"Template {tmpl} rendered empty HTML body.");

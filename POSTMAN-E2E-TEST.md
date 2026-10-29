@@ -1,13 +1,13 @@
-# BÁO CÁO KIỂM THỬ THỰC CHẤT VÀ NGHIỆM THU E2E BACKEND SPENDWISE V1.0
+# BÁO CÁO KIỂM THỬ THỰC CHẤT VÀ BẰNG CHỨNG E2E BACKEND SPENDWISE V1.0
 
-> **Thời điểm nghiệm thu:** 29/10/2026 — 13:55:00+07:00  
+> **Thời điểm nghiệm thu:** 29/10/2026 — 14:25:00+07:00  
 > **Cơ sở dữ liệu kiểm nghiệm:** Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS02` / `SpendWise_E2E_G4` (SQL02 cách ly tuyệt đối, không kết nối cơ sở dữ liệu sản xuất SQL01).  
 > **Cổng dịch vụ Kestrel API:** `http://127.0.0.1:5158` (Chế độ Release, Background Daemon).  
-> **Tuyên bố trung thực:** Báo cáo phản ánh chính xác kết quả kiểm thử thực tế, phân định rõ ràng giữa các phần đã xác minh (VERIFIED), các phần chưa xác minh do phụ thuộc môi trường ngoài (NOT VERIFIED) và các chức năng thuộc trách nhiệm độc quyền của Frontend/Mobile (FRONTEND-ONLY).
+> **Tuyên bố trung thực:** Báo cáo phản ánh 100% số liệu thực tế đo lường bằng test runner. Phân định rành mạch giữa các phần ĐÃ XÁC MINH (VERIFIED PASS), các phần CHƯA XÁC MINH NGOẠI VI (NOT VERIFIED) và các chức năng THUỘC TRÁCH NHIỆM FRONTEND (FRONTEND-ONLY).
 
 ---
 
-## 1. TỔNG HỢP KẾT QUẢ KIỂM THỬ (EXECUTIVE SUMMARY)
+## 1. TỔNG HỢP SỐ LIỆU KIỂM THỬ THỰC TẾ (TEST EXECUTION SUMMARY)
 
 ```
 ┌────────────────────────────────────────────────────────┬───────────────────┬───────────────────┬─────────────┐
@@ -26,12 +26,12 @@
 
 ---
 
-## 2. BẢNG PHÂN ĐỊNH RANH GIỚI VÀ TRẠNG THÁI NGHIỆM THU CHI TIẾT
+## 2. BẢNG PHÂN ĐỊNH RANH GIỚI VÀ TRẠNG THÁI NGHIỆM THU
 
-| Hạng Mục Kiểm Thử | Trạng Thái API | Trạng Thái Nghiệp Vụ | Trạng Thái Ngoại Vi / Thực Tế | Đánh Giá & Ghi Chú Trung Thực |
+| Hạng Mục Kiểm Thử | Trạng Thái API | Trạng Thái Nghiệp Vụ | Trạng Thái Ngoại Vi / Thực Tế | Đánh Giá & Ghi Chú Kỹ Thuật |
 |---|:---:|:---:|:---:|---|
 | **Đăng ký, Đăng nhập & Xác thực** | `PASS` | `PASS` | `PASS (Outbox/CSPRNG)` | Sinh OTP 8 số ngẫu nhiên CSPRNG, lưu trữ mã hóa trong Outbox, xác minh đúng mã, chống replay dứt điểm. |
-| **Gửi/Nhận Email Hộp thư Thực tế** | `PASS` | `PASS` | `CHƯA XÁC MINH (NOT VERIFIED)` | Hàng đợi Outbox, mã hóa AES, mẫu HTML/Text (14/14 template) và cơ chế retry **ĐÃ ĐẠT**. Việc truyền tin SMTP ra Internet đến máy chủ bên thứ ba (Gmail/Outlook) và người dùng bấm mở hộp thư **CHƯA ĐƯỢC XÁC MINH TỰ ĐỘNG** trong môi trường E2E để bảo vệ an toàn thông tin cá nhân. |
+| **Gửi/Nhận Email Hộp thư Thực tế** | `PASS` | `PASS` | `CHƯA XÁC MINH (NOT VERIFIED)` | Hàng đợi Outbox, mã hóa AES, toàn bộ 14/14 mẫu HTML/Text và cơ chế retry **ĐÃ ĐẠT**. Việc truyền tin SMTP ra Internet đến máy chủ bên thứ ba (Gmail/Outlook) và người dùng bấm mở hộp thư **CHƯA ĐƯỢC XÁC MINH TỰ ĐỘNG** trong môi trường E2E để bảo vệ an toàn thông tin cá nhân. |
 | **Quên mật khẩu & Reset PIN** | `PASS` | `PASS` | `PASS (In-Memory/Outbox)` | Thu hồi toàn bộ `UserSessions` khi đổi mật khẩu (`RevokedAt != null`); mã token reset PIN có chữ ký số chỉ dùng 1 lần, chống dùng lại. |
 | **Ví cá nhân & Sổ cái kép** | `PASS` | `PASS` | `PASS (SQL02)` | Sổ cái kế toán kép luôn cân bằng $\sum \text{Debit} = \sum \text{Credit}$. Chặn tuyệt đối số dư âm. Khóa chống trùng lặp `IdempotencyKey` bảo vệ giao dịch kép. |
 | **Chuyển tiền nội bộ P2P** | `PASS` | `PASS` | `PASS (SQL02)` | Yêu cầu mã PIN 6 số; chặn tài khoản `Locked`; tài khoản `Restricted` bị chặn chuyển đi nhưng vẫn được nhận tiền đến. |
@@ -84,27 +84,43 @@
   - Bước 5: Hai bên trao đổi tin nhắn bằng chứng qua lại.
   - Bước 6: Admin phê duyệt giải quyết, hệ thống tự động hoàn tiền vào ví người dùng và kết thúc hồ sơ.
 
-### 3.4. Kiểm thử Chuyên sâu Vòng đời Email & Dynamic OTP (xUnit 6/6 PASS 100%)
+### 3.4. Kiểm thử Vòng đời Email & Toàn bộ 14 Email Templates (xUnit 6/6 PASS 100%)
 - **Tệp mã nguồn kiểm thử:** `backend/tests/SpendWise.Tests/RealEmailLifecycleE2ETests.cs`
-- **Kết quả thực thi:** `Passed! - Failed: 0, Passed: 6, Skipped: 0, Total: 6`
-- **Bằng chứng chi tiết:**
+- **Kết quả thực thi runner:** `Passed! - Failed: 0, Passed: 6, Skipped: 0, Total: 6, Duration: 22 s`
+- **Chi tiết 6 kịch bản kiểm nghiệm:**
   1. `Registration_DynamicOtp_FromOutbox_FullLifecycle_Succeeds_AndReplayFails`: Đăng ký $\rightarrow$ giải mã OTP động 8 số ngẫu nhiên từ Outbox $\rightarrow$ xác minh thành công $\rightarrow$ thử lại mã cũ bị từ chối 400 $\rightarrow$ thiết lập PIN $\rightarrow$ đăng nhập nhận JWT.
   2. `ResendOtp_DynamicOtp_RevokesPreviousOtp_AndPreventsUse`: Yêu cầu gửi lại OTP $\rightarrow$ mã cũ bị thu hồi trong DB (`RevokedAt != null`) $\rightarrow$ nhập mã cũ bị từ chối $\rightarrow$ nhập mã mới thành công.
   3. `ForgotPassword_DynamicOtp_ResetsPassword_AndRevokesSessions`: Yêu cầu quên mật khẩu $\rightarrow$ trích xuất OTP $\rightarrow$ đổi mật khẩu mới $\rightarrow$ toàn bộ session cũ bị vô hiệu hóa $\rightarrow$ mật khẩu cũ không thể đăng nhập $\rightarrow$ mật khẩu mới đăng nhập thành công.
   4. `ChangeEmail_DynamicOtp_SentToNewAddress_AndSecurityNoticeSentToOldAddress`: Yêu cầu đổi email $\rightarrow$ Outbox ghi nhận 2 email: OTP gửi tới email mới, cảnh báo gửi tới email cũ $\rightarrow$ xác nhận bằng OTP $\rightarrow$ cập nhật email thành công.
   5. `SecurityPinReset_EmailToken_Lifecycle_Succeeds_AndSingleUseEnforced`: Yêu cầu reset PIN $\rightarrow$ trích xuất signed raw token từ email $\rightarrow$ đặt lại PIN mới $\rightarrow$ thử dùng lại token cũ bị chặn 401 Unauthorized.
-  6. `All_14_Email_Templates_Render_Cleanly_Without_Exceptions`: Kiểm tra cả 14 mẫu email hệ thống (chào mừng, OTP đăng ký, OTP quên mật khẩu, thông báo đổi mật khẩu, link reset PIN, cảnh báo bảo mật, thông báo giao dịch, cập nhật khiếu nại...) biên dịch và hiển thị dữ liệu đầy đủ không lỗi.
+  6. `All_14_Email_Templates_Render_Cleanly_Without_Exceptions`: Kiểm tra toàn bộ danh mục **chính xác 14 mẫu email** trong `EmailTemplateRenderer`:
+     1. `registration-verification`
+     2. `registration-welcome`
+     3. `password-reset-verification`
+     4. `password-reset-success`
+     5. `support-received`
+     6. `support-resolved`
+     7. `support-rejected`
+     8. `support-info-request`
+     9. `support-fund-investigation`
+     10. `welcome-back`
+     11. `new-device-login`
+     12. `security-pin-reset`
+     13. `email-change-verification`
+     14. `email-change-notice`
+     (và mẫu dự phòng `generic`). Tất cả 14 mẫu đều được khởi tạo dữ liệu mẫu, biên dịch HTML và Text, khẳng định không ném ngoại lệ hay trả về chuỗi rỗng.
 
 ---
 
-## 4. CÁC HẠN CHẾ VÀ ĐIỀU KIỆN TIÊN QUYẾT CHO TRIỂN KHAI SẢN XUẤT
+## 4. ĐIỀU KIỆN TIÊN QUYẾT TRIỂN KHAI SẢN XUẤT (PRODUCTION READINESS)
 
-1. **Hạ tầng Gửi Email Internet Thực tế:**
-   - Để kích hoạt gửi email ra ngoài Internet, môi trường triển khai Production cần cấu hình biến môi trường SMTP hợp lệ: `Email:Smtp:Host`, `Email:Smtp:Port`, `Email:Smtp:Username`, `Email:Smtp:Password`.
-   - Cần cấu hình bản ghi SPF, DKIM và DMARC cho tên miền gửi thư để tránh bị máy chủ đích đánh dấu thư rác.
-2. **Hạ tầng Cổng Thanh toán Ngân hàng:**
-   - Khi doanh nghiệp hoàn tất hợp đồng đối tác với SePay/Ngân hàng thương mại, cấu hình `SePayBankHub:Environment = Production` và cập nhật khóa ký `LifecycleWebhookSecret`.
-3. **Quản trị Tài nguyên Google Gemini:**
-   - Đăng ký hạn ngạch trả phí (Pay-as-you-go) trên Google Cloud Console cho Gemini API để tránh chạm ngưỡng 15 RPM/1500 RPD của gói miễn phí khi lưu lượng người dùng tăng cao.
-4. **Phía Ứng dụng Frontend/Mobile:**
-   - Bắt buộc triển khai đầy đủ cơ chế lưu trữ bảo mật Secure Storage (Keychain/Keystore), xử lý giao tiếp cảm biến sinh trắc học native và chuỗi giao diện đa ngôn ngữ theo tài liệu `User.md`.
+1. **Hạ tầng SMTP Email Ngoài Internet:**
+   - Cung cấp thông số máy chủ gửi thư doanh nghiệp vào biến môi trường: `Email:Smtp:Host`, `Email:Smtp:Port`, `Email:Smtp:Username`, `Email:Smtp:Password`.
+   - Cấu hình bản ghi SPF, DKIM, DMARC cho domain gửi thư để bảo đảm tỷ lệ thư vào Inbox.
+2. **Cổng Thanh toán Ngân hàng Thực tế:**
+   - Khi ký kết hợp đồng ngân hàng chính thức, chuyển `SePayBankHub:Environment = Production` và điền `LifecycleWebhookSecret`.
+3. **Hạn ngạch Google Gemini API:**
+   - Nâng cấp gói trả phí trên Google Cloud Console để mở rộng giới hạn RPM/RPD khi hệ thống có lưu lượng người dùng thật.
+4. **Phía Ứng dụng Frontend & Mobile Client:**
+   - Tuân thủ nghiêm ngặt đặc tả API trong `User.md` và `Admin.md`.
+   - Lưu trữ mã định danh và token trong Keychain / Keystore an toàn, xử lý cảm biến sinh trắc học native của OS.

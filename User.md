@@ -1,119 +1,75 @@
-# SPENDWISE V1.0 — ĐẶC TẢ NGHIỆP VỤ VÀ TÀI LIỆU API PHÂN HỆ USER
+# SPENDWISE V1.0 — ĐẶC TẢ KỸ THUẬT VÀ TÀI LIỆU API PHÂN HỆ USER
 
 > **Phiên bản:** V1.0 (Production Candidate)  
-> **Phạm vi tài liệu:** Thuần đặc tả nghiệp vụ, quy tắc dữ liệu, API contract và luồng người dùng (User Flows) của phân hệ Người dùng (User Mobile / Web Client).  
-> **Trạng thái Backend:** Đã khóa nghiệp vụ (Backend Functional Locked), 100% endpoint được kiểm thử hồi quy tự động.  
-> **Ranh giới:** Không chứa triết lý kiến trúc chung, không chứa nội dung tiếp thị hay hướng dẫn framework UI.
+> **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
+> **Trạng thái Backend:** Locked 100% (Đã kiểm thử hồi quy tự động 306 requests / 343 assertions Newman PASS).  
+> **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
 
-## 1. QUY TẮC NGHIỆP VỤ CỐT LÕI (CORE BUSINESS RULES)
+## 1. NGUYÊN TẮC NGHIỆP VỤ & BẢO MẬT BẮT BUỘC (CORE BUSINESS RULES)
 
-### 1.1. Vòng đời Tài khoản & Phiên đăng nhập (Account & Session Lifecycle)
-1. **Phân quyền Actor:**
-   - Người dùng thông thường sở hữu `SystemRole.User = 1`.
-   - Các vai trò cũ (`SystemAdmin = 0`, `SuperAdmin = 3`) bị loại bỏ hoàn toàn; token chứa các vai trò này sẽ bị từ chối truy cập ngay lập tức (`403 Forbidden`).
-   - Chủ quỹ nhóm (`Fund Owner`) là người dùng thông thường có thêm quyền quản trị trong phạm vi quỹ mình sở hữu, tuyệt đối không có quyền quản trị hệ thống.
-2. **Trạng thái tài khoản:**
-   - `Active (0)`: Trạng thái bình thường; toàn quyền sử dụng ví, giao dịch, ngân sách, mục tiêu, quỹ nhóm và gửi khiếu nại.
-   - `Restricted (1)`: Tài khoản bị giới hạn rủi ro; người dùng vẫn đăng nhập, xem số dư, đọc dữ liệu, nhận tiền P2P và gửi hỗ trợ, nhưng **bị chặn toàn bộ lệnh ghi nợ tiền ra** (chuyển tiền, rút tiền, chi tiêu quỹ, nộp quỹ). Mã lỗi trả về: `403 Forbidden` (`account_restricted`).
-   - `Locked (2)`: Tài khoản bị khóa an ninh; toàn bộ Refresh Token và User Session bị thu hồi ngay lập tức (`RevokedAt = UtcNow`). **Chặn hoàn toàn đăng nhập và cấp mới token**. Khi được mở khóa, người dùng bắt buộc phải đăng nhập lại từ đầu.
+### 1.1. Phân quyền & Vòng đời Tài khoản (Actor & Lifecycle)
+1. **Phân quyền người dùng:**
+   - Người dùng thông thường sở hữu vai trò `SystemRole.User = 1`.
+   - Các vai trò cũ (`SystemAdmin = 0`, `SuperAdmin = 3`) bị loại bỏ hoàn toàn. Token chứa các vai trò này sẽ bị từ chối truy cập ngay lập tức (`403 Forbidden` - `legacy_role_rejected`).
+   - Chủ quỹ nhóm (`Fund Owner`) là người dùng thông thường có thêm quyền quản trị trong phạm vi quỹ mình sở hữu, không có bất kỳ quyền quản trị hệ thống nào.
+2. **Trạng thái tài khoản (`AccountStatus`):**
+   - `Active (0)`: Tài khoản hoạt động bình thường, toàn quyền truy cập tất cả chức năng.
+   - `Restricted (1)`: Tài khoản bị hạn chế rủi ro. Người dùng **vẫn được phép** đăng nhập, xem số dư, đọc dữ liệu, nhận tiền chuyển đến (P2P Receive) và gửi yêu cầu hỗ trợ. **Chặn toàn bộ lệnh ghi nợ tiền ra** (chuyển tiền đi, rút tiền, chi tiêu cá nhân, nộp quỹ nhóm). Mã lỗi trả về khi vi phạm: `403 Forbidden` (`account_restricted`).
+   - `Locked (2)`: Tài khoản bị khóa an ninh. Toàn bộ `UserSessions` và `RefreshToken` bị thu hồi ngay lập tức (`RevokedAt = UtcNow`). **Chặn hoàn toàn đăng nhập và refresh token**. Khi được mở khóa, người dùng bắt buộc phải đăng nhập lại từ đầu.
 3. **Mã PIN bảo mật 6 số (`SecurityPin`):**
    - Bắt buộc thiết lập ngay sau khi xác minh email thành công (`PIN_SETUP_REQUIRED`).
-   - Mọi thao tác ghi nợ, chuyển tiền, rút tiền, phê duyệt chi quỹ nhóm đều bắt buộc phải cung cấp mã PIN hợp lệ.
-   - Khóa tạm thời (`Lockout`) nếu nhập sai quá 5 lần liên tiếp.
+   - Yêu cầu xác thực mã PIN cho mọi hành vi biến động số dư: chuyển tiền P2P, rút tiền, nộp quỹ nhóm, giải tán quỹ nhóm.
+   - Tự động khóa tạm thời (`Lockout`) nếu nhập sai quá 5 lần liên tiếp.
 
-### 1.2. Quản lý Ví & Số dư (Wallet Limits & Balances)
-1. **Cấu trúc ví:**
+### 1.2. Quản lý Ví & Sổ cái Kép (Wallets & Double-Entry Ledger)
+1. **Cấu trúc Ví:**
    - Mỗi người dùng khi kích hoạt được cấp một Ví chính (`Main Wallet`, mặc định, không thể xóa).
-   - Người dùng có thể tạo thêm các Ví phụ (`Sub-wallets`) để phân bổ tài chính.
-   - Tổng số dư hiển thị = Tổng số dư khả dụng của Ví chính + các Ví phụ.
-2. **Nguyên tắc Sổ cái kép (Double-Entry Ledger):**
-   - Mọi biến động số dư phải được ghi nhận đồng thời vào hai tài khoản đối ứng (Nợ / Có).
-   - Tổng Nợ luôn bằng Tổng Có ($\sum \text{Debit} = \sum \text{Credit}$).
-   - Số dư ví không bao giờ được âm; nếu số dư khả dụng nhỏ hơn số tiền yêu cầu ghi nợ, giao dịch bị từ chối (`insufficient_funds`).
-3. **Chống trùng lặp (Idempotency):**
-   - Các API biến động số dư yêu cầu gửi kèm `IdempotencyKey` (UUIDv4) và `IdempotencyScope`.
-   - Nếu một request gửi lại với cùng key và scope, Backend trả về kết quả đã xử lý trước đó mà không trừ tiền lần hai.
+   - Người dùng có thể tạo thêm Ví phụ (`Sub-wallets`) để quản lý các mục đích chi tiêu riêng.
+   - Tổng số dư khả dụng hiển thị trên UI = Số dư Ví chính + Tổng số dư các Ví phụ.
+2. **Nguyên tắc Sổ cái kép:**
+   - Mọi biến động số dư ghi nhận đồng thời hai vế Nợ và Có ($\sum \text{Debit} = \sum \text{Credit}$).
+   - Số dư ví không bao giờ được phép âm. Nếu số dư khả dụng nhỏ hơn số tiền yêu cầu, giao dịch bị từ chối ngay lập tức (`400 BadRequest` - `insufficient_funds`).
+3. **Chống lặp giao dịch (Idempotency):**
+   - Mọi request biến động số dư yêu cầu gửi Header `X-Idempotency-Key` (chuẩn UUIDv4).
+   - Nếu client gửi lại cùng một key khi gặp sự cố mạng, Backend trả về kết quả đã ghi nhận trước đó mà không trừ tiền lần hai.
 
-### 1.3. Ngân hàng & Tích hợp Nạp tiền Sandbox (Banking Guard)
-1. **Ràng buộc liên kết ngân hàng:**
-   - Tên chủ tài khoản ngân hàng liên kết bắt buộc phải trùng khớp (hoặc chuẩn hóa tương đương) với Họ tên định danh của tài khoản SpendWise.
-   - Mỗi số tài khoản ngân hàng tại một ngân hàng chỉ được liên kết với một tài khoản người dùng tại một thời điểm.
-2. **Chính sách an toàn dòng tiền (Safety Policy):**
-   - Hệ thống V1.0 chạy tích hợp Sandbox thông qua SePay BankHub.
-   - Nghiêm cấm tạo giao dịch rút tiền hoặc nạp tiền bằng tiền thật khi chưa được phê duyệt hạ tầng ngân hàng sống.
-   - Mọi giao dịch nạp tiền Sandbox được xác thực qua chữ ký số Webhook IPN và cập nhật số dư tức thời.
-
-### 1.4. Chuyển tiền Nội bộ P2P (P2P Transfer)
-1. **Tìm kiếm người nhận:**
-   - Tra cứu qua `SpendId` (mã định danh duy nhất) hoặc số điện thoại.
-   - Không thể tự chuyển tiền cho chính mình (`self_transfer_not_allowed`).
-   - Người nhận phải ở trạng thái `Active` hoặc `Restricted` (cho phép nhận tiền). Nếu người nhận bị `Locked`, từ chối chuyển tiền.
-2. **Quy trình chuyển tiền:**
-   - Yêu cầu xác thực mã PIN 6 số.
-   - Ghi sổ cái kép: Ghi Nợ (`Debit`) ví người gửi, ghi Có (`Credit`) ví người nhận trong một transaction cô lập (`IsolationLevel.ReadCommitted` hoặc cao hơn).
-
-### 1.5. Quỹ nhóm Cố định V2 (Fixed Group Fund V2)
-1. **Cơ chế góp quỹ theo nghĩa vụ (Obligation Model):**
-   - Quỹ có chu kỳ (tuần/tháng) và số tiền nghĩa vụ định mức cho mỗi thành viên.
-   - Thành viên nộp quỹ để hoàn thành nghĩa vụ của kỳ.
-2. **Quy tắc chi tiêu động (`CanSpend`):**
+### 1.3. Quỹ nhóm Cố định V2 & Quỹ nhóm Tự do (Group Funds)
+1. **Quỹ nhóm Cố định V2 (Fixed Fund V2):**
+   - Quản lý theo mô hình Nghĩa vụ kỳ (`Obligation Model`). Mỗi thành viên có định mức đóng góp theo chu kỳ.
+   - Hạn mức chi tiêu khả dụng cá nhân (`CanSpend`):
+     $$\text{CanSpend} = \text{Tổng tiền thành viên đã đóng} - \text{Nghĩa vụ đã phân bổ/sử dụng}$$
+   - Thành viên được bật quyền chi tiêu có thể thực hiện chi trong hạn mức `CanSpend` mà không cần chờ duyệt. Chi tiêu vượt định mức cá nhân phải gửi đề xuất hoạt động (`Activity Proposal`) để Chủ quỹ phê duyệt.
    - Loại bỏ hoàn toàn cơ chế tạm giữ 20% và trạng thái giữ chỗ giả tạo (Pending24h).
-   - Công thức hạn mức chi tiêu khả dụng của thành viên:
-     $$\text{CanSpend} = \text{Tổng số tiền đã đóng} - \text{Phần nghĩa vụ đã phân bổ/sử dụng}$$
-   - Thành viên được cấp quyền `CanSpend` có thể thực hiện chi tiêu trong hạn mức này mà không cần chờ toàn bộ thành viên khác phê duyệt.
-   - Chi tiêu vượt quá hạn mức cá nhân phải được Chủ quỹ (`Owner`) phê duyệt đề xuất chi.
+2. **Quỹ nhóm Tự do (Free Fund):**
+   - Đóng góp tự nguyện linh hoạt, không ép định mức.
+   - Mọi chi tiêu hoặc rút tiền từ quỹ đều phải thông qua đề xuất hoạt động (`Activity Proposal`) và được Chủ quỹ phê duyệt bằng mã PIN.
 
-### 1.6. Quỹ nhóm Tự do (Free Group Fund)
-1. **Cơ chế đóng góp linh hoạt:**
-   - Thành viên đóng góp tự nguyện với số tiền tùy ý, không ép buộc định mức kỳ.
-2. **Quy trình chi tiêu & Rút vốn:**
-   - Mọi thành viên có quyền tạo đề xuất chi tiêu (`Expense Proposal`) hoặc đề xuất rút vốn.
-   - Đề xuất phải được Chủ quỹ phê duyệt mới kích hoạt xuất tiền từ quỹ.
-   - Bảng kê chi tiêu và biến động quỹ được công khai minh bạch cho toàn bộ thành viên trong quỹ.
-
-### 1.7. Ngân sách Chi tiêu (Budgets)
-- Thiết lập hạn mức theo từng Danh mục chi tiêu (`Category`) theo tuần, tháng hoặc năm.
-- Ngưỡng cảnh báo tự động khi chi tiêu đạt 80% và 100% ngân sách.
-- Giao dịch chi tiêu phát sinh trong danh mục sẽ tự động trừ vào hạn mức ngân sách của chu kỳ tương ứng.
-
-### 1.8. Mục tiêu Tiết kiệm (Savings Goals)
-- Thiết lập số tiền mục tiêu (`TargetAmount`) và ngày hoàn thành dự kiến (`TargetDate`).
-- Cho phép nạp tiền định kỳ hoặc trích tự động từ Ví chính vào quỹ tích lũy mục tiêu.
-- Khi hoàn thành hoặc hủy bỏ, số tiền tích lũy được hoàn trả về Ví chính của người dùng.
-
-### 1.9. Giao dịch Định kỳ (Recurring Transactions)
-- Tự động tạo giao dịch định kỳ (ngày, tuần, tháng) cho hóa đơn định kỳ, tiền nhà, lương.
-- Thực thi thông qua cơ chế Outbox Worker chạy nền.
-- Nếu ví không đủ số dư tại thời điểm thực thi, hệ thống đánh dấu trạng thái `Failed`, gửi thông báo cho người dùng và thử lại theo cấu hình chính sách.
-
-### 1.10. Hỗ trợ & Khiếu nại Trực tiếp (Direct Support & Complaints)
-1. **Luồng khiếu nại giao dịch:**
-   - Người dùng có quyền gửi khiếu nại (`SupportCase`) trực tiếp từ một giao dịch cụ thể (`TransactionId`).
-   - Loại bỏ hoàn toàn endpoint tạo Dispute độc lập trôi nổi ngoài quy trình hỗ trợ.
-2. **Vòng đời vụ việc:**
-   - `Pending`: Người dùng vừa tạo yêu cầu.
-   - `InReview`: Admin đã tiếp nhận và đang thẩm tra.
-   - `Resolved`: Admin chấp thuận khiếu nại (hoàn tiền hoặc điều chỉnh trạng thái).
-   - `Rejected`: Admin từ chối khiếu nại kèm lý do chính thức.
-   - Người dùng và Admin có thể trao đổi tin nhắn, đính kèm bằng chứng bên trong vụ việc.
+### 1.4. Hỗ trợ & Khiếu nại Giao dịch Trực tiếp (Direct Support Flow)
+1. Người dùng khiếu nại giao dịch trực tiếp bằng cách tạo `SupportCase` gắn với `TransactionId`.
+2. Không tồn tại endpoint tạo tranh chấp (Dispute) độc lập trôi nổi ngoài quy trình hỗ trợ.
+3. Người dùng và Admin trao đổi tin nhắn, bằng chứng đính kèm ngay trong vụ việc. Khi được Admin phê duyệt (`Resolved`), số tiền khiếu nại sẽ được tự động hoàn trả vào ví.
 
 ---
 
-## 2. DANH MỤC API PHÂN HỆ USER (API SPECIFICATIONS)
+## 2. QUY CHUẨN KỸ THUẬT GỌI API (CLIENT API CONTRACT)
 
-Mọi request yêu cầu Header:
+### 2.1. Headers bắt buộc
 ```http
 Content-Type: application/json
-Authorization: Bearer <access_token> (trừ các endpoint xác thực công khai)
-X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
+Authorization: Bearer <access_token>
+X-Idempotency-Key: <uuid-v4> (Bắt buộc với các lệnh ghi nợ/chuyển tiền/chi tiêu)
 ```
 
-### 2.1. Phân hệ Xác thực & Định danh (Authentication)
+---
 
-#### `POST /api/auth/register`
-- **Mô tả:** Đăng ký tài khoản mới. Hệ thống tạo User ở trạng thái chưa xác minh, sinh mã dynamic OTP ngẫu nhiên 8 số và xếp email E01 vào hàng đợi Outbox mã hóa.
+## 3. DANH MỤC API PHÂN HỆ USER
+
+### 3.1. Xác thực & Quản lý Phiên (Authentication & Sessions)
+
+#### 1. `POST /api/auth/register`
+- **Mô tả:** Đăng ký tài khoản mới. Sinh mã dynamic OTP ngẫu nhiên 8 chữ số từ nguồn mật mã an toàn (CSPRNG), xếp email vào hàng đợi Outbox.
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -133,10 +89,10 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "resendAfterSeconds": 60
 }
 ```
-- **Mã lỗi:** `400 BadRequest` (`email_already_exists`, `invalid_phone_format`, `password_too_weak`).
+- **Lỗi thường gặp:** `400 BadRequest` (`email_already_exists`, `invalid_phone_format`, `password_too_weak`).
 
-#### `POST /api/auth/email-verification/verify`
-- **Mô tả:** Xác minh mã OTP 8 số từ email. Mã OTP chỉ dùng một lần (single-use), chống replay.
+#### 2. `POST /api/auth/email-verification/verify`
+- **Mô tả:** Xác minh mã OTP 8 chữ số nhận từ email. Mã chỉ dùng một lần (single-use), chống tấn công phát lại (replay).
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -149,14 +105,14 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
 ```json
 {
   "status": "PIN_SETUP_REQUIRED",
-  "challengeToken": "signed-token-string",
+  "challengeToken": "signed-challenge-jwt-string",
   "expiresIn": 900
 }
 ```
-- **Mã lỗi:** `400 BadRequest` (`email_verification_failed`, `otp_expired`, `otp_already_used`, `too_many_failed_attempts`).
+- **Lỗi thường gặp:** `400 BadRequest` (`email_verification_failed`, `otp_expired`, `otp_already_used`, `too_many_failed_attempts`).
 
-#### `POST /api/auth/email-verification/resend`
-- **Mô tả:** Gửi lại mã OTP qua email. Mã OTP cũ bị thu hồi ngay lập tức. Áp dụng cooldown 60 giây.
+#### 3. `POST /api/auth/email-verification/resend`
+- **Mô tả:** Gửi lại OTP xác minh email. Mã OTP cũ bị thu hồi ngay lập tức (`RevokedAt = UtcNow`). Áp dụng giới hạn tần suất (cooldown 60s).
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -171,27 +127,27 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "resendAfterSeconds": 60
 }
 ```
-- **Mã lỗi:** `429 TooManyRequests` (`resend_cooldown_active`).
+- **Lỗi thường gặp:** `429 TooManyRequests` (`resend_cooldown_active`).
 
-#### `POST /api/auth/pin/setup`
-- **Mô tả:** Thiết lập mã PIN bảo mật 6 số lần đầu tiên sau khi xác minh email. Hoàn tất chu trình onboarding và cấp JWT token.
+#### 4. `POST /api/auth/pin/setup`
+- **Mô tả:** Thiết lập mã PIN 6 số lần đầu sau khi xác minh email. Hoàn tất onboarding, kích hoạt ví chính và cấp token.
 - **Quyền:** Public (kèm `ChallengeToken`).
 - **Request Body:**
 ```json
 {
-  "challengeToken": "signed-token-string",
-  "pin": "{ securityPin }",
-  "confirmPin": "{ securityPin }"
+  "challengeToken": "signed-challenge-jwt-string",
+  "pin": "123456",
+  "confirmPin": "123456"
 }
 ```
 - **Response `200 OK`:**
 ```json
 {
-  "accessToken": "jwt-token-string",
+  "accessToken": "jwt-access-token",
   "refreshToken": "refresh-token-string",
   "expiresIn": 3600,
   "user": {
-    "id": "uuid",
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "email": "user@example.com",
     "fullName": "Nguyen Van A",
     "spendId": "SPEND_123456",
@@ -200,15 +156,15 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
 }
 ```
 
-#### `POST /api/auth/login`
-- **Mô tả:** Bước 1 đăng nhập bằng Email/SpendId và mật khẩu. Nếu đúng, trả về ChallengeToken yêu cầu nhập mã PIN.
+#### 5. `POST /api/auth/login`
+- **Mô tả:** Bước 1 đăng nhập bằng Email/SpendId và mật khẩu. Trả về `ChallengeToken` để thực hiện Bước 2 (nhập PIN).
 - **Quyền:** Public.
 - **Request Body:**
 ```json
 {
   "identifier": "user@example.com",
   "password": "Password123!",
-  "deviceName": "iPhone 15 Pro"
+  "deviceName": "Chrome / Windows 11"
 }
 ```
 - **Response `200 OK`:**
@@ -219,38 +175,23 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "expiresIn": 300
 }
 ```
-- **Mã lỗi:** `401 Unauthorized` (`invalid_credentials`), `403 Forbidden` (`account_locked`).
+- **Lỗi thường gặp:** `401 Unauthorized` (`invalid_credentials`), `403 Forbidden` (`account_locked`).
 
-#### `POST /api/auth/pin/verify`
-- **Mô tả:** Bước 2 đăng nhập bằng mã PIN 6 số. Cấp Access Token và Refresh Token.
+#### 6. `POST /api/auth/pin/verify`
+- **Mô tả:** Bước 2 đăng nhập bằng mã PIN 6 số.
 - **Quyền:** Public (kèm `ChallengeToken`).
 - **Request Body:**
 ```json
 {
   "challengeToken": "signed-challenge-token",
-  "pin": "{ securityPin }",
-  "deviceName": "iPhone 15 Pro"
+  "pin": "123456",
+  "deviceName": "Chrome / Windows 11"
 }
 ```
-- **Response `200 OK`:**
-```json
-{
-  "accessToken": "jwt-token-string",
-  "refreshToken": "refresh-token-string",
-  "expiresIn": 3600,
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "fullName": "Nguyen Van A",
-    "spendId": "SPEND_123456",
-    "status": "Active"
-  }
-}
-```
-- **Mã lỗi:** `400 BadRequest` (`invalid_pin`), `429 TooManyRequests` (`pin_temporarily_locked`).
+- **Response `200 OK`:** Trả về `AuthResponse` (`accessToken`, `refreshToken`, `expiresIn`, `user`).
 
-#### `POST /api/auth/refresh`
-- **Mô tả:** Cấp mới Access Token bằng Refresh Token (Token Rotation).
+#### 7. `POST /api/auth/refresh`
+- **Mô tả:** Cấp mới Access Token bằng Refresh Token (Token Rotation). Refresh token cũ bị vô hiệu hóa ngay sau khi sử dụng.
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -258,16 +199,38 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "refreshToken": "current-refresh-token"
 }
 ```
-- **Response `200 OK`:** Trả về bộ token mới. Refresh token cũ bị vô hiệu hóa.
-- **Mã lỗi:** `401 Unauthorized` (`token_revoked`, `token_expired`).
+- **Response `200 OK`:** Trả về `AuthResponse` mới.
 
-#### `POST /api/auth/logout`
-- **Mô tả:** Đăng xuất phiên hiện tại, thu hồi refresh token tương ứng.
+#### 8. `POST /api/auth/logout`
+- **Mô tả:** Đăng xuất phiên hiện tại, thu hồi refresh token của phiên đó.
+- **Quyền:** User (`Authorize`).
+- **Response:** `204 NoContent`.
+
+#### 9. `GET /api/auth/sessions`
+- **Mô tả:** Xem danh sách các phiên đăng nhập đang hoạt động của tài khoản.
 - **Quyền:** User.
-- **Response `204 NoContent`**
+- **Response `200 OK`:** Mảng các đối tượng phiên (`id`, `deviceName`, `ipAddress`, `lastActiveAt`, `isCurrent`).
 
-#### `POST /api/auth/forgot-password`
-- **Mô tả:** Yêu cầu đặt lại mật khẩu. Gửi dynamic OTP 8 số tới email đã đăng ký.
+#### 10. `DELETE /api/auth/sessions/{id}`
+- **Mô tả:** Hủy một phiên đăng nhập cụ thể theo ID phiên.
+- **Quyền:** User.
+- **Response:** `204 NoContent`.
+
+#### 11. `POST /api/auth/change-password`
+- **Mô tả:** Đổi mật khẩu tài khoản khi đang đăng nhập.
+- **Quyền:** User.
+- **Request Body:**
+```json
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword456!",
+  "confirmPassword": "NewPassword456!"
+}
+```
+- **Response:** `204 NoContent`.
+
+#### 12. `POST /api/auth/forgot-password`
+- **Mô tả:** Yêu cầu đặt lại mật khẩu khi quên. Sinh mã OTP động gửi vào email.
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -275,10 +238,10 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "identifier": "user@example.com"
 }
 ```
-- **Response `202 Accepted`**
+- **Response:** `202 Accepted`.
 
-#### `POST /api/auth/reset-password`
-- **Mô tả:** Đặt lại mật khẩu mới bằng mã OTP. Tự động thu hồi toàn bộ phiên hoạt động cũ (`UserSessions`).
+#### 13. `POST /api/auth/reset-password`
+- **Mô tả:** Đặt lại mật khẩu bằng mã OTP nhận từ email. Tự động thu hồi toàn bộ các phiên hoạt động cũ (`RevokedAt = UtcNow`).
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -288,10 +251,10 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "newPassword": "NewPassword123!"
 }
 ```
-- **Response `204 NoContent`**
+- **Response:** `204 NoContent`.
 
-#### `POST /api/auth/pin/forgot`
-- **Mô tả:** Yêu cầu khôi phục mã PIN. Hệ thống gửi email chứa signed reset link bảo mật.
+#### 14. `POST /api/auth/pin/forgot`
+- **Mô tả:** Yêu cầu đặt lại mã PIN. Hệ thống gửi email chứa signed reset link bảo mật.
 - **Quyền:** Public.
 - **Request Body:**
 ```json
@@ -299,45 +262,61 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "identifier": "user@example.com"
 }
 ```
-- **Response `202 Accepted`**
+- **Response:** `202 Accepted`.
 
-#### `POST /api/auth/pin/reset`
-- **Mô tả:** Đặt lại mã PIN bằng signed token từ email. Mã token chỉ dùng một lần.
+#### 15. `POST /api/auth/pin/reset/validate`
+- **Mô tả:** Kiểm tra token đặt lại mã PIN từ link email có hợp lệ hay đã hết hạn/đã dùng.
 - **Quyền:** Public.
 - **Request Body:**
 ```json
 {
-  "token": "raw-token-from-email-link",
-  "newPin": "{ securityPin }",
-  "confirmPin": "{ securityPin }"
+  "token": "raw-token-from-link"
 }
 ```
-- **Response `204 NoContent`**
-- **Mã lỗi:** `401 Unauthorized` (`token_invalid_or_expired`, `token_already_used`).
+- **Response `200 OK`:** `{ "valid": true }`.
+
+#### 16. `POST /api/auth/pin/reset`
+- **Mô tả:** Đặt lại mã PIN bằng signed token. Token chỉ được dùng một lần.
+- **Quyền:** Public.
+- **Request Body:**
+```json
+{
+  "token": "raw-token-from-link",
+  "newPin": "654321",
+  "confirmPin": "654321"
+}
+```
+- **Response:** `204 NoContent`.
 
 ---
 
-### 2.2. Hồ sơ Người dùng & Tùy chọn (User Profile & Preferences)
+### 3.2. Hồ sơ Người dùng & Tùy chọn (Users & Preferences)
 
-#### `GET /api/users/me`
-- **Mô tả:** Lấy thông tin chi tiết người dùng hiện tại, bao gồm số dư ví chính, trạng thái tài khoản.
+#### 1. `GET /api/users/me`
+- **Mô tả:** Lấy thông tin chi tiết hồ sơ người dùng hiện tại, bao gồm số dư ví chính và preferences.
 - **Quyền:** User.
 - **Response `200 OK`:**
 ```json
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "email": "user@example.com",
   "fullName": "Nguyen Van A",
   "phone": "0912345678",
   "spendId": "SPEND_123456",
   "status": "Active",
   "mainWalletBalance": 5000000.00,
-  "createdAt": "2026-10-20T10:00:00Z"
+  "createdAt": "2026-10-20T10:00:00Z",
+  "preferences": {
+    "theme": "dark",
+    "locale": "vi-VN",
+    "enableBiometric": true,
+    "notificationsEnabled": true
+  }
 }
 ```
 
-#### `PUT /api/users/me/preferences`
-- **Mô tả:** Lưu tùy chọn giao diện người dùng (chủ đề, ngôn ngữ hiển thị).
+#### 2. `PUT /api/users/me/preferences`
+- **Mô tả:** Lưu cấu hình tùy chọn của người dùng (theme, locale, biometric flag).
 - **Quyền:** User.
 - **Request Body:**
 ```json
@@ -348,463 +327,456 @@ X-Idempotency-Key: <uuid> (đối với các lệnh ghi biến động số dư)
   "notificationsEnabled": true
 }
 ```
-- **Response `200 OK`:** Trả về đối tượng preferences đã cập nhật.
+- **Response `200 OK`:** Trả về đối tượng `UserPreferencesDto` đã lưu.
 
-#### `POST /api/users/me/email/request`
-- **Mô tả:** Yêu cầu đổi địa chỉ email. Gửi dynamic OTP tới email mới và gửi thông báo cảnh báo tới email cũ.
+#### 3. `POST /api/users/me/email/request`
+- **Mô tả:** Yêu cầu đổi địa chỉ email. Sinh OTP gửi tới email mới và gửi thông báo cảnh báo tới email cũ.
 - **Quyền:** User.
 - **Request Body:**
 ```json
 {
-  "newEmail": "new_email@example.com"
+  "newEmail": "newemail@example.com"
 }
 ```
-- **Response `200 OK`:** `{ "status": "CONFIRMATION_REQUIRED", "resendAfterSeconds": 60 }`
+- **Response `200 OK`:** `{ "status": "CONFIRMATION_REQUIRED", "resendAfterSeconds": 60 }`.
 
-#### `POST /api/users/me/email/confirm`
-- **Mô tả:** Xác nhận đổi email bằng mã OTP nhận được tại hộp thư mới.
+#### 4. `POST /api/users/me/email/confirm`
+- **Mô tả:** Xác nhận đổi email bằng mã OTP nhận tại hộp thư mới.
 - **Quyền:** User.
 - **Request Body:**
 ```json
 {
-  "newEmail": "new_email@example.com",
+  "newEmail": "newemail@example.com",
   "otp": "94820153"
 }
 ```
-- **Response `200 OK`:** Trả về hồ sơ người dùng với email mới.
+- **Response `200 OK`:** Trả về hồ sơ `UserProfileDto` với email đã cập nhật.
+
+#### 5. `DELETE /api/users/me/sessions`
+- **Mô tả:** Cưỡng chế đăng xuất toàn bộ các phiên khác của chính mình (ngoại trừ phiên hiện tại).
+- **Quyền:** User.
+- **Response:** `204 NoContent`.
 
 ---
 
-### 2.3. Phân hệ Ví & Giao dịch Tài chính (Wallets & Transactions)
+### 3.3. Ví & Giao dịch Tài chính Cá nhân (Wallets & Transactions)
 
-#### `GET /api/wallets`
-- **Mô tả:** Lấy danh sách ví của người dùng (Ví chính và các Ví phụ).
+#### 1. `GET /api/wallets`
+- **Mô tả:** Danh sách các ví người dùng đang sở hữu (Ví chính và các ví phụ).
 - **Quyền:** User.
 - **Response `200 OK`:**
 ```json
 [
   {
-    "id": "uuid-main",
+    "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
     "name": "Ví chính",
+    "currency": "VND",
     "type": "Main",
     "balance": 5000000.00,
     "isDefault": true
-  },
-  {
-    "id": "uuid-sub",
-    "name": "Ví du lịch",
-    "type": "Sub",
-    "balance": 2000000.00,
-    "isDefault": false
   }
 ]
 ```
 
-#### `POST /api/wallets`
+#### 2. `POST /api/wallets`
 - **Mô tả:** Tạo ví phụ mới.
-- **Quyền:** User (chỉ `Active`).
+- **Quyền:** User (`Active`). Nếu tài khoản `Restricted`, không được tạo thêm ví mới.
 - **Request Body:**
 ```json
 {
-  "name": "Quỹ mua sắm",
-  "initialBalance": 0
+  "name": "Quỹ Mua Sắm",
+  "currency": "VND",
+  "type": "Sub",
+  "targetAmount": 10000000.00
 }
 ```
-- **Response `201 Created`**
+- **Response `201 Created`:** Trả về `WalletDto` vừa tạo.
 
-#### `POST /api/transfers/p2p`
-- **Mô tả:** Chuyển tiền nội bộ cho người dùng khác trong hệ thống qua SpendId hoặc số điện thoại.
-- **Quyền:** User (`Active`; nếu `Restricted` bị chặn `403`).
+#### 3. `GET /api/transactions`
+- **Mô tả:** Lịch sử giao dịch cá nhân có phân trang và bộ lọc.
+- **Quyền:** User.
+- **Query Params:** `page=1&pageSize=20&walletId={id}&type=Expense&categoryId={id}&fromDate=2026-10-01`
+- **Response `200 OK`:** `PagedResult<TransactionDto>` (`items`, `totalCount`, `page`, `pageSize`).
+
+#### 4. `POST /api/transactions/expense`
+- **Mô tả:** Ghi nhận khoản chi tiêu cá nhân (ghi nợ ví, ghi có tài khoản chi phí để theo dõi ngân sách).
+- **Quyền:** User (`Active`). Nếu `Restricted`, bị chặn `403 Forbidden` (`account_restricted`).
+- **Request Body:**
+```json
+{
+  "walletId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "amount": 45000.00,
+  "categoryId": "2c963f66-afa6-4562-b3fc-3fa85f645717",
+  "description": "Cà phê sáng",
+  "occurredAt": "2026-10-29T08:30:00Z"
+}
+```
+- **Response `201 Created`:** `TransactionDto`.
+
+#### 5. `POST /api/transactions/income`
+- **Mô tả:** Ghi nhận khoản thu nhập cá nhân vào ví.
+- **Quyền:** User (`Active` hoặc `Restricted` - nhận tiền được phép).
+- **Request Body:**
+```json
+{
+  "walletId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "amount": 15000000.00,
+  "categoryId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "description": "Lương tháng 10",
+  "occurredAt": "2026-10-29T09:00:00Z"
+}
+```
+- **Response `201 Created`:** `TransactionDto`.
+
+---
+
+### 3.4. Chuyển tiền (Transfers: Internal & P2P)
+
+#### 1. `GET /api/transfers/recipients?phone=0912345678`
+- **Mô tả:** Tra cứu thông tin người nhận trước khi chuyển tiền (hiển thị họ tên đã che bảo mật và SpendId).
+- **Quyền:** User.
+- **Response `200 OK`:**
+```json
+{
+  "userId": "uuid-recipient",
+  "fullName": "NGUYEN VAN B",
+  "spendId": "SPEND_654321",
+  "phoneMasked": "091****678"
+}
+```
+
+#### 2. `POST /api/transfers/internal`
+- **Mô tả:** Chuyển tiền giữa hai ví thuộc cùng một tài khoản người dùng.
+- **Quyền:** User (`Active`). Yêu cầu mã PIN 6 số.
+- **Request Body:**
+```json
+{
+  "sourceWalletId": "uuid-wallet-main",
+  "destinationWalletId": "uuid-wallet-sub",
+  "amount": 1000000.00,
+  "note": "Chuyển tiền vào quỹ du lịch",
+  "securityPin": "123456"
+}
+```
+- **Response `201 Created`:** `TransferDto`.
+
+#### 3. `POST /api/transfers/p2p`
+- **Mô tả:** Chuyển tiền P2P nội bộ giữa 2 tài khoản SpendWise qua SpendId hoặc số điện thoại.
+- **Quyền:** User (`Active`). Nếu `Restricted`, bị chặn `403 Forbidden` (`account_restricted`). Người nhận ở trạng thái `Locked` cũng sẽ bị từ chối nhận tiền.
 - **Request Body:**
 ```json
 {
   "recipientIdentifier": "SPEND_654321",
+  "sourceWalletId": "uuid-wallet-main",
   "amount": 250000.00,
-  "sourceWalletId": "uuid-main",
-  "note": "Tiền ăn tối",
-  "securityPin": "{ securityPin }"
+  "note": "Tiền cơm trưa",
+  "securityPin": "123456"
 }
 ```
-- **Response `200 OK`:**
-```json
-{
-  "transactionId": "uuid-tx",
-  "status": "Completed",
-  "amount": 250000.00,
-  "sourceBalanceAfter": 4750000.00,
-  "timestamp": "2026-10-29T14:00:00Z"
-}
-```
-- **Mã lỗi:** `400 BadRequest` (`insufficient_funds`, `invalid_recipient`, `invalid_security_pin`), `403 Forbidden` (`account_restricted`).
-
-#### `GET /api/transactions`
-- **Mô tả:** Lịch sử giao dịch cá nhân có phân trang, bộ lọc thời gian, loại giao dịch, danh mục.
-- **Quyền:** User.
-- **Query Params:** `page=1&pageSize=20&type=Transfer&fromDate=2026-10-01`
-- **Response `200 OK`:** Danh sách giao dịch kèm thông tin phân trang.
-
-#### `POST /api/transactions/expense`
-- **Mô tả:** Ghi nhận khoản chi tiêu cá nhân (rút khỏi ví, ghi nhận danh mục để trừ ngân sách).
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "walletId": "uuid-main",
-  "categoryId": "uuid-category-food",
-  "amount": 120000.00,
-  "transactionDate": "2026-10-29T14:30:00Z",
-  "note": "Cà phê sáng"
-}
-```
-- **Response `201 Created`**
-
-#### `POST /api/banking/sepay/deposit-intent`
-- **Mô tả:** Tạo ý định nạp tiền qua cổng ngân hàng SePay (Sandbox). Trả về thông tin chuyển khoản (QR code / số tài khoản / cú pháp nội dung).
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "walletId": "uuid-main",
-  "amount": 1000000.00
-}
-```
-- **Response `200 OK`:**
-```json
-{
-  "depositReference": "SPEND_DEP_123456",
-  "bankCode": "MB",
-  "accountNumber": "0912345678",
-  "accountName": "SPENDWISE SANDBOX",
-  "amount": 1000000.00,
-  "transferCode": "SE_DEP_123456",
-  "qrUrl": "https://img.vietqr.io/image/MB-0912345678-compact2.png"
-}
-```
+- **Response `201 Created`:** `TransferDto`.
 
 ---
 
-### 2.4. Phân hệ Quỹ Nhóm (Group Funds)
+### 3.5. Kết nối Ngân hàng & Nạp rút Sandbox (Bank Connections & Sandbox Banking)
 
-#### `POST /api/funds/fixed`
-- **Mô tả:** Tạo quỹ nhóm Cố định V2.
+#### 1. `POST /api/bank-connections/link`
+- **Mô tả:** Liên kết tài khoản ngân hàng (kiểm tra họ tên chủ thẻ trùng khớp họ tên định danh tài khoản).
+- **Quyền:** User.
+- **Request Body:**
+```json
+{
+  "bankCode": "MB",
+  "accountNumber": "0912345678",
+  "accountHolderName": "NGUYEN VAN A"
+}
+```
+- **Response `201 Created`:** `BankConnectionDto`.
+
+#### 2. `GET /api/bank-connections`
+- **Mô tả:** Danh sách các tài khoản ngân hàng đang liên kết.
+- **Quyền:** User.
+- **Response `200 OK`:** Mảng `BankConnectionDto`.
+
+#### 3. `POST /api/bank-connections/test-mode/wallet-top-ups`
+- **Mô tả:** Tạo lệnh nạp tiền vào ví qua cổng Sandbox (SePay BankHub). Trả về thông tin chuyển khoản VietQR.
 - **Quyền:** User (`Active`).
 - **Request Body:**
 ```json
 {
-  "name": "Quỹ Nhà Trọ 402",
-  "description": "Quỹ sinh hoạt chung",
-  "period": "Monthly",
-  "obligationAmount": 500000.00
-}
-```
-- **Response `201 Created`**
-
-#### `POST /api/funds/free`
-- **Mô tả:** Tạo quỹ nhóm Tự do (linh hoạt, tự nguyện).
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "name": "Quỹ Du Lịch Hè 2026",
-  "description": "Góp quỹ linh hoạt"
-}
-```
-- **Response `201 Created`**
-
-#### `POST /api/funds/{fundId}/members`
-- **Mô tả:** Mời thành viên vào quỹ bằng SpendId hoặc Email.
-- **Quyền:** Chủ quỹ (`Fund Owner`).
-- **Request Body:**
-```json
-{
-  "memberIdentifier": "SPEND_789012"
-}
-```
-- **Response `200 OK`**
-
-#### `POST /api/funds/{fundId}/contributions`
-- **Mô tả:** Đóng tiền vào quỹ từ Ví chính của thành viên.
-- **Quyền:** Thành viên quỹ (`Active`).
-- **Request Body:**
-```json
-{
-  "sourceWalletId": "uuid-main",
+  "walletId": "uuid-wallet-main",
   "amount": 500000.00,
-  "securityPin": "{ securityPin }"
+  "description": "Nạp tiền ví chính"
+}
+```
+- **Response `201 Created`:**
+```json
+{
+  "id": "uuid-topup",
+  "walletId": "uuid-wallet-main",
+  "amount": 500000.00,
+  "depositReference": "SPEND_TOPUP_839201",
+  "transferCode": "SE_TOPUP_839201",
+  "qrCodeUrl": "https://img.vietqr.io/image/MB-0912345678-compact2.png",
+  "bankCode": "MB",
+  "accountNumber": "0912345678",
+  "status": "Pending",
+  "expiresAt": "2026-10-29T16:00:00Z"
+}
+```
+
+#### 4. `POST /api/bank-connections/test-mode/wallet-top-ups/{id}/confirm`
+- **Mô tả:** Xác nhận giao dịch nạp tiền Sandbox thành công (mô phỏng Webhook IPN từ ngân hàng), cộng số dư vào ví.
+- **Quyền:** User (`Active`).
+- **Response `200 OK`:** `TestModeWalletTopUpDto` (`status`: "Completed").
+
+---
+
+### 3.6. Quỹ nhóm & Phân bổ Nghĩa vụ V2 (Groups & V1 Funds)
+
+#### 1. `POST /api/groups`
+- **Mô tả:** Tạo nhóm chi tiêu mới. Người tạo trở thành Chủ nhóm (`Owner`).
+- **Quyền:** User (`Active`).
+- **Request Body:**
+```json
+{
+  "name": "Nhà Trọ 402",
+  "description": "Nhóm sinh hoạt phòng 402",
+  "currency": "VND"
+}
+```
+- **Response `201 Created`:** `GroupDto`.
+
+#### 2. `POST /api/groups/{id}/members`
+- **Mô tả:** Thêm thành viên vào nhóm qua SpendId hoặc Email/SĐT.
+- **Quyền:** Chủ nhóm (`Owner`).
+- **Request Body:**
+```json
+{
+  "identifier": "SPEND_654321"
+}
+```
+- **Response `201 Created`:** `GroupMemberDto`.
+
+#### 3. `POST /api/v1/funds/{id}/contributions`
+- **Mô tả:** Nộp tiền vào Quỹ Cố định V2 từ ví chính của thành viên.
+- **Quyền:** Thành viên quỹ (`Active`). Yêu cầu mã PIN 6 số.
+- **Request Body:**
+```json
+{
+  "amount": 500000.00,
+  "sourceWalletId": "uuid-wallet-main",
+  "securityPin": "123456"
 }
 ```
 - **Response `200 OK`**
 
-#### `GET /api/funds/{fundId}/can-spend`
-- **Mô tả:** Kiểm tra hạn mức chi tiêu khả dụng (`CanSpend`) của thành viên trong Quỹ Cố định V2.
+#### 4. `GET /api/v1/funds/{id}/contribution-allocation`
+- **Mô tả:** Lấy thông tin phân bổ nghĩa vụ đóng góp và hạn mức chi tiêu khả dụng cá nhân (`CanSpend`).
 - **Quyền:** Thành viên quỹ.
 - **Response `200 OK`:**
 ```json
 {
   "fundId": "uuid-fund",
   "userId": "uuid-user",
-  "totalContributed": 1500000.00,
+  "obligationTotal": 1000000.00,
+  "contributed": 1500000.00,
   "allocatedObligation": 1000000.00,
-  "canSpendAmount": 500000.00
+  "obligationRemaining": 0.00,
+  "canSpend": 500000.00,
+  "isEligibleToSpend": true
 }
 ```
 
-#### `POST /api/funds/{fundId}/proposals`
-- **Mô tả:** Tạo đề xuất chi tiêu hoặc rút tiền từ quỹ (áp dụng cho Quỹ Tự do hoặc chi vượt hạn mức Quỹ Cố định).
+#### 5. `POST /api/v1/funds/{id}/activity-proposals`
+- **Mô tả:** Tạo đề xuất hoạt động / chi tiêu chung từ quỹ nhóm.
 - **Quyền:** Thành viên quỹ.
 - **Request Body:**
 ```json
 {
-  "title": "Mua bình nóng lạnh",
-  "amount": 1800000.00,
-  "description": "Thay bình nước nóng bị hỏng phòng tắm",
-  "recipientWalletId": "uuid-member-wallet"
+  "title": "Mua bình nước uống",
+  "estimatedAmount": 120000.00,
+  "description": "2 bình nước Lavie 19L"
 }
 ```
-- **Response `201 Created`**
+- **Response `201 Created`:** `V1ActivityProposalDto`.
 
-#### `POST /api/funds/{fundId}/proposals/{proposalId}/review`
-- **Mô tả:** Chủ quỹ phê duyệt hoặc từ chối đề xuất chi.
-- **Quyền:** Chủ quỹ (`Fund Owner`).
+#### 6. `POST /api/v1/funds/activity-proposals/{id}/settle`
+- **Mô tả:** Quyết toán đề xuất hoạt động (Chủ quỹ phê duyệt hoặc từ chối).
+- **Quyền:** Chủ quỹ (`Owner`). Yêu cầu mã PIN 6 số.
 - **Request Body:**
 ```json
 {
-  "action": "Approve",
-  "reviewNote": "Đồng ý thay mới",
-  "securityPin": "{ securityPin }"
-}
-```
-- **Response `200 OK`:** Trạng thái đề xuất chuyển thành `Approved`, kích hoạt lệnh chuyển tiền từ quỹ đến người nhận.
-
----
-
-### 2.5. Phân hệ Ngân sách & Mục tiêu (Budgets & Goals)
-
-#### `POST /api/budgets`
-- **Mô tả:** Tạo ngân sách chi tiêu cho danh mục theo kỳ.
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "categoryId": "uuid-category",
-  "limitAmount": 3000000.00,
-  "period": "Monthly",
-  "startDate": "2026-11-01"
-}
-```
-- **Response `201 Created`**
-
-#### `GET /api/budgets/progress`
-- **Mô tả:** Theo dõi tiến độ chi tiêu so với ngân sách của các danh mục trong tháng.
-- **Quyền:** User.
-- **Response `200 OK`:** Danh sách tiến độ theo tỷ lệ % và số tiền đã chi/còn lại.
-
-#### `POST /api/goals`
-- **Mô tả:** Tạo mục tiêu tiết kiệm.
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "title": "Mua Laptop mới",
-  "targetAmount": 25000000.00,
-  "targetDate": "2026-12-31"
-}
-```
-- **Response `201 Created`**
-
-#### `POST /api/goals/{goalId}/deposit`
-- **Mô tả:** Nạp tiền vào mục tiêu tiết kiệm từ Ví chính.
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "sourceWalletId": "uuid-main",
-  "amount": 2000000.00,
-  "securityPin": "{ securityPin }"
+  "actualAmount": 120000.00,
+  "status": "Approved",
+  "note": "Đã mua và có hóa đơn kèm theo",
+  "securityPin": "123456"
 }
 ```
 - **Response `200 OK`**
 
 ---
 
-### 2.6. Phân hệ Giao dịch Định kỳ (Recurring Transactions)
+### 3.7. Ngân sách & Mục tiêu Tiết kiệm (Budgets & Goals)
 
-#### `POST /api/recurring-transactions`
-- **Mô tả:** Thiết lập giao dịch tự động định kỳ.
+#### 1. `GET /api/budgets?year=2026&month=10`
+- **Mô tả:** Lấy danh sách ngân sách và tiến độ chi tiêu theo tháng của các danh mục.
+- **Quyền:** User.
+- **Response `200 OK`:** Mảng `BudgetDto` (`id`, `categoryId`, `categoryName`, `amount`, `spentAmount`, `remainingAmount`, `warningThresholdPercent`, `isOverBudget`).
+
+#### 2. `POST /api/budgets`
+- **Mô tả:** Tạo ngân sách chi tiêu cho danh mục.
 - **Quyền:** User (`Active`).
 - **Request Body:**
 ```json
 {
-  "walletId": "uuid-main",
-  "categoryId": "uuid-category-rent",
-  "amount": 4000000.00,
-  "interval": "Monthly",
-  "dayOfMonth": 5,
-  "description": "Tiền nhà trọ định kỳ hàng tháng"
+  "categoryId": "uuid-cat-food",
+  "amount": 3000000.00,
+  "year": 2026,
+  "month": 11,
+  "warningThresholdPercent": 80
 }
 ```
-- **Response `201 Created`**
+- **Response `201 Created`:** `BudgetDto`.
+
+#### 3. `GET /api/goals`
+- **Mô tả:** Lấy danh sách mục tiêu tiết kiệm cá nhân.
+- **Quyền:** User.
+- **Response `200 OK`:** Mảng `GoalDto`.
+
+#### 4. `POST /api/goals/{id}/contributions`
+- **Mô tả:** Nạp tiền vào mục tiêu tiết kiệm từ Ví chính.
+- **Quyền:** User (`Active`). Yêu cầu mã PIN 6 số.
+- **Request Body:**
+```json
+{
+  "sourceWalletId": "uuid-wallet-main",
+  "amount": 1000000.00,
+  "securityPin": "123456"
+}
+```
+- **Response `200 OK`:** `GoalDto`.
+
+#### 5. `POST /api/goals/{id}/withdrawals`
+- **Mô tả:** Rút tiền từ mục tiêu tiết kiệm về Ví chính.
+- **Quyền:** User (`Active`). Yêu cầu mã PIN 6 số.
+- **Request Body:**
+```json
+{
+  "destinationWalletId": "uuid-wallet-main",
+  "amount": 500000.00,
+  "securityPin": "123456"
+}
+```
+- **Response `200 OK`:** `GoalDto`.
 
 ---
 
-### 2.7. Phân hệ Hỗ trợ & Khiếu nại Giao dịch (Support & Complaints)
+### 3.8. Hỗ trợ & Khiếu nại Giao dịch (Support & Complaints)
 
-#### `POST /api/v1/support/cases`
-- **Mô tả:** Gửi yêu cầu hỗ trợ hoặc khiếu nại trực tiếp liên quan đến một giao dịch tài chính.
+#### 1. `POST /api/cases/support`
+- **Mô tả:** Mở yêu cầu hỗ trợ hoặc khiếu nại gắn liền với một giao dịch tài chính cụ thể.
 - **Quyền:** User (`Active` hoặc `Restricted`).
 - **Request Body:**
 ```json
 {
-  "transactionId": "uuid-tx-disputed",
+  "transactionId": "uuid-transaction-issue",
   "title": "Chuyển tiền bị trừ 2 lần",
-  "description": "Giao dịch lúc 14:02 bị timeout nhưng tài khoản trừ tiền 2 lần",
+  "description": "Lúc 14:02 mạng bị chập chờn khiến lệnh trừ tiền lặp lại",
   "category": "TransactionIssue"
 }
 ```
-- **Response `201 Created`:**
-```json
-{
-  "caseId": "uuid-case",
-  "status": "Pending",
-  "transactionId": "uuid-tx-disputed",
-  "createdAt": "2026-10-29T14:40:00Z"
-}
-```
+- **Response `201 Created`:** `CaseDto` (`id`, `title`, `description`, `status`: "Pending", `userId`, `transactionId`, `createdAt`).
 
-#### `GET /api/v1/support/cases`
+#### 2. `GET /api/cases/support`
 - **Mô tả:** Xem danh sách các yêu cầu hỗ trợ/khiếu nại của chính mình.
 - **Quyền:** User.
-- **Response `200 OK`**
+- **Response `200 OK`:** Mảng `SupportCaseDetailDto`.
 
-#### `POST /api/v1/support/cases/{caseId}/messages`
-- **Mô tả:** Gửi thêm phản hồi, cung cấp thông tin/bằng chứng cho vụ việc đang xử lý.
-- **Quyền:** User (sở hữu `caseId`).
+#### 3. `GET /api/cases/support/{id}`
+- **Mô tả:** Xem chi tiết một hồ sơ hỗ trợ kèm lịch sử tin nhắn trao đổi với Admin.
+- **Quyền:** User (chính chủ sở hữu hồ sơ).
+- **Response `200 OK`:** `SupportCaseDetailDto` (`id`, `title`, `description`, `status`, `messages`: `[ { senderId, senderName, isAdmin, content, createdAt } ]`).
+
+#### 4. `POST /api/cases/support/{id}/messages`
+- **Mô tả:** Gửi tin nhắn phản hồi, bổ sung thông tin hoặc bằng chứng đối soát vào hồ sơ hỗ trợ.
+- **Quyền:** User (chính chủ).
 - **Request Body:**
 ```json
 {
-  "message": "Tôi xin gửi kèm mã tham chiếu đối soát ngân hàng: REF987654"
+  "message": "Tôi xin gửi mã tra soát ngân hàng: REF839201"
 }
 ```
-- **Response `200 OK`**
+- **Response `200 OK`:** `SupportCaseDetailDto`.
 
 ---
 
-### 2.8. Phân hệ Trợ lý Tài chính AI (AI Assistant — Phương án B)
+### 3.9. Trợ lý Tài chính AI (AI Assistant — Phương án B)
 
-#### `POST /api/ai/conversations`
-- **Mô tả:** Tạo phiên hội thoại tư vấn tài chính mới với AI.
-- **Quyền:** User.
-- **Response `201 Created`:** `{ "conversationId": "uuid-conv" }`
-
-#### `POST /api/ai/conversations/{convId}/messages`
-- **Mô tả:** Gửi tin nhắn hỏi đáp phân tích chi tiêu, gợi ý tiết kiệm. Tự động chuyển mạch sang chính sách quy tắc nội bộ (`SpendWisePolicy`) nếu Gemini API vượt hạn ngạch hoặc mất kết nối.
+#### 1. `POST /api/ai/conversations`
+- **Mô tả:** Mở phiên hội thoại tư vấn tài chính mới với AI.
 - **Quyền:** User.
 - **Request Body:**
 ```json
 {
-  "message": "Tháng này tôi chi bao nhiêu tiền cho ăn uống và có vượt ngân sách không?"
+  "title": "Tư vấn chi tiêu tháng 10"
+}
+```
+- **Response `201 Created`:** `AiConversationDto` (`id`, `title`, `createdAt`).
+
+#### 2. `POST /api/ai/chat`
+- **Mô tả:** Gửi câu hỏi cho trợ lý AI. Tự động chuyển mạch an toàn sang chính sách quy tắc nội bộ (`SpendWisePolicy`) nếu Gemini API ngoài gặp lỗi kết nối hoặc vượt hạn ngạch 429.
+- **Quyền:** User.
+- **Request Body:**
+```json
+{
+  "conversationId": "uuid-conversation",
+  "message": "Tháng này tôi đã tiêu bao nhiêu tiền cho ăn uống và có bị vượt ngân sách không?"
 }
 ```
 - **Response `200 OK`:**
 ```json
 {
-  "reply": "Trong tháng này, bạn đã chi 3.200.000 VNĐ cho danh mục Ăn uống, đạt 106% ngân sách (3.000.000 VNĐ). Bạn nên cân đối chi tiêu các ngày còn lại.",
-  "provider": "Gemini_Live"
+  "reply": "Bạn đã chi 2.850.000 VNĐ cho danh mục Ăn uống, đạt 95% ngân sách đề ra (3.000.000 VNĐ). Bạn còn 150.000 VNĐ cho 2 ngày tới.",
+  "provider": "Gemini_Live",
+  "latencyMs": 750
 }
 ```
 
 ---
 
-## 3. CÁC LUỒNG NGƯỜI DÙNG TIÊU BIỂU (STEP-BY-STEP USER FLOWS)
+### 3.10. Thông báo Hệ thống (Notifications)
 
-### Flow 1: Đăng ký $\rightarrow$ Xác minh Email $\rightarrow$ Tạo PIN $\rightarrow$ Đăng nhập
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Người dùng (Mobile)
-    participant FE as Frontend / Mobile App
-    participant BE as Backend API
-    participant OB as Email Outbox Queue
+#### 1. `GET /api/notifications`
+- **Mô tả:** Lấy danh sách thông báo người dùng (giao dịch, biến động số dư, thông báo broadcast toàn hệ thống).
+- **Quyền:** User.
+- **Query Params:** `unreadOnly=false&page=1&pageSize=20`
+- **Response `200 OK`:** `PagedResult<NotificationDto>`.
 
-    U->>FE: Nhập Họ tên, Email, SĐT, Mật khẩu
-    FE->>BE: POST /api/auth/register
-    BE->>OB: Xếp email E01 (chứa OTP 8 số ngẫu nhiên)
-    BE-->>FE: 200 OK (EMAIL_VERIFICATION_REQUIRED)
-    FE-->>U: Hiển thị màn hình nhập OTP
+#### 2. `POST /api/notifications/{id}/read`
+- **Mô tả:** Đánh dấu một thông báo đã đọc.
+- **Quyền:** User.
+- **Response:** `204 NoContent`.
 
-    U->>FE: Nhập mã OTP 8 số từ email
-    FE->>BE: POST /api/auth/email-verification/verify
-    BE-->>FE: 200 OK (PIN_SETUP_REQUIRED, ChallengeToken)
-    FE-->>U: Hiển thị màn hình thiết lập PIN 6 số
-
-    U->>FE: Nhập PIN 6 số và xác nhận
-    FE->>BE: POST /api/auth/pin/setup (ChallengeToken, Pin, ConfirmPin)
-    BE-->>FE: 200 OK (AccessToken, RefreshToken, UserProfile)
-    FE-->>U: Lưu token an toàn (SecureStorage), chuyển vào Dashboard
-```
-
-### Flow 2: Quên mật khẩu $\rightarrow$ Dynamic OTP $\rightarrow$ Đổi mật khẩu $\rightarrow$ Thu hồi phiên
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Người dùng
-    participant FE as Mobile App
-    participant BE as Backend API
-    participant DB as Database
-
-    U->>FE: Bấm "Quên mật khẩu", nhập Email
-    FE->>BE: POST /api/auth/forgot-password (Identifier)
-    BE-->>FE: 202 Accepted
-    FE-->>U: Báo "Kiểm tra email để lấy mã OTP"
-
-    U->>FE: Nhập OTP và Mật khẩu mới
-    FE->>BE: POST /api/auth/reset-password (Identifier, Otp, NewPassword)
-    BE->>DB: Cập nhật PasswordHash
-    BE->>DB: Thu hồi toàn bộ UserSessions (RevokedAt = Now)
-    BE-->>FE: 204 NoContent
-    FE-->>U: Thông báo thành công, chuyển về màn hình Đăng nhập
-```
-
-### Flow 3: Chuyển tiền P2P nội bộ (Bảo vệ PIN & Sổ cái kép)
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Người gửi
-    participant FE as Mobile App
-    participant BE as Backend API
-    participant LD as Double-Entry Ledger
-
-    U->>FE: Chọn người nhận (SpendId), nhập số tiền 500k
-    FE->>BE: GET /api/users/lookup?identifier=SPEND_654321
-    BE-->>FE: 200 OK (Tên người nhận: Nguyen Van B)
-    FE-->>U: Hiển thị xác nhận giao dịch & yêu cầu mã PIN
-
-    U->>FE: Nhập mã PIN 6 số
-    FE->>BE: POST /api/transfers/p2p (SourceWallet, Recipient, Amount, SecurityPin, IdempotencyKey)
-    BE->>BE: Xác minh PIN & kiểm tra số dư ví nguồn
-    BE->>LD: Transaction: Nợ ví người gửi 500k, Có ví người nhận 500k
-    BE-->>FE: 200 OK (TransactionCompleted, Số dư mới)
-    FE-->>U: Hiển thị biên lai giao dịch thành công
-```
+#### 3. `POST /api/notifications/read-all`
+- **Mô tả:** Đánh dấu tất cả thông báo là đã đọc.
+- **Quyền:** User.
+- **Response:** `204 NoContent`.
 
 ---
 
-## 4. RANH GIỚI TRÁCH NHIỆM FRONTEND / MOBILE APP
+## 4. RANH GIỚI TRÁCH NHIỆM FRONTEND / MOBILE APP (FRONTEND-ONLY)
 
-Để bảo đảm tính tách bạch kiến trúc, Frontend/Mobile chịu trách nhiệm toàn bộ các phần việc sau:
-
-1. **Giao diện & Trải nghiệm Trực quan (UI/UX):**
-   - Triển khai 3 chủ đề: Sáng (`light`), Tối (`dark`), Theo hệ điều hành (`system`).
-   - Quản lý bộ chuỗi đa ngôn ngữ (Localization Strings) cho Tiếng Việt (`vi-VN`) và Tiếng Anh (`en-US`).
-   - Xử lý hoạt ảnh chuyển cảnh (animations), loading skeleton, toast thông báo lỗi thân thiện.
-2. **Sinh trắc học Native Phần cứng (Biometrics):**
-   - Gọi API native của thiết bị (Face ID / Touch ID trên iOS qua `LocalAuthentication`; Fingerprint / BiometricPrompt trên Android).
-   - Quản lý khóa WebAuthn/FIDO2 trên phần cứng an toàn (Secure Enclave / Keystore).
-   - Backend chỉ nhận chữ ký số mật mã hoặc Challenge Token, không can thiệp vào UI cảm biến vân tay/khuôn mặt native.
-3. **Quản lý Lưu trữ Bảo mật (Client Secure Storage):**
-   - Lưu trữ `accessToken` trong bộ nhớ RAM hoặc Keystore/Keychain mã hóa.
-   - Quản lý `refreshToken` an toàn, tự động gọi API refresh ngầm trước khi token hết hạn.
-   - Xóa sạch toàn bộ token và bộ nhớ đệm khi nhận lỗi `401 Unauthorized` hoặc người dùng chủ động Đăng xuất.
-4. **Xử lý Mất kết nối & Idempotency:**
-   - Tạo khóa `IdempotencyKey` ngẫu nhiên chuẩn UUIDv4 cho mỗi lệnh bấm chuyển tiền / thanh toán để chống gửi đúp khi mạng gián đoạn.
-   - Hiển thị banner trạng thái offline khi mất kết nối mạng.
+1. **Giao diện & Trực quan hóa (UI/UX):**
+   - Triển khai 3 chế độ Theme: Sáng (`light`), Tối (`dark`), Theo hệ thống (`system`).
+   - Quản lý bộ chuỗi đa ngôn ngữ (Localization): Tiếng Việt (`vi-VN`) và Tiếng Anh (`en-US`).
+   - Xử lý hiệu ứng chuyển động (animations), toast thông báo, skeleton loading khi chờ dữ liệu.
+2. **Sinh trắc học Native (Biometrics Hardware):**
+   - Tương tác với cảm biến phần cứng qua API Native của OS (Face ID / Touch ID qua `LocalAuthentication` trên iOS; `BiometricPrompt` trên Android).
+   - Backend chỉ quản lý cờ trạng thái `enableBiometric` trong preferences và xác thực token JWT, không can thiệp trực tiếp vào phần cứng cảm biến.
+3. **Lưu trữ an toàn trên thiết bị (Client Secure Storage):**
+   - Lưu trữ `accessToken` trong RAM hoặc Secure Storage.
+   - Quản lý `refreshToken` an toàn trong Keychain / Keystore; tự động gọi `POST /api/auth/refresh` ngầm trước khi token hết hạn.
+   - Xóa toàn bộ token và điều hướng về màn hình Đăng nhập khi nhận mã lỗi `401 Unauthorized`.
+4. **Idempotency & Mất mạng (Offline Resilience):**
+   - Tự động sinh `X-Idempotency-Key` (UUIDv4 ngẫu nhiên) cho mỗi lần bấm nút chuyển tiền/thanh toán.
+   - Hiển thị thông báo mất kết nối nếu thiết bị offline, không gọi API lặp lại khi chưa có mạng.

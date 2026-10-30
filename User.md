@@ -379,153 +379,120 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 ---
 
-### 3.7. Ngân sách & Mục tiêu Tiết kiệm (Budgets & Goals)
+### 3.7. Kế hoạch tài chính: Ngân sách, mục tiêu, giao dịch định kỳ, quy tắc
 
-#### 1. `GET /api/budgets?year=2026&month=10`
-- **Mô tả:** Lấy danh sách ngân sách và tiến độ chi tiêu theo tháng của các danh mục.
-- **Quyền:** User.
-- **Response `200 OK`:** Mảng `BudgetDto` (`id`, `categoryId`, `categoryName`, `amount`, `spentAmount`, `remainingAmount`, `warningThresholdPercent`, `isOverBudget`).
+**Nguồn:** `PlanningControllers.cs`, `PlanningContracts.cs`. Tất cả nghiệp vụ gắn với user trong access token, không gửi `userId` giả định.
 
-#### 2. `POST /api/budgets`
-- **Mô tả:** Tạo ngân sách chi tiêu cho danh mục.
-- **Quyền:** User (`Active`).
-- **Request Body:**
-```json
-{
-  "categoryId": "uuid-cat-food",
-  "amount": 3000000.00,
-  "year": 2026,
-  "month": 11,
-  "warningThresholdPercent": 80
-}
-```
-- **Response `201 Created`:** `BudgetDto`.
+**Ngân sách (Budgets) — chi theo danh mục / tháng:**
 
-#### 3. `GET /api/goals`
-- **Mô tả:** Lấy danh sách mục tiêu tiết kiệm cá nhân.
-- **Quyền:** User.
-- **Response `200 OK`:** Mảng `GoalDto`.
+| API | Contract/ý nghĩa |
+|---|---|
+| `GET /api/budgets?year=2026&month=10` | `BudgetDto[]` gồm `categoryId,categoryName,year,month,limitAmount,spentAmount,remainingAmount,percentage,alertLevel,alertsEnabled,rollover`. |
+| `GET /api/budgets/{id}` | Ngân sách cụ thể của user. |
+| `POST /api/budgets` | `{categoryId,year,month,limitAmount,alertsEnabled:true,rollover:false,securityPin?}`. |
+| `PUT /api/budgets` | **API tương thích legacy**: tạo nếu chưa có ngân sách cho danh mục/tháng, ngược lại cập nhật. Frontend mới nên dùng POST/PUT ID rõ nghĩa. |
+| `PUT /api/budgets/{id}` | `{limitAmount,alertsEnabled:true,rollover:false,securityPin?}`; không chuyển ngân sách sang danh mục/tháng khác bằng update. |
+| `DELETE /api/budgets/{id}` | Body `{securityPin}`; xóa cấu hình, không xóa chi tiêu đã phát sinh. |
 
-#### 4. `POST /api/goals/{id}/contributions`
-- **Mô tả:** Nạp tiền vào mục tiêu tiết kiệm từ Ví chính.
-- **Quyền:** User (`Active`). Yêu cầu mã PIN 6 số.
-- **Request Body:**
-```json
-{
-  "sourceWalletId": "uuid-wallet-main",
-  "amount": 1000000.00,
-  "securityPin": "123456"
-}
-```
-- **Response `200 OK`:** `GoalDto`.
+**Mục tiêu tiết kiệm (Goals):**
 
-#### 5. `POST /api/goals/{id}/withdrawals`
-- **Mô tả:** Rút tiền từ mục tiêu tiết kiệm về Ví chính.
-- **Quyền:** User (`Active`). Yêu cầu mã PIN 6 số.
-- **Request Body:**
-```json
-{
-  "destinationWalletId": "uuid-wallet-main",
-  "amount": 500000.00,
-  "securityPin": "123456"
-}
-```
-- **Response `200 OK`:** `GoalDto`.
+| API | Contract/ý nghĩa |
+|---|---|
+| `GET /api/goals`, `GET /api/goals/{id}` | Danh sách/chi tiết `GoalDto` có `name,targetAmount,currentAllocatedAmount,targetDate?,status,percentage,categoryId?,categoryName?,iconName?,colorHex?,movements`. |
+| `POST /api/goals` | `{name,targetAmount,targetDate?,categoryId?,iconName?,colorHex?,initialAmount:0,walletId?,idempotencyKey?,securityPin?}`. Nếu đặt `initialAmount` khác 0, phải cung cấp ví và thông tin xác thực/khử trùng lặp hợp lệ. |
+| `PUT /api/goals/{id}` | `{name,targetAmount,targetDate?,categoryId?,iconName?,colorHex?,securityPin?}`; chỉ sửa cấu hình, không trực tiếp sửa tiền. |
+| `DELETE /api/goals/{id}` | Body `{securityPin}`; không cho xóa nếu còn tiền hoặc lịch sử tài chính không đáp ứng điều kiện handler. |
+| `POST /api/goals/{id}/contributions` | `{walletId,amount,idempotencyKey,securityPin?}` chuyển từ ví vào mục tiêu qua ledger. |
+| `POST /api/goals/{id}/withdrawals` | **Cùng `GoalMovementRequest`**: `{walletId,amount,idempotencyKey,securityPin?}`, ví nhận phải hợp lệ; **không có trường `destinationWalletId`** trong DTO này. |
 
----
+**Giao dịch định kỳ và Subscription:** Không được tự động hạch toán mọi giao dịch dự kiến thành số dư đã chi. Backend có định nghĩa, occurrence, lệnh ghi nhận, dừng và tiếp tục.
 
-### 3.8. Hỗ trợ & Khiếu nại Giao dịch (Support & Complaints)
+| API | Contract/ý nghĩa |
+|---|---|
+| `GET /api/recurring-transactions`, `GET /api/recurring-transactions/{id}` | `RecurringDto`: ví, danh mục, `kind,amount,title,description,frequency,nextRunAt,status,isSubscription,lastRunAt?,anchorDay,anchorMonth,occurrences?`. |
+| `POST /api/recurring-transactions` | `{walletId,categoryId,kind,amount,description,frequency,nextRunAt,isSubscription:false,title?}`. |
+| `PUT /api/recurring-transactions/{id}` | Cùng nhóm trường `UpdateRecurringRequest`, chỉ đổi cấu hình các kỳ tương lai. |
+| `DELETE /api/recurring-transactions/{id}` | Hủy định nghĩa lịch định kỳ; **không xóa giao dịch đã ghi nhận**. |
+| `POST /api/recurring-transactions/{id}/pause` và `/resume` | Tạm dừng/khôi phục lịch. |
+| `POST /api/recurring-transactions/{id}/occurrences/{occurrenceId}/record` | `{securityPin,evidenceIds:[],idempotencyKey}` → `TransactionDto`. Chỉ khi lệnh ghi nhận hợp lệ, ledger mới thay đổi. |
 
-#### 1. `POST /api/cases/support`
-- **Mô tả:** Mở yêu cầu hỗ trợ hoặc khiếu nại gắn liền với một giao dịch tài chính cụ thể.
-- **Quyền:** User (`Active` hoặc `Restricted`).
-- **Request Body:**
-```json
-{
-  "transactionId": "uuid-transaction-issue",
-  "title": "Chuyển tiền bị trừ 2 lần",
-  "description": "Lúc 14:02 mạng bị chập chờn khiến lệnh trừ tiền lặp lại",
-  "category": "TransactionIssue"
-}
-```
-- **Response `201 Created`:** `CaseDto` (`id`, `title`, `description`, `status`: "Pending", `userId`, `transactionId`, `createdAt`).
+**Quy tắc phân loại giao dịch (Transaction Rules):** `GET /api/transaction-rules`, `GET /api/transaction-rules/{id}`, `POST /api/transaction-rules`, `PUT /api/transaction-rules/{id}`, `DELETE /api/transaction-rules/{id}`. Tạo `{descriptionPattern,targetCategoryId,priority:0}`; sửa thêm `isActive:true`; `TransactionRuleDto` gồm `id,descriptionPattern,targetCategoryId,targetCategoryName,priority,isActive`. Không coi quy tắc là giao dịch có hạch toán.
 
-#### 2. `GET /api/cases/support`
-- **Mô tả:** Xem danh sách các yêu cầu hỗ trợ/khiếu nại của chính mình.
-- **Quyền:** User.
-- **Response `200 OK`:** Mảng `SupportCaseDetailDto`.
+### 3.8. Khiếu nại, tranh chấp, bằng chứng và trò chuyện với Admin
 
-#### 3. `GET /api/cases/support/{id}`
-- **Mô tả:** Xem chi tiết một hồ sơ hỗ trợ kèm lịch sử tin nhắn trao đổi với Admin.
-- **Quyền:** User (chính chủ sở hữu hồ sơ).
-- **Response `200 OK`:** `SupportCaseDetailDto` (`id`, `title`, `description`, `status`, `messages`: `[ { senderId, senderName, isAdmin, content, createdAt } ]`).
+**Nguồn:** `AdminController.cs` (`CasesController`), `AdminContracts.cs`. User chỉ xem/sửa **hồ sơ thuộc chính mình**; Admin xử lý trên web. Support và Dispute là hai nhóm riêng, không gộp `status` làm chứng từ hoàn tiền.
 
-#### 4. `POST /api/cases/support/{id}/messages`
-- **Mô tả:** Gửi tin nhắn phản hồi, bổ sung thông tin hoặc bằng chứng đối soát vào hồ sơ hỗ trợ.
-- **Quyền:** User (chính chủ).
-- **Request Body:**
-```json
-{
-  "message": "Tôi xin gửi mã tra soát ngân hàng: REF839201"
-}
-```
-- **Response `200 OK`:** `SupportCaseDetailDto`.
+| API | Contract chính xác |
+|---|---|
+| `POST /api/cases/support` | `{category:"transaction",priority:"Normal",linkedTransactionId?,subject:"Yêu cầu hỗ trợ",description:"Nội dung"}` → `CaseDto`. `category` phải thuộc danh sách backend cho phép (ví dụ `system_error,account,banking_sepay,transaction_edit,other,transaction,feature_request,general,complaint,complaint_transaction,complaint_banking,complaint_fund,complaint_account,v1funddispute`). |
+| `GET /api/cases/support` / `GET /api/cases/support/{id}` | Danh sách `SupportCaseDetailDto[]`, chi tiết gồm `ticketNumber,subject,description,category,priority,status,linkedTransactionId?,assignedAdminId?,correctionGranted,history[]`. |
+| `POST /api/cases/support/{id}/messages` | `{message,attachments?}`; đính kèm JSON nếu backend chấp nhận DTO `CaseAttachmentUpload`. |
+| `POST /api/cases/support/{id}/messages/multipart` | Upload tin nhắn + đính kèm qua form-data; kiểm tra kích thước/loại file theo handler. |
+| `POST /api/cases/disputes` | `{linkedTransactionId,reason,description?}`; chỉ gắn giao dịch thuộc user, tạo `CaseDto`. |
+| `GET /api/cases/disputes` / `GET /api/cases/disputes/{id}` | Danh sách và chi tiết `DisputeDetailDto`: `linkedTransactionId,reference,title,amount,counterparty?,reason,description,status,resolution?,history`. |
+| `POST /api/cases/disputes/{id}/messages` và `.../messages/multipart` | User phản hồi/đính kèm minh chứng trong tranh chấp của mình. |
+| `GET /api/cases/attachments/{id}` | Tải đính kèm sau kiểm tra quyền. |
 
----
+**Trạng thái/luồng:** Người dùng tạo hồ sơ → backend ghi lịch sử và xếp thông báo/email → Admin xem/trao đổi/đổi trạng thái → user xem kết quả. **Không khẳng định hỗ trợ `Resolved` tự động hoàn tiền**; tài chính được sửa qua nghiệp vụ ledger/correction tương ứng. `transaction_edit` chỉ áp dụng cho giao dịch thủ công đủ điều kiện để xin quyền correction.
 
-### 3.9. Trợ lý Tài chính AI (AI Assistant — Phương án B)
+### 3.9. AI Assistant: Gemini, hội thoại, file và xác nhận hành động
 
-#### 1. `POST /api/ai/conversations`
-- **Mô tả:** Mở phiên hội thoại tư vấn tài chính mới với AI.
-- **Quyền:** User.
-- **Request Body:**
-```json
-{
-  "title": "Tư vấn chi tiêu tháng 10"
-}
-```
-- **Response `201 Created`:** `AiConversationDto` (`id`, `title`, `createdAt`).
+**Nguồn:** `AiController`, `AiContracts.cs`. AI là trợ lý phân tích tài chính theo dữ liệu mà User được phép xem, không phải role quản trị. Provider có thể trả lời trực tiếp hoặc fallback; không hardcode `"Gemini_Live"` trong UI và không tự giả lập `latencyMs`.
 
-#### 2. `POST /api/ai/chat`
-- **Mô tả:** Gửi câu hỏi cho trợ lý AI. Tự động chuyển mạch an toàn sang chính sách quy tắc nội bộ (`SpendWisePolicy`) nếu Gemini API ngoài gặp lỗi kết nối hoặc vượt hạn ngạch 429.
-- **Quyền:** User.
-- **Request Body:**
-```json
-{
-  "conversationId": "uuid-conversation",
-  "message": "Tháng này tôi đã tiêu bao nhiêu tiền cho ăn uống và có bị vượt ngân sách không?"
-}
-```
-- **Response `200 OK`:**
-```json
-{
-  "reply": "Bạn đã chi 2.850.000 VNĐ cho danh mục Ăn uống, đạt 95% ngân sách đề ra (3.000.000 VNĐ). Bạn còn 150.000 VNĐ cho 2 ngày tới.",
-  "provider": "Gemini_Live",
-  "latencyMs": 750
-}
-```
+| API | Contract chính xác |
+|---|---|
+| `GET /api/ai/conversations?search=...` | Danh sách hội thoại của user. |
+| `GET /api/ai/conversations/{id}` | Chi tiết có `messages[]`. |
+| `POST /api/ai/conversations` | `{title?,contextType:"General",contextGroupId?}` → `AiConversationDto`. |
+| `PUT /api/ai/conversations/{id}` | `{title?,isPinned?,contextType?,contextGroupId?}` → `AiConversationDto`. |
+| `DELETE /api/ai/conversations/{id}` | Xóa hội thoại thuộc chủ sở hữu. |
+| `POST /api/ai/chat` | `{conversationId?,message,mode:"FinancialQuery",groupId?,attachmentIds?}` → `AiChatResponse {conversationId,message,provider,isFallback,proposedAction?}`. |
+| `POST /api/ai/attachments` | `multipart/form-data` key `file` (theo controller, tối đa request 10 MB cộng overhead) → `AiAttachmentDto`. |
+| `GET /api/ai/attachments/{id}` | Tải attachment thuộc user. |
+| `GET /api/ai/actions/{id}` | Xem `AiActionDto` với `status,expiresAt,executedAt?,failureCode?`. |
+| `POST /api/ai/actions/{id}/execute` | `{securityPin?,evidenceIds?,explicitConfirmation:true}`. Nếu hành động ghi tiền, kiểm tra PIN/chứng từ theo chính sách; phải xác nhận tường minh, không chạy từ câu chat đơn thuần. |
+| `POST /api/ai/actions/{id}/cancel` | Hủy hành động đề xuất còn hiệu lực. |
+
+**Phân quyền và giao diện:** Hiển thị context nhóm chỉ khi user có quyền; đề xuất thao tác phải cho xem nội dung/ảnh hưởng trước khi bấm đồng ý. `isFallback` báo AI provider có sử dụng fallback; backend chặn nội dung/đầu vào không hợp lệ theo bộ lọc an toàn.
+
+### 3.10. Thông báo: Inbox, tìm kiếm, xóa, preference và Push
+
+**Nguồn:** `NotificationsController`, `NotificationContracts.cs`, `MobilePushController`.
+
+| API | Contract và UI |
+|---|---|
+| `GET /api/notifications` | Danh sách `NotificationDto[]` thuộc User, gồm `id,type,title,message,dataJson,isRead,createdAt,readAt?`. |
+| `GET /api/notifications/search?unreadOnly=&type=&search=&page=1&pageSize=20` | `NotificationPageDto {items,page,pageSize,total}`, **không phải** `PagedResult` của endpoint danh sách thường. |
+| `POST /api/notifications/{id}/read` | Đánh dấu đã đọc. |
+| `POST /api/notifications/read-all` | Đánh dấu tất cả đã đọc. |
+| `DELETE /api/notifications/{id}` | Xóa thông báo theo ID và quyền sở hữu. |
+| `DELETE /api/notifications` | Xóa toàn bộ thông báo của chính User; trả số lượng đã xóa. |
+| `GET /api/notifications/preferences` | Danh sách `NotificationPreferenceDto` cấu hình theo tài khoản/ví. |
+| `PUT /api/notifications/preferences` | `{accountKey,accountName,walletId?,notifyBalanceChanges,notifyBudgetAlerts,notifyLargeTransactions,largeTransactionThreshold,notifyMinBalanceAlert,minBalanceThreshold}` → `NotificationPreferenceDto`. |
+| `PUT /api/mobile/push/installations/{installationId}` | Đăng ký cài đặt thiết bị/push token với backend. |
+| `DELETE /api/mobile/push/installations/{installationId}` | Gỡ cài đặt/đăng ký nhận push của thiết bị. |
+
+Thông báo sự kiện quỹ và kết quả chi/rút phải dựa trên dữ liệu backend, phân biệt thông báo đã ghi vào inbox với việc đã gửi push thật lên thiết bị. Thông báo hủy request khi đổi chủ Free Fund là **yêu cầu đã chốt nhưng chưa triển khai**.
 
 ---
 
-### 3.10. Thông báo Hệ thống (Notifications)
+### 3.11. Bảng đối chiếu backend ↔ User.md, phạm vi và các trường hợp cần kiểm thử
 
-#### 1. `GET /api/notifications`
-- **Mô tả:** Lấy danh sách thông báo người dùng (giao dịch, biến động số dư, thông báo broadcast toàn hệ thống).
-- **Quyền:** User.
-- **Query Params:** `unreadOnly=false&page=1&pageSize=20`
-- **Response `200 OK`:** `PagedResult<NotificationDto>`.
+| Phân hệ | Những mục đã được kiểm và đồng bộ trong tài liệu này | Giới hạn xác nhận |
+|---|---|---|
+| Auth, PIN, Passkey, Recovery | Đúng tên body, response, routes, xác thực hai bước, session | Không chứng nhận end-to-end passkey trên thiết bị khi chưa chạy |
+| Profile, Friends, Push | Preferences là `UserProfile`, danh sách API kết bạn, ảnh đại diện multipart, thiết bị push | Push provider/thiết bị thật phải test riêng |
+| Wallet, Transaction, Category | 3 ví, `availableBalance`, manual/multi-wallet, correction/reversal, category archive, evidence | Cần test dữ liệu ledger thực khi tích hợp UI |
+| Transfers | Phân biệt `p2p`/`internal`/`bank-direct` và DTO | Không xem bank-direct là tiền đã tới chỉ vì tạo lệnh |
+| Bank + SePay | Liên kết/sync, sao kê, Test Mode top-up/withdraw/cancel/history, trạng thái đối soát | Khả năng payout ngân hàng thật tùy provider |
+| Planning | Budget CRUD, Goal CRUD + money movement, recurring + occurrence, transaction rule CRUD | Không tự ghi sổ recurring khi mới tới hạn |
+| Support/Dispute | Hai loại case, tin nhắn, attachments, correction quyền | Resolved không đồng nghĩa hoàn tiền |
+| AI | Hội thoại, search, pin, upload, proposed actions & execution | Phụ thuộc provider và chính sách an toàn |
+| Notifications | List/search/read/delete/clear/preferences/push | Không suy diễn push delivered |
+| Free Fund | Toàn bộ các hành vi đã chốt ở 1.3.1 và 3.6, có bảng API V1 | **Chặn kick/dissolve khi bầu cử; tự hủy Expense/Withdrawal chờ khi đổi chủ: chưa code** |
+| Fixed Fund V2 | **Chưa rà soát theo yêu cầu Product Owner** | Đoạn Fixed V2 hiện có trong 1.3 và 3.6 còn thuộc tài liệu cũ; **không dùng làm API nguồn sự thật cho frontend/Word** |
 
-#### 2. `POST /api/notifications/{id}/read`
-- **Mô tả:** Đánh dấu một thông báo đã đọc.
-- **Quyền:** User.
-- **Response:** `204 NoContent`.
-
-#### 3. `POST /api/notifications/read-all`
-- **Mô tả:** Đánh dấu tất cả thông báo là đã đọc.
-- **Quyền:** User.
-- **Response:** `204 NoContent`.
-
----
+**Quy định cho frontend và Word:** Dùng mục 3.1–3.5, 3.7–3.10 và Free Fund V1 tại 1.3.1/3.6 để xác định chức năng; đọc DTO/controller nếu cần các trường chuyên sâu chưa ghi ở đây. **Chưa gọi User.md “100% đã kiểm thử”**: đây là bản đối chiếu tĩnh mã nguồn, không phải kết quả chạy Postman hoặc xác nhận provider mới.
 
 ## 4. RANH GIỚI TRÁCH NHIỆM FRONTEND / MOBILE APP (FRONTEND-ONLY)
 

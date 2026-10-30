@@ -189,7 +189,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 | Endpoint | Body và tác dụng |
 |---|---|
-| `POST /api/bank-connections/link` | `{completionRedirectUri?,language:"vi",clientPlatform:"Web" | "Mobile"}` → `BankLinkSessionDto {sessionId,hostedLinkUrl,expiresAt,purpose}`. Client phải dùng hosted link provider, không giả lập liên kết. |
+| `POST /api/bank-connections/link` | `{completionRedirectUri?,language:"vi",clientPlatform:"Web" hoặc "Mobile"}` → `BankLinkSessionDto {sessionId,hostedLinkUrl,expiresAt,purpose}`. Client phải dùng hosted link provider, không giả lập liên kết. |
 | `GET /api/bank-connections` | Danh sách `BankConnectionDto`: `id,provider,accountEnvironment,bankBrandName,accountType?,accountHolderName?,maskedAccountNumber,status,linkedAt?,lastSyncedAt?`. |
 | `GET /api/bank-connections/{id}` | Chi tiết kết nối thuộc người dùng. |
 | `POST /api/bank-connections/{id}/unlink` | Body `CreateBankLinkRequest`, trả session; chờ xác nhận provider. |

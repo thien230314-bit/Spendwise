@@ -1,3 +1,4 @@
+using SpendWise.Application.Notifications;
 using SpendWise.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
@@ -613,6 +614,25 @@ public class FreeFundRequestWorkflowTests
         Assert.Empty(maliciousActivities);
     }
 
+    private sealed class FaultyNotificationService(INotificationService inner) : INotificationService
+    {
+        public bool FailOnCreateMany { get; set; } = true;
+
+        public Task<NotificationDto> CreateAsync(Guid userId, string type, string title, string message, object? data, CancellationToken cancellationToken) =>
+            inner.CreateAsync(userId, type, title, message, data, cancellationToken);
+
+        public Task<IReadOnlyList<NotificationDto>> CreateManyAsync(
+            IReadOnlyCollection<CreateNotificationRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            if (FailOnCreateMany)
+            {
+                throw new InvalidOperationException("Injected notification failure during expiration sweep.");
+            }
+            return inner.CreateManyAsync(requests, cancellationToken);
+        }
+    }
+
     [Fact]
     public async Task FreeFund_AtomicExpirationSweep_ConcurrentWorkers_CreatesExactlyOneActivity()
     {
@@ -640,7 +660,7 @@ public class FreeFundRequestWorkflowTests
         clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
 
         // Concurrently run 5 sweep workers for the same fund with 5 independent DbContext instances
-        // to prove concurrency safety and exactly-once execution across isolated contexts
+        // using Task.WhenAll to prove concurrency safety and exactly-once execution across isolated contexts
         var workers = Enumerable.Range(0, 5).Select(_ =>
         {
             var db = f.CreateNewDbContext();
@@ -652,14 +672,22 @@ public class FreeFundRequestWorkflowTests
             return (db, service);
         }).ToArray();
 
-        var expiredTotal = 0;
-        foreach (var w in workers)
+        var tasks = workers.Select(async w =>
         {
-            expiredTotal += await w.service.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
-            await w.db.DisposeAsync();
-        }
+            try
+            {
+                return await w.service.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
+            }
+            finally
+            {
+                await w.db.DisposeAsync();
+            }
+        });
 
-        // Exactly one worker claims the transition
+        var results = await Task.WhenAll(tasks);
+        var expiredTotal = results.Sum();
+
+        // Exactly one worker claims the transition across all concurrent executions
         Assert.Equal(1, expiredTotal);
 
         // Verify database state: State is Expired
@@ -701,11 +729,46 @@ public class FreeFundRequestWorkflowTests
         // Fast forward 7 days + 1 min
         clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
 
-        // Run sweep inside transaction
-        var expired = await s.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
-        Assert.Equal(1, expired);
+        // Create an isolated context and inject FaultyNotificationService that throws on CreateManyAsync
+        await using var isolatedDb = f.CreateNewDbContext();
+        var sec = new FinancialSecurityGuard(isolatedDb, new SecurityPinService(), new AccountCredentialLockout(isolatedDb, f.Clock));
+        var baseNotif = new SpendWise.Infrastructure.Notifications.NotificationService(isolatedDb);
+        var faultyNotif = new FaultyNotificationService(baseNotif) { FailOnCreateMany = true };
+        var faultyService = new V1FundService(isolatedDb, f.Clock, sec,
+            faultyNotif,
+            new SpendWise.Infrastructure.Finance.LedgerService(isolatedDb, f.Clock),
+            new SpendWise.Application.Features.Banking.ActiveBankGuard(isolatedDb));
 
-        var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
-        Assert.Equal("Expired", dbItem.State);
+        // 1. Run sweep with failing notification: must throw and rollback the entire transaction
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            faultyService.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default));
+        Assert.Contains("Injected notification failure", ex.Message);
+
+        // 2. Verify rollback in fresh database query:
+        // Request remains ApprovedUnused, CancelledAt is still null, and no FundRequestExpired activity exists
+        var rolledBackReq = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
+        Assert.Equal("ApprovedUnused", rolledBackReq.State);
+        Assert.Null(rolledBackReq.CancelledAt);
+
+        var noActivities = await f.Db.V1FundActivities.AsNoTracking()
+            .Where(a => a.FundId == fund.Id && a.Event == "FundRequestExpired")
+            .ToListAsync();
+        Assert.Empty(noActivities);
+
+        // 3. Retry with notification failure disabled (healthy state): succeeds and commits exactly once
+        faultyNotif.FailOnCreateMany = false;
+        var retryExpired = await faultyService.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
+        Assert.Equal(1, retryExpired);
+
+        // Verify committed state
+        var committedReq = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
+        Assert.Equal("Expired", committedReq.State);
+        Assert.NotNull(committedReq.CancelledAt);
+
+        var committedActivities = await f.Db.V1FundActivities.AsNoTracking()
+            .Where(a => a.FundId == fund.Id && a.Event == "FundRequestExpired")
+            .ToListAsync();
+        Assert.Single(committedActivities);
+        Assert.Null(committedActivities.Single().ActorUserId);
     }
 }

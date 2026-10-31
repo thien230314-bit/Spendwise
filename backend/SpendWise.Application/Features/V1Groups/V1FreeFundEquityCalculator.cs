@@ -62,7 +62,7 @@ public sealed partial class V1FundService
 
         // Event internal model
         // Types: "Contribution", "Withdrawal", "Expense"
-        var events = new List<(string Type, Guid UserId, Guid MembershipId, long AmountVnd, DateTime Timestamp, Guid EventId)>();
+        var events = new List<FundEvent>();
 
         // 1. Authoritative Contributions
         var contributions = await db.V1FundContributions.AsNoTracking()
@@ -71,7 +71,8 @@ public sealed partial class V1FundService
 
         foreach (var c in contributions)
         {
-            events.Add(("Contribution", c.UserId, c.MembershipId, c.AmountVnd, c.CreatedAt, c.Id));
+            long? seq = ExtractSequence(c.IdempotencyKey, c.Purpose) ?? (c.ObligationRevision > 0 ? c.ObligationRevision : null);
+            events.Add(new FundEvent("Contribution", c.UserId, c.MembershipId, c.AmountVnd, c.CreatedAt, null, seq, c.Id));
         }
 
         // 2. Authoritative Outflows and Ledger Reconciliation
@@ -131,14 +132,17 @@ public sealed partial class V1FundService
 
             accountedLedgerTxIds.Add(matchedTx.Id);
 
+            long? seq = ExtractSequence(r.IdempotencyKey, r.Purpose, matchedTx.IdempotencyKey, matchedTx.Description, matchedTx.Reference)
+                ?? (r.OwnershipRevision > 0 ? r.OwnershipRevision : null);
+
             // Add verified event with the true ledger execution timestamp
             if (r.Kind == "Withdrawal")
             {
-                events.Add(("Withdrawal", r.RecipientUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, r.Id));
+                events.Add(new FundEvent("Withdrawal", r.RecipientUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, matchedTx.CompletedAt, seq, r.Id));
             }
             else if (r.Kind == "Expense")
             {
-                events.Add(("Expense", r.RequestedByUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, r.Id));
+                events.Add(new FundEvent("Expense", r.RequestedByUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, matchedTx.CompletedAt, seq, r.Id));
             }
         }
 
@@ -155,18 +159,84 @@ public sealed partial class V1FundService
             var amount = (long)creditEntry.Amount;
             if (tx.BusinessType == "V1FundExpense")
             {
-                events.Add(("Expense", fund.OwnerUserId, Guid.Empty, amount, tx.CreatedAt, tx.Id));
+                // Must have a valid fund business link: tx.BusinessId == fund.Id or valid idempotency scope
+                bool hasValidFundLink = tx.BusinessId == fund.Id ||
+                    (tx.IdempotencyScope != null && tx.IdempotencyScope.StartsWith($"v1-fund-expense:{fund.Id:N}", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasValidFundLink)
+                {
+                    throw new ConflictException("fund_orphan_outflow",
+                        $"Unidentified ledger expense {tx.Id} of {amount:N0} VND has no valid fund business link. Audit halted.");
+                }
+
+                Guid recipientUserId = ledgerToFinancialTx.TryGetValue(tx.Id, out var fTx) && fTx.OwnerUserId != Guid.Empty
+                    ? fTx.OwnerUserId
+                    : fund.OwnerUserId;
+
+                long? seq = ExtractSequence(tx.IdempotencyKey, tx.Description, tx.Reference);
+                events.Add(new FundEvent("Expense", recipientUserId, Guid.Empty, amount, tx.CreatedAt, tx.CompletedAt, seq, tx.Id));
             }
             else if (tx.BusinessType == "V1FundWithdrawal")
             {
-                Guid userId = ledgerToFinancialTx.TryGetValue(tx.Id, out var fTx) ? fTx.OwnerUserId : fund.OwnerUserId;
-                events.Add(("Withdrawal", userId, Guid.Empty, amount, tx.CreatedAt, tx.Id));
+                // Orphan outflow without verified recipient must NOT default to Owner
+                if (!ledgerToFinancialTx.TryGetValue(tx.Id, out var fTx) || fTx.OwnerUserId == Guid.Empty)
+                {
+                    throw new ConflictException("fund_orphan_outflow",
+                        $"Unidentified ledger withdrawal {tx.Id} of {amount:N0} VND has no recipient. Audit halted.");
+                }
+
+                long? seq = ExtractSequence(tx.IdempotencyKey, tx.Description, tx.Reference);
+                events.Add(new FundEvent("Withdrawal", fTx.OwnerUserId, Guid.Empty, amount, tx.CreatedAt, tx.CompletedAt, seq, tx.Id));
             }
         }
 
-        // Sort events chronologically. For identical timestamps, contributions process before withdrawals/expenses.
+        // Detect indeterminate execution sequence when events share identical timestamps
+        foreach (var timeGroup in events.GroupBy(e => e.Timestamp))
+        {
+            var groupItems = timeGroup.ToList();
+            if (groupItems.Count <= 1) continue;
+
+            bool strictlySequenced = groupItems.All(i => i.Sequence.HasValue) &&
+                groupItems.Select(i => i.Sequence!.Value).Distinct().Count() == groupItems.Count;
+
+            if (!strictlySequenced)
+            {
+                bool completedAtSequenced = groupItems.All(i => i.CompletedAt.HasValue) &&
+                    groupItems.Select(i => i.CompletedAt!.Value).Distinct().Count() == groupItems.Count;
+
+                if (!completedAtSequenced)
+                {
+                    // Items do not have unambiguous verifiable sequence. Test if order affects equity outcome.
+                    var perm1 = groupItems
+                        .OrderBy(e => e.Sequence ?? long.MaxValue)
+                        .ThenBy(e => e.Type == "Contribution" ? 0 : (e.Type == "Expense" ? 1 : 2))
+                        .ThenBy(e => e.EventId)
+                        .ToList();
+
+                    var perm2 = groupItems
+                        .OrderBy(e => e.Sequence ?? long.MaxValue)
+                        .ThenBy(e => e.Type == "Contribution" ? 2 : (e.Type == "Withdrawal" ? 0 : 1))
+                        .ThenByDescending(e => e.EventId)
+                        .ToList();
+
+                    var preEquities = SimulatePreEquities(events.Where(e => e.Timestamp < timeGroup.Key), allMemberships);
+                    var res1 = SimulateEvents(preEquities, perm1, allMemberships);
+                    var res2 = SimulateEvents(preEquities, perm2, allMemberships);
+
+                    if (ResultsDiffer(res1, res2))
+                    {
+                        throw new ConflictException("fund_indeterminate_order",
+                            $"Events at {timeGroup.Key:O} share identical timestamp without verifiable sequence and have conflicting equity outcomes. Audit halted.");
+                    }
+                }
+            }
+        }
+
+        // Sort events chronologically. For identical timestamps, verifiable sequence or tie-breakers apply.
         var orderedEvents = events
             .OrderBy(e => e.Timestamp)
+            .ThenBy(e => e.Sequence ?? long.MaxValue)
+            .ThenBy(e => e.CompletedAt ?? DateTime.MaxValue)
             .ThenBy(e => e.Type == "Contribution" ? 0 : (e.Type == "Withdrawal" ? 1 : 2))
             .ThenBy(e => e.EventId)
             .ToList();
@@ -281,5 +351,104 @@ public sealed partial class V1FundService
             totalActiveEquity,
             currentBalance,
             refundMap);
+    }
+
+    private sealed record FundEvent(
+        string Type,
+        Guid UserId,
+        Guid MembershipId,
+        long AmountVnd,
+        DateTime Timestamp,
+        DateTime? CompletedAt,
+        long? Sequence,
+        Guid EventId);
+
+    private static long? ExtractSequence(params string?[] values)
+    {
+        foreach (var val in values)
+        {
+            if (string.IsNullOrWhiteSpace(val)) continue;
+            var match = System.Text.RegularExpressions.Regex.Match(
+                val,
+                @"(?:seq|sequence|order|step)[:=-]?(\d+)",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && long.TryParse(match.Groups[1].Value, out var s))
+                return s;
+        }
+        return null;
+    }
+
+    private static Dictionary<Guid, long> SimulatePreEquities(
+        IEnumerable<FundEvent> preEvents,
+        IReadOnlyList<V1FundMembership> allMemberships)
+    {
+        var eq = allMemberships.ToDictionary(m => m.Id, _ => 0L);
+        return SimulateEvents(eq, preEvents.OrderBy(e => e.Timestamp).ThenBy(e => e.Sequence ?? long.MaxValue), allMemberships);
+    }
+
+    private static Dictionary<Guid, long> SimulateEvents(
+        Dictionary<Guid, long> startingEquities,
+        IEnumerable<FundEvent> evts,
+        IReadOnlyList<V1FundMembership> allMemberships)
+    {
+        var currentEquities = new Dictionary<Guid, long>(startingEquities);
+        foreach (var evt in evts)
+        {
+            if (evt.Type == "Contribution")
+            {
+                var targetMem = allMemberships.FirstOrDefault(m => m.Id == evt.MembershipId)
+                    ?? allMemberships.FirstOrDefault(m => m.UserId == evt.UserId && m.JoinedAt <= evt.Timestamp && (m.LeftAt == null || m.LeftAt >= evt.Timestamp));
+                if (targetMem != null)
+                    currentEquities[targetMem.Id] = currentEquities.GetValueOrDefault(targetMem.Id) + evt.AmountVnd;
+            }
+            else if (evt.Type == "Withdrawal")
+            {
+                var targetMem = allMemberships.FirstOrDefault(m => m.Id == evt.MembershipId)
+                    ?? allMemberships.FirstOrDefault(m => m.UserId == evt.UserId && m.JoinedAt <= evt.Timestamp && (m.LeftAt == null || m.LeftAt >= evt.Timestamp));
+                if (targetMem != null)
+                    currentEquities[targetMem.Id] = currentEquities.GetValueOrDefault(targetMem.Id) - evt.AmountVnd;
+            }
+            else if (evt.Type == "Expense")
+            {
+                var activeAtExpense = allMemberships
+                    .Where(m => m.JoinedAt <= evt.Timestamp && (m.LeftAt == null || m.LeftAt >= evt.Timestamp))
+                    .OrderBy(m => m.Seat)
+                    .ToList();
+
+                var memberEpochs = activeAtExpense
+                    .Select(m => new FreeFundEquityEngine.MemberEpochState(m.UserId, m.Id, m.Seat, currentEquities.GetValueOrDefault(m.Id)))
+                    .ToList();
+
+                long positiveSum = memberEpochs.Where(e => e.EquityVnd > 0).Sum(e => e.EquityVnd);
+                if (evt.AmountVnd <= positiveSum && positiveSum > 0)
+                {
+                    var updated = FreeFundEquityEngine.ApplySharedExpense(memberEpochs, evt.AmountVnd);
+                    foreach (var mem in activeAtExpense)
+                    {
+                        currentEquities[mem.Id] = updated[mem.UserId];
+                    }
+                }
+                else
+                {
+                    // Can't afford expense in this simulation order: record divergent state
+                    foreach (var mem in activeAtExpense)
+                    {
+                        currentEquities[mem.Id] = long.MinValue;
+                    }
+                }
+            }
+        }
+        return currentEquities;
+    }
+
+    private static bool ResultsDiffer(Dictionary<Guid, long> a, Dictionary<Guid, long> b)
+    {
+        if (a.Count != b.Count) return true;
+        foreach (var (k, v) in a)
+        {
+            if (!b.TryGetValue(k, out var bv) || bv != v)
+                return true;
+        }
+        return false;
     }
 }

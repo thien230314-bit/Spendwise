@@ -430,4 +430,286 @@ public sealed class FreeFundEquityIntegrationTests
         var finalTreasury = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
         Assert.Equal(0, finalTreasury.Balance);
     }
+
+    [Fact]
+    public async Task FreeFund_OrphanWithdrawal_ThrowsFundOrphanOutflow()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fundDto = await s.CreateAsync(owner.Id, new("OrphanWthFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fundDto.Id,
+            new(ownerWallet.Id, 500_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+        // Inject unmapped ledger withdrawal crediting treasury with no FinancialTransaction recipient
+        var extAccount = new LedgerAccount
+        {
+            Code = "ORPHAN:WTH:CLEARING",
+            Name = "Orphan Withdrawal Clearing",
+            Type = LedgerAccountType.ExpenseClearing,
+            Currency = "VND"
+        };
+        f.Db.LedgerAccounts.Add(extAccount);
+        await f.Db.SaveChangesAsync();
+
+        var ledgerService = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, f.Clock);
+        await ledgerService.PostAsync(
+            treasury.LedgerAccountId,
+            extAccount.Id,
+            50_000,
+            "VND",
+            "V1FundWithdrawal",
+            Guid.NewGuid(),
+            "scope-orphan-wth",
+            "key-orphan-wth",
+            "Orphan withdrawal without recipient",
+            default);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.CalculateFreeFundEquityAsync(fund, treasury, null, default));
+        Assert.Equal("fund_orphan_outflow", ex.Code);
+    }
+
+    [Fact]
+    public async Task FreeFund_OrphanExpense_ThrowsFundOrphanOutflow()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fundDto = await s.CreateAsync(owner.Id, new("OrphanExpFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fundDto.Id,
+            new(ownerWallet.Id, 500_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+        var extAccount = new LedgerAccount
+        {
+            Code = "ORPHAN:EXP:CLEARING",
+            Name = "Orphan Expense Clearing",
+            Type = LedgerAccountType.ExpenseClearing,
+            Currency = "VND"
+        };
+        f.Db.LedgerAccounts.Add(extAccount);
+        await f.Db.SaveChangesAsync();
+
+        var ledgerService = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, f.Clock);
+        await ledgerService.PostAsync(
+            treasury.LedgerAccountId,
+            extAccount.Id,
+            50_000,
+            "VND",
+            "V1FundExpense",
+            Guid.NewGuid(), // Arbitrary ID not equal to fund.Id
+            "scope-orphan-exp", // Not v1-fund-expense:{fund.Id:N}
+            "key-orphan-exp",
+            "Orphan expense without valid fund business link",
+            default);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.CalculateFreeFundEquityAsync(fund, treasury, null, default));
+        Assert.Equal("fund_orphan_outflow", ex.Code);
+    }
+
+    [Fact]
+    public async Task FreeFund_SameTimestamp_ExpenseBeforeWithdrawal_ExecutesInVerifiableSequence()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fundDto = await s.CreateAsync(owner.Id, new("SeqExpFirstFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
+
+        await s.ContributeAsync(owner.Id, fundDto.Id,
+            new(ownerWallet.Id, 600_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ContributeAsync(member.Id, fundDto.Id,
+            new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Request 1: Expense 200,000 VND
+        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Request 2: Withdrawal 100,000 VND for Member B
+        var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+        // Align both ledger transactions to the EXACT same timestamp, but provide verifiable sequence
+        var baseTime = DateTime.UtcNow.AddMinutes(5);
+        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
+        var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
+
+        txExp.CreatedAt = baseTime;
+        txExp.CompletedAt = baseTime;
+        txExp.IdempotencyKey = "seq:1";
+
+        txWth.CreatedAt = baseTime;
+        txWth.CompletedAt = baseTime;
+        txWth.IdempotencyKey = "seq:2";
+
+        await f.Db.SaveChangesAsync();
+
+        var result = await s.CalculateFreeFundEquityAsync(fund, treasury, null, default);
+        Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
+        Assert.Equal(700_000, result.TotalFundEquityVnd);
+
+        // Expense runs first:
+        // A (60%) pays 120k -> 480k. B (40%) pays 80k -> 320k.
+        // Withdrawal runs second:
+        // B withdraws 100k -> 220k.
+        var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
+        var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
+
+        Assert.Equal(480_000, eqA.EquityVnd);
+        Assert.Equal(220_000, eqB.EquityVnd);
+    }
+
+    [Fact]
+    public async Task FreeFund_SameTimestamp_WithdrawalBeforeExpense_ExecutesInVerifiableSequence()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fundDto = await s.CreateAsync(owner.Id, new("SeqWthFirstFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
+
+        await s.ContributeAsync(owner.Id, fundDto.Id,
+            new(ownerWallet.Id, 600_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ContributeAsync(member.Id, fundDto.Id,
+            new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+        // Align both ledger transactions to the EXACT same timestamp, but Withdrawal has sequence 1
+        var baseTime = DateTime.UtcNow.AddMinutes(5);
+        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
+        var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
+
+        txWth.CreatedAt = baseTime;
+        txWth.CompletedAt = baseTime;
+        txWth.IdempotencyKey = "seq:1";
+
+        txExp.CreatedAt = baseTime;
+        txExp.CompletedAt = baseTime;
+        txExp.IdempotencyKey = "seq:2";
+
+        await f.Db.SaveChangesAsync();
+
+        var result = await s.CalculateFreeFundEquityAsync(fund, treasury, null, default);
+        Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
+        Assert.Equal(700_000, result.TotalFundEquityVnd);
+
+        // Withdrawal runs first:
+        // B withdraws 100k -> B has 300k, A has 600k. Total = 900k.
+        // Ratio: A = 600k/900k = 2/3 (66.6667%), B = 300k/900k = 1/3 (33.3333%).
+        // Expense 200k runs second:
+        // A pays 133,334 -> 466,666.
+        // B pays 66,666 -> 233,334.
+        var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
+        var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
+
+        Assert.Equal(466_666, eqA.EquityVnd);
+        Assert.Equal(233_334, eqB.EquityVnd);
+    }
+
+    [Fact]
+    public async Task FreeFund_SameTimestamp_ConflictingOrderWithoutSequence_ThrowsFundIndeterminateOrder()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fundDto = await s.CreateAsync(owner.Id, new("IndetFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
+
+        await s.ContributeAsync(owner.Id, fundDto.Id,
+            new(ownerWallet.Id, 600_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ContributeAsync(member.Id, fundDto.Id,
+            new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
+            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+        // Align both ledger transactions to the EXACT same timestamp without verifiable sequence
+        var baseTime = DateTime.UtcNow.AddMinutes(5);
+        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
+        var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
+
+        txExp.CreatedAt = baseTime;
+        txExp.CompletedAt = baseTime;
+        txExp.IdempotencyKey = "unsequenced-alpha";
+
+        txWth.CreatedAt = baseTime;
+        txWth.CompletedAt = baseTime;
+        txWth.IdempotencyKey = "unsequenced-beta";
+
+        await f.Db.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.CalculateFreeFundEquityAsync(fund, treasury, null, default));
+        Assert.Equal("fund_indeterminate_order", ex.Code);
+    }
 }

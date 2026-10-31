@@ -276,10 +276,10 @@ public sealed class V1FundRefundRegressionTests
         var ownerAccount = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == ownerWallet.Id);
         var ledgerService = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, f.Clock);
 
-        await ledgerService.PostAsync(treasury.LedgerAccountId, ownerAccount.Id, 1_000_000, "VND",
+        var posting = await ledgerService.PostAsync(treasury.LedgerAccountId, ownerAccount.Id, 1_000_000, "VND",
             "V1FundWithdrawal", fund.Id, $"v1-fund-payout:{fund.Id:N}", "wd-post-1", "Personal withdrawal", default);
 
-        f.Db.V1FundRequests.Add(new V1FundRequest
+        var req = new V1FundRequest
         {
             FundId = fund.Id,
             RequestedByUserId = owner.Id,
@@ -289,6 +289,20 @@ public sealed class V1FundRefundRegressionTests
             Purpose = "Personal withdrawal",
             State = "Completed",
             IdempotencyKey = "wd-1"
+        };
+        f.Db.V1FundRequests.Add(req);
+        f.Db.FinancialTransactions.Add(new SpendWise.Domain.Finance.FinancialTransaction
+        {
+            OwnerUserId = owner.Id,
+            WalletId = ownerWallet.Id,
+            LedgerTransactionId = posting.LedgerTransactionId,
+            RelatedBusinessId = req.Id,
+            Type = SpendWise.Domain.Finance.FinancialTransactionType.Withdrawal,
+            Status = SpendWise.Domain.Finance.FinancialTransactionStatus.Completed,
+            Amount = 1_000_000,
+            Currency = "VND",
+            Description = "Personal withdrawal",
+            OccurredAt = f.Clock.UtcNow
         });
         await f.Db.SaveChangesAsync();
 

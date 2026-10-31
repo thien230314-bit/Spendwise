@@ -74,37 +74,20 @@ public sealed partial class V1FundService
             events.Add(("Contribution", c.UserId, c.MembershipId, c.AmountVnd, c.CreatedAt, c.Id));
         }
 
-        // 2. Authoritative Completed Requests (Withdrawal and Expense)
+        // 2. Authoritative Outflows and Ledger Reconciliation
+        // In a Free Fund, every completed request must be backed by an authoritative ledger debit on the treasury.
         var completedRequests = await db.V1FundRequests.AsNoTracking()
             .Where(r => r.FundId == fund.Id && r.State == "Completed")
             .ToListAsync(ct);
 
-        var accountedRequestIds = new HashSet<Guid>();
-
-        foreach (var r in completedRequests)
-        {
-            accountedRequestIds.Add(r.Id);
-            var timestamp = r.ReviewedAt ?? r.CreatedAt;
-
-            if (r.Kind == "Withdrawal")
-            {
-                events.Add(("Withdrawal", r.RecipientUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, timestamp, r.Id));
-            }
-            else if (r.Kind == "Expense")
-            {
-                events.Add(("Expense", r.RequestedByUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, timestamp, r.Id));
-            }
-        }
-
-        // 3. Find any ledger transactions with BusinessType == "V1FundExpense" or "V1FundWithdrawal"
-        // and map them using FinancialTransactions.RelatedBusinessId to avoid double counting completed requests.
+        // Fetch all completed ledger transactions that credit the fund treasury (outflows)
         var fundLedgerOutflows = await db.LedgerTransactions.AsNoTracking()
             .Include(lt => lt.Entries)
             .Where(lt => lt.Status == LedgerTransactionStatus.Completed &&
-                (lt.BusinessType == "V1FundExpense" || lt.BusinessType == "V1FundWithdrawal"))
+                         (lt.BusinessType == "V1FundExpense" || lt.BusinessType == "V1FundWithdrawal") &&
+                         lt.Entries.Any(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit && e.Amount > 0))
             .ToListAsync(ct);
 
-        // Fetch FinancialTransactions linked to these ledger transactions
         var outflowLedgerIds = fundLedgerOutflows.Select(lt => lt.Id).ToList();
         var linkedFinancialTxs = await db.FinancialTransactions.AsNoTracking()
             .Where(ft => outflowLedgerIds.Contains(ft.LedgerTransactionId))
@@ -113,43 +96,62 @@ public sealed partial class V1FundService
         var ledgerToFinancialTx = linkedFinancialTxs
             .ToDictionary(ft => ft.LedgerTransactionId, ft => ft);
 
-        var accountedRequestIdsForLedger = new HashSet<Guid>();
+        // Strict 1-to-1 matching: map each completed request to its unique ledger debit transaction
+        var accountedLedgerTxIds = new HashSet<Guid>();
 
+        foreach (var r in completedRequests)
+        {
+            // Find the matching ledger transaction by exact reference/id link
+            var matchedTx = fundLedgerOutflows.FirstOrDefault(tx =>
+                !accountedLedgerTxIds.Contains(tx.Id) &&
+                ((ledgerToFinancialTx.TryGetValue(tx.Id, out var finTx) && finTx.RelatedBusinessId == r.Id) ||
+                 tx.BusinessId == r.Id ||
+                 (tx.IdempotencyScope != null && tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{r.Id:N}") ||
+                 tx.IdempotencyKey == $"review-{r.Id:N}"));
+
+            if (matchedTx == null)
+            {
+                throw new ConflictException("fund_request_ledger_mismatch",
+                    $"Completed fund request {r.Id} ({r.Kind}, {r.AmountVnd:N0} VND) has no verified ledger debit transaction in treasury. Audit halted.");
+            }
+
+            var creditEntry = matchedTx.Entries.FirstOrDefault(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit);
+            if (creditEntry == null || (long)creditEntry.Amount != r.AmountVnd)
+            {
+                throw new ConflictException("fund_request_ledger_mismatch",
+                    $"Ledger debit amount ({creditEntry?.Amount ?? 0} VND) does not match request amount ({r.AmountVnd} VND) for request {r.Id}.");
+            }
+
+            var expectedBusinessType = r.Kind == "Withdrawal" ? "V1FundWithdrawal" : "V1FundExpense";
+            if (matchedTx.BusinessType != expectedBusinessType)
+            {
+                throw new ConflictException("fund_request_ledger_mismatch",
+                    $"Ledger business type {matchedTx.BusinessType} does not match request kind {r.Kind} for request {r.Id}.");
+            }
+
+            accountedLedgerTxIds.Add(matchedTx.Id);
+
+            // Add verified event with the true ledger execution timestamp
+            if (r.Kind == "Withdrawal")
+            {
+                events.Add(("Withdrawal", r.RecipientUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, r.Id));
+            }
+            else if (r.Kind == "Expense")
+            {
+                events.Add(("Expense", r.RequestedByUserId, r.RequestedByMembershipId ?? Guid.Empty, r.AmountVnd, matchedTx.CreatedAt, r.Id));
+            }
+        }
+
+        // Process any direct ledger transactions that are NOT backed by a request (e.g. direct owner expenses or unmanaged debits)
         foreach (var tx in fundLedgerOutflows)
         {
-            // Check if this transaction debited the treasury
+            if (accountedLedgerTxIds.Contains(tx.Id))
+                continue;
+
             var creditEntry = tx.Entries.FirstOrDefault(e => e.LedgerAccountId == treasury.LedgerAccountId && e.Direction == LedgerEntryDirection.Credit);
             if (creditEntry == null || creditEntry.Amount <= 0)
                 continue;
 
-            // Determine if this ledger transaction is already accounted for by a completed V1FundRequest
-            V1FundRequest? matchedRequest = null;
-
-            if (accountedRequestIds.Contains(tx.BusinessId))
-            {
-                matchedRequest = completedRequests.FirstOrDefault(r => r.Id == tx.BusinessId);
-            }
-            else if (ledgerToFinancialTx.TryGetValue(tx.Id, out var finTx) && finTx.RelatedBusinessId != null && accountedRequestIds.Contains(finTx.RelatedBusinessId.Value))
-            {
-                matchedRequest = completedRequests.FirstOrDefault(r => r.Id == finTx.RelatedBusinessId.Value);
-            }
-            else if (tx.IdempotencyScope != null)
-            {
-                matchedRequest = completedRequests.FirstOrDefault(r =>
-                    !accountedRequestIdsForLedger.Contains(r.Id) &&
-                    (tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{r.Id:N}" ||
-                     (tx.IdempotencyScope.StartsWith($"v1-fund-payout:{fund.Id:N}") &&
-                      r.AmountVnd == (long)creditEntry.Amount &&
-                      (r.Kind == (tx.BusinessType == "V1FundWithdrawal" ? "Withdrawal" : "Expense")))));
-            }
-
-            if (matchedRequest != null)
-            {
-                accountedRequestIdsForLedger.Add(matchedRequest.Id);
-                continue;
-            }
-
-            // If this is a direct ledger transaction not backed by an accounted V1FundRequest
             var amount = (long)creditEntry.Amount;
             if (tx.BusinessType == "V1FundExpense")
             {
@@ -258,18 +260,16 @@ public sealed partial class V1FundService
 
         long totalActiveEquity = activeResults.Sum(r => r.EquityVnd);
 
-        if (singleMemberRefundTargetUserIds == null || singleMemberRefundTargetUserIds.Count == 0)
+        if (currentBalance > 0 && totalActiveEquity == 0)
         {
-            if (currentBalance > 0 && totalActiveEquity == 0)
-            {
-                throw new ConflictException("zero_entitlement_dissolution_blocked",
-                    "Cannot dissolve fund: no active members have valid contribution entitlement to receive the remaining balance.");
-            }
-            if (totalActiveEquity != currentBalance)
-            {
-                throw new ConflictException("dissolution_equity_mismatch",
-                    $"Dissolution equity mismatch: Total active member equity ({totalActiveEquity} VND) does not match treasury balance ({currentBalance} VND). Reconciliation required.");
-            }
+            throw new ConflictException("zero_entitlement_dissolution_blocked",
+                "Cannot refund or dissolve fund: no active members have valid contribution entitlement to receive the balance.");
+        }
+
+        if (totalActiveEquity != currentBalance)
+        {
+            throw new ConflictException("free_fund_reconciliation_mismatch",
+                $"Free Fund equity reconciliation mismatch: Total active member equity ({totalActiveEquity} VND) does not match treasury balance ({currentBalance} VND). Operation halted for audit.");
         }
 
         // Compute refunds using FreeFundEquityEngine

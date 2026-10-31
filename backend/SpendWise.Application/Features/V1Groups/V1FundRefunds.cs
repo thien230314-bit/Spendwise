@@ -349,7 +349,7 @@ public sealed partial class V1FundService
             var refunds = new List<V1RefundResultDto>();
             long totalRefunded = 0;
 
-            if (currentBalance > 0 && activeMembers.Count > 0)
+            if ((currentBalance > 0 || fund.Kind == V1FundKind.Free) && activeMembers.Count > 0)
             {
                 var calc = await CalculateUnifiedRefundsAsync(fund, treasury, null, token);
                 var caseType = fund.Kind == V1FundKind.Fixed ? "CaseB_DissolveFixed" : "CaseC_DissolveFree";
@@ -468,7 +468,7 @@ public sealed partial class V1FundService
         var account = await db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId, ct);
         var currentBalance = account.Balance;
         var results = new Dictionary<Guid, (long Amount, string CaseType)>();
-        if (currentBalance <= 0)
+        if (currentBalance <= 0 && fund.Kind == V1FundKind.Fixed)
         {
             if (singleMemberUserIds is not null)
                 foreach (var id in singleMemberUserIds) results[id] = (0, "ZeroBalance");

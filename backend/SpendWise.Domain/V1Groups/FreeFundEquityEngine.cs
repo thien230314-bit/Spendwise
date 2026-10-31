@@ -108,11 +108,9 @@ public static class FreeFundEquityEngine
 
     /// <summary>
     /// Computes refund entitlement for a single member leaving or being kicked, or for full dissolution.
-    /// Rules:
-    /// 1. Each member receives their exact calculated equity.
-    /// 2. For dissolution, total equity of all active members MUST equal current fund balance.
-    ///    If there is any discrepancy, throws InvalidOperationException to halt settlement.
-    /// 3. For single member leaving, refund is exactly their current equity (capped only by fund balance if fund has unspent deficit).
+    /// Invariant: Total active member equity MUST strictly equal currentFundBalanceVnd.
+    /// If there is ANY discrepancy, throws InvalidOperationException to halt settlement.
+    /// Refund is strictly the exact calculated equity without silent clamping or truncation.
     /// </summary>
     public static Dictionary<Guid, long> CalculateRefunds(
         IReadOnlyList<MemberEpochState> activeMembers,
@@ -122,47 +120,30 @@ public static class FreeFundEquityEngine
         var orderedMembers = activeMembers.OrderBy(m => m.Seat).ToList();
         var results = new Dictionary<Guid, long>();
 
-        if (currentFundBalanceVnd <= 0)
+        long sumEquity = orderedMembers.Sum(m => m.EquityVnd);
+        if (sumEquity != currentFundBalanceVnd)
         {
-            foreach (var m in orderedMembers)
-            {
-                results[m.UserId] = 0;
-            }
-            return results;
+            throw new InvalidOperationException(
+                $"Free Fund equity reconciliation mismatch: Total active member equity ({sumEquity} VND) does not match treasury balance ({currentFundBalanceVnd} VND). Reconciliation required.");
         }
 
         if (singleMemberUserIds is not null)
         {
-            // Single member preview / leave / kick
+            // Single member preview / leave / kick: refund is exactly their current equity
             foreach (var targetUserId in singleMemberUserIds)
             {
                 var member = orderedMembers.FirstOrDefault(m => m.UserId == targetUserId);
-                if (member == null || member.EquityVnd <= 0)
-                {
-                    results[targetUserId] = 0;
-                }
-                else
-                {
-                    results[targetUserId] = Math.Max(0, Math.Min(member.EquityVnd, currentFundBalanceVnd));
-                }
+                results[targetUserId] = member?.EquityVnd ?? 0L;
             }
             return results;
         }
         else
         {
-            // Full dissolution
-            long sumEquity = orderedMembers.Sum(m => m.EquityVnd);
-            if (sumEquity != currentFundBalanceVnd)
-            {
-                throw new InvalidOperationException(
-                    $"Dissolution equity mismatch: Total active member equity ({sumEquity} VND) does not match treasury balance ({currentFundBalanceVnd} VND). Reconciliation required.");
-            }
-
+            // Full dissolution: each active member receives their exact equity
             foreach (var m in orderedMembers)
             {
                 results[m.UserId] = m.EquityVnd;
             }
-
             return results;
         }
     }

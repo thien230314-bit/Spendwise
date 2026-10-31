@@ -33,6 +33,8 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     public Task<V1FundRequestDto> ReportRequest(Guid id, V1FundReportRequest request, CancellationToken ct) => funds.ReportFundRequestAsync(Actor, id, request.Reason, ct);
     [HttpPost("requests/{id:guid}/cancel"), EnableRateLimiting("financial")]
     public Task<V1FundRequestDto> CancelRequest(Guid id, V1PinRequest request, CancellationToken ct) => funds.CancelFundRequestAsync(Actor, id, request.SecurityPin, ct);
+    [HttpPost("requests/{id:guid}/initiate-payment"), EnableRateLimiting("financial")]
+    public Task<V1FundRequestDto> InitiatePayment(Guid id, V1PinRequest request, CancellationToken ct) => funds.InitiateExpensePaymentAsync(Actor, id, request.SecurityPin, ct);
 
     [HttpGet]
     public Task<IReadOnlyList<V1FundDto>> List(CancellationToken ct) => funds.ListAsync(Actor, ct);

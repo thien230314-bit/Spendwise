@@ -705,9 +705,10 @@ public sealed class FixedFundV2BusinessRuleTests
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
         await service.AcceptAsync(member.Id, inv.Id, default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
-        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 100);
+        var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 200);
 
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 300, "c-free-f26", Pin), default);
+        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-free-m26", Pin), default);
 
         var wd = new V1FundRequestInput("Withdrawal", 100, member.Id, "Reimbursement", "wd-free-f26", Pin);
         var req = await service.CreateFundRequestAsync(member.Id, fund.Id, wd, default);

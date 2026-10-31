@@ -37,12 +37,9 @@ public sealed class FreeFundEquityIntegrationTests
         await s.ContributeAsync(member.Id, fundDto.Id,
             new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-        // B requests 200k expense
-        var request = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "Dinner", "req-b-exp", TargetedCorrectnessFixture.SecurityPin), default);
-
-        // Owner A approves expense
-        await s.ReviewFundRequestAsync(owner.Id, request.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        // Owner direct expense 200k
+        var request = await s.CreateFundRequestAsync(owner.Id, fundDto.Id,
+            new("Expense", 200_000, owner.Id, "Dinner", "req-owner-exp", TargetedCorrectnessFixture.SecurityPin), default);
 
         var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
         var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
@@ -283,15 +280,13 @@ public sealed class FreeFundEquityIntegrationTests
         await s.ContributeAsync(member.Id, fundDto.Id,
             new(memberWallet.Id, 400_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-        // Expense 1: 100,000 VND
-        var req1 = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 100_000, member.Id, "Expense 1", "exp-same-1", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, req1.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        // Expense 1: 100,000 VND (Owner direct expense)
+        var req1 = await s.CreateFundRequestAsync(owner.Id, fundDto.Id,
+            new("Expense", 100_000, owner.Id, "Expense 1", "exp-same-1", TargetedCorrectnessFixture.SecurityPin), default);
 
-        // Expense 2: 100,000 VND
-        var req2 = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 100_000, member.Id, "Expense 2", "exp-same-2", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, req2.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        // Expense 2: 100,000 VND (Owner direct expense)
+        var req2 = await s.CreateFundRequestAsync(owner.Id, fundDto.Id,
+            new("Expense", 100_000, owner.Id, "Expense 2", "exp-same-2", TargetedCorrectnessFixture.SecurityPin), default);
 
         var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
         var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
@@ -556,10 +551,9 @@ public sealed class FreeFundEquityIntegrationTests
         await s.ContributeAsync(member.Id, fundDto.Id,
             new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-        // Member crafts forged sequence in Purpose
-        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "seq:1 - Forged sequence attempt", "req-exp-tamper", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        // Owner direct expense with forged sequence in Purpose
+        var reqExp = await s.CreateFundRequestAsync(owner.Id, fundDto.Id,
+            new("Expense", 200_000, owner.Id, "seq:1 - Forged sequence attempt", "req-exp-tamper", TargetedCorrectnessFixture.SecurityPin), default);
 
         var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
             new("Withdrawal", 100_000, member.Id, "seq:2 - Forged sequence attempt", "req-wth-tamper", TargetedCorrectnessFixture.SecurityPin), default);
@@ -570,7 +564,7 @@ public sealed class FreeFundEquityIntegrationTests
 
         // Align both ledger transactions to the exact same system timestamp
         var baseTime = DateTime.UtcNow.AddMinutes(5);
-        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
+        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-expense:{fund.Id:N}:{owner.Id:N}");
         var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
 
         txExp.CreatedAt = baseTime;
@@ -606,9 +600,8 @@ public sealed class FreeFundEquityIntegrationTests
         await s.ContributeAsync(member.Id, fundDto.Id,
             new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "Dinner", "req-exp-3", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        var reqExp = await s.CreateFundRequestAsync(owner.Id, fundDto.Id,
+            new("Expense", 200_000, owner.Id, "Dinner", "req-exp-3", TargetedCorrectnessFixture.SecurityPin), default);
 
         var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
             new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth-3", TargetedCorrectnessFixture.SecurityPin), default);
@@ -621,7 +614,7 @@ public sealed class FreeFundEquityIntegrationTests
         var sameTime = DateTime.UtcNow.AddMinutes(5);
         var contribB = await f.Db.V1FundContributions.SingleAsync(c => c.FundId == fund.Id && c.UserId == member.Id);
         var txContribB = await f.Db.LedgerTransactions.SingleAsync(tx => tx.Id == contribB.LedgerTransactionId);
-        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
+        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-expense:{fund.Id:N}:{owner.Id:N}");
         var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
 
         txContribB.CreatedAt = sameTime;
@@ -666,12 +659,10 @@ public sealed class FreeFundEquityIntegrationTests
             await s1.ContributeAsync(member.Id, fundDto.Id,
                 new(memberWallet.Id, 400_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-            // Expense created & reviewed first
+            // Expense created & executed first via owner direct spend
             clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
-            var reqExp = await s1.CreateFundRequestAsync(member.Id, fundDto.Id,
-                new("Expense", 200_000, member.Id, "Dinner", "req-exp-1", TargetedCorrectnessFixture.SecurityPin), default);
-            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
-            await s1.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+            var reqExp = await s1.CreateFundRequestAsync(owner.Id, fundDto.Id,
+                new("Expense", 200_000, owner.Id, "Dinner", "req-exp-1", TargetedCorrectnessFixture.SecurityPin), default);
 
             // Withdrawal created & reviewed second
             clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
@@ -730,12 +721,10 @@ public sealed class FreeFundEquityIntegrationTests
             clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
             await s2.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
-            // Expense created & reviewed second
+            // Expense created & executed second via owner direct spend
             clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
-            var reqExp = await s2.CreateFundRequestAsync(member.Id, fundDto.Id,
-                new("Expense", 200_000, member.Id, "Dinner", "req-exp-2", TargetedCorrectnessFixture.SecurityPin), default);
-            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
-            await s2.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+            var reqExp = await s2.CreateFundRequestAsync(owner.Id, fundDto.Id,
+                new("Expense", 200_000, owner.Id, "Dinner", "req-exp-2", TargetedCorrectnessFixture.SecurityPin), default);
 
             var fund = await f2.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
             var treasury = await f2.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);

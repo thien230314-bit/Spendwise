@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Các quyết định Free Fund mới đang chờ code**; quỹ cố định V2 được hoãn rà soát theo yêu cầu.  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Các quyết định Free Fund mới đang chờ code**; Fixed V2 được đồng bộ mô tả contract theo backend hiện tại nhưng vẫn có trường hợp xung đột logic quyết toán chưa sửa và một số ca chưa kiểm thử.  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -24,12 +24,17 @@
 - P2P là chuyển tiền **nội bộ SpendWise**; bank-direct là tạo lệnh/hướng dẫn chuyển khoản ngân hàng, **không tự ghi giảm ví SpendWise**. SePay Test Mode cho kiểm chứng luồng sandbox và ledger; không đồng nghĩa API rút/chuyển tiền ngân hàng thật đã được cấp quyền.
 
 ### 1.3. Quỹ nhóm Cố định V2 & Quỹ nhóm Tự do (Group Funds)
-1. **Quỹ nhóm Cố định V2 (Fixed Fund V2):**
-   - Quản lý theo mô hình Nghĩa vụ kỳ (`Obligation Model`). Mỗi thành viên có định mức đóng góp theo chu kỳ.
-   - Hạn mức chi tiêu khả dụng cá nhân (`CanSpend`):
-     $$\text{CanSpend} = \text{Tổng tiền thành viên đã đóng} - \text{Nghĩa vụ đã phân bổ/sử dụng}$$
-   - Thành viên được bật quyền chi tiêu có thể thực hiện chi trong hạn mức `CanSpend` mà không cần chờ duyệt. Chi tiêu vượt định mức cá nhân phải gửi đề xuất hoạt động (`Activity Proposal`) để Chủ quỹ phê duyệt.
-   - Loại bỏ hoàn toàn cơ chế tạm giữ 20% và trạng thái giữ chỗ giả tạo (Pending24h).
+1. **Quỹ nhóm Cố định V2 (Fixed Fund V2) — mô tả theo backend hiện tại:**
+   - Quỹ Fixed có `targetVnd` dương, tối đa **30 thành viên** tính cả chủ nhóm. Mỗi thành viên giữ một `seat`; phân chia nghĩa vụ theo vị trí ghế hiện còn hoạt động. Số tiền mục tiêu được chia gần đều theo phép chia nguyên, phần đồng lẻ được phân bổ lần lượt cho ghế có thứ tự nhỏ.
+   - **Mời người:** Chủ quỹ mời bạn bè trực tiếp; nếu B là thành viên thường đề xuất mời C thì lời mời là `Proposed`, **phải được chủ quỹ duyệt** thành `Pending` trước khi C tự chấp nhận. Không nhầm với Free Fund (B mời C không cần A duyệt).
+   - **Chủ nhóm xác nhận nghĩa vụ** bằng `POST /api/v1/funds/{id}/obligations/confirm`. Có `revision` gắn với `targetVnd` và chữ ký danh sách thành viên. `GET .../contribution-allocation` chỉ xem trước các khoản `requiredVnd`, **không xác nhận nghĩa vụ**, không phải hạn mức chi.
+   - **Góp tiền** từ ví VND đang `Active` thuộc thành viên, không bắt buộc chỉ ví chính, sử dụng `walletId,amountVnd,idempotencyKey,securityPin,obligationRevision`; một lần không được đóng vượt nghĩa vụ còn thiếu. Thay đổi cấu hình/thành viên có thể buộc xác nhận lại và sử dụng revision mới.
+   - **`CanSpend` là quyền boolean do chủ nhóm cấp/tắt**, **không phải số tiền**. Với thành viên thường, `effectiveCanSpend` chỉ đúng khi đã đóng đủ nghĩa vụ cá nhân, nhóm đạt đủ mục tiêu, chủ đã bật `canSpend` và chu kỳ còn mở; chủ quỹ không cần `CanSpend` nhưng vẫn phải góp đủ phần cá nhân và đạt đủ mục tiêu nhóm.
+   - **Chi Fixed:** `Expense` hợp lệ ghi ledger **trực tiếp `Completed`**, không qua chủ duyệt, không có hạn mức cá nhân dựa trên tổng tiền đã góp và không áp dụng giữ 20% hay giữ chỗ `Pending24h` cho giao dịch mới. Số dư chi dùng chung = `max(0, balanceVnd - tổng lockedExcessVnd - các hold legacy còn tồn tại)`, với `spendingState` phải `OPEN`. Fixed không cho `Withdrawal` cá nhân.
+   - **Chu kỳ:** chủ quỹ đóng kỳ bằng PIN, sau đó đề xuất **mục tiêu chu kỳ tiếp theo** (Activity Proposal), không phải đề xuất xin duyệt chi. Cử tri cố định bỏ `support:true/false` trong **24 giờ hoạt động**. Cần **Yes > 50% tổng cử tri**, người im lặng không được tính Có; đề xuất được thông qua cần quyết toán bằng PIN. Người bỏ Có giữ quyền lợi chuyển tiếp, người bỏ Không hoặc không bỏ phiếu được hoàn tiền hợp lệ rồi rời quỹ; tạo revision nghĩa vụ mới.
+   - **Hoàn tiền Fixed:** cùng một bộ tính cho preview, rời, loại và giải tán. Chưa chi: xét đóng góp chưa hoàn. Đã chi: bảo vệ phần đóng vượt nghĩa vụ còn hợp lệ, phần số dư còn lại được phân chia theo trọng số `min(paid, required)` với quy tắc phân bổ đồng lẻ theo ghế; **khác** công thức hoàn tiền của Free Fund.
+   - **Trạng thái đã có:** `OPEN`, `FINANCE_BLOCKED`, `ACTIVITY_CLOSED`, `DISSOLVED` cho tài chính; `Voting`, `ApprovedAwaitingSettlement`, `Rejected`, `Invalidated`, `Settled` cho Activity Proposal. `Pending24h` vẫn tồn tại trong code xử lý **request legacy**, không đồng nghĩa luồng chi Fixed V2 mới giữ tiền 24 giờ.
+   - **B1 — Chưa xử lý backend:** Proposal đạt đa số nhưng chủ quỹ đã bỏ Không có thể không quyết toán được, trong khi chuyển chủ tự nguyện cũng bị chặn bởi trạng thái proposal chờ. Không mô tả đây là luồng đã hoàn thiện. Các ca mục tiêu thấp/đổi thành viên sau chi/carry-over cần kiểm thử riêng.
 2. **Quỹ nhóm Tự do (Free Fund) — nghiệp vụ đã chốt ngày 30/10/2026:**
    - Người tạo quỹ là chủ nhóm hiện tại (`OwnerUserId`), vẫn chỉ mang role hệ thống `User`. Giới hạn 6 thành viên/quỹ (bao gồm chủ nhóm); mỗi User được tham gia tối đa 10 nhóm đang hoạt động.
    - Chủ nhóm hoặc bất kỳ thành viên đang hoạt động đều có thể mời **bạn bè đã kết bạn thành công**; người được mời có quyền **chấp nhận/từ chối** và chỉ gia nhập sau khi tự chấp nhận. **Thành viên B mời C không cần A (chủ nhóm) duyệt.** Lời mời có thời hạn 7 ngày.
@@ -63,7 +68,7 @@
 
 - Hai loại hồ sơ: **Support** (`POST /api/cases/support` với `category,priority,subject,description,linkedTransactionId?`) và **Dispute** (`POST /api/cases/disputes` với `linkedTransactionId,reason,description?`). Cả hai có danh sách, chi tiết, tin nhắn và đính kèm, riêng biệt theo chủ sở hữu.
 - Người dùng có thể trao đổi với Admin trong hồ sơ, đính kèm tài liệu. Backend chỉ cho liên kết giao dịch thực sự thuộc chính người tạo. Khi Admin cập nhật trạng thái hồ sơ **không được mặc nhiên suy ra hoàn tiền tự động**; xử lý điều chỉnh/hoàn tiền là nghiệp vụ tài chính riêng có điều kiện và chứng từ.
-- Tranh chấp khoản chi Fixed V2 được hoãn rà soát chi tiết cùng quỹ cố định, không áp dụng quy tắc suy diễn từ Support thường cho nó.
+- `POST /api/v1/funds/requests/{id}/report` với `Expense` Fixed V2 đã `Completed` có thể tạo SupportCase gắn đúng giao dịch, **không tự đảo ledger hoặc hoàn tiền**. Các trường hợp report trạng thái legacy vẫn có guard riêng.
 
 ## 2. Quy ước API, dữ liệu và frontend
 
@@ -72,7 +77,7 @@
 3. **Thời gian:** Backend trả ISO 8601 UTC/offset; client chỉ đổi múi giờ khi hiển thị. Số tiền VND truyền dưới dạng JSON number theo DTO `decimal`/`long`, không gửi chuỗi đã định dạng có dấu chấm/phẩy.
 4. **Lỗi:** Phân biệt 400 input, 401 hết phiên, 403 hạn chế quyền, 404 ID không thuộc chủ sở hữu, 409 trạng thái xung đột và 429 giới hạn yêu cầu. Không tự retry lệnh ghi tiền bằng idempotency key mới. UI phải hiển thị lỗi rõ và không giả lập thành công.
 5. **Realtime/thông báo:** Dùng API notifications làm dữ liệu gốc, realtime/push chỉ là tín hiệu làm mới; không coi push đã giao thành ledger commit.
-6. **Phạm vi:** Mục `/api/groups` là **legacy compatibility**, khác quỹ `/api/v1/funds`. Hệ thống chỉ có vai trò hoạt động `User`/`Admin`. **Không triển khai frontend Fixed V2 theo phần chưa rà soát**.
+6. **Phạm vi:** Mục `/api/groups` là **legacy compatibility**, khác quỹ `/api/v1/funds`. Hệ thống chỉ có vai trò hoạt động `User`/`Admin`. **Fixed V2: áp dụng contract đã đối chiếu tại 3.6, nhưng chưa coi B1 hoặc các ca C1–C3 là đã nghiệm thu**.
 
 ## 3. DANH MỤC API PHÂN HỆ USER
 
@@ -101,7 +106,7 @@
 | `GET /api/security-pin/status` | `{isSet}` | Kiểm tra trạng thái PIN từ phiên đã đăng nhập. |
 | `POST /api/security-pin/verify` | `{pin}` → `204` | Kiểm tra PIN giao dịch, **không cấp access token**. |
 | `PUT /api/security-pin` | `{currentPin,newPin,confirmPin}` → `204` | Đổi PIN khi đang đăng nhập. |
-| `POST /api/account-recovery` | Yêu cầu khôi phục tài khoản (DTO riêng của AccountRecovery) | Gửi yêu cầu cho quy trình kiểm tra Admin, không tự mở khóa tài khoản. |
+| `POST /api/account-recovery` | `{fullName,phone,description,emailHint?}` → `202 Accepted`, `AccountRecoverySubmissionResponse {message}` | Đề nghị Admin xét khôi phục, không tự mở khóa; phản hồi trung tính chống dò tài khoản. |
 
 **Định dạng token:** `AuthResponse` gồm `accessToken, refreshToken, accessTokenExpiresAt, user, deviceTrustToken?`. `UserProfile` gồm `id,fullName,email,spendId,phone,systemRole,status,mustChangePassword,preferredLanguage,preferredTheme,defaultCurrency,createdAt,lastLoginAt,engagementEmailOptIn,avatarUrl`. Không hiển thị `expiresIn` hoặc `mainWalletBalance` như trường của chính các DTO này. PIN/mật khẩu/OTP không log ra console/analytics.
 
@@ -128,13 +133,13 @@
 | `GET /api/friends/discover?query=...&page=1&pageSize=20` | Khám phá user hệ thống, trả phân trang với thông tin công khai/relationshipStatus. |
 | `GET /api/friends` | Danh sách bạn bè, tên gợi nhớ và đánh dấu yêu thích. |
 | `GET /api/friends/requests/incoming` / `GET /api/friends/requests/outgoing` | Lời mời đến/đi. |
-| `POST /api/friends/requests` | Gửi lời mời kết bạn (xem `SendFriendRequest` về trường `contact`); chống tự mời/trùng lời mời. |
+| `POST /api/friends/requests` | Body `{contact,message?,contactKind?}` (`SendFriendRequest`), không dùng `targetUserId` thay cho `contact`; chống tự mời và lời mời trùng. |
 | `POST /api/friends/requests/{requestId}/accept` / `reject` | Nhận hoặc từ chối lời mời. |
 | `DELETE /api/friends/requests/{requestId}` | Hủy lời mời do mình gửi. |
 | `DELETE /api/friends/{friendUserId}` | Hủy kết bạn. |
-| `PATCH /api/friends/{friendUserId}/preference` | Body `{alias?,isFavorite?}` theo DTO `UpdateFriendPreferenceRequest`. |
+| `PATCH /api/friends/{friendUserId}/preference` | Body `{nickname?,isFavorite}` theo `UpdateFriendPreferenceRequest(string? Nickname,bool IsFavorite)`; **không có `alias`**. |
 
-**Thiết bị nhận push:** `PUT /api/mobile/push/installations/{installationId}` đăng ký Expo push token + metadata thiết bị; `DELETE /api/mobile/push/installations/{installationId}` gỡ đăng ký. Đây là API lưu token/thiết bị, không phải bằng chứng đã thử push đến thiết bị thật.
+**Thiết bị nhận push:** `PUT /api/mobile/push/installations/{installationId}` body `{platform,pushToken,deviceName?}` theo `RegisterMobilePushInstallationRequest`, trả `204`; `DELETE /api/mobile/push/installations/{installationId}` xóa đăng ký, trả `204`. `installationId` là GUID trong route. Đăng ký token **không phải** chứng nhận Expo Push đã giao thật.
 
 ### 3.3. Ví, thu/chi, chỉnh giao dịch, danh mục, bằng chứng, dashboard
 
@@ -164,6 +169,15 @@
 **Bằng chứng giao dịch:** `POST /api/evidence` (`multipart/form-data`, key `file`) → `EvidenceDto {id,originalFileName,contentType,length,contentHash,createdAt}`; `GET /api/evidence/{id}` tải file đã qua kiểm tra quyền. Dùng `evidenceIds` trên giao dịch/chỉnh sửa nơi hỗ trợ.
 
 **Tổng quan:** `GET /api/dashboard` → `DashboardDto` tổng hợp từ backend. Không tính số dư hoặc tổng chi tiêu chỉ từ danh sách sample/mock trong UI.
+
+**Xác thực giao dịch nâng cao bằng Passkey/WebAuthn (`TransactionAuthorizationsController`):**
+
+| Endpoint | Body và response |
+|---|---|
+| `POST /api/transaction-authorizations/options` | `{transactionType,amount,currency?,sourceId,destinationId,idempotencyKey,payloadJson?}` → `TransactionAuthorizationOptionsResponse {authorizationId,challenge,transactionType,amount,currency,sourceId,destinationId,expiresAt,allowedCredentials}`. |
+| `POST /api/transaction-authorizations/verify` | `{authorizationId,credentialId,signature,clientDataJSON?,authenticatorData?}` → `TransactionAuthorizationExecutionResult {success,authorizationId,status,transactionType,amount,currency,executedAt?,result?}`. |
+
+Lấy challenge từ backend, ký bằng credential hợp lệ, chỉ coi giao dịch thực hiện khi backend xác minh và trả trạng thái tương ứng. Không nhầm việc nhận `options` với thực hiện tài chính.
 
 ### 3.4. Chuyển tiền giữa ví, P2P SpendWise và chuyển khoản ngân hàng trực tiếp
 
@@ -297,64 +311,79 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 ```
 - **Lỗi thường gặp:** `404 NotFound` (`invite_not_found`), `409 Conflict` (`invite_unavailable`).
 
-#### 6. `POST /api/v1/funds/{id}/contributions`
-- **Mô tả:** Nộp tiền vào Quỹ Cố định V2 từ ví chính của thành viên.
-- **Quyền:** Thành viên quỹ (`Active`). Yêu cầu mã PIN 6 số.
-- **Request Body:**
-```json
-{
-  "amount": 500000.00,
-  "sourceWalletId": "uuid-wallet-main",
-  "securityPin": "123456"
-}
-```
-- **Response `200 OK`**
+#### 5a. Kiểm kê 24 endpoint còn lại của `/api/groups` (Legacy)
 
-#### 7. `GET /api/v1/funds/{id}/contribution-allocation`
-- **Mô tả:** Lấy thông tin phân bổ nghĩa vụ đóng góp và hạn mức chi tiêu khả dụng cá nhân (`CanSpend`).
-- **Quyền:** Thành viên quỹ.
-- **Response `200 OK`:**
-```json
-{
-  "fundId": "uuid-fund",
-  "userId": "uuid-user",
-  "obligationTotal": 1000000.00,
-  "contributed": 1500000.00,
-  "allocatedObligation": 1000000.00,
-  "obligationRemaining": 0.00,
-  "canSpend": 500000.00,
-  "isEligibleToSpend": true
-}
-```
+> `GroupsController` có tổng cộng **29 endpoint** (5 mục 1–5 bên trên + 24 endpoint dưới đây). Đây là nhóm tương thích, **không thay thế các API V1 Fixed/Free**. Các body/DTO phải dùng contract riêng của legacy.
 
-#### 8. `POST /api/v1/funds/{id}/activity-proposals`
-- **Mô tả:** Tạo đề xuất hoạt động / chi tiêu chung từ quỹ nhóm.
-- **Quyền:** Thành viên quỹ.
-- **Request Body:**
-```json
-{
-  "title": "Mua bình nước uống",
-  "estimatedAmount": 120000.00,
-  "description": "2 bình nước Lavie 19L"
-}
-```
-- **Response `201 Created`:** `V1ActivityProposalDto`.
+| API legacy | Chức năng |
+|---|---|
+| `GET /api/groups`; `GET /api/groups/{groupId}`; `PUT /api/groups/{groupId}` | Danh sách, chi tiết, sửa nhóm |
+| `DELETE /api/groups/{groupId}/members/{memberUserId}`; `POST /api/groups/{groupId}/ownership/{memberUserId}` | Loại thành viên, chuyển chủ |
+| `PUT /api/groups/{groupId}/receiving-bank` | Cài đặt tài khoản nhận tiền |
+| `GET /api/groups/{groupId}/fund`; `GET /api/groups/{groupId}/fund/transactions` | Số dư và lịch sử quỹ |
+| `POST /api/groups/{groupId}/fund/contributions` | Góp tiền |
+| `GET /api/groups/{groupId}/fund-requests`; `POST /api/groups/{groupId}/fund-requests`; `POST /api/groups/{groupId}/fund-requests/{requestId}/pay` | Yêu cầu đóng góp và thanh toán |
+| `GET /api/groups/{groupId}/fund-rounds`; `POST /api/groups/{groupId}/fund-rounds`; `POST /api/groups/{groupId}/fund-rounds/{roundId}/pay` | Vòng thu tiền và thanh toán |
+| `GET /api/groups/{groupId}/expenses`; `POST /api/groups/{groupId}/expenses`; `GET /api/groups/{groupId}/activities` | Chi phí và lịch sử |
+| `GET /api/groups/{groupId}/deletion-request`; `POST /api/groups/{groupId}/deletion-requests`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/vote` | Yêu cầu xóa nhóm và bỏ phiếu |
+| `POST /api/groups/{groupId}/deletion-requests/{requestId}/cancel`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/refunds/{refundId}/payment`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/finalize` | Hủy xóa, xác nhận hoàn tiền và hoàn tất giải thể |
 
-#### 9. `POST /api/v1/funds/activity-proposals/{id}/settle`
-- **Mô tả:** Quyết toán đề xuất hoạt động (Chủ quỹ phê duyệt hoặc từ chối).
-- **Quyền:** Chủ quỹ (`Owner`). Yêu cầu mã PIN 6 số.
-- **Request Body:**
-```json
-{
-  "actualAmount": 120000.00,
-  "status": "Approved",
-  "note": "Đã mua và có hóa đơn kèm theo",
-  "securityPin": "123456"
-}
-```
-- **Response `200 OK`**
+#### 6. Quỹ cố định V2 — Hợp đồng xác nhận và đóng góp
 
-> **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5 phía trên là **nhóm legacy**, không phải API quản lý `V1FundKind.Free`; không lấy mô hình lời mời kèm token của legacy áp dụng cho quỹ tự do V1. Các ví dụ mục 6–9 là mô tả cũ, cần đối chiếu lại DTO thực tế trước khi sử dụng. Với Free Fund, dùng các API `/api/v1/funds` chính thức dưới đây, đã đối chiếu `V1FundsController` và DTO hiện hành.
+| API | DTO/body và điều kiện |
+|---|---|
+| `POST /api/v1/funds` | Tạo Fixed: `{"name":"Quỹ định kỳ","kind":"Fixed","targetVnd":600000,"securityPin":"<PIN>"}` → `V1FundDto`. |
+| `POST /api/v1/funds/{id}/obligations/confirm` | Chỉ **chủ quỹ**, `{"targetVnd":600000,"securityPin":"<PIN>"}` → `V1FinanceDto`; xác nhận revision nghĩa vụ cho tập thành viên và target hiện hành. |
+| `GET /api/v1/funds/{id}/contribution-allocation` | **Xem trước, không ghi sổ:** `V1ContributionAllocationDto {fundId,targetVnd,basis:"CurrentMembershipPreview",postingEnabled:false,members:[{userId,seat,requiredVnd}]}`. Không có `canSpend` hoặc số tiền đã góp trong response này. |
+| `GET /api/v1/funds/{id}/finance` | `V1FinanceDto {fundId,revision,targetVnd?,balanceVnd,configurationCurrent,contributionsEnabled,spendingState,obligations:[{userId,seat,requiredVnd,paidVnd,remainingVnd,lockedExcessVnd}]}`. |
+| `POST /api/v1/funds/{id}/contributions` | Thành viên đóng bằng `{"walletId":"<wallet-guid>","amountVnd":200000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>","obligationRevision":1,"purpose":"Đóng chu kỳ"}`. **Lấy revision từ finance thực tế, không hardcode 1.** |
+| `GET /api/v1/funds/{id}/contributions?page=1&pageSize=20` | `V1ContributionDto[]` có `id,fundId,userId,walletId,amountVnd,obligationRevision,ledgerTransactionId,createdAt,replayed`. |
+
+**Kiểm tra Fixed:** không đóng vượt `requiredVnd-paidVnd`; `obligationRevision` hiện hành; ví `Active` thuộc chính thành viên và VND, PIN hợp lệ, intent idempotent. Đổi danh sách thành viên hoặc target có thể khiến revision/bảng nghĩa vụ cần xác nhận lại và làm sai lệch `configurationCurrent`.
+
+#### 7. Quỹ cố định V2 — Quyền và chi tiêu
+
+| API | Nội dung |
+|---|---|
+| `GET /api/v1/funds/{id}/members` | `V1MemberDto[]`: `userId,seat,isOwner,canSpend,joinedAt,fullName,avatarUrl?,effectiveCanSpend,individualContributionCompleted,groupFundingCompleted,canManageSpendingPermission`. |
+| `PUT /api/v1/funds/{id}/members/{userId}/spending-permission` | **Chủ quỹ** `{"enabled":true,"securityPin":"<PIN>"}` → `204`. Chỉ đổi quyền khi thành viên có nghĩa vụ hợp lệ và đã đóng đủ; chủ quỹ không cần cấp quyền cho chính mình. |
+| `POST /api/v1/funds/{id}/requests` | `{"kind":"Expense","amountVnd":100000,"recipientUserId":"<user-guid>","purpose":"Chi chung","idempotencyKey":"<unique-key>","securityPin":"<PIN>"}` → `V1FundRequestDto.state:"Completed"` khi đủ điều kiện, chi trực tiếp, **không tạo yêu cầu chờ chủ quỹ duyệt**. |
+| `GET /api/v1/funds/{id}/requests` | Lịch sử `V1FundRequestDto {id,fundId,requestedByUserId,recipientUserId,kind,amountVnd,purpose,state,reviewedByUserId?,reviewedAt?,executionAvailability}`. |
+| `POST /api/v1/funds/requests/{id}/report` | `{"reason":"Nội dung báo cáo"}`; báo chi Fixed đã Completed, mở case hỗ trợ/tranh chấp, không tự hoàn tác ledger. |
+
+**Các cờ khác nhau:** `canSpend` chỉ là quyền boolean do chủ cấp; `effectiveCanSpend` là điều kiện tổng hợp; `canManageSpendingPermission` không thay quyền của chủ nhóm trong API. Không có công thức hạn mức chi tiền cá nhân dựa trên đóng góp. `spendingState:"OPEN"` và số dư thực trừ `lockedExcessVnd`/hold legacy mới xác định có thể chi.
+
+#### 8. Quỹ cố định V2 — Đóng kỳ và đề xuất kỳ tiếp theo
+
+| API | Body, ý nghĩa |
+|---|---|
+| `POST /api/v1/funds/{id}/activity/close` | **Chủ quỹ**, `{"securityPin":"<PIN>"}` → `204`, đóng chu kỳ hiện tại trước khi tạo đề xuất mới. |
+| `POST /api/v1/funds/{id}/activity-proposals` | **Chủ quỹ**, `{"targetVnd":900000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>"}` → `V1ActivityProposalDto`; mục tiêu **chu kỳ mới**, không phải khoản chi phát sinh. |
+| `GET /api/v1/funds/activity-proposals/{id}` | `{id,fundId,targetVnd,state,electorateSize,yes,no,openedAt,deadline,ownVote?}`. |
+| `POST /api/v1/funds/activity-proposals/{id}/vote` | Cử tri cố định, `{"support":true}` hoặc `{"support":false}`. Một phiếu không đổi sau khi bỏ. |
+| `POST /api/v1/funds/activity-proposals/{id}/settle` | **Chủ quỹ**, body **chỉ** `{"securityPin":"<PIN>"}`, xử lý đề xuất đã `ApprovedAwaitingSettlement`. Không có `actualAmount`, `status` hay `note`. |
+
+**Trạng thái biểu quyết:** `Voting` trong **24 giờ hoạt động** (không tính thời gian bảo trì hệ thống nhóm); `Yes * 2 > electorateSize` → `ApprovedAwaitingSettlement`, ngược lại `Rejected`. Nếu tập cử tri mất hợp lệ có `Invalidated`. Khi quyết toán thành công, người bỏ Có mang phần quyền lợi tiếp sang revision mới; người bỏ Không hoặc im lặng được hoàn tiền hợp lệ và rời quỹ.
+
+**B1 — Backend chưa xử lý:** Nếu đa số thông qua nhưng chủ quỹ bỏ Không, code có thể chặn quyết toán bằng `owner_transfer_required`, và chuyển chủ tự nguyện cũng có thể bị chặn trong `ApprovedAwaitingSettlement`. **Không tuyên bố trường hợp này đã xử lý hoặc nghiệm thu.**
+
+#### 9. Quỹ cố định V2 — Hoàn tiền, quản trị, tình huống biên
+
+| API | Body và mục đích |
+|---|---|
+| `GET /api/v1/funds/{id}/refund-preview?memberUserId=...` | `V1RefundPreviewDto {fundId,userId,currentFundBalanceVnd,eligibleRefundAmountVnd,caseType,status}`; số dự kiến tại thời điểm đọc. |
+| `POST /api/v1/funds/{id}/leave` | `{"securityPin":"<PIN>","idempotencyKey":"<unique-key>","destinationWalletId":null}`; chủ quỹ phải chuyển quyền trước khi rời nhóm nhiều thành viên. |
+| `POST /api/v1/funds/{id}/members/{userId}/kick` | Chủ quỹ, `{"securityPin":"<PIN>","reason":"Lý do","idempotencyKey":"<unique-key>","destinationWalletId":null}`. |
+| `POST /api/v1/funds/{id}/dissolve` | Chủ quỹ, `{"securityPin":"<PIN>","idempotencyKey":"<unique-key>"}`; giải tán chỉ khi ledger sau hoàn tiền về **0 VND**. |
+| `GET /api/v1/funds/{id}/activities` | Lịch sử hoạt động theo `page,pageSize`, `V1ActivityDto` có `event,actorUserId?,subjectUserId?,detail?,createdAt,referenceId?`. |
+| `GET /api/v1/funds/{id}/owner-response` | `V1OwnerResponseDto {fundId,requiredSince?,deadline?,overdue,respondedAt?,caseId?}`. |
+| `POST /api/v1/funds/{id}/owner-response/escalate` | Thành viên góp tiền được mở case hỗ trợ khi chủ quỹ không phản hồi sau **7 ngày hoạt động** kể từ lúc đóng kỳ; không tự sửa ledger hay đổi chủ. |
+
+**Hoàn tiền theo nhánh đã triển khai:** `CaseA_Unspent` nếu chưa phát sinh chi (đóng góp chưa hoàn), `CaseB_FixedSpentClearShare` khi rời/loại sau chi, `CaseB_DissolveFixed` khi giải tán sau chi. Khi đã chi, giữ lại `protectedExcess=max(0,max(0,paid-required)-refundsBefore)` cho mỗi người, rồi phân bổ phần số dư còn lại theo trọng số `min(paid,required)` và đồng lẻ theo ghế. Cần xét quyền lợi theo **membership episode**; không dùng công thức Free Fund. Các mã như `zero_entitlement_dissolution_blocked` ngăn giải tán nếu số dư còn nhưng không có người có quyền nhận.
+
+**Chưa nghiệm thu B/C:** Xung đột B1 ở quyết toán/chuyển chủ; C1 khi target quá thấp có ghế nghĩa vụ 0; C2 thay thành viên sau khi đã chi; C3 chuyển chu kỳ/carry-over/hoàn tiền. `Pending24h`/`Suspended` còn trong đường xử lý request legacy, không phải luồng chi Fixed mới.
+
+> **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5a là **legacy**, không phải V1 Fixed/Free. Mục 6–9 đã cập nhật theo DTO Fixed V2 nhưng **không chứng nhận B1/C1–C3 đã PASS**. Free Fund dùng bản đồ API ở mục 10; không áp dụng cơ chế token của lời mời legacy.
 
 #### 10. Bản đồ API quỹ tự do V1 (dành cho Mobile User và kiểm thử)
 
@@ -476,6 +505,16 @@ Thông báo sự kiện quỹ và kết quả chi/rút phải dựa trên dữ l
 
 ---
 
+### 3.10.1. Bảo trì và thông báo khẩn cấp dành cho User
+
+| API | Quyền và dữ liệu |
+|---|---|
+| `GET /api/system/maintenance` | `AllowAnonymous`, trả `MaintenanceStateDto` cho màn hình trạng thái bảo trì. |
+| `GET /api/system/announcements/active` | `AllowAnonymous`, trả `EmergencyAnnouncementDto?` (có thể null). |
+| `GET /api/v1/system/maintenance` | `AllowAnonymous`, trả `MaintenancePlanDto[]`, trạng thái bảo trì V1. |
+
+Các route tạo/sửa/hủy bảo trì thuộc Admin, **không cấp quyền thao tác cho User**.
+
 ### 3.11. Bảng đối chiếu backend ↔ User.md, phạm vi và các trường hợp cần kiểm thử
 
 | Phân hệ | Những mục đã được kiểm và đồng bộ trong tài liệu này | Giới hạn xác nhận |
@@ -490,9 +529,9 @@ Thông báo sự kiện quỹ và kết quả chi/rút phải dựa trên dữ l
 | AI | Hội thoại, search, pin, upload, proposed actions & execution | Phụ thuộc provider và chính sách an toàn |
 | Notifications | List/search/read/delete/clear/preferences/push | Không suy diễn push delivered |
 | Free Fund | Toàn bộ các hành vi đã chốt ở 1.3.1 và 3.6, có bảng API V1 | **Chặn kick/dissolve khi bầu cử; tự hủy Expense/Withdrawal chờ khi đổi chủ: chưa code** |
-| Fixed Fund V2 | **Chưa rà soát theo yêu cầu Product Owner** | Đoạn Fixed V2 hiện có trong 1.3 và 3.6 còn thuộc tài liệu cũ; **không dùng làm API nguồn sự thật cho frontend/Word** |
+| Fixed Fund V2 | Đã cập nhật CanSpend, nghĩa vụ, quyền chi, API góp/chi, Activity Proposal, biểu quyết, hoàn tiền và legacy API theo controller/DTO | **B1 còn xung đột logic; C1–C3 chưa được nghiệm thu**; không gọi Fixed V2 đã PASS toàn bộ |
 
-**Quy định cho frontend và Word:** Dùng mục 3.1–3.5, 3.7–3.10 và Free Fund V1 tại 1.3.1/3.6 để xác định chức năng; đọc DTO/controller nếu cần các trường chuyên sâu chưa ghi ở đây. **Chưa gọi User.md “100% đã kiểm thử”**: đây là bản đối chiếu tĩnh mã nguồn, không phải kết quả chạy Postman hoặc xác nhận provider mới.
+**Quy định cho frontend và Word:** Áp dụng những contract đã đối chiếu trong 1.3, 3.1–3.10.1; riêng B1/B2/B3 và C1–C6 **không được mô tả là backend đã sửa/PASS**. Đọc DTO/controller nếu cần thêm trường chuyên sâu. Không gọi `User.md` “100% đã kiểm thử”: tài liệu này đối chiếu tĩnh mã nguồn, không phải kết quả chạy E2E hoặc xác nhận provider.
 
 ## 4. RANH GIỚI TRÁCH NHIỆM FRONTEND / MOBILE APP (FRONTEND-ONLY)
 
@@ -502,11 +541,11 @@ Thông báo sự kiện quỹ và kết quả chi/rút phải dựa trên dữ l
    - Xử lý hiệu ứng chuyển động (animations), toast thông báo, skeleton loading khi chờ dữ liệu.
 2. **Sinh trắc học Native (Biometrics Hardware):**
    - Tương tác với cảm biến phần cứng qua API Native của OS (Face ID / Touch ID qua `LocalAuthentication` trên iOS; `BiometricPrompt` trên Android).
-   - Backend chỉ quản lý cờ trạng thái `enableBiometric` trong preferences và xác thực token JWT, không can thiệp trực tiếp vào phần cứng cảm biến.
+   - **DTO preferences backend không có `enableBiometric`.** Mở khóa sinh trắc học cục bộ là việc của thiết bị/client; xác thực Passkey/WebAuthn dùng `/api/auth/passkeys/*` và khi thích hợp `/api/transaction-authorizations/*`, không tự thêm trường vào preferences.
 3. **Lưu trữ an toàn trên thiết bị (Client Secure Storage):**
    - Lưu trữ `accessToken` trong RAM hoặc Secure Storage.
    - Quản lý `refreshToken` an toàn trong Keychain / Keystore; tự động gọi `POST /api/auth/refresh` ngầm trước khi token hết hạn.
    - Xóa toàn bộ token và điều hướng về màn hình Đăng nhập khi nhận mã lỗi `401 Unauthorized`.
 4. **Idempotency & Mất mạng (Offline Resilience):**
-   - Tự động sinh `X-Idempotency-Key` (UUIDv4 ngẫu nhiên) cho mỗi lần bấm nút chuyển tiền/thanh toán.
+   - Sinh `idempotencyKey` trong **request body** theo DTO từng nghiệp vụ tài chính, lưu và dùng lại cho cùng intent nếu retry. Chỉ gửi thêm `X-Idempotency-Key` nếu endpoint có hỗ trợ; header không thay body bắt buộc.
    - Hiển thị thông báo mất kết nối nếu thiết bị offline, không gọi API lặp lại khi chưa có mạng.

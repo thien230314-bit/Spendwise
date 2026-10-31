@@ -97,6 +97,13 @@ public sealed class RecurringBackgroundService(
             {
                 using var scope = scopeFactory.CreateScope();
                 await scope.ServiceProvider.GetRequiredService<IRecurringProcessor>().ProcessDueAsync(stoppingToken);
+
+                var fundService = scope.ServiceProvider.GetService<SpendWise.Application.Features.V1Groups.V1FundService>();
+                if (fundService is not null)
+                {
+                    await fundService.ExpireStaleApprovedUnusedRequestsAsync(null, stoppingToken);
+                }
+
                 await timer.WaitForNextTickAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

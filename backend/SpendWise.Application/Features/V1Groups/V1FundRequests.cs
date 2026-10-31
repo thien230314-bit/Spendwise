@@ -672,31 +672,39 @@ public sealed partial class V1FundService
             query = query.Where(r => r.FundId == fundId.Value);
         }
 
-        var candidates = await query
-            .Select(r => new { r.Id, r.FundId, r.RequestedByUserId, r.AmountVnd })
-            .ToListAsync(ct);
+        var candidateIds = await query.Select(r => r.Id).ToListAsync(ct);
+        if (candidateIds.Count == 0) return 0;
 
         var expiredCount = 0;
 
-        foreach (var c in candidates)
+        foreach (var id in candidateIds)
         {
-            // Atomic compare-and-set: only transitions if State is currently 'ApprovedUnused'
-            var affected = await db.V1FundRequests
-                .Where(r => r.Id == c.Id && r.State == "ApprovedUnused")
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(r => r.State, "Expired")
-                    .SetProperty(r => r.CancelledAt, now)
-                    .SetProperty(r => r.ReviewReason, "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt."),
-                    ct);
+            var transitioned = await db.ExecuteInTransactionAsync(async token =>
+            {
+                var req = await db.V1FundRequests.SingleOrDefaultAsync(r => r.Id == id, token);
+                if (req is null || req.State != "ApprovedUnused" || req.ReviewedAt == null || req.ReviewedAt.Value > cutoff)
+                    return false;
 
-            // Exactly-once: ONLY the worker that actually transitioned the record creates the activity
-            if (affected > 0)
+                await LockFundAsync(req.FundId, token);
+
+                // Re-verify under fund lock
+                if (req.State != "ApprovedUnused") return false;
+
+                req.State = "Expired";
+                req.CancelledAt = now;
+                req.ReviewReason = "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt.";
+
+                await ActivityAsync(req.FundId, null, "FundRequestExpired", token, req.RequestedByUserId,
+                    detail: $"Quyền chi {req.AmountVnd:N0} đ tự hết hạn sau 7 ngày kể từ lúc duyệt.",
+                    referenceId: req.Id);
+
+                await db.SaveChangesAsync(token);
+                return true;
+            }, ct);
+
+            if (transitioned)
             {
                 expiredCount++;
-                await ActivityAsync(c.FundId, null, "FundRequestExpired", ct, c.RequestedByUserId,
-                    detail: $"Quyền chi {c.AmountVnd:N0} đ tự hết hạn sau 7 ngày kể từ lúc duyệt.",
-                    referenceId: c.Id);
-                await db.SaveChangesAsync(ct);
             }
         }
 

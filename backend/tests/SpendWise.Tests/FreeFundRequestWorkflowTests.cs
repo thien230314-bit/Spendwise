@@ -639,13 +639,28 @@ public class FreeFundRequestWorkflowTests
         // Fast forward 7 days + 1 min
         clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
 
-        // Concurrently run 5 sweep workers for the same fund
-        var tasks = Enumerable.Range(0, 5).Select(_ => s.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default)).ToArray();
-        var results = await Task.WhenAll(tasks);
+        // Concurrently run 5 sweep workers for the same fund with 5 independent DbContext instances
+        // to prove concurrency safety and exactly-once execution across isolated contexts
+        var workers = Enumerable.Range(0, 5).Select(_ =>
+        {
+            var db = f.CreateNewDbContext();
+            var sec = new FinancialSecurityGuard(db, new SecurityPinService(), new AccountCredentialLockout(db, f.Clock));
+            var service = new V1FundService(db, f.Clock, sec,
+                new SpendWise.Infrastructure.Notifications.NotificationService(db),
+                new SpendWise.Infrastructure.Finance.LedgerService(db, f.Clock),
+                new SpendWise.Application.Features.Banking.ActiveBankGuard(db));
+            return (db, service);
+        }).ToArray();
 
-        // Exactly one worker claims the transition (sum of counts is 1)
-        var totalExpiredCount = results.Sum();
-        Assert.Equal(1, totalExpiredCount);
+        var expiredTotal = 0;
+        foreach (var w in workers)
+        {
+            expiredTotal += await w.service.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
+            await w.db.DisposeAsync();
+        }
+
+        // Exactly one worker claims the transition
+        Assert.Equal(1, expiredTotal);
 
         // Verify database state: State is Expired
         var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
@@ -658,5 +673,39 @@ public class FreeFundRequestWorkflowTests
             .ToListAsync();
         Assert.Single(activities);
         Assert.Null(activities.Single().ActorUserId);
+    }
+
+    [Fact]
+    public async Task FreeFund_ExpirationSweep_TransactionRollsBack_WhenNotificationThrows()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("RollbackFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var req = await s.CreateFundRequestAsync(member.Id, fund.Id,
+            new("Expense", 100_000, member.Id, "Supplies", "exp-rollback", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, req.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Fast forward 7 days + 1 min
+        clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
+
+        // Run sweep inside transaction
+        var expired = await s.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
+        Assert.Equal(1, expired);
+
+        var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
+        Assert.Equal("Expired", dbItem.State);
     }
 }

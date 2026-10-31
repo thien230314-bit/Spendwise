@@ -1,6 +1,10 @@
+using SpendWise.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
+using SpendWise.Application.Features;
+using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Features.V1Groups;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.V1Groups;
 using Xunit;
@@ -15,7 +19,7 @@ public class FreeFundRequestWorkflowTests
     }
 
     [Fact]
-    public async Task FreeFund_Member_CannotCreateTwoActiveExpensesConcurrently()
+    public async Task FreeFund_Member_CannotCreateTwoActiveExpenses_Sequential()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
@@ -33,15 +37,15 @@ public class FreeFundRequestWorkflowTests
             new("Expense", 50_000, member.Id, "Exp 1", "exp-1", TargetedCorrectnessFixture.SecurityPin), default);
         Assert.Equal("AwaitingOwnerReview", req1.State);
 
-        // Expense 2 fails with limit exceeded
+        // Expense 2 fails with granular limit exceeded code
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             s.CreateFundRequestAsync(member.Id, fund.Id,
                 new("Expense", 30_000, member.Id, "Exp 2", "exp-2", TargetedCorrectnessFixture.SecurityPin), default));
-        Assert.Equal("fund_request_limit_exceeded", ex.Code);
+        Assert.Equal("fund_active_expense_limit_exceeded", ex.Code);
     }
 
     [Fact]
-    public async Task FreeFund_Member_CannotCreateTwoActiveWithdrawalsConcurrently()
+    public async Task FreeFund_Member_CannotCreateTwoActiveWithdrawals_Sequential()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
@@ -59,11 +63,51 @@ public class FreeFundRequestWorkflowTests
             new("Withdrawal", 50_000, member.Id, "Wth 1", "wth-1", TargetedCorrectnessFixture.SecurityPin), default);
         Assert.Equal("AwaitingOwnerReview", req1.State);
 
-        // Withdrawal 2 fails with limit exceeded
+        // Withdrawal 2 fails with granular limit exceeded code
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             s.CreateFundRequestAsync(member.Id, fund.Id,
                 new("Withdrawal", 30_000, member.Id, "Wth 2", "wth-2", TargetedCorrectnessFixture.SecurityPin), default));
-        Assert.Equal("fund_request_limit_exceeded", ex.Code);
+        Assert.Equal("fund_active_withdrawal_limit_exceeded", ex.Code);
+    }
+
+    [Fact]
+    public async Task FreeFund_ConcurrentExpenseCreation_FromTwoSeparateContexts_EnforcesActiveLimit()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s1 = V1FundMembershipTests.Service(f);
+        var fund = await s1.CreateAsync(owner.Id, new("ConcurFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s1.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s1.AcceptAsync(member.Id, invite.Id, default);
+
+        // Expense 1 created via service context 1
+        var req1 = await s1.CreateFundRequestAsync(member.Id, fund.Id,
+            new("Expense", 40_000, member.Id, "Parallel 1", "par-1", TargetedCorrectnessFixture.SecurityPin), default);
+        Assert.Equal("AwaitingOwnerReview", req1.State);
+
+        // Attempt creating a second active expense from a separate DbContext instance
+        // to verify active request limit is strictly enforced across contexts
+        await using var db2 = f.CreateNewDbContext();
+        var sec2 = new FinancialSecurityGuard(db2, new SecurityPinService(), new AccountCredentialLockout(db2, f.Clock));
+        var s2 = new V1FundService(db2, f.Clock, sec2,
+            new SpendWise.Infrastructure.Notifications.NotificationService(db2),
+            new SpendWise.Infrastructure.Finance.LedgerService(db2, f.Clock),
+            new SpendWise.Application.Features.Banking.ActiveBankGuard(db2));
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s2.CreateFundRequestAsync(member.Id, fund.Id,
+                new("Expense", 60_000, member.Id, "Parallel 2", "par-2", TargetedCorrectnessFixture.SecurityPin), default));
+        Assert.Equal("fund_active_expense_limit_exceeded", ex.Code);
+
+        // Verify database state: exactly 1 active request exists for this member
+        var dbRequests = await f.Db.V1FundRequests
+            .Where(r => r.FundId == fund.Id && r.RequestedByUserId == member.Id && r.State == "AwaitingOwnerReview")
+            .ToListAsync();
+        Assert.Single(dbRequests);
     }
 
     [Fact]
@@ -139,7 +183,7 @@ public class FreeFundRequestWorkflowTests
     }
 
     [Fact]
-    public async Task FreeFund_ApprovedUnused_ExpiresAfterSevenDays()
+    public async Task FreeFund_ApprovedUnused_ExpiresAfterSevenDays_AndPersistsToDatabase()
     {
         var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
         await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
@@ -162,20 +206,123 @@ public class FreeFundRequestWorkflowTests
         await s.ReviewFundRequestAsync(owner.Id, req.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
         // Within 7 days, state is ApprovedUnused
-        var reqsDay1 = await s.FundRequestsAsync(member.Id, fund.Id, 1, 10, default);
+        var reqsDay1 = await s.FundRequestsAsync(owner.Id, fund.Id, 1, 10, default);
         Assert.Equal("ApprovedUnused", reqsDay1.Single().State);
 
         // Fast forward 7 days + 1 minute
         clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
 
-        // State is now Expired
-        var reqsDay8 = await s.FundRequestsAsync(member.Id, fund.Id, 1, 10, default);
+        // Querying requests triggers the persistent sweep and returns Expired
+        var reqsDay8 = await s.FundRequestsAsync(owner.Id, fund.Id, 1, 10, default);
         Assert.Equal("Expired", reqsDay8.Single().State);
 
-        // Initiating payment on expired request fails
+        // VERIFY DATABASE PERSISTENCE:
+        var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
+        Assert.Equal("Expired", dbItem.State);
+        Assert.NotNull(dbItem.CancelledAt);
+        Assert.Contains("tự hết hạn sau 7 ngày", dbItem.ReviewReason);
+
+        // VERIFY RESERVATION RELEASED: Owner can now spend the full 500,000 VND
+        var fullSpend = await s.CreateFundRequestAsync(owner.Id, fund.Id,
+            new("Expense", 500_000, owner.Id, "Spend all after expiration", "exp-all", TargetedCorrectnessFixture.SecurityPin), default);
+        Assert.Equal("Completed", fullSpend.State);
+
+        // VERIFY NO DUPLICATE ACTIVITIES: Calling sweep again does not duplicate activities
+        var count = await s.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default);
+        Assert.Equal(0, count);
+
+        var activities = await f.Db.V1FundActivities
+            .Where(a => a.FundId == fund.Id && a.Event == "FundRequestExpired")
+            .ToListAsync();
+        Assert.Single(activities);
+    }
+
+    [Fact]
+    public async Task FreeFund_Requests_MemberCanOnlyViewOwnRequests_OwnerCanViewAll()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        var memberC = await f.AddUserAsync("MemberC");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberC.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("PrivacyFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var inviteB = await s.InviteAsync(owner.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, inviteB.Id, default);
+        var inviteC = await s.InviteAsync(owner.Id, fund.Id, memberC.Id, default);
+        await s.AcceptAsync(memberC.Id, inviteC.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
+        var memberBWallet = await f.AddWalletAsync(memberB.Id, "MemberBWallet", true, balance: 1_000_000);
+        var memberCWallet = await f.AddWalletAsync(memberC.Id, "MemberCWallet", true, balance: 1_000_000);
+
+        await s.ContributeAsync(owner.Id, fund.Id, new(ownerWallet.Id, 200_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(memberBWallet.Id, 200_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ContributeAsync(memberC.Id, fund.Id, new(memberCWallet.Id, 200_000, "c-c", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Member B creates Expense request
+        var reqB = await s.CreateFundRequestAsync(memberB.Id, fund.Id,
+            new("Expense", 50_000, memberB.Id, "B Expense", "exp-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Member C creates Withdrawal request
+        var reqC = await s.CreateFundRequestAsync(memberC.Id, fund.Id,
+            new("Withdrawal", 60_000, memberC.Id, "C Withdrawal", "wth-c", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Member B views requests: ONLY sees Member B's request
+        var listB = await s.FundRequestsAsync(memberB.Id, fund.Id, 1, 10, default);
+        Assert.Single(listB);
+        Assert.Equal(reqB.Id, listB.Single().Id);
+
+        // Member C views requests: ONLY sees Member C's request
+        var listC = await s.FundRequestsAsync(memberC.Id, fund.Id, 1, 10, default);
+        Assert.Single(listC);
+        Assert.Equal(reqC.Id, listC.Single().Id);
+
+        // Owner views requests: sees BOTH requests
+        var listOwner = await s.FundRequestsAsync(owner.Id, fund.Id, 1, 10, default);
+        Assert.Equal(2, listOwner.Count);
+        Assert.Contains(listOwner, r => r.Id == reqB.Id);
+        Assert.Contains(listOwner, r => r.Id == reqC.Id);
+    }
+
+    [Fact]
+    public async Task FreeFund_InitiatePayment_WhenProviderUnavailable_RejectsAndKeepsApprovedUnused()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("ProviderGuardFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var reqExp = await s.CreateFundRequestAsync(member.Id, fund.Id,
+            new("Expense", 100_000, member.Id, "Internet bill", "exp-net", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Attempt to initiate payment when no provider is integrated
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            s.InitiateExpensePaymentAsync(member.Id, req.Id, TargetedCorrectnessFixture.SecurityPin, default));
-        Assert.Equal("fund_request_expired", ex.Code);
+            s.InitiateExpensePaymentAsync(member.Id, reqExp.Id, TargetedCorrectnessFixture.SecurityPin, default));
+
+        Assert.Equal("fund_payment_provider_unavailable", ex.Code);
+
+        // CRITICAL CHECK: State remains ApprovedUnused in DB, does NOT become PaymentProcessing, fund is not locked!
+        var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == reqExp.Id);
+        Assert.Equal("ApprovedUnused", dbItem.State);
+
+        // Member CAN still cancel the request since it is ApprovedUnused (not PaymentProcessing)
+        var cancelled = await s.CancelFundRequestAsync(member.Id, reqExp.Id, TargetedCorrectnessFixture.SecurityPin, default);
+        Assert.Equal("Cancelled", cancelled.State);
     }
 
     [Fact]
@@ -291,7 +438,7 @@ public class FreeFundRequestWorkflowTests
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             s.CreateFundRequestAsync(owner.Id, fund.Id,
                 new("Expense", 300_000, owner.Id, "Office desk", "exp-desk", TargetedCorrectnessFixture.SecurityPin), default));
-        Assert.Equal("insufficient_fund_balance", ex.Code);
+        Assert.Equal("insufficient_unreserved_fund_balance", ex.Code);
 
         // Owner direct spend of 200,000 VND -> SUCCEEDS!
         var directSpend = await s.CreateFundRequestAsync(owner.Id, fund.Id,
@@ -373,7 +520,7 @@ public class FreeFundRequestWorkflowTests
     }
 
     [Fact]
-    public async Task FreeFund_InitiatePayment_TransitionsToPaymentProcessing_AndBlocksCancellation()
+    public async Task FixedFundV2_RegressionCheck_ExpenseWorkflow_Unchanged()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
@@ -381,27 +528,40 @@ public class FreeFundRequestWorkflowTests
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
 
         var s = V1FundMembershipTests.Service(f);
-        var fund = await s.CreateAsync(owner.Id, new("PaymentProcFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+        var fund = await s.CreateAsync(owner.Id, new("FixedFundRegression", "Fixed", 1_000_000, TargetedCorrectnessFixture.SecurityPin), default);
 
         var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
         await s.AcceptAsync(member.Id, invite.Id, default);
 
+        // Fixed Fund V2 requires owner to confirm obligations before contributions
+        var config = await s.ConfirmObligationsAsync(owner.Id, fund.Id, new(1_000_000, TargetedCorrectnessFixture.SecurityPin), default);
+
         var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
-        await s.ContributeAsync(owner.Id, fund.Id,
-            new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+        var memberWallet = await f.AddWalletAsync(member.Id, "MemberWallet", true, balance: 1_000_000);
 
-        var reqExp = await s.CreateFundRequestAsync(member.Id, fund.Id,
-            new("Expense", 100_000, member.Id, "Internet bill", "exp-net", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+        // Fixed fund: owner and member contribute to 100% target (500k each)
+        await s.ContributeAsync(owner.Id, fund.Id, new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin, config.Revision), default);
+        await s.ContributeAsync(member.Id, fund.Id, new(memberWallet.Id, 500_000, "c-member", TargetedCorrectnessFixture.SecurityPin, config.Revision), default);
 
-        // Initiate payment -> PaymentProcessing
-        var paying = await s.InitiateExpensePaymentAsync(member.Id, reqExp.Id, TargetedCorrectnessFixture.SecurityPin, default);
-        Assert.Equal("PaymentProcessing", paying.State);
-        Assert.Equal("PaymentProcessing", paying.ExecutionAvailability);
+        // Member without spending permission cannot create expense
+        var exPerm = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            s.CreateFundRequestAsync(member.Id, fund.Id,
+                new("Expense", 100_000, member.Id, "Buy tools", "exp-tools", TargetedCorrectnessFixture.SecurityPin), default));
+        Assert.Equal("fund_spending_permission_required", exPerm.Code);
 
-        // Cancellation is blocked while in PaymentProcessing
-        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            s.CancelFundRequestAsync(member.Id, reqExp.Id, TargetedCorrectnessFixture.SecurityPin, default));
-        Assert.Equal("fund_payment_processing", ex.Code);
+        // Owner grants spending permission to member
+        await s.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Now member creates expense: in Fixed Fund V2, it executes directly to Completed and transfers money
+        var expDto = await s.CreateFundRequestAsync(member.Id, fund.Id,
+            new("Expense", 100_000, member.Id, "Buy tools with perm", "exp-tools-ok", TargetedCorrectnessFixture.SecurityPin), default);
+
+        Assert.Equal("Completed", expDto.State);
+        Assert.Equal("Executed", expDto.ExecutionAvailability);
+
+        // Fixed Fund does NOT allow Owner to review expenses (it throws fixed_owner_review_disallowed)
+        var exReview = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.ReviewFundRequestAsync(owner.Id, expDto.Id, true, "Cannot review fixed", TargetedCorrectnessFixture.SecurityPin, default));
+        Assert.Equal("fixed_owner_review_disallowed", exReview.Code);
     }
 }

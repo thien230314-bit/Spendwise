@@ -61,6 +61,11 @@ public sealed partial class V1FundService
 
             var isOwner = actor == fund.OwnerUserId;
 
+            if (fund.Kind == V1FundKind.Free)
+            {
+                await SweepExpiredApprovedRequestsAsync(fundId, token);
+            }
+
             // Free Fund member limit: max 1 active Expense and max 1 active Withdrawal
             if (fund.Kind == V1FundKind.Free && !isOwner)
             {
@@ -77,7 +82,7 @@ public sealed partial class V1FundService
 
                     if (hasActiveExpense)
                     {
-                        throw new ConflictException("fund_request_limit_exceeded",
+                        throw new ConflictException("fund_active_expense_limit_exceeded",
                             "Thành viên chỉ được có tối đa một yêu cầu chi tiêu đang hoạt động trong cùng quỹ.");
                     }
                 }
@@ -92,7 +97,7 @@ public sealed partial class V1FundService
 
                     if (hasActiveWithdrawal)
                     {
-                        throw new ConflictException("fund_request_limit_exceeded",
+                        throw new ConflictException("fund_active_withdrawal_limit_exceeded",
                             "Thành viên chỉ được có tối đa một yêu cầu rút vốn đang hoạt động trong cùng quỹ.");
                     }
                 }
@@ -160,7 +165,7 @@ public sealed partial class V1FundService
                     var unreservedBalance = Math.Max(0, treasuryAccount.Balance - activeReservations);
                     if (request.AmountVnd > unreservedBalance)
                     {
-                        throw new ConflictException("insufficient_fund_balance",
+                        throw new ConflictException("insufficient_unreserved_fund_balance",
                             "Khoản chi trực tiếp của chủ quỹ vượt quá số dư khả dụng chưa phân bổ của quỹ.");
                     }
                 }
@@ -307,6 +312,11 @@ public sealed partial class V1FundService
             await RequireReconciledAccountingAsync(treasury, token);
             var treasuryAccount = await FreshAccountAsync(treasury.LedgerAccountId, token);
 
+            if (fund.Kind == V1FundKind.Free)
+            {
+                await SweepExpiredApprovedRequestsAsync(fund.Id, token);
+            }
+
             // Free Fund Expense: ApprovedUnused (no funds transfer, valid for 7 days)
             if (fund.Kind == V1FundKind.Free && item.Kind == "Expense")
             {
@@ -321,7 +331,7 @@ public sealed partial class V1FundService
                 var unreserved = Math.Max(0, treasuryAccount.Balance - otherReservations);
                 if (item.AmountVnd > unreserved)
                 {
-                    throw new ConflictException("insufficient_fund_balance",
+                    throw new ConflictException("insufficient_unreserved_fund_balance",
                         "Số dư khả dụng chưa phân bổ của quỹ không đủ để cấp quyền chi.");
                 }
 
@@ -423,8 +433,38 @@ public sealed partial class V1FundService
         }, ct, approved);
     }
 
-    public Task<V1FundRequestDto> InitiateExpensePaymentAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
-        ChangeFundRequestAsync(actor, id, pin, async (fund, item, token) =>
+    public async Task<V1FundRequestDto> InitiateExpensePaymentAsync(Guid actor, Guid id, string pin, CancellationToken ct)
+    {
+        await RequireActorAsync(actor, ct);
+        if (pin is not null)
+            await security.VerifyAsync(actor, pin, ct);
+
+        // Pre-check for expiration: if expired, persist Expired state in DB in an isolated transaction first, then throw
+        var preCheck = await db.V1FundRequests.AsNoTracking().Where(r => r.Id == id)
+            .Select(r => new { r.FundId, r.State, r.ReviewedAt, r.RequestedByUserId, r.AmountVnd }).SingleOrDefaultAsync(ct);
+
+        if (preCheck is not null && preCheck.State == "ApprovedUnused" && preCheck.ReviewedAt is { } reviewedAt && clock.UtcNow >= reviewedAt.AddDays(7))
+        {
+            await db.ExecuteInTransactionAsync(async token =>
+            {
+                var r = await db.V1FundRequests.SingleOrDefaultAsync(x => x.Id == id, token);
+                if (r is not null && r.State == "ApprovedUnused")
+                {
+                    r.State = "Expired";
+                    r.CancelledAt = clock.UtcNow;
+                    r.ReviewReason = "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt.";
+                    await ActivityAsync(preCheck.FundId, actor, "FundRequestExpired", token, preCheck.RequestedByUserId,
+                        detail: $"Quyền chi {preCheck.AmountVnd:N0} đ tự hết hạn sau 7 ngày.",
+                        referenceId: id);
+                    await db.SaveChangesAsync(token);
+                }
+                return true;
+            }, ct);
+
+            throw new ConflictException("fund_request_expired", "Quyền chi đã hết hạn sau 7 ngày.");
+        }
+
+        return await ChangeFundRequestAsync(actor, id, null, async (fund, item, token) =>
         {
             if (fund.Kind != V1FundKind.Free || item.Kind != "Expense")
                 throw new ConflictException("invalid_fund_request", "Chỉ áp dụng thanh toán cho quyền chi tiêu Quỹ Tự do.");
@@ -432,24 +472,31 @@ public sealed partial class V1FundService
             if (actor != item.RequestedByUserId && actor != fund.OwnerUserId)
                 throw new ForbiddenException("fund_request_permission_required", "Chỉ người yêu cầu hoặc chủ quỹ mới có thể bắt đầu thanh toán.");
 
+            if (item.State == "Expired")
+                throw new ConflictException("fund_request_expired", "Quyền chi đã hết hạn sau 7 ngày.");
+
             if (item.State != "ApprovedUnused")
                 throw new ConflictException("fund_request_unavailable", "Chỉ quyền chi ở trạng thái ApprovedUnused mới có thể bắt đầu thanh toán.");
 
-            if (item.ReviewedAt is { } reviewedAt && clock.UtcNow >= reviewedAt.AddDays(7))
+            if (item.ReviewedAt is { } itemReviewedAt && clock.UtcNow >= itemReviewedAt.AddDays(7))
             {
                 item.State = "Expired";
                 item.CancelledAt = clock.UtcNow;
                 item.ReviewReason = "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt.";
+                await ActivityAsync(fund.Id, actor, "FundRequestExpired", token, item.RequestedByUserId,
+                    detail: $"Quyền chi {item.AmountVnd:N0} đ tự hết hạn sau 7 ngày.",
+                    referenceId: id);
+                await db.SaveChangesAsync(token);
                 throw new ConflictException("fund_request_expired", "Quyền chi đã hết hạn sau 7 ngày.");
             }
 
-            item.State = "PaymentProcessing";
-            await ActivityAsync(fund.Id, actor, "FundExpensePaymentProcessing", token, item.RequestedByUserId,
-                detail: $"Bắt đầu xử lý thanh toán quyền chi {item.AmountVnd:N0} đ qua cổng thanh toán.",
-                referenceId: id);
-
-            return MapRequest(item);
+            // External bill payment provider guard:
+            // No payment provider is integrated in Stage 2. To avoid locking the fund in PaymentProcessing indefinitely,
+            // reject safely with fund_payment_provider_unavailable while keeping ApprovedUnused.
+            throw new ConflictException("fund_payment_provider_unavailable",
+                "Cổng thanh toán hóa đơn đối ngoại chưa sẵn sàng. Quyền chi vẫn được giữ ở trạng thái ApprovedUnused.");
         }, ct);
+    }
 
     public Task<V1FundRequestDto> ReportFundRequestAsync(Guid actor, Guid id, string reason, CancellationToken ct) =>
         ChangeFundRequestAsync(actor, id, null, async (fund, item, token) =>
@@ -588,10 +635,27 @@ public sealed partial class V1FundService
     {
         ValidatePage(page, pageSize);
         await RequireActorAsync(actor, ct);
+        var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fundId, ct)
+            ?? throw new NotFoundException("fund_not_found", "Fund not found.");
+
         await RequireMemberAsync(actor, fundId, ct);
 
-        var rows = await db.V1FundRequests.AsNoTracking()
-            .Where(x => x.FundId == fundId)
+        if (fund.Kind == V1FundKind.Free)
+        {
+            await SweepExpiredApprovedRequestsAsync(fundId, ct);
+        }
+
+        var isOwner = actor == fund.OwnerUserId;
+
+        var query = db.V1FundRequests.AsNoTracking()
+            .Where(x => x.FundId == fundId);
+
+        if (!isOwner)
+        {
+            query = query.Where(x => x.RequestedByUserId == actor);
+        }
+
+        var rows = await query
             .OrderByDescending(x => x.CreatedAt)
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
@@ -599,6 +663,78 @@ public sealed partial class V1FundService
             .ToListAsync(ct);
 
         return rows.Select(MapRequest).ToList();
+    }
+
+    public async Task<int> ExpireStaleApprovedUnusedRequestsAsync(Guid? fundId, CancellationToken ct)
+    {
+        return await db.ExecuteInTransactionAsync(async token =>
+        {
+            var query = db.V1FundRequests
+                .Where(r => r.Kind == "Expense" && r.State == "ApprovedUnused" && r.ReviewedAt != null);
+
+            if (fundId.HasValue)
+            {
+                query = query.Where(r => r.FundId == fundId.Value);
+            }
+
+            var stale = await query.ToListAsync(token);
+            var now = clock.UtcNow;
+            var expiredCount = 0;
+
+            foreach (var r in stale)
+            {
+                if (r.ReviewedAt!.Value.AddDays(7) <= now)
+                {
+                    r.State = "Expired";
+                    r.CancelledAt = now;
+                    r.ReviewReason = "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt.";
+                    expiredCount++;
+
+                    await ActivityAsync(r.FundId, r.ReviewedByUserId ?? r.RequestedByUserId, "FundRequestExpired", token, r.RequestedByUserId,
+                        detail: $"Quyền chi {r.AmountVnd:N0} đ tự hết hạn sau 7 ngày kể từ lúc duyệt.",
+                        referenceId: r.Id);
+                }
+            }
+
+            if (expiredCount > 0)
+            {
+                await db.SaveChangesAsync(token);
+            }
+
+            return expiredCount;
+        }, ct);
+    }
+
+    private async Task<int> SweepExpiredApprovedRequestsAsync(Guid fundId, CancellationToken token)
+    {
+        var stale = await db.V1FundRequests
+            .Where(r => r.FundId == fundId && r.Kind == "Expense" && r.State == "ApprovedUnused" && r.ReviewedAt != null)
+            .ToListAsync(token);
+
+        var now = clock.UtcNow;
+        var expiredCount = 0;
+
+        foreach (var r in stale)
+        {
+            if (r.ReviewedAt!.Value.AddDays(7) <= now)
+            {
+                r.State = "Expired";
+                r.CancelledAt = now;
+                r.ReviewReason = "Quyền chi tự hết hạn sau 7 ngày kể từ lúc duyệt.";
+                expiredCount++;
+
+                await ActivityAsync(fundId, r.ReviewedByUserId ?? r.RequestedByUserId, "FundRequestExpired", token, r.RequestedByUserId,
+                    detail: $"Quyền chi {r.AmountVnd:N0} đ tự hết hạn sau 7 ngày kể từ lúc duyệt.",
+                    referenceId: r.Id);
+            }
+        }
+
+        if (expiredCount > 0)
+        {
+            await db.SaveChangesAsync(token);
+        }
+
+        return expiredCount;
     }
 
     private async Task AutoCancelExcessWithdrawalsAsync(V1Fund fund, V1FundTreasury treasury, CancellationToken token)

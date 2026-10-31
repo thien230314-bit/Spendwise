@@ -87,6 +87,10 @@ Tất cả endpoint đều được ánh xạ trực tiếp từ Controllers th�
 | Tạo yêu cầu chi/rút | POST | `/api/v1/funds/{id}/requests` | `V1FundRequestInput`: `Kind`, `AmountVnd`, `RecipientUserId`, `Purpose`, `IdempotencyKey`, `SecurityPin` | `V1FundRequestDto` | Member + PIN | READY |
 | Duyệt yêu cầu chi/rút | POST | `/api/v1/funds/requests/{id}/review` | `V1RequestReview`: `Approved`, `Reason`, `SecurityPin` | `V1FundRequestDto` | Owner + PIN | POLICY_BLOCKED |
 
+> **CẬP NHẬT ĐẶC TẢ FREE FUND 01/11/2026 — CHƯA CODE/TEST:** Bảng API phía trên là **hợp đồng backend cũ**. Không xem `READY` của route đồng nghĩa đã hỗ trợ logic Free mới. Xem [`User.md`](../../User.md) mục **1.3 / 1.3.1 / 3.6 mục 10** và [`USER-FRONTEND-API-HANDOFF.md`](USER-FRONTEND-API-HANDOFF.md) mục 5. Free không chuyển chủ/bầu cử/hold 24h; Member có 2 nút Expense/Withdrawal (1 request hiệu lực mỗi loại), Owner duyệt Expense **chỉ cấp quyền chi** chờ thanh toán ngoài, quyền hết hạn 7 ngày, không trừ quỹ cho đến khi thanh toán thành công. Khi có quyền chi chưa dùng, **khóa duyệt mọi rút cá nhân**, nhưng Member vẫn được tự rời và được hoàn vốn theo thời điểm. Duyệt Withdrawal hợp lệ chuyển vốn về ví cá nhân. Quyền chi bị hủy khi thành viên rời/giải tán hoặc quỹ không còn đủ, ưu tiên giữ quyền cũ. Không sửa SePay.
+>
+> **Ví dụ nghiệm thu Free mới:** A góp 600k, B 400k, chi chung 200k → A 480k, B 320k; B góp thêm 200k rồi rời → hoàn 520k; C góp sau khoản chi cũ 200k → rời trước chi mới hoàn đủ 200k. Quỹ 1 triệu, quyền chi chưa dùng 800k, hoàn C 300k → còn 700k và hủy quyền chi 800k. **Các ví dụ chưa được xác nhận bằng test mới.**
+
 > [!WARNING]
 > **Hiện trạng CanSpend & Thực hiện chi tiền:**
 > - Chủ nhóm Fixed có thể bật `CanSpend = ON` cho thành viên và ghi nhận audit event thành công (`READY`).

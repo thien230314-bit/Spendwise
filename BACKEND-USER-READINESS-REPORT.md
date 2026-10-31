@@ -1,5 +1,7 @@
 # BÁO CÁO MỨC ĐỘ SẴN SÀNG TOÀN DIỆN CỦA BACKEND USER (BACKEND USER READINESS REPORT)
 
+> **LƯU Ý PHẠM VI (01/11/2026):** Các tỷ lệ READY/PASS về Free Fund dưới đây là **kết quả theo backend cũ**, không chứng minh logic Free mới đã triển khai. Đặc tả Free Fund mới (vốn theo thời điểm, 2 nút request, quyền chi 7 ngày, rời/kick/dissolve không bầu cử/chuyển chủ) tại [User.md](User.md) mục 1.3, 1.3.1 và 3.6 mục 10; **CHỜ CODE + KIỂM THỬ**. Không thay đổi dữ liệu lịch sử của Fixed và SePay.
+
 > **Current Acceptance Status (2026-10-27):**  
 > **`BACKEND USER DEMO — ACCEPTED & LOCKED`**  
 > - **Đối tượng đánh giá:** Backend ASP.NET Core SpendWise (.NET 10 Kestrel)  

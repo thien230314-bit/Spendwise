@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Các quyết định Free Fund mới đang chờ code**; Fixed V2 được đồng bộ mô tả contract theo backend hiện tại nhưng vẫn có trường hợp xung đột logic quyết toán chưa sửa và một số ca chưa kiểm thử.  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Đặc tả Free Fund mới chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10; toàn bộ thay đổi đang chờ code và test**; Fixed V2 được đồng bộ mô tả contract theo backend hiện tại nhưng vẫn có trường hợp xung đột logic quyết toán chưa sửa và một số ca chưa kiểm thử.  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -35,34 +35,52 @@
    - **Hoàn tiền Fixed:** cùng một bộ tính cho preview, rời, loại và giải tán. Chưa chi: xét đóng góp chưa hoàn. Đã chi: bảo vệ phần đóng vượt nghĩa vụ còn hợp lệ, phần số dư còn lại được phân chia theo trọng số `min(paid, required)` với quy tắc phân bổ đồng lẻ theo ghế; **khác** công thức hoàn tiền của Free Fund.
    - **Trạng thái đã có:** `OPEN`, `FINANCE_BLOCKED`, `ACTIVITY_CLOSED`, `DISSOLVED` cho tài chính; `Voting`, `ApprovedAwaitingSettlement`, `Rejected`, `Invalidated`, `Settled` cho Activity Proposal. `Pending24h` vẫn tồn tại trong code xử lý **request legacy**, không đồng nghĩa luồng chi Fixed V2 mới giữ tiền 24 giờ.
    - **B1 — Chưa xử lý backend:** Proposal đạt đa số nhưng chủ quỹ đã bỏ Không có thể không quyết toán được, trong khi chuyển chủ tự nguyện cũng bị chặn bởi trạng thái proposal chờ. Không mô tả đây là luồng đã hoàn thiện. Các ca mục tiêu thấp/đổi thành viên sau chi/carry-over cần kiểm thử riêng.
-2. **Quỹ nhóm Tự do (Free Fund) — nghiệp vụ đã chốt ngày 30/10/2026:**
-   - Người tạo quỹ là chủ nhóm hiện tại (`OwnerUserId`), vẫn chỉ mang role hệ thống `User`. Giới hạn 6 thành viên/quỹ (bao gồm chủ nhóm); mỗi User được tham gia tối đa 10 nhóm đang hoạt động.
-   - Chủ nhóm hoặc bất kỳ thành viên đang hoạt động đều có thể mời **bạn bè đã kết bạn thành công**; người được mời có quyền **chấp nhận/từ chối** và chỉ gia nhập sau khi tự chấp nhận. **Thành viên B mời C không cần A (chủ nhóm) duyệt.** Lời mời có thời hạn 7 ngày.
-   - Thành viên góp tự nguyện, không có mức nghĩa vụ hay mục tiêu cố định; tiền được chuyển từ ví cá nhân vào sổ cái của quỹ.
-   - Thành viên thường tạo yêu cầu `Expense` (chi tiền) hoặc `Withdrawal` (rút về ví chính mình): trạng thái `AwaitingOwnerReview`; **chủ nhóm hiện tại** duyệt hoặc từ chối, xác thực PIN khi duyệt. Chủ nhóm tạo `Expense` thì chi trực tiếp, không cần tự duyệt. Không dùng `Activity Proposal` cho quy trình chi/rút của Free Fund.
-   - Thành viên có thể rời quỹ, chủ nhóm có thể loại thành viên có lý do hoặc giải tán quỹ; backend trả tiền theo phần quyền lợi tài chính thực tế (xem `refund-preview`), **không bảo đảm hoàn 100% số tiền từng góp nếu quỹ đã chi**. Chủ nhóm phải chuyển quyền trước khi rời nhóm có nhiều thành viên; quỹ chỉ còn một người thì chủ nhóm giải tán.
-   - Nếu chủ nhóm thiếu hoạt động đủ **15 ngày theo bằng chứng hợp lệ**, các thành viên đủ điều kiện có thể mở bầu cử. Người thắng phải chấp nhận chức vụ; chủ nhóm cũ trở thành thành viên thường, không tự lấy lại quyền khi đăng nhập lại.
-   - **Quy tắc bổ sung đã CHỐT nhưng CHƯA triển khai backend:** (1) Khi bầu cử đang diễn ra, không cho chủ nhóm loại thành viên hoặc giải tán quỹ. (2) Khi **chuyển quyền tự nguyện hoặc bầu cử hoàn tất**, tất cả yêu cầu `Expense`/**`Withdrawal`** thuộc nhiệm kỳ cũ và còn `AwaitingOwnerReview` phải **tự động `Cancelled` và gửi thông báo cho người tạo để gửi lại**, không chuyển quyền phê duyệt cho chủ mới; giao dịch đã `Completed` giữ nguyên. Việc hủy và đổi chủ phải nhất quán trong một giao dịch; gửi thông báo không trùng lặp khi thao tác lặp lại.
-   - **Điều kiện vận hành cần xác minh, không bỏ qua:** chính sách bầu cử, ghi nhận tương tác foreground qua `POST /api/v1/activity`, cấu hình `V1:Activity:CoverageVerified` / `CoverageStartsAtUtc` và bằng chứng vắng mặt đủ 15 ngày. Chưa có bằng chứng tin cậy thì **chặn mở bầu cử**, không suy đoán chủ nhóm vắng mặt.
-   - **Ranh giới trạng thái:** Các API tạo/mời/góp/chi duyệt/rút/hoàn tiền/bầu cử và kiểm tra nhiệm kỳ hiện **đã có trong code**. Hai quy tắc bổ sung về khóa thao tác khi bầu cử và tự hủy yêu cầu chờ khi đổi chủ là **đặc tả cần code + kiểm thử**, tuyệt đối không ghi vào báo cáo Word là đã hoàn thành khi chưa nghiệm thu.
 
-#### 1.3.1. Quỹ tự do — trường hợp biên và quy tắc UI/Word
+2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ MỚI CHỐT 01/11/2026, CHỜ TRIỂN KHAI:**
+   - **Phạm vi:** Quỹ chung góp tự nguyện, không có nghĩa vụ đóng `T/n`; tối đa **6 người** gồm Owner và Member. Mỗi User tối đa 10 nhóm/quỹ đang hoạt động theo giới hạn chung hiện có. Chủ quỹ và thành viên đều được góp thêm tiền. Mời bạn bè: Owner hoặc Member có thể mời người đã kết bạn; người nhận phải tự chấp nhận, **không cần Owner duyệt lời mời do Member gửi**.
+   - **Không có** bầu cử khi Owner vắng mặt 15 ngày, chuyển quyền Owner, Activity Proposal của Fixed, `Pending24h`, `Suspended` nội bộ hoặc phán xử tranh chấp quỹ riêng. Khiếu nại giao dịch sử dụng chức năng hỗ trợ chung SpendWise. **Owner muốn rời thì phải giải tán quỹ**; không được chuyển chủ.
+   - **Hai nút Member:** `Yêu cầu chi chung` (`Expense`) và `Yêu cầu rút vốn cá nhân` (`Withdrawal`). Mỗi người, trong mỗi quỹ, chỉ được có **1 yêu cầu đang hoạt động cho mỗi loại** (tối đa 2 loại khác nhau). Nút đã gửi bị khóa; phía server phải từ chối tạo trùng. Member xem yêu cầu bản thân; Owner xem và duyệt/từ chối yêu cầu của toàn nhóm. Lịch sử bao gồm đã duyệt, hoàn tất, đang chờ, từ chối, hủy và lý do; tất cả thành viên thấy lịch sử giao dịch tài chính chung theo phạm vi tham gia.
+   - **Expense của Member:** Owner duyệt **cấp quyền chi đúng số tiền yêu cầu**, **chưa chuyển tiền về ví và chưa trừ số dư quỹ**. Quyền chi đã duyệt chỉ thực sự giảm quỹ sau khi thanh toán bên ngoài thành công và được đối soát; không dùng một quyền hai lần. Quyền chưa dùng hết hạn sau **7 ngày tính từ thời điểm duyệt** và có thể hủy sớm; đang thanh toán phải xác minh kết quả trước khi hủy. Khoản chi ngoài là **mở rộng chờ nhà cung cấp**, không tuyên bố đã vận hành thật hoặc cần demo nộp báo cáo; SePay hiện tại giữ nguyên.
+   - **Withdrawal của Member:** Owner duyệt thì chuyển phần vốn thực tế của người đó về ví cá nhân ngay; không được vượt vốn còn lại; không chia là chi phí chung. **Nếu quỹ còn bất kỳ quyền chi đã duyệt nhưng chưa thanh toán, không được phê duyệt rút tiền cá nhân của bất kỳ Member nào** (yêu cầu rút vẫn chờ, không tự từ chối). Chỉ mở lại khi các quyền này hoàn tất hoặc hủy. Khi chi thành công làm yêu cầu rút chờ vượt vốn, tự động hủy và thông báo.
+   - **Quyền chi đồng thời:** Tổng các quyền chi đã duyệt chưa sử dụng không được vượt số dư quỹ; Owner chi trực tiếp chỉ được dùng số dư **chưa phân bổ cho các quyền chi đó**. Nếu một người rời quỹ được hoàn tiền mà tổng quyền chi không còn đủ, hủy các quyền chưa dùng **mới nhất trước**, giữ các quyền cũ hợp lệ khi còn đủ tiền; thông báo cho người bị hủy. Nếu đang xử lý thanh toán, chưa được hoàn tiền trong tình trạng không xác định.
+   - **Vốn và hoàn tiền SpendWise:** Mỗi lượt tham gia có phần vốn riêng; góp thêm làm tăng vốn đúng thời điểm; Withdrawal và hoàn tiền giảm vốn người nhận; **chi chung thành công** được chia theo tỷ lệ vốn thực tế ngay trước thời điểm chi, làm tròn nguyên VND sao cho tổng phân bổ bằng đúng số tiền chi. Người mới/góp thêm không chịu khoản chi xảy ra trước đó. Rời rồi tham gia lại là **lượt thành viên mới về mặt tài chính**, nhưng giữ lịch sử cũ để đối soát. Vốn 0đ vẫn được gửi yêu cầu chi chung; nếu chi thành công thì chi phí phân bổ cho các thành viên có vốn dương.
+   - **Rời/Kick/Giải tán:** Member tự rời không cần Owner duyệt, nhưng phải tự hủy hoặc chờ giải quyết các yêu cầu của mình còn `AwaitingOwnerReview`. Quyền chi đã duyệt chưa dùng của chính Member được hủy lúc rời. Kick chỉ khi các yêu cầu chờ của người bị kick đã được duyệt/thực hiện hoặc từ chối/hủy hợp lệ. Giải tán hủy mọi yêu cầu chưa duyệt và quyền chi chưa dùng, thông báo rồi hoàn tiền; giao dịch đã hoàn tất không đảo lại. Hành động rời/kick/giải tán phải đối soát đúng tiền và chống đồng thời.
+   - **Ranh giới bằng chứng:** Đây là **chính sách sản phẩm đã chốt**, **KHÔNG PHẢI trạng thái đã có trong backend**. Code trên `main` còn luồng bầu cử/chuyển chủ Free, Expense duyệt chuyển về ví và phép tính vốn ròng không xử lý được người góp sau chi cũ; cần sửa và kiểm thử mới được coi là hoàn thành.
 
-| Tình huống | Kết quả đúng / UI cần thể hiện |
+#### 1.3.1. Free Fund — bảng tình huống chi tiết và kết quả đã chốt
+
+| Tình huống | Kết quả bắt buộc |
 |---|---|
-| A mời B; B từ chối/hết hạn | Không thêm B vào thành viên; thông báo/lịch sử lời mời phản ánh trạng thái. |
-| B đã là thành viên mời C | Chỉ cần B và C là bạn bè, quỹ chưa đủ chỗ; C tự chấp nhận, **không đợi A duyệt**. |
-| B gửi yêu cầu chi/rút; A chưa quyết định | Hiện `AwaitingOwnerReview` cho B và danh sách chờ xử lý cho A; chưa trừ quỹ khi mới tạo yêu cầu. |
-| A duyệt hoặc từ chối | Duyệt: kiểm tra số dư, ví nhận, tư cách thành viên và ghi giao dịch; từ chối: không chuyển tiền. |
-| A tự tạo `Expense` | Chi trực tiếp nếu hợp lệ và quỹ đủ tiền; phân biệt với `Withdrawal`, không giả định mọi loại yêu cầu của A đều chi trực tiếp. |
-| B rời nhóm khi quỹ chưa chi | Hoàn phần đóng góp chưa rút/chưa hoàn trước đó, giới hạn bởi số dư còn lại. |
-| B rời nhóm khi quỹ đã chi | Hoàn theo tỷ lệ quyền lợi ròng: số dư quỹ × (đóng góp − rút cá nhân − đã hoàn) của B / tổng quyền lợi ròng của thành viên đang hoạt động; xử lý làm tròn theo backend. |
-| B được bầu làm chủ mới | A giữ tư cách thành viên nếu chưa rời; quyền owner chuyển cho B sau khi B chấp nhận. |
-| Đang bầu cử | Theo quyết định mới: khóa loại thành viên/giải tán; **cần triển khai**. Quy trình tài chính và mời/nhận thành viên đã có các chốt kiểm tra bầu cử riêng. |
-| Thay chủ nhóm khi còn yêu cầu chi/rút chờ A | Theo quyết định mới: tự hủy `AwaitingOwnerReview` của nhiệm kỳ A, thông báo người gửi tạo lại cho B duyệt; **cần triển khai**. Không hủy các giao dịch `Completed` hay yêu cầu tranh chấp `Suspended` chỉ vì đổi chủ. |
-| A không hoạt động 15 ngày nhưng bằng chứng thiếu | Không mở bầu cử; giao diện giải thích dữ liệu hoạt động/chính sách chưa được xác minh, không được tự cấp quyền. |
+| A góp 600.000đ, B góp 400.000đ; chi chung thành công 200.000đ | Chi theo tỷ lệ 60%/40%: A chịu 120.000đ, B chịu 80.000đ; A còn **480.000đ**, B còn **320.000đ**, tổng quỹ **800.000đ**. |
+| B rời sau khoản chi trên | Hoàn B **320.000đ**; A còn 480.000đ. |
+| B đang có 320.000đ, góp thêm 200.000đ rồi rời ngay, chưa chi mới | Hoàn B **520.000đ**; khoản góp mới không chịu phí cũ. |
+| A/B còn tổng vốn 800.000đ sau chi; C mới góp 200.000đ rồi rời trước khi có chi mới | Tổng quỹ 1.000.000đ; hoàn C **đủ 200.000đ**. Không chia lại chi phí cũ cho C. |
+| B góp 400.000đ, rút cá nhân 100.000đ trước mọi chi chung | B còn **300.000đ**; lần chi chung kế tiếp lấy trọng số vốn mới của B (không còn 400.000đ). |
+| B rời và được hoàn 320.000đ, sau đó vào lại góp 200.000đ | Lượt mới bắt đầu với **200.000đ**; rời trước chi mới hoàn 200.000đ. Lượt cũ không cộng trừ sang lượt mới. |
+| B còn 320.000đ, rút cá nhân 300.000đ thành công trước khoản chi chung | B còn **20.000đ**, vẫn chịu chi phí chung về sau theo tỷ trọng 20.000đ trên tổng vốn lúc chi. |
+| Khoản chi chung 100.000đ hoàn tất trước khi Owner duyệt yêu cầu rút 300.000đ của B (B trước chi có 320.000đ, vốn sau chi còn 280.000đ) | Tự động **`Cancelled`** yêu cầu rút 300.000đ, thông báo thiếu vốn; B có thể tạo yêu cầu mới tối đa 280.000đ. |
+| B có `Expense` đã duyệt 100.000đ nhưng chưa thanh toán; C đang chờ rút 50.000đ | Owner **không được duyệt bất kỳ `Withdrawal` nào trong quỹ**. Tiền và vốn chưa giảm; quyền chi được thanh toán/hủy mới mở khóa rút. |
+| Member có hai yêu cầu: 1 Expense và 1 Withdrawal cùng chờ | Hợp lệ vì khác loại; mọi yêu cầu thứ hai cùng loại trong khi loại đó còn hoạt động đều bị chặn, kể cả gọi API trực tiếp. |
+| Owner duyệt Expense 200.000đ và Member không thanh toán trong 7 ngày | Quyền chi tự hết hạn và hủy; không trừ quỹ; thông báo, mở lại quyền xin chi và xét duyệt rút nếu không còn quyền chi khác. Không hủy mù khi `PaymentProcessing`. |
+| Quỹ 1.000.000đ (A 400.000đ, B 300.000đ, C 300.000đ). B đã được duyệt chi 800.000đ chưa dùng; C rời và được hoàn 300.000đ | Quỹ còn 700.000đ, hủy quyền chi 800.000đ của B vì không đủ tiền; thông báo B có thể yêu cầu lại; **C được rời/hoàn 300.000đ**. |
+| Quỹ 800.000đ, duyệt cho B chi 500.000đ trước, C chi 300.000đ sau; hoàn thành viên khiến quỹ còn 600.000đ | Giữ quyền 500.000đ của B, **hủy quyền 300.000đ mới hơn của C**; số dư 600.000đ, 100.000đ không bị phân bổ quyền. |
+| Quỹ 1.000.000đ, B có quyền chi chưa dùng 800.000đ; Owner muốn chi trực tiếp 500.000đ | **Không cho chi 500.000đ**; Owner chỉ được chi trong 200.000đ chưa phân bổ, hoặc hủy hợp lệ quyền 800.000đ trước. |
+| B có vốn 0đ, muốn gửi Expense 100.000đ | Vẫn được xin chi. Nếu hợp lệ và chi thành công, phần 100.000đ được phân bổ cho các thành viên có vốn dương; B không thể rút vốn riêng khi vốn 0đ. |
+| Member có `AwaitingOwnerReview` khi muốn rời; Owner không hoạt động lâu | Member tự hủy request chờ (không cần Owner duyệt hủy), sau đó được rời và nhận vốn còn lại. Không bầu cử hay tự chuyển chủ do Owner vắng 15 ngày. |
+| Member tự rời khi có quyền chi `ApprovedUnused` của chính mình | Hủy quyền chi chưa dùng rồi rời; không trừ tiền chưa chi. Các quyền chi của người khác chỉ hủy nếu cần thiết để quỹ đủ hoàn tiền. |
+| Owner kick Member có request chờ | Phải giải quyết request chờ trước; Owner có thể từ chối, không buộc duyệt chi. Không để quyền chi chưa dùng tiếp tục hoạt động sau kick. |
+| Owner giải tán quỹ còn request chưa duyệt hoặc quyền chi chưa dùng | Hủy request/quyền chưa dùng và gửi thông báo; hoàn tiền theo vốn thực, tổng số dư sau giải tán = **0đ**. Giao dịch đang xử lý cần đối soát trước. |
+| Owner muốn rời dù B/C muốn duy trì quỹ | Owner **phải giải tán** và hoàn tiền; B/C có thể tạo quỹ mới. Không chuyển chủ. |
 
-**Lưu ý dành cho báo cáo Word:** Mô tả đây là **quỹ chung đóng góp linh hoạt có phê duyệt chi của chủ nhóm, cơ chế bầu lại chủ khi đủ điều kiện và hoàn phần quyền lợi khi rời quỹ**. Không tuyên bố tính năng bầu chủ nhóm hoặc hoàn tiền là tính năng của MoMo; MoMo chỉ là sản phẩm tham khảo cho phần quỹ nhóm thông thường. Tách rõ `Đã có trong backend` và `Đã chốt — chờ triển khai`.
+**Quy tắc tính đồng lẻ:** VND là số nguyên; chia chi phí chung theo vốn hiện thời, phân bổ phần đồng dư bằng thứ tự ổn định và có thể kiểm chứng (ví dụ thứ tự `seat`), không tạo/mất 1đ. Sau mỗi giao dịch đã quyết toán: **tổng vốn còn lại của các thành viên đang có quyền sở hữu = số dư quỹ**. Preview/Leave/Kick/Dissolve phải sử dụng cùng dữ liệu quyền lợi. Không chuyển quyền lợi từ lượt tham gia cũ sang lượt mới.
+
+**Thứ tự trạng thái nghiệp vụ đề xuất để triển khai:** `Expense`: `AwaitingOwnerReview` → `ApprovedUnused` → `PaymentProcessing` → `Completed`; có nhánh `Rejected`, `Cancelled`, `Expired` (có thể biểu diễn hết hạn bằng `Cancelled` kèm lý do); `Withdrawal`: `AwaitingOwnerReview` → `Completed` hoặc `Rejected`/`Cancelled`. Những tên chưa tồn tại trong code là **đề xuất contract**, không phải endpoint/DTO hiện hữu.
+
+**Yêu cầu thanh toán ngoài:** quyền chi đúng số tiền được duyệt, trả kết quả từ đơn vị cung cấp thật; thiếu provider thì không xác nhận thành công, không tự trừ tiền hoặc ghi `Completed` giả. Đây là hạng mục bổ sung **không bắt buộc demo/thử thanh toán thực trong báo cáo**, nhưng khi triển khai để sử dụng thực tế vẫn phải kiểm thử an toàn. **SePay không thay đổi.**
+
+**Lịch sử và hiển thị:** Member có hai nút chi/rút, nút đang có request/quyền chi hiệu lực phải vô hiệu; thêm `Xem yêu cầu` (đã chấp nhận/đang xử lý/từ chối/đã hủy, phân biệt đã duyệt với đã thanh toán). Owner có hàng chờ phê duyệt và lịch sử mọi yêu cầu. Toàn nhóm thấy lịch sử góp/chi/rút/hoàn thực tế (không nhầm request với giao dịch thành công). Giữ thông tin requester, reviewer, thời gian, lý do, mã đối soát và thông báo thay đổi.
+
+**Ranh giới bảo toàn:** không sửa Fixed Fund V2, legacy `/api/groups`, SePay, ví và dữ liệu tài chính thật chỉ vì việc thay logic Free. Phải phân biệt **`ĐÃ CHỐT NGHIỆP VỤ`** và **`ĐÃ TRIỂN KHAI / ĐÃ KIỂM THỬ`** trong mọi tài liệu, UI và báo cáo.
 
 ### 1.4. Hỗ trợ, tranh chấp, khiếu nại
 
@@ -385,28 +403,30 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 > **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5a là **legacy**, không phải V1 Fixed/Free. Mục 6–9 đã cập nhật theo DTO Fixed V2 nhưng **không chứng nhận B1/C1–C3 đã PASS**. Free Fund dùng bản đồ API ở mục 10; không áp dụng cơ chế token của lời mời legacy.
 
-#### 10. Bản đồ API quỹ tự do V1 (dành cho Mobile User và kiểm thử)
 
-| Nghiệp vụ | API hiện có | Lưu ý |
+#### 10. Free Fund V1 — API hiện hữu, API cần bổ sung và hợp đồng UI mới (CHƯA TRIỂN KHAI)
+
+> **Nguồn sự thật nghiệp vụ:** phần **1.3** và **1.3.1** của chính file này. Bảng dưới tách rõ API đã có theo code ngày 31/10/2026 với **nghiệp vụ mới phải bổ sung**, không tuyên bố đã chạy.
+
+| Nghiệp vụ | API hiện có trên main | Yêu cầu mới / ghi chú |
 |---|---|---|
-| Tạo quỹ tự do | `POST /api/v1/funds` | Body `{ "name": "Quỹ sinh hoạt", "kind": "Free", "targetVnd": null, "securityPin": "<PIN>" }`. |
-| Danh sách / chi tiết / thành viên | `GET /api/v1/funds`; `GET /api/v1/funds/{id}`; `GET /api/v1/funds/{id}/members` | `ownerUserId` phân biệt chủ nhóm, không dựa vào role Admin. |
-| Mời bạn bè (kể cả thành viên thường) | `POST /api/v1/funds/{id}/invitations` | Body `{ "userId": "<user-guid>" }`. Free Fund gửi lời mời `Pending` trực tiếp, không cần chủ nhóm xét duyệt. |
-| Hộp thư lời mời / đồng ý / từ chối | `GET /api/v1/funds/invitations`; `POST /api/v1/funds/invitations/{id}/accept`; `POST /api/v1/funds/invitations/{id}/decline` | Người nhận tự quyết định; `DELETE /api/v1/funds/invitations/{id}` để hủy lời mời theo quyền hiện tại. |
-| Góp tiền | `POST /api/v1/funds/{id}/contributions` | Body `{ "walletId": "<wallet-guid>", "amountVnd": 100000, "idempotencyKey": "<unique-key>", "securityPin": "<PIN>", "obligationRevision": null, "purpose": "Góp quỹ" }`. |
-| Yêu cầu chi/rút | `POST /api/v1/funds/{id}/requests` | Body `{ "kind": "Expense", "amountVnd": 100000, "recipientUserId": "<user-guid>", "purpose": "Mua đồ chung", "idempotencyKey": "<unique-key>", "securityPin": "<PIN>" }`. Dùng `"Withdrawal"` và `recipientUserId` là chính người yêu cầu khi rút cá nhân. |
-| Danh sách, duyệt/từ chối, hủy yêu cầu | `GET /api/v1/funds/{id}/requests`; `POST /api/v1/funds/requests/{id}/review`; `POST /api/v1/funds/requests/{id}/cancel` | Duyệt/từ chối body `{ "approved": true, "reason": "Hợp lệ", "securityPin": "<PIN>" }`; hủy body `{ "securityPin": "<PIN>" }`. |
-| Chuyển quyền tự nguyện | `POST /api/v1/funds/{id}/ownership-offers`; `POST /api/v1/funds/ownership-offers/{id}/accept` | Body tạo `{ "userId": "<member-guid>", "securityPin": "<PIN>" }`; nhận quyền `{ "securityPin": "<PIN>" }`. **Cần bổ sung hủy yêu cầu chờ ở thời điểm đổi owner.** |
-| Kiểm tra vắng mặt / bầu cử | `GET /api/v1/funds/{id}/governance`; `POST /api/v1/funds/{id}/elections`; `GET /api/v1/funds/elections/{id}` | Mở bầu cử body `{ "expectedOwnershipRevision": 0 }` (giá trị phải lấy từ governance thực tế, không hardcode 0). Còn các API ứng cử/bỏ phiếu/chuyển vòng/chấp nhận chức tại controller. |
-| Ghi tương tác người dùng | `POST /api/v1/activity` | Gọi khi user thực sự tương tác ở foreground; không gọi từ polling, refresh hay background sync. |
-| Xem hoàn tiền, rời/loại/giải tán | `GET /api/v1/funds/{id}/refund-preview`; `POST /api/v1/funds/{id}/leave`; `POST /api/v1/funds/{id}/members/{userId}/kick`; `POST /api/v1/funds/{id}/dissolve` | API hoàn tiền cần PIN và idempotency; kick cần thêm lý do. **Cần bổ sung chặn kick/dissolve khi đang bầu cử.** |
+| Tạo, xem quỹ/Member | `POST /api/v1/funds`; `GET /api/v1/funds`; `GET /api/v1/funds/{id}`; `GET /api/v1/funds/{id}/members` | Body tạo Free: `{"name":"Quỹ sinh hoạt","kind":"Free","targetVnd":null,"securityPin":"<PIN>"}`. Owner/Member phân biệt theo quan hệ trong quỹ. |
+| Mời, chấp nhận/từ chối | `POST /api/v1/funds/{id}/invitations`; `GET /api/v1/funds/invitations`; `POST /api/v1/funds/invitations/{id}/accept` / `decline` | Owner hoặc Member mời bạn bè; người được mời tự chấp nhận; không yêu cầu Owner xét lại lời mời Free. |
+| Góp tiền, lịch sử góp | `POST /api/v1/funds/{id}/contributions`; `GET /api/v1/funds/{id}/contributions` | `walletId, amountVnd, idempotencyKey, securityPin`; ghi vào **vốn lượt tham gia hiện hành** ở thời điểm góp. |
+| Tạo Expense/Withdrawal | `POST /api/v1/funds/{id}/requests` | Body có `kind`, `amountVnd`, `recipientUserId`, `purpose`, `idempotencyKey`, `securityPin`. Mỗi Member chỉ 1 request hiệu lực/mỗi kind; nút thứ hai cùng loại khóa và server trả xung đột. |
+| Danh sách/lịch sử request | `GET /api/v1/funds/{id}/requests` | Hiện API chung chưa phân luồng Member/Owner; **cần bổ sung bộ lọc trạng thái/chủ thể và DTO** (lý do, thời điểm tạo/duyệt/chi, người duyệt). |
+| Owner duyệt/từ chối | `POST /api/v1/funds/requests/{id}/review` | Với Expense: duyệt **không ghi payout**, tạo quyền `ApprovedUnused` trong 7 ngày. Với Withdrawal: chỉ chuyển vào ví Member nếu không có quyền chi chưa dùng ở quỹ và vốn Member còn đủ. Backend hiện tại **chưa đúng** quy tắc Expense mới. |
+| Hủy request/quyền | `POST /api/v1/funds/requests/{id}/cancel` | Cần hỗ trợ hủy `ApprovedUnused`, hết hạn 7 ngày, tự hủy do số dư thay đổi và hủy khi rời/kick/giải tán; không hủy giao dịch đã chuyển qua provider mà chưa xác minh. |
+| Thanh toán bên ngoài bằng quyền chi | **Chưa có API provider thanh toán hóa đơn thực tế** | Hạng mục mở rộng: xác thực quyền chi, đúng số tiền, một lần, kết quả provider và đối soát; **không tạo giao dịch thành công giả** và không bắt buộc demo thanh toán thật. SePay giữ nguyên. |
+| Vốn / hoàn tiền | `GET /api/v1/funds/{id}/refund-preview`; `POST /api/v1/funds/{id}/leave`; `POST /api/v1/funds/{id}/members/{userId}/kick`; `POST /api/v1/funds/{id}/dissolve` | Phải thay bộ tính Free hiện hành bằng vốn theo thời điểm và lượt thành viên; giữ đúng tất cả ví dụ ở 1.3.1; hủy request/quyền hợp lệ trước refund. |
+| Lịch sử tài chính | `GET /api/v1/funds/{id}/contributions`; `GET /api/v1/funds/{id}/activities`; `GET /api/v1/funds/{id}/requests` | Hiện có nguồn dữ liệu lịch sử; cần hiển thị riêng yêu cầu đang chờ và giao dịch đã chi/rút thực sự. Thành viên xem tài chính chung, lịch sử request cá nhân. |
+| Quản trị/bầu cử/chuyển chủ | Một số route `/elections`, `/ownership-offers` và `/governance` vẫn tồn tại trong code dùng chung | **Free Fund không được sử dụng các hành động bầu cử hoặc chuyển Owner**; chỉ Fixed được sử dụng theo chính sách Fixed. Không dùng mốc vắng mặt 15 ngày cho Free. |
 
-**Thiết kế frontend:** Hộp thư mời phải có nút **Chấp nhận/Từ chối**; trang quỹ gồm thành viên, góp tiền, số dư, lịch sử và yêu cầu chờ duyệt; chủ nhóm có danh sách **Duyệt/Từ chối**; trang quản trị quỹ có **Chuyển quyền/Bầu cử/Rời quỹ/Giải tán** theo đúng quyền và trạng thái. Khi backend triển khai quyết định mới, hiển thị trạng thái `Cancelled` kèm thông báo “Chủ nhóm đã thay đổi; vui lòng gửi lại yêu cầu”, không tự gửi lại hay tự duyệt thay người dùng.
+**Ví dụ UI:** B có 320.000đ vốn; đang chờ `Withdrawal` 300.000đ và `Expense` 100.000đ đã được duyệt nhưng chưa thanh toán. Hai nút tạo yêu cầu tương ứng đều bị khóa; Owner **không thể duyệt Withdrawal của bất cứ Member nào**. Khi Expense hoàn tất làm vốn B còn 280.000đ, yêu cầu rút 300.000đ tự hủy và gửi thông báo. Nếu quyền Expense hủy mà không chi, B vẫn có 320.000đ và Owner có thể duyệt rút.
 
-**Checklist nghiệm thu bổ sung (chưa tuyên bố PASS):** (a) B mời C trực tiếp và C phải chấp nhận; (b) thành viên yêu cầu chi/rút phải được chủ duyệt, chủ tự chi `Expense`; (c) khóa kick/dissolve khi có bầu cử; (d) cả hai luồng đổi chủ đều tự hủy `Expense` và `Withdrawal` còn `AwaitingOwnerReview`, thông báo đúng người, không hủy `Completed`; (e) dữ liệu 15 ngày chỉ hợp lệ khi xác minh bao phủ hoạt động; (f) refund-preview khớp Leave/Kick/Dissolve và không hoàn trùng.
+**Không dùng cho Free:** `ownership-offers`, `elections`, `Pending24h`, `Suspended` và mô tả chuyển tiền Expense về ví ngay sau khi Owner duyệt. Những mục này còn được đề cập ở tài liệu/code cũ, không phải yêu cầu nghiệp vụ Free đã khóa.
 
-
----
+**Tiêu chí triển khai/kiểm thử tương lai:** số dư quỹ = tổng vốn người tham gia; request không trùng; tổng quyền chi không vượt quỹ; chi/hoàn/rút không double-post; tự hết hạn quyền 7 ngày; bảo vệ thanh toán đang xử lý; refund-preview khớp thực nhận; Free không đổi hành vi Fixed, SePay và `/api/groups`. Chưa có kết quả kiểm thử cho đặc tả mới.
 
 ### 3.7. Kế hoạch tài chính: Ngân sách, mục tiêu, giao dịch định kỳ, quy tắc
 
@@ -528,7 +548,7 @@ Các route tạo/sửa/hủy bảo trì thuộc Admin, **không cấp quyền th
 | Support/Dispute | Hai loại case, tin nhắn, attachments, correction quyền | Resolved không đồng nghĩa hoàn tiền |
 | AI | Hội thoại, search, pin, upload, proposed actions & execution | Phụ thuộc provider và chính sách an toàn |
 | Notifications | List/search/read/delete/clear/preferences/push | Không suy diễn push delivered |
-| Free Fund | Toàn bộ các hành vi đã chốt ở 1.3.1 và 3.6, có bảng API V1 | **Chặn kick/dissolve khi bầu cử; tự hủy Expense/Withdrawal chờ khi đổi chủ: chưa code** |
+| Free Fund | **Đặc tả mới 01/11/2026 tại 1.3, 1.3.1 và 3.6 mục 10**; bao gồm ví dụ số tiền, quyền chi 7 ngày, rời/kick/dissolve, lịch sử và chống spam | **CHƯA TRIỂN KHAI/CHƯA KIỂM THỬ**; không áp dụng bầu cử/chuyển chủ/hold 24h cho Free |
 | Fixed Fund V2 | Đã cập nhật CanSpend, nghĩa vụ, quyền chi, API góp/chi, Activity Proposal, biểu quyết, hoàn tiền và legacy API theo controller/DTO | **B1 còn xung đột logic; C1–C3 chưa được nghiệm thu**; không gọi Fixed V2 đã PASS toàn bộ |
 
 **Quy định cho frontend và Word:** Áp dụng những contract đã đối chiếu trong 1.3, 3.1–3.10.1; riêng B1/B2/B3 và C1–C6 **không được mô tả là backend đã sửa/PASS**. Đọc DTO/controller nếu cần thêm trường chuyên sâu. Không gọi `User.md` “100% đã kiểm thử”: tài liệu này đối chiếu tĩnh mã nguồn, không phải kết quả chạy E2E hoặc xác nhận provider.

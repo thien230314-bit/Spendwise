@@ -77,6 +77,17 @@
   - Đọc các trường: `userId`, `seat`, `isOwner`, `canSpend`, `joinedAt`, `fullName`, `avatarUrl`, `displayName`.
   - Hiển thị huy hiệu "Chủ nhóm" dựa trên thuộc tính `isOwner === true`.
 
-### 2.3 Phân biệt rõ Fixed Fund và Free Fund
-- **Quỹ cố định (Fixed):** Cho phép Chủ nhóm bật/tắt quyền chi tiêu (`canSpend`) cho thành viên. Áp dụng hạn mức rút 20% và khóa thời gian 24 giờ.
-- **Quỹ tự do (Free):** **Tuyệt đối KHÔNG hiển thị switch `canSpend`**. Mọi khoản chi tiêu/rút tiền của thành viên đều bắt buộc tạo Request và chờ Chủ nhóm phê duyệt (`POST /api/v1/funds/requests/{id}/review`).
+
+### 2.3 Phân biệt Fixed Fund và Free Fund — cập nhật sản phẩm 01/11/2026
+
+> Bản mô phỏng UI trước ngày 01/11 có mô tả Fixed 20%/24h là **nội dung cũ**, không dùng làm contract hiện hành. Fixed V2 theo `User.md` (không giới hạn 20%/không `Pending24h` cho khoản chi mới). **Không sửa logic Fixed bằng tài liệu Free mới.**
+
+- **Free Fund không hiển thị `canSpend`**; không hiển thị bầu cử, chuyển Owner, hold 24h hoặc `Suspended` nội bộ.
+- **Member có 2 nút:** `Yêu cầu chi chung` (`Expense`) và `Yêu cầu rút cá nhân` (`Withdrawal`). Chỉ tối đa 1 request hiệu lực mỗi loại. Sau khi gửi/được duyệt chi mà chưa sử dụng thì khóa nút tương ứng; mở lại khi Completed/Rejected/Cancelled/Expired hợp lệ.
+- **Nút `Xem yêu cầu`:** Member xem lịch sử của mình; Owner xem và duyệt/từ chối tất cả. Hiển thị rõ `Đã duyệt — chờ thanh toán` khác `Đã thanh toán`; luôn lưu cả từ chối/hủy và lý do.
+- **Expense:** Owner phê duyệt chỉ cấp quyền thanh toán **đúng số tiền**, chưa chuyển về ví/chưa trừ quỹ; hết hạn sau 7 ngày chưa dùng. Chi phí chung chỉ phân bổ khi thanh toán thành công.
+- **Withdrawal:** chủ duyệt thì chuyển vốn của chính Member về ví; **không được duyệt Withdrawal của bất cứ thành viên nào khi quỹ có quyền chi đã duyệt chưa thanh toán**.
+- **Đối chiếu hiển thị vốn:** A góp 600k, B góp 400k, quỹ chi 200k → A 480k, B 320k. C mới góp sau khoản chi cũ 200k rồi rời trước chi mới phải được hoàn đủ 200k.
+- **Rời/kick/giải tán:** Member có thể tự rời sau khi xử lý/hủy request chờ của mình. Chủ quỹ không rời riêng mà phải giải tán; quyền chi chưa sử dụng được hủy khi cần để hoàn tiền. Quỹ hết tiền thì không phân bổ âm cho thành viên vốn 0đ.
+
+**Trạng thái hiện tại:** Đây là **đặc tả UI sau khi backend đổi**; các trạng thái mới và API thanh toán hóa đơn thật chưa tồn tại trong backend. **Nguồn đầy đủ:** [`User.md`](../../User.md) mục 1.3, 1.3.1 và 3.6 mục 10. SePay giữ nguyên.

@@ -88,15 +88,25 @@
 
 ---
 
-## 5. QUỸ NHÓM TỰ DO (FREE FUND)
 
-- **Tạo Quỹ Tự do:** `POST /api/v1/funds` -> `{ name, kind: "Free", securityPin }`.
-- **Đóng góp quỹ tự nguyện:** `POST /api/v1/funds/{fundId}/contributions`.
-- **Tạo yêu cầu chi/rút (Member):** `POST /api/v1/funds/{fundId}/requests` -> Trạng thái ban đầu `AwaitingOwnerReview`.
-- **Chủ quỹ xét duyệt yêu cầu:** `POST /api/v1/funds/requests/{id}/review`
-  - **Body:** `{ approved: boolean, reason, securityPin }`.
+## 5. QUỸ NHÓM TỰ DO (FREE FUND V1) — ĐẶC TẢ MỚI 01/11/2026, CHƯA TRIỂN KHAI
 
----
+**Nguồn quyết định đầy đủ:** [`User.md`](../../User.md) mục **1.3, 1.3.1 và 3.6 mục 10**. Không dùng bảng API này để suy ra backend đã hỗ trợ toàn bộ Free mới.
+
+- `POST /api/v1/funds`: tạo `{"name":"Quỹ sinh hoạt","kind":"Free","targetVnd":null,"securityPin":"<PIN>"}`; quỹ tối đa 6 người, góp tự nguyện.
+- `POST /api/v1/funds/{fundId}/invitations`, `.../accept`/`.../decline`: Member/Owner mời bạn bè, người nhận chấp nhận; Member mời không cần Owner duyệt.
+- `POST /api/v1/funds/{fundId}/contributions`: góp vốn theo đúng thời điểm và lượt thành viên; `GET .../contributions` và `GET .../activities` phục vụ lịch sử.
+- **UI Member có hai nút:** `Yêu cầu chi chung` (`Expense`), `Yêu cầu rút cá nhân` (`Withdrawal`). Gọi `POST /api/v1/funds/{fundId}/requests`, mỗi Member tối đa **1 request đang hoạt động mỗi loại**; nút tương ứng khóa cho đến khi kết thúc. `GET .../requests` cần bổ sung cách lọc request của bản thân và hàng chờ duyệt của Owner.
+- `POST /api/v1/funds/requests/{id}/review`: Owner duyệt/từ chối. **Expense mới**: duyệt chỉ cấp quyền `ApprovedUnused` đúng số tiền, chưa chuyển ví/chưa trừ quỹ; hết hạn sau **7 ngày** nếu chưa sử dụng; chỉ ghi chi khi thanh toán ngoài thành công. **Withdrawal mới**: chỉ duyệt/chuyển về ví Member nếu đủ vốn và **toàn quỹ không còn quyền chi đã duyệt chưa thanh toán**.
+- `POST /api/v1/funds/requests/{id}/cancel`: thêm hủy quyền chưa dùng/hết hạn/hủy do biến động quỹ; `PaymentProcessing` phải đối soát trước khi hoàn/hủy.
+- `GET /api/v1/funds/{id}/refund-preview`; `POST .../{id}/leave`/`members/{userId}/kick`/`dissolve`: hoàn vốn theo từng lượt tham gia và chi phí chung theo tỷ lệ vốn hiện thời; không tính lại chi cũ cho người mới/góp thêm. Member tự rời sau khi tự hủy hoặc giải quyết request chờ; giải tán hủy các quyền chi chưa dùng.
+- **Không hiển thị cho Free:** chuyển chủ, bầu cử, giới hạn 20%/hold 24h, `Suspended` hay Activity Proposal Fixed. **SePay không thay đổi**. Thanh toán hóa đơn thật bên ngoài là mở rộng chưa có PSP; không demo như giao dịch thành công thật.
+
+**Ví dụ kiểm tra:** A góp 600.000đ, B góp 400.000đ, chi chung thành công 200.000đ → vốn A **480.000đ**, B **320.000đ**. B góp thêm 200.000đ rồi rời trước chi mới → hoàn **520.000đ**. C mới góp 200.000đ sau chi cũ rồi rời ngay → hoàn **200.000đ**. B còn 320.000đ, chờ rút 300.000đ; chi chung khiến B chỉ còn 280.000đ → tự hủy yêu cầu rút và thông báo.
+
+**Ví dụ quyền chi:** Quỹ 1 triệu, B được duyệt chi 800.000đ chưa dùng; C rời và hoàn 300.000đ → quỹ còn 700.000đ, hủy quyền B chưa dùng. Nếu nhiều quyền, giữ quyền duyệt trước và hủy quyền mới nhất trước khi cần; Owner không được chi vào số đã cấp quyền.
+
+**Trạng thái triển khai:** `/requests` và `/review` hiện hữu nhưng luồng Expense hiện tại **chuyển tiền vào ví khi Owner duyệt**, khác yêu cầu mới. Chưa có trạng thái `ApprovedUnused` và cơ chế vốn theo thời điểm. Không báo cáo đã hoàn thiện trước khi code và test.
 
 ## 6. NGÂN HÀNG LIÊN KẾT & RÚT TIỀN (BANK CONNECTIONS & WITHDRAWAL)
 

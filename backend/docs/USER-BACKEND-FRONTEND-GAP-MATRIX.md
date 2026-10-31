@@ -42,8 +42,12 @@
 | **E3** | Fixed Fund | Bật/tắt quyền chi tiêu (CanSpend) | Nút "Đang cấp quyền · Thu hồi" / "Cấp quyền" | `PUT /api/v1/funds/{id}/members/{userId}/spending-permission` | Chủ quỹ phân quyền chi tiêu cho thành viên | `MATCH` | Minor | **Đã test**: Nút phân quyền hoạt động đúng logic Fixed Fund |
 | **E4** | Fixed Fund | Giới hạn 20% & Khóa 24h | Hiển thị "HẠN MỨC 20% CÒN LẠI", quy tắc 24h | Nghiệp vụ V1 Fixed Fund Backend | Chi trong hạn mức 20% qua khóa 24h; chi vượt cần Chủ nhóm duyệt | `MATCH` | Minor | Text quy tắc và số dư hạn mức hiển thị chuẩn xác |
 | **E5** | Fixed Fund | Bầu cử Chủ nhóm mới (Governance) | Màn hình Quản trị bầu cử 4 bước | `POST /api/v1/funds/{id}/elections`... | Quy trình bầu cử khi chủ quỹ vắng mặt | `MATCH` | Minor | Đã test tab Quản trị bầu cử |
-| **F1** | Free Fund | Chi tiết Quỹ tự do (Free Fund) | Hiển thị số dư khả dụng, góp linh hoạt | `GET /api/v1/funds/{id}` (`Kind = Free`) | Không có hạn mức rút 20% cố định | `MATCH` | Minor | **Đã test**: Màn hình Quỹ Ăn Trưa Văn Phòng thể hiện đúng bản chất Quỹ tự do |
-| **F2** | Free Fund | Duyệt chi / Rút quỹ tự do | Tab "Duyệt (1)" hiển thị yêu cầu chi của thành viên | `POST /api/v1/funds/{id}/requests`<br>`POST /api/v1/funds/requests/{id}/review` | Mọi yêu cầu chi của thành viên đều cần Chủ nhóm duyệt | `MATCH` | Minor | **Đã test**: Hiển thị yêu cầu chi "Đặt tiệc bánh ngọt" chờ duyệt |
+| **F1** | Free Fund — bản đặc tả mới | Góp linh hoạt, lịch sử quỹ | `GET /api/v1/funds/{id}` | Vốn theo lượt thành viên; người mới không chịu chi cũ | `SPEC_APPROVED / BACKEND_PENDING` | High | Demo/ảnh cũ chỉ xác nhận UI mock, không xác nhận logic mới |
+| **F2** | Free — 2 nút Member | Expense và Withdrawal, tối đa 1 request hiệu lực/loại | `POST /api/v1/funds/{id}/requests` | Backend cần chống trùng và trạng thái riêng Owner/Member | `SPEC_APPROVED / BACKEND_PENDING` | High | Ví dụ 1 Expense + 1 Withdrawal được phép; 2 Expense cùng chờ bị chặn |
+| **F3** | Free — duyệt quyền chi | Owner duyệt đúng số tiền, chưa trừ quỹ; quyền chi hết hạn 7 ngày | `POST /api/v1/funds/requests/{id}/review` | Cần ApprovedUnused/PaymentProcessing; chi thực tế sau provider confirm | `SPEC_APPROVED / BACKEND_PENDING` | High | Không chuyển tiền vào ví Member khi vừa duyệt Expense |
+| **F4** | Free — rút vốn | Chặn duyệt rút toàn nhóm khi có quyền chi chưa dùng | `POST /api/v1/funds/requests/{id}/review` | Không rút vượt vốn; chi thành công làm thiếu vốn phải hủy req rút | `SPEC_APPROVED / BACKEND_PENDING` | High | B 320k, chờ rút 300k, sau chi còn 280k → tự hủy |
+| **F5** | Free — rời/kick/giải tán | Hoàn vốn theo thời điểm, tự hủy quyền chi khi thiếu số dư | `/refund-preview`, `/leave`, `/kick`, `/dissolve` | Cần sổ vốn mới; không bầu cử/chuyển chủ Free | `SPEC_APPROVED / BACKEND_PENDING` | High | Quỹ 1m, B quyền chi 800k, C hoàn 300k → hủy quyền B, còn 700k |
+| **F6** | Free — giao dịch & lịch sử | Member xem request cá nhân; Owner duyệt và thấy toàn bộ; lịch sử chi/rút thành công chung | `/requests`, `/activities`, `/contributions` | Cần DTO/phân lọc mới; thanh toán hóa đơn ngoài là API mở rộng, SePay giữ nguyên | `SPEC_APPROVED / BACKEND_PENDING` | Medium | Không dùng PASS mock cũ làm bằng chứng backend đã code |
 | **G1** | Planning | Quản lý Ngân sách & Cảnh báo | Hiển thị thanh tiến độ %, cảnh báo chạm trần 80% | `GET /api/budgets`<br>`POST /api/budgets` | Giám sát hạn mức danh mục hàng tháng | `MATCH` | Minor | Đã test màn Kế hoạch tài chính (77%) |
 | **G2** | AI Assistant | Chat với Trợ lý Tài chính & Action | Giao diện chat spendwise AI, gợi ý trích lập quỹ | `POST /api/ai/chat`<br>`POST /api/ai/actions/{id}/execute` | Phân tích tài chính dựa trên dữ liệu thật | `MATCH` | Minor | Đã test: Hiển thị thẻ Đề xuất thao tác tài chính 2.000.000 ₫ |
 | **G3** | Support | Yêu cầu hỗ trợ & Tra soát (Cases) | Danh sách yêu cầu hỗ trợ, bộ lọc Đang mở/Đã đóng | `GET /api/cases/support`<br>`POST /api/cases/support` | Gửi yêu cầu hỗ trợ và đính kèm biên lai đối soát | `MATCH` | Minor | **Đã test thành công trên DevTools**: Mở chi tiết ticket `#SW-SUP-261018` |
@@ -51,6 +55,8 @@
 ---
 
 ## 2. Kết luận Chính xác về Coverage
+
+> **Ngày 01/11/2026:** Các tỷ lệ coverage/`MATCH` và bằng chứng demo dưới đây là **lịch sử**, không tính F1–F6 Free Fund mới như đã hoàn thành. Free Fund đã chốt nghiệp vụ nhưng đang chờ backend/UI và kiểm thử. Nguồn: [`User.md`](../../User.md) 1.3, 1.3.1 và 3.6 mục 10.
 
 ### 1. Functional Contract Coverage: **90.6% (29 / 32 chức năng MATCH)**
 - **Mẫu số chính xác:** **32** nhóm chức năng & hành vi User đã được kiểm kê đầy đủ theo `User.md` và hệ thống Controller/Handler của SpendWise.

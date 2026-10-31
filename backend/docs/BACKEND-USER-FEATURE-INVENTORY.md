@@ -236,30 +236,44 @@ Nhóm góp cố định được thiết kế cho các hoạt động có mục 
 
 ---
 
-### PHẦN 6: QUỸ NHÓM V1 AUTHORITATIVE — NHÓM TỰ DO (FREE FUND)
 
-#### 1. Mục đích & Quy mô
-Mô hình quỹ linh hoạt theo phong cách Quỹ Nhóm MoMo. Quy mô tối đa **6 thành viên** (1 chủ quỹ + 5 thành viên). Không áp đặt tổng dự kiến bắt buộc `T` hay nghĩa vụ góp cố định.
+### PHẦN 6: FREE FUND V1 — ĐẶC TẢ MỚI ĐÃ CHỐT 01/11/2026 (CHƯA TRIỂN KHAI)
 
-#### 2. Cơ chế Chi tiêu & Xét duyệt (Approval Workflow)
-- **Không sử dụng công tắc `CanSpend`:** Thành viên không có quyền chi trực tiếp từ quỹ.
-- Khi thành viên cần chi tiền hoặc rút tiền tích lũy của mình, thành viên tạo yêu cầu (`V1FundRequestInput`).
-- **Chủ quỹ (Owner) xét duyệt:** Chủ quỹ nhận được thông báo và thực hiện phê duyệt (`Approved = true`) hoặc từ chối (`Approved = false`) có cung cấp mã PIN.
-- Khoản chi chỉ được giải ngân nội bộ vào ví cá nhân sau khi Chủ quỹ duyệt thành công. Chủ quỹ có quyền chi trực tiếp theo vai trò quản trị.
+> Đặc tả chi tiết, bảng tình huống và ví dụ số tiền: [`User.md`](../../User.md), mục **1.3, 1.3.1, 3.6 mục 10**. Đây là quy tắc sản phẩm được duyệt, **không phải danh sách tính năng đã PASS**. Các đoạn kế tiếp về governance phải được đọc với phạm vi Fixed-only.
 
-#### 3. Rút tiền cá nhân & Episode thành viên
-- Thành viên chỉ được yêu cầu rút tối đa bằng số tiền đóng góp ròng hợp lệ của chính mình trong kỳ thành viên hiện tại (`RequestedByMembershipId`).
-- Khi thành viên rời nhóm và sau đó được mời vào lại, một kỳ thành viên mới (`Episode`) được khởi tạo với số tiền đóng góp lũy kế ban đầu bằng đúng `0 VND`.
+#### Quy mô, thành viên và góp vốn
+- Free tối đa 6 người, góp linh hoạt, không nghĩa vụ cố định. Owner hoặc Member đều được mời bạn bè, người nhận phải tự đồng ý.
+- Sổ vốn riêng của mỗi **lượt thành viên**: góp +, rút cá nhân -, chi chung thực tế phân bổ tỷ lệ vốn ngay trước lúc chi -, hoàn tiền -. Thành viên mới/góp thêm sau chi cũ không chịu chi cũ; rời rồi vào lại là lượt mới.
+- Ví dụ A góp 600.000đ, B góp 400.000đ, chi chung 200.000đ → A **480.000đ**, B **320.000đ**. B góp thêm 200.000đ rồi rời ngay → hoàn **520.000đ**. C mới góp 200.000đ sau khoản chi cũ và rời trước khoản chi mới → hoàn đủ **200.000đ**.
 
-#### 4. Danh sách Endpoints liên quan
-- `POST /api/v1/funds/{id}/requests` — Thành viên gửi yêu cầu chi/rút tiền quỹ.
-- `GET /api/v1/funds/{id}/requests` — Lấy danh sách các yêu cầu chi/rút tiền của quỹ.
-- `POST /api/v1/funds/requests/{id}/review` — Chủ quỹ phê duyệt hoặc từ chối yêu cầu chi tiền (yêu cầu PIN).
-- `GET /api/v1/funds/{id}/refund-preview` — Xem trước số tiền hoàn trả chính xác nếu rời nhóm hoặc giải tán quỹ.
+#### Hai nút Member và lịch sử yêu cầu
+- `Expense` — yêu cầu chi chung; `Withdrawal` — yêu cầu rút vốn cá nhân về ví chính Member. Mỗi loại chỉ **1 yêu cầu hiệu lực/Member/quỹ**; có thể cùng lúc 1 Expense và 1 Withdrawal. UI khóa nút đang có request; server chặn spam/trùng.
+- Owner xem/duyệt/từ chối tất cả yêu cầu; Member xem yêu cầu cá nhân với trạng thái đang chờ/đã duyệt/hoàn tất/từ chối/hủy. Toàn quỹ được xem lịch sử góp, chi, rút và hoàn **đã hoàn tất**. Cần tách request đã duyệt nhưng chưa thanh toán khỏi chi thành công.
 
----
+#### Quyền chi đã duyệt, thanh toán và thời hạn
+- Owner duyệt Expense để **cấp quyền chi đúng số tiền**, **không chuyển tiền về ví cá nhân và chưa trừ quỹ**. Chỉ hoàn tất khi thanh toán ngoài thành công và xác minh được; quyền chỉ dùng một lần.
+- Quyền chi chưa dùng `ApprovedUnused` **hết hạn sau 7 ngày từ khi Owner duyệt**, hủy được trước hạn. Nếu `PaymentProcessing` thì cần đối soát kết quả trước khi kết luận. Tổng quyền chi chưa dùng không được vượt số dư quỹ.
+- Owner chi trực tiếp chỉ được dùng phần tiền chưa cấp quyền cho Member. Ví dụ quỹ 1.000.000đ, B được duyệt chi 800.000đ chưa dùng → Owner không được chi 500.000đ; chỉ còn **200.000đ** chưa được cấp quyền.
+- API thanh toán hóa đơn ngoài là **mở rộng phụ thuộc PSP**, không bắt buộc demo thanh toán thật; không ghi Completed giả. **Không thay SePay**.
 
-### PHẦN 7: QUẢN TRỊ QUỸ, BẦU CỬ CHỦ QUỸ & CHUYỂN HOẠT ĐỘNG (GOVERNANCE & ELECTIONS)
+#### Rút vốn và tránh kẹt quỹ
+- Withdrawal tối đa bằng vốn của chính Member. Owner duyệt thành công thì chuyển ngay từ quỹ vào ví Member, không phân bổ làm chi chung.
+- **Chặn tất cả phê duyệt Withdrawal nếu bất kỳ quyền chi nào trong quỹ đã duyệt nhưng chưa thanh toán**. Yêu cầu rút giữ trạng thái chờ cho đến khi hết quyền chặn.
+- Nếu Expense thành công làm vốn rút không đủ, hủy Withdrawal chờ và thông báo. Ví dụ B có 320.000đ, chờ rút 300.000đ; chi trước làm B còn 280.000đ → tự hủy rút 300.000đ. Nếu rút 300.000đ đã thực hiện trước chi, B còn 20.000đ và chịu chi sau theo tỷ lệ vốn mới.
+
+#### Rời, kick, giải tán, đổi số dư
+- Member rời không cần Owner duyệt, nhưng phải hủy/chờ giải quyết các `AwaitingOwnerReview` của chính mình; quyền chi đã duyệt nhưng chưa dùng của chính Member tự hủy khi rời. Owner kick phải xử lý xong request đang chờ của người bị kick, có thể từ chối. Owner chỉ được rời bằng **giải tán quỹ**.
+- Khi hoàn tiền làm quỹ không đủ cho các quyền chi chưa dùng: **ưu tiên quyền được duyệt trước; hủy quyền mới nhất trước cho đến khi đủ**. Quỹ 1.000.000đ, B có quyền 800.000đ; C rời và được hoàn 300.000đ → còn 700.000đ, hủy quyền B chưa dùng, thông báo. Nếu vẫn đủ tiền thì giữ quyền, không hủy vô cớ.
+- Giải tán tự hủy yêu cầu chưa duyệt và quyền chi chưa dùng, thông báo, hoàn vốn, đưa quỹ về 0đ; **giao dịch đã hoàn tất giữ nguyên**. `PaymentProcessing` phải xác minh kết quả trước khi hoàn. Owner vắng 15 ngày **không tạo bầu cử Free**; Member tự hủy request chờ để rời.
+- Member vốn 0đ vẫn xin Expense chung được, chi phí do người có vốn dương chia; không được rút vốn 0đ.
+
+#### Ranh giới kiến trúc và nghiệm thu
+- Không có bầu cử, chuyển Owner, `Pending24h`, `Suspended` nội bộ hoặc Activity Proposal Fixed trong Free. Cần đổi code Free cũ vốn đang có những luồng này. Không sửa logic Fixed và legacy `/api/groups`.
+- Backend hiện có `/requests`, `/refund-preview`, `/leave`, `/kick`, `/dissolve` nhưng **chưa có tính vốn theo thời điểm, giới hạn 1 request/mỗi kind và quyền chi chưa dùng 7 ngày**; chưa tích hợp PSP hóa đơn ngoài. Không dùng kiểm thử lịch sử để chứng nhận logic mới.
+
+### PHẦN 7: QUẢN TRỊ V1 — BẦU CỬ/CHUYỂN CHỦ CHỈ THUỘC FIXED FUND
+
+> **Phạm vi mới 01/11/2026:** Các mục chuyển quyền Owner, bầu cử khi vắng 15 ngày và Activity Proposal dưới đây **chỉ còn thuộc Fixed Fund V2**. Free Fund không có bầu cử/chuyển chủ; xem phần 6 và `User.md`. Đây là giới hạn nghiệp vụ mới, backend còn route legacy phải được phân luồng khi triển khai.
 
 #### 1. Mục đích & Nguyên tắc Quản trị
 Mỗi quỹ tại mọi thời điểm có **đúng 1 Chủ quỹ duy nhất**. Người sáng lập (`FounderUserId`) được ghi nhận bất biến trong lịch sử quỹ.
@@ -675,7 +689,9 @@ Hệ thống quỹ authoritative hiện hành là **Quỹ V1 (`/api/v1/funds`)**
 
 ---
 
-## KẾT LUẬN & SỰ SẴN SÀNG NỘI BỘ (100% INTERNAL READINESS)
+## KẾT LUẬN & SỰ SẴN SÀNG NỘI BỘ — BẰNG CHỨNG LỊCH SỬ
+
+> **Lưu ý 01/11/2026:** Các thống kê 100% bên dưới phản ánh các lượt kiểm thử **trước khi chốt Free Fund mới**. Chúng **không xác nhận** các quy tắc Free mới ở phần 6 đã code hoặc PASS.
 
 1. **Về Mã nguồn & Nghiệp vụ nội bộ:** Đạt **100% Sẵn sàng (100% Ready)**. Mọi endpoint User nội bộ đều có đầy đủ Implementation, DTO, Validation, Phân quyền User, Rate Limiter và kiểm soát bất biến tài chính sổ cái kép.
 2. **Về Tích hợp Nhà cung cấp bên ngoài (External Providers):**

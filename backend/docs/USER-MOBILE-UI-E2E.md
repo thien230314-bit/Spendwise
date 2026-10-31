@@ -1,5 +1,7 @@
 # USER MOBILE UI E2E TEST REPORT (GOOGLE AI STUDIO)
 
+> **LƯU Ý PHẠM VI (01/11/2026):** Các kịch bản/màn hình Fixed và Free trong tài liệu này là **bằng chứng UI/mock tại thời điểm chạy**, không phải đặc tả Free Fund mới. Mọi mô tả Free cũ (duyệt chi chuyển ví, bầu cử/chuyển chủ, refund theo tổng góp) được thay thế về **mặt yêu cầu sản phẩm** bởi [User.md](../../User.md) mục 1.3, 1.3.1 và 3.6 mục 10. Chưa code/test lại Free mới. Giữ nguyên các kết quả kiểm thử lịch sử và phần Fixed/SePay.
+
 > **Môi trường thử nghiệm:** Google AI Studio Mobile Web Application  
 > **Target URL:** `https://ai.studio/apps/e5db1617-9046-4fb0-b946-a9de726914b0?fullscreenApplet=true`  
 > **Công nghệ Client:** React 19 / TypeScript / Vite / Tailwind CSS / LocalStorage Simulation (`spendwise_sim_store_v5`)  

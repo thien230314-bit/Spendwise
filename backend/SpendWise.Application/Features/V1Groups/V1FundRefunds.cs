@@ -594,56 +594,20 @@ public sealed partial class V1FundService
         }
         else // Free Fund
         {
-            // Gather completed personal withdrawals
-            var withdrawals = await db.V1FundRequests.AsNoTracking()
-                .Where(r => r.FundId == fund.Id && r.Kind == "Withdrawal" && r.State == "Completed")
-                .ToListAsync(ct);
-
-            // Compute net equity per member: NetEquity_i = max(0, Contributed - Withdrawn - Refunded)
-            var memberNetEquity = new Dictionary<Guid, long>();
-            foreach (var m in activeMembers)
-            {
-                var contrib = contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
-                var wd = withdrawals.Where(w => w.RecipientUserId == m.UserId && (w.RequestedByMembershipId == m.Id || (w.RequestedByMembershipId == null && w.CreatedAt >= m.JoinedAt))).Sum(w => w.AmountVnd);
-                var priorRef = m.RefundedVnd ?? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
-                var net = Math.Max(0, contrib - wd - priorRef);
-                memberNetEquity[m.UserId] = net;
-            }
-
-            var sumNetEquity = memberNetEquity.Values.Sum();
+            var equityResult = await CalculateFreeFundEquityAsync(fund, treasury, singleMemberUserIds, ct);
 
             if (isDissolution)
             {
-                var payouts = new Dictionary<Guid, long>();
-                if (sumNetEquity > 0)
-                {
-                    foreach (var m in activeMembers)
-                    {
-                        var share = (long)Math.Floor((decimal)currentBalance * memberNetEquity[m.UserId] / sumNetEquity);
-                        payouts[m.UserId] = share;
-                    }
-                }
-                else if ((long)currentBalance > 0 && sumNetEquity == 0)
+                if ((long)currentBalance > 0 && equityResult.TotalFundEquityVnd == 0)
                 {
                     throw new ConflictException("zero_entitlement_dissolution_blocked",
                         "Cannot dissolve fund: no active members have valid contribution entitlement to receive the remaining balance.");
                 }
-                else
-                {
-                    foreach (var m in activeMembers) payouts[m.UserId] = 0;
-                }
 
-                // Distribute remainder (đồng dư)
-                var eligibleMembers = activeMembers.Where(m => memberNetEquity.GetValueOrDefault(m.UserId) > 0).ToList();
-                var allocatedSum = payouts.Values.Sum();
-                var remainder = (long)currentBalance - allocatedSum;
-                for (var i = 0; i < remainder && i < eligibleMembers.Count; i++)
-                {
-                    payouts[eligibleMembers[i].UserId] += 1;
-                }
                 foreach (var m in activeMembers)
                 {
-                    results[m.UserId] = (payouts[m.UserId], "CaseC_DissolveFree");
+                    var refundAmount = equityResult.RefundEntitlements.GetValueOrDefault(m.UserId, 0L);
+                    results[m.UserId] = (refundAmount, "CaseC_DissolveFree");
                 }
                 return new UnifiedCalculationResult(results, (long)currentBalance, currentBalance);
             }
@@ -651,27 +615,15 @@ public sealed partial class V1FundService
             {
                 foreach (var targetUserId in singleMemberUserIds!)
                 {
-                    if (!memberNetEquity.TryGetValue(targetUserId, out var net) || net <= 0)
+                    var refundAmount = equityResult.RefundEntitlements.GetValueOrDefault(targetUserId, 0L);
+                    if (refundAmount <= 0)
                     {
                         results[targetUserId] = (0, "NoContribution");
-                        continue;
-                    }
-
-                    if (totalSpent == 0)
-                    {
-                        var refund = Math.Max(0, Math.Min(net, (long)currentBalance));
-                        results[targetUserId] = (refund, "CaseA_Unspent");
                     }
                     else
                     {
-                        long share = 0;
-                        if (sumNetEquity > 0)
-                            share = (long)Math.Floor((decimal)currentBalance * net / sumNetEquity);
-                        else
-                            share = 0;
-
-                        var refund = Math.Max(0, Math.Min((long)currentBalance, share));
-                        results[targetUserId] = (refund, "CaseC_FreeSharedExpenseClearShare");
+                        var caseType = totalSpent == 0 ? "CaseA_Unspent" : "CaseC_FreeSharedExpenseClearShare";
+                        results[targetUserId] = (refundAmount, caseType);
                     }
                 }
                 return new UnifiedCalculationResult(results, results.Values.Sum(v => v.Amount), currentBalance);

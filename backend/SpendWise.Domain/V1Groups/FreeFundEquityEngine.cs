@@ -8,6 +8,7 @@ namespace SpendWise.Domain.V1Groups;
 /// - Integer VND arithmetic with remainder distribution ordered by occupied seat.
 /// - Historical epochs: each contribution or settled shared expense or personal withdrawal updates equity.
 /// - Newcomers or new episodes begin with 0 past share and do not retroactively absorb past expenses.
+/// - Never silently alter or clamp event amounts; if historical data invalid, fail audit.
 /// </summary>
 public static class FreeFundEquityEngine
 {
@@ -54,7 +55,7 @@ public static class FreeFundEquityEngine
     /// <summary>
     /// Distributes a general shared expense proportionally based on each active member's equity right before the expense.
     /// Any VND remainder is distributed by occupied seat order (lowest seat index first).
-    /// If total positive equity is 0, no member has equity to absorb.
+    /// Invariant: Expense amount cannot exceed total positive equity.
     /// </summary>
     public static Dictionary<Guid, long> ApplySharedExpense(
         IReadOnlyList<MemberEpochState> activeMembers,
@@ -68,7 +69,7 @@ public static class FreeFundEquityEngine
         long totalPositiveEquity = positiveMembers.Sum(m => m.EquityVnd);
 
         if (expenseAmountVnd > totalPositiveEquity)
-            throw new InvalidOperationException($"Expense {expenseAmountVnd} exceeds total positive equity {totalPositiveEquity}.");
+            throw new InvalidOperationException($"Shared expense {expenseAmountVnd} exceeds total positive equity {totalPositiveEquity}.");
 
         // Calculate proportional charge per member with integer division
         var charges = new Dictionary<Guid, long>();
@@ -107,11 +108,11 @@ public static class FreeFundEquityEngine
 
     /// <summary>
     /// Computes refund entitlement for a single member leaving or being kicked, or for full dissolution.
-    /// For a single member leaving:
-    /// - Their entitled refund is exactly their current active equity: Math.Min(memberEquity, currentFundBalance).
-    /// For full dissolution:
-    /// - Each active member receives their exact current equity. Total allocated equals currentFundBalance.
-    /// - Any remainder (if balance slightly deviates) is distributed by lowest seat order.
+    /// Rules:
+    /// 1. Each member receives their exact calculated equity.
+    /// 2. For dissolution, total equity of all active members MUST equal current fund balance.
+    ///    If there is any discrepancy, throws InvalidOperationException to halt settlement.
+    /// 3. For single member leaving, refund is exactly their current equity (capped only by fund balance if fund has unspent deficit).
     /// </summary>
     public static Dictionary<Guid, long> CalculateRefunds(
         IReadOnlyList<MemberEpochState> activeMembers,
@@ -151,25 +152,15 @@ public static class FreeFundEquityEngine
         {
             // Full dissolution
             long sumEquity = orderedMembers.Sum(m => m.EquityVnd);
-            if (sumEquity == 0)
+            if (sumEquity != currentFundBalanceVnd)
             {
-                foreach (var m in orderedMembers) results[m.UserId] = 0;
-                return results;
+                throw new InvalidOperationException(
+                    $"Dissolution equity mismatch: Total active member equity ({sumEquity} VND) does not match treasury balance ({currentFundBalanceVnd} VND). Reconciliation required.");
             }
 
-            long allocated = 0;
             foreach (var m in orderedMembers)
             {
-                long payout = (long)Math.Floor((decimal)currentFundBalanceVnd * m.EquityVnd / sumEquity);
-                results[m.UserId] = payout;
-                allocated += payout;
-            }
-
-            long remainder = currentFundBalanceVnd - allocated;
-            var eligible = orderedMembers.Where(m => m.EquityVnd > 0).ToList();
-            for (int i = 0; i < remainder && i < eligible.Count; i++)
-            {
-                results[eligible[i].UserId] += 1;
+                results[m.UserId] = m.EquityVnd;
             }
 
             return results;

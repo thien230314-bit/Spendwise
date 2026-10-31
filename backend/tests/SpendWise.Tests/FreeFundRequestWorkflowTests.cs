@@ -564,4 +564,99 @@ public class FreeFundRequestWorkflowTests
             s.ReviewFundRequestAsync(owner.Id, expDto.Id, true, "Cannot review fixed", TargetedCorrectnessFixture.SecurityPin, default));
         Assert.Equal("fixed_owner_review_disallowed", exReview.Code);
     }
+
+    [Fact]
+    public async Task FreeFund_InitiatePayment_UnauthorizedCaller_ThrowsForbidden_BeforeExpirationCheck()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        var memberC = await f.AddUserAsync("MemberC");
+        var outsider = await f.AddUserAsync("Outsider");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberC.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("AuthFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var inviteB = await s.InviteAsync(owner.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, inviteB.Id, default);
+        var inviteC = await s.InviteAsync(owner.Id, fund.Id, memberC.Id, default);
+        await s.AcceptAsync(memberC.Id, inviteC.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+
+        // Member B requests Expense and Owner approves -> ApprovedUnused
+        var req = await s.CreateFundRequestAsync(memberB.Id, fund.Id,
+            new("Expense", 100_000, memberB.Id, "Supplies", "exp-auth", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, req.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Fast forward 7 days + 1 min so it is expired
+        clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
+
+        // 1. Outsider calls initiate-payment -> Throws ForbiddenException / NotFoundException (not member)
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            s.InitiateExpensePaymentAsync(outsider.Id, req.Id, TargetedCorrectnessFixture.SecurityPin, default));
+
+        // 2. Unrelated Member C calls initiate-payment on Member B's request -> Throws ForbiddenException
+        var exPerm = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            s.InitiateExpensePaymentAsync(memberC.Id, req.Id, TargetedCorrectnessFixture.SecurityPin, default));
+        Assert.Equal("fund_request_permission_required", exPerm.Code);
+
+        // Assert: NO expiration activity was created with outsider or Member C as actor!
+        var maliciousActivities = await f.Db.V1FundActivities
+            .Where(a => a.Event == "FundRequestExpired" && (a.ActorUserId == memberC.Id || a.ActorUserId == outsider.Id))
+            .ToListAsync();
+        Assert.Empty(maliciousActivities);
+    }
+
+    [Fact]
+    public async Task FreeFund_AtomicExpirationSweep_ConcurrentWorkers_CreatesExactlyOneActivity()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerA");
+        var member = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(owner.Id, new("AtomicSweepFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, default);
+
+        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerWallet", true, balance: 1_000_000);
+        await s.ContributeAsync(owner.Id, fund.Id,
+            new(ownerWallet.Id, 500_000, "c-owner", TargetedCorrectnessFixture.SecurityPin), default);
+
+        var req = await s.CreateFundRequestAsync(member.Id, fund.Id,
+            new("Expense", 100_000, member.Id, "Supplies", "exp-atomic", TargetedCorrectnessFixture.SecurityPin), default);
+        await s.ReviewFundRequestAsync(owner.Id, req.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+        // Fast forward 7 days + 1 min
+        clock.UtcNow = clock.UtcNow.AddDays(7).AddMinutes(1);
+
+        // Concurrently run 5 sweep workers for the same fund
+        var tasks = Enumerable.Range(0, 5).Select(_ => s.ExpireStaleApprovedUnusedRequestsAsync(fund.Id, default)).ToArray();
+        var results = await Task.WhenAll(tasks);
+
+        // Exactly one worker claims the transition (sum of counts is 1)
+        var totalExpiredCount = results.Sum();
+        Assert.Equal(1, totalExpiredCount);
+
+        // Verify database state: State is Expired
+        var dbItem = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == req.Id);
+        Assert.Equal("Expired", dbItem.State);
+        Assert.NotNull(dbItem.CancelledAt);
+
+        // Verify EXACTLY ONE activity was created, and ActorUserId is null (system event)
+        var activities = await f.Db.V1FundActivities
+            .Where(a => a.FundId == fund.Id && a.Event == "FundRequestExpired")
+            .ToListAsync();
+        Assert.Single(activities);
+        Assert.Null(activities.Single().ActorUserId);
+    }
 }

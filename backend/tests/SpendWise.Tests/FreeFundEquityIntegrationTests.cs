@@ -531,15 +531,19 @@ public sealed class FreeFundEquityIntegrationTests
     }
 
     [Fact]
-    public async Task FreeFund_SameTimestamp_ExpenseBeforeWithdrawal_ExecutesInVerifiableSequence()
+    public async Task FreeFund_AntiTamper_UserSuppliedPurposeSequence_IgnoredAndThrowsIndeterminateOrder()
     {
+        // Anti-tamper verification:
+        // A user crafts a request with Purpose = "seq:1" or "order:1" to artificially manipulate equity execution sequence.
+        // The financial engine MUST ignore user-supplied purpose strings and rely strictly on authoritative system posting evidence.
+        // When concurrent events share identical system posting timestamps, it must detect the ambiguity and throw fund_indeterminate_order.
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
         var member = await f.AddUserAsync("MemberB");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
 
         var s = V1FundMembershipTests.Service(f);
-        var fundDto = await s.CreateAsync(owner.Id, new("SeqExpFirstFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+        var fundDto = await s.CreateAsync(owner.Id, new("AntiTamperFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
 
         var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
         await s.AcceptAsync(member.Id, invite.Id, default);
@@ -552,51 +556,36 @@ public sealed class FreeFundEquityIntegrationTests
         await s.ContributeAsync(member.Id, fundDto.Id,
             new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
 
-        // Request 1: Expense 200,000 VND
+        // Member crafts forged sequence in Purpose
         var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
+            new("Expense", 200_000, member.Id, "seq:1 - Forged sequence attempt", "req-exp-tamper", TargetedCorrectnessFixture.SecurityPin), default);
         await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
-        // Request 2: Withdrawal 100,000 VND for Member B
         var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
+            new("Withdrawal", 100_000, member.Id, "seq:2 - Forged sequence attempt", "req-wth-tamper", TargetedCorrectnessFixture.SecurityPin), default);
         await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
         var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
         var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
 
-        // Align both ledger transactions to the EXACT same timestamp, but provide verifiable sequence
+        // Align both ledger transactions to the exact same system timestamp
         var baseTime = DateTime.UtcNow.AddMinutes(5);
         var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
         var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
 
         txExp.CreatedAt = baseTime;
         txExp.CompletedAt = baseTime;
-        txExp.IdempotencyKey = "seq:1";
-
         txWth.CreatedAt = baseTime;
         txWth.CompletedAt = baseTime;
-        txWth.IdempotencyKey = "seq:2";
-
         await f.Db.SaveChangesAsync();
 
-        var result = await s.CalculateFreeFundEquityAsync(fund, treasury, null, default);
-        Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
-        Assert.Equal(700_000, result.TotalFundEquityVnd);
-
-        // Expense runs first:
-        // A (60%) pays 120k -> 480k. B (40%) pays 80k -> 320k.
-        // Withdrawal runs second:
-        // B withdraws 100k -> 220k.
-        var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
-        var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
-
-        Assert.Equal(480_000, eqA.EquityVnd);
-        Assert.Equal(220_000, eqB.EquityVnd);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.CalculateFreeFundEquityAsync(fund, treasury, null, default));
+        Assert.Equal("fund_indeterminate_order", ex.Code);
     }
 
-    [Fact]
-    public async Task FreeFund_SameTimestamp_WithdrawalBeforeExpense_ExecutesInVerifiableSequence()
+[Fact]
+    public async Task FreeFund_ThreeEvents_SameTimestamp_ThrowsFundIndeterminateOrder()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("OwnerA");
@@ -604,7 +593,7 @@ public sealed class FreeFundEquityIntegrationTests
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
 
         var s = V1FundMembershipTests.Service(f);
-        var fundDto = await s.CreateAsync(owner.Id, new("SeqWthFirstFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+        var fundDto = await s.CreateAsync(owner.Id, new("ThreeSameTimeFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
 
         var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
         await s.AcceptAsync(member.Id, invite.Id, default);
@@ -618,98 +607,158 @@ public sealed class FreeFundEquityIntegrationTests
             new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
 
         var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
+            new("Expense", 200_000, member.Id, "Dinner", "req-exp-3", TargetedCorrectnessFixture.SecurityPin), default);
         await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
         var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
+            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth-3", TargetedCorrectnessFixture.SecurityPin), default);
         await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
 
         var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
         var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
 
-        // Align both ledger transactions to the EXACT same timestamp, but Withdrawal has sequence 1
-        var baseTime = DateTime.UtcNow.AddMinutes(5);
+        // Align 3 events (Member contribution, Expense, and Withdrawal) to the exact same system timestamp
+        var sameTime = DateTime.UtcNow.AddMinutes(5);
+        var contribB = await f.Db.V1FundContributions.SingleAsync(c => c.FundId == fund.Id && c.UserId == member.Id);
+        var txContribB = await f.Db.LedgerTransactions.SingleAsync(tx => tx.Id == contribB.LedgerTransactionId);
         var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
         var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
 
-        txWth.CreatedAt = baseTime;
-        txWth.CompletedAt = baseTime;
-        txWth.IdempotencyKey = "seq:1";
-
-        txExp.CreatedAt = baseTime;
-        txExp.CompletedAt = baseTime;
-        txExp.IdempotencyKey = "seq:2";
-
-        await f.Db.SaveChangesAsync();
-
-        var result = await s.CalculateFreeFundEquityAsync(fund, treasury, null, default);
-        Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
-        Assert.Equal(700_000, result.TotalFundEquityVnd);
-
-        // Withdrawal runs first:
-        // B withdraws 100k -> B has 300k, A has 600k. Total = 900k.
-        // Ratio: A = 600k/900k = 2/3 (66.6667%), B = 300k/900k = 1/3 (33.3333%).
-        // Expense 200k runs second:
-        // A pays 133,334 -> 466,666.
-        // B pays 66,666 -> 233,334.
-        var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
-        var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
-
-        Assert.Equal(466_666, eqA.EquityVnd);
-        Assert.Equal(233_334, eqB.EquityVnd);
-    }
-
-    [Fact]
-    public async Task FreeFund_SameTimestamp_ConflictingOrderWithoutSequence_ThrowsFundIndeterminateOrder()
-    {
-        await using var f = await TargetedCorrectnessFixture.CreateAsync();
-        var owner = await f.AddUserAsync("OwnerA");
-        var member = await f.AddUserAsync("MemberB");
-        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
-
-        var s = V1FundMembershipTests.Service(f);
-        var fundDto = await s.CreateAsync(owner.Id, new("IndetFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
-
-        var invite = await s.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
-        await s.AcceptAsync(member.Id, invite.Id, default);
-
-        var ownerWallet = await f.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
-        var memberWallet = await f.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
-
-        await s.ContributeAsync(owner.Id, fundDto.Id,
-            new(ownerWallet.Id, 600_000, "contrib-a", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ContributeAsync(member.Id, fundDto.Id,
-            new(memberWallet.Id, 400_000, "contrib-b", TargetedCorrectnessFixture.SecurityPin), default);
-
-        var reqExp = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Expense", 200_000, member.Id, "Dinner", "req-exp", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
-
-        var reqWth = await s.CreateFundRequestAsync(member.Id, fundDto.Id,
-            new("Withdrawal", 100_000, member.Id, "Personal withdrawal", "req-wth", TargetedCorrectnessFixture.SecurityPin), default);
-        await s.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
-
-        var fund = await f.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
-        var treasury = await f.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
-
-        // Align both ledger transactions to the EXACT same timestamp without verifiable sequence
-        var baseTime = DateTime.UtcNow.AddMinutes(5);
-        var txExp = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqExp.Id:N}");
-        var txWth = await f.Db.LedgerTransactions.SingleAsync(tx => tx.IdempotencyScope == $"v1-fund-payout:{fund.Id:N}:{reqWth.Id:N}");
-
-        txExp.CreatedAt = baseTime;
-        txExp.CompletedAt = baseTime;
-        txExp.IdempotencyKey = "unsequenced-alpha";
-
-        txWth.CreatedAt = baseTime;
-        txWth.CompletedAt = baseTime;
-        txWth.IdempotencyKey = "unsequenced-beta";
+        txContribB.CreatedAt = sameTime;
+        txContribB.CompletedAt = sameTime;
+        txExp.CreatedAt = sameTime;
+        txExp.CompletedAt = sameTime;
+        txWth.CreatedAt = sameTime;
+        txWth.CompletedAt = sameTime;
 
         await f.Db.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             s.CalculateFreeFundEquityAsync(fund, treasury, null, default));
         Assert.Equal("fund_indeterminate_order", ex.Code);
+    }
+
+    [Fact]
+    public async Task FreeFund_RealPostingSequence_OrdersBySystemCompletedAt_WithoutModifyingIdempotencyKey()
+    {
+        // Scenario 1: Expense posted before Withdrawal (governed strictly by clock.UtcNow at PostAsync)
+        {
+            var clock1 = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+            await using var f1 = await TargetedCorrectnessFixture.CreateAsync(clock1);
+            var owner = await f1.AddUserAsync("Owner1");
+            var member = await f1.AddUserAsync("Member1");
+            await V1FundMembershipTests.MakeFriends(f1, owner.Id, member.Id);
+
+            var s1 = V1FundMembershipTests.Service(f1);
+            var fundDto = await s1.CreateAsync(owner.Id, new("SeqExpFirst", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+            var invite = await s1.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+            await s1.AcceptAsync(member.Id, invite.Id, default);
+
+            var ownerWallet = await f1.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+            var memberWallet = await f1.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
+
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            await s1.ContributeAsync(owner.Id, fundDto.Id,
+                new(ownerWallet.Id, 600_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            await s1.ContributeAsync(member.Id, fundDto.Id,
+                new(memberWallet.Id, 400_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+            // Expense created & reviewed first
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            var reqExp = await s1.CreateFundRequestAsync(member.Id, fundDto.Id,
+                new("Expense", 200_000, member.Id, "Dinner", "req-exp-1", TargetedCorrectnessFixture.SecurityPin), default);
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            await s1.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+            // Withdrawal created & reviewed second
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            var reqWth = await s1.CreateFundRequestAsync(member.Id, fundDto.Id,
+                new("Withdrawal", 100_000, member.Id, "Cash out", "req-wth-1", TargetedCorrectnessFixture.SecurityPin), default);
+            clock1.UtcNow = clock1.UtcNow.AddMinutes(1);
+            await s1.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+            var fund = await f1.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+            var treasury = await f1.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+            var result = await s1.CalculateFreeFundEquityAsync(fund, treasury, null, default);
+            Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
+            Assert.Equal(700_000, result.TotalFundEquityVnd);
+
+            // Expense first:
+            // Equity before expense: A=600k (60%), B=400k (40%). Expense=200k.
+            // A pays 120k -> 480k. B pays 80k -> 320k.
+            // Withdrawal second:
+            // B withdraws 100k -> B has 220k. A has 480k.
+            var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
+            var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
+            Assert.Equal(480_000, eqA.EquityVnd);
+            Assert.Equal(220_000, eqB.EquityVnd);
+        }
+
+        // Scenario 2: Withdrawal posted before Expense (governed strictly by clock.UtcNow at PostAsync)
+        {
+            var clock2 = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+            await using var f2 = await TargetedCorrectnessFixture.CreateAsync(clock2);
+            var owner = await f2.AddUserAsync("Owner2");
+            var member = await f2.AddUserAsync("Member2");
+            await V1FundMembershipTests.MakeFriends(f2, owner.Id, member.Id);
+
+            var s2 = V1FundMembershipTests.Service(f2);
+            var fundDto = await s2.CreateAsync(owner.Id, new("SeqWthFirst", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+            var invite = await s2.InviteAsync(owner.Id, fundDto.Id, member.Id, default);
+            await s2.AcceptAsync(member.Id, invite.Id, default);
+
+            var ownerWallet = await f2.AddWalletAsync(owner.Id, "OwnerMain", true, balance: 1_000_000);
+            var memberWallet = await f2.AddWalletAsync(member.Id, "MemberMain", true, balance: 1_000_000);
+
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            await s2.ContributeAsync(owner.Id, fundDto.Id,
+                new(ownerWallet.Id, 600_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            await s2.ContributeAsync(member.Id, fundDto.Id,
+                new(memberWallet.Id, 400_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+
+            // Withdrawal created & reviewed first
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            var reqWth = await s2.CreateFundRequestAsync(member.Id, fundDto.Id,
+                new("Withdrawal", 100_000, member.Id, "Cash out", "req-wth-2", TargetedCorrectnessFixture.SecurityPin), default);
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            await s2.ReviewFundRequestAsync(owner.Id, reqWth.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+            // Expense created & reviewed second
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            var reqExp = await s2.CreateFundRequestAsync(member.Id, fundDto.Id,
+                new("Expense", 200_000, member.Id, "Dinner", "req-exp-2", TargetedCorrectnessFixture.SecurityPin), default);
+            clock2.UtcNow = clock2.UtcNow.AddMinutes(1);
+            await s2.ReviewFundRequestAsync(owner.Id, reqExp.Id, true, "Approved", TargetedCorrectnessFixture.SecurityPin, default);
+
+            var fund = await f2.Db.V1Funds.FirstAsync(fd => fd.Id == fundDto.Id);
+            var treasury = await f2.Db.V1FundTreasuries.FirstAsync(t => t.FundId == fund.Id);
+
+            var result = await s2.CalculateFreeFundEquityAsync(fund, treasury, null, default);
+            Assert.Equal(700_000, result.CurrentTreasuryBalanceVnd);
+            Assert.Equal(700_000, result.TotalFundEquityVnd);
+
+            // Withdrawal first:
+            // B withdraws 100k -> B has 300k, A has 600k. Total = 900k.
+            // Ratio: A = 600k/900k = 2/3 (66.6667%), B = 300k/900k = 1/3 (33.3333%).
+            // Expense 200k second:
+            // A pays 133,334 -> 466,666.
+            // B pays 66,666 -> 233,334.
+            var eqA = result.MemberEquities.Single(m => m.UserId == owner.Id);
+            var eqB = result.MemberEquities.Single(m => m.UserId == member.Id);
+            Assert.Equal(466_666, eqA.EquityVnd);
+            Assert.Equal(233_334, eqB.EquityVnd);
+        }
+    }
+
+    private sealed class MutableClock(DateTime utcNow) : SpendWise.Application.Common.Interfaces.IClock
+    {
+        public DateTime UtcNow { get; set; } = utcNow;
     }
 }

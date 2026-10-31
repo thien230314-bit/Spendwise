@@ -9,6 +9,7 @@ using SpendWise.Domain.Admin;
 using SpendWise.Domain.Finance;
 
 using SpendWise.Domain.V1Groups;
+using SpendWise.Application.Notifications;
 
 
 
@@ -611,6 +612,65 @@ public sealed partial class V1FundService
         }, ct);
 
 
+
+    /// <summary>
+    /// Closes requests that cannot be approved after a change of owner or membership.
+    /// Called only while the fund row is locked and inside the caller's transaction.
+    /// Completed/Rejected/Suspended requests and ledger postings must never change here.
+    /// </summary>
+    private async Task CancelPendingFreeFundRequestsAsync(
+        V1Fund fund, string reason, CancellationToken ct, Guid? requesterUserId = null)
+    {
+        if (fund.Kind != V1FundKind.Free) return;
+
+        var pendingQuery = db.V1FundRequests.Where(r =>
+            r.FundId == fund.Id && r.State == "AwaitingOwnerReview");
+        if (requesterUserId is { } requester)
+            pendingQuery = pendingQuery.Where(r => r.RequestedByUserId == requester);
+
+        var pending = await pendingQuery.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id).ToListAsync(ct);
+        if (pending.Count == 0) return;
+
+        var message = reason switch
+        {
+            "OwnershipChanged" => "Chủ nhóm đã thay đổi. Yêu cầu chi/rút đang chờ đã bị hủy; vui lòng tạo lại để chủ mới xét duyệt.",
+            "MemberLeft" => "Yêu cầu chi/rút đang chờ đã bị hủy vì bạn đã rời quỹ.",
+            "MemberKicked" => "Yêu cầu chi/rút đang chờ đã bị hủy vì bạn không còn là thành viên quỹ.",
+            "FundDissolved" => "Yêu cầu chi/rút đang chờ đã bị hủy vì quỹ đã giải tán.",
+            _ => throw new ArgumentOutOfRangeException(nameof(reason))
+        };
+
+        foreach (var request in pending)
+        {
+            request.State = "Cancelled";
+            request.CancelledAt = clock.UtcNow;
+            db.V1FundActivities.Add(new V1FundActivity
+            {
+                FundId = fund.Id,
+                ActorUserId = null,
+                Event = "FundRequestAutoCancelled",
+                SubjectUserId = request.RequestedByUserId,
+                Detail = reason,
+                ReferenceId = request.Id
+            });
+        }
+
+        await db.SaveChangesAsync(ct);
+        await notifications.CreateManyAsync(pending.Select(request => new CreateNotificationRequest(
+            request.RequestedByUserId,
+            "V1FundActivity",
+            "Yêu cầu chi/rút đã hủy",
+            message,
+            new
+            {
+                FundId = fund.Id,
+                RequestId = request.Id,
+                Kind = request.Kind,
+                State = "Cancelled",
+                Reason = reason,
+                ResubmitRequired = reason == "OwnershipChanged"
+            })).ToList(), ct);
+    }
 
     public async Task<IReadOnlyList<V1FundRequestDto>> FundRequestsAsync(Guid actor, Guid fundId, int page, int pageSize, CancellationToken ct)
 

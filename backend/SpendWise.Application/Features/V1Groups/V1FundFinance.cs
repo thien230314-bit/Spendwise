@@ -60,11 +60,22 @@ public sealed partial class V1FundService
             var amounts = FixedFundAllocation.Allocate(request.TargetVnd, members.Select(m => m.Seat).ToArray());
             var duration = fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
             var deadline = clock.UtcNow.AddHours(duration);
+            var trackedMembers = await db.V1FundMemberships
+                .Where(m => m.FundId == fundId && m.LeftAt == null)
+                .ToListAsync(token);
+            foreach (var tm in trackedMembers)
+            {
+                if (tm.ContributionDeadline == null)
+                {
+                    tm.ContributionDeadline = deadline;
+                }
+            }
             db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation { FundId = fundId, Revision = treasury.Revision,
                 MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat], Deadline = deadline }));
             await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.TargetVnd, (long?)request.TargetVnd), token);
             await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null && m.ContributionDeadline == null)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.ContributionDeadline, deadline), token);
+            await db.SaveChangesAsync(token);
             await db.V1FundInvitations.Where(i => i.FundId == fundId && i.Status == V1InvitationStatus.Pending && !i.IsReplacement)
                 .ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Cancelled), token);
             await ActivityAsync(fundId, ownerId, "ObligationsConfirmed", token, detail: treasury.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture));

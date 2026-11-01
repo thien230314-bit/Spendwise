@@ -326,6 +326,11 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             {
                 if (!invite.TargetSeat.HasValue || occupied.Contains(invite.TargetSeat.Value))
                     throw new ConflictException("replacement_seat_unavailable", "Ghế chỉ định thay thế không còn trống hoặc không hợp lệ.");
+
+                var treasuryCheck = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
+                if (treasuryCheck?.ReplacementWindowExpiresAt is not null && clock.UtcNow > treasuryCheck.ReplacementWindowExpiresAt)
+                    throw new ConflictException("replacement_window_expired", "Cửa sổ tìm người thay thế 72 giờ của kỳ đã kết thúc.");
+
                 seat = invite.TargetSeat.Value;
             }
             else

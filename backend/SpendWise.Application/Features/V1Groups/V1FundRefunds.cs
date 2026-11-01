@@ -381,6 +381,11 @@ public sealed partial class V1FundService
                 throw new NotFoundException("member_not_found", "Target member not found in fund.");
             }
 
+            if (fund.Kind == V1FundKind.Fixed && membership.ContributionDeadline.HasValue && clock.UtcNow < membership.ContributionDeadline.Value)
+            {
+                throw new ConflictException("member_deadline_active", "Không được loại thành viên khi thời hạn đóng góp cá nhân vẫn còn hiệu lực.");
+            }
+
             if (fund.Kind == V1FundKind.Free)
             {
                 var hasPaymentProcessing = await db.V1FundRequests.AsNoTracking()

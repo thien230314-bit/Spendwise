@@ -9,6 +9,7 @@ public sealed class V1FundTreasury : BaseEntity
     public long Revision { get; set; }
     public long? TargetVnd { get; set; }
     public string MembershipSignature { get; set; } = string.Empty;
+    public DateTime? ReplacementWindowExpiresAt { get; set; }
 }
 
 public sealed class V1FundObligation : BaseEntity

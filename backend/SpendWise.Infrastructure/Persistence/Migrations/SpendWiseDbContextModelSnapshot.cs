@@ -869,6 +869,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<int?>("RecipientLimit")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("ReplacementWindowExpiresAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<long>("Revision")
                         .HasColumnType("bigint");
 

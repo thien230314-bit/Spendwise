@@ -5,6 +5,7 @@
 **Căn cứ nghiệp vụ**: `User.md` (Phiên bản chốt Free Fund V1 ngày 01/11/2026)  
 **AI Reviewer**: ChatGPT SpendWise (Autonomous Agent-to-ChatGPT Review Loop)  
 **Ngày nghiệm thu**: 01/11/2026  
+**Artifact kiểm chứng**: `backend/tests/SpendWise.Tests/TestResults/spendwise_freefund_v1_acceptance.trx`  
 
 ---
 
@@ -22,28 +23,29 @@
 
 ## 2. BẰNG CHỨNG KIỂM THỬ THỰC TẾ (100/100 PASS — 100% GREEN)
 
-Toàn bộ 100 bài kiểm thử thuộc bộ kiểm thử quỹ SpendWise (Free Fund V1 + Fixed Fund V2 + Regression) đã chạy và đạt **100% PASS (0 Failed, 0 Skipped)**:
+Toàn bộ 100 bài kiểm thử thuộc bộ kiểm thử quỹ SpendWise (Free Fund V1 + Fixed Fund V2 + Regression) đã chạy thành công qua runner chính thức và xuất file kết quả kiểm chứng TRX:
 
 ```text
 Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\Debug\net10.0\SpendWise.Tests.dll (.NETCoreApp,Version=v10.0)
 A total of 1 test files matched the specified pattern.
+Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\spendwise_freefund_v1_acceptance.trx
 
-Passed!  - Failed:     0, Passed:   100, Skipped:     0, Total:   100, Duration: 1 m 20 s - SpendWise.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:   100, Skipped:     0, Total:   100, Duration: 1 m 14 s - SpendWise.Tests.dll (net10.0)
 ```
 
-### Giải trình chi tiết phân rã số lượng bài kiểm thử (100 Tests):
-Filter `FullyQualifiedName~FreeFund|FullyQualifiedName~FixedFundV2` khớp chính xác 100 test cases, bao gồm **95 bài kiểm thử trọng tâm** thuộc 6 file test chính của V1 Funds và **5 bài kiểm thử hồi quy lịch sử** khớp từ khóa `FreeFund`:
+### Phân rã cấu trúc bài kiểm thử (100 Tests):
+Filter `FullyQualifiedName~FreeFund|FullyQualifiedName~FixedFundV2` khớp chính xác 100 test cases, bao gồm **95 bài kiểm thử trọng tâm** thuộc 6 file test chính của V1 Funds và **5 bài kiểm thử hồi quy lịch sử**:
 
 1. **`FreeFundFinalAcceptanceTests`** (4 tests - PASS):
-   - `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`: Kiểm thử toàn diện vòng đời thực tế gồm chi tiêu đã giải ngân (`Completed`), rút vốn cá nhân (`Withdrawal`), bảo lưu chi tiêu (`ApprovedUnused`), tự động hủy bảo lưu khi thành viên rời quỹ, kick thành viên, giải tán quỹ (`Dissolve`), và đối soát bảo toàn vốn tuyệt đối.
-   - `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_WithIndependentDbContexts`: Kiểm thử đồng thời đa DbContext (5 luồng chạy song song với các instance DbContext và Service độc lập trên cùng một kết nối) với cùng Idempotency Key, xác minh bảo vệ chống ghi đúp (deduplication) và toàn vẹn số dư sổ cái.
-   - `FixedFundV2_BackwardCompatibility_PreservedAndUnmodified`: Kiểm thử tính tương thích ngược của Quỹ Cố định (Fixed Fund V2), đảm bảo các quy tắc phân quyền, bắt buộc nghĩa vụ đóng góp và cấu trúc quỹ cũ không bị phá vỡ.
-   - `FreeFund_HttpApi_OpenApiContract_SmokeTest`: Kiểm thử smoke test các giao thức HTTP API theo OpenAPI contract (`GET /equity`, `GET /refund-preview`, `GET /requests/{id}`) với kiểm tra phân quyền bảo mật nhiều tầng.
+   - `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`: Kiểm thử toàn diện vòng đời thực tế gồm chi tiêu đã giải ngân (`Completed` 100k), rút vốn cá nhân (`Withdrawal` 50k), bảo lưu chi tiêu (`ApprovedUnused` 50k), tự động hủy bảo lưu khi thành viên rời quỹ, kick thành viên, giải tán quỹ (`Dissolve`), và đối soát bảo toàn vốn tuyệt đối.
+   - `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_OnSqlServer_WithIndependentConnections`: Kiểm thử đồng thời đa kết nối thực tế trên SQL Server (`DESKTOP-B5KA3LT\SQLEXPRESS02`), sử dụng catalog độc lập (`SpendWise_GroupFundS052_Test_*`). 5 luồng worker chạy song song với 5 kết nối SQL Server và `SpendWiseDbContext` độc lập cùng gửi đóng góp với IDENTICAL idempotency key. Xác minh đúng 1 `LedgerTransaction` và 1 `FinancialTransaction`, số dư quỹ và ví khớp tuyệt đối. Dọn dẹp sạch sẽ catalog sau kiểm thử.
+   - `FixedFundV2_BackwardCompatibility_WithLegacyRefundScope_PreservedAndUnmodified`: Kiểm thử tính tương thích ngược của Quỹ Cố định (Fixed Fund V2) với định dạng refund scope lịch sử `v1-fund-refund:{fundId:N}:{membershipId:N}`, kiểm tra cơ chế replay trả về `CaseType == "Replayed"` mà không tạo bút toán trùng lặp, và khấu trừ chính xác trong các kỳ tính toán tiếp theo.
+   - `FreeFund_HttpApi_OpenApiContract_RealServerSmokeTest`: Kiểm thử HTTP server thực tế qua `SpendWiseApiFactory`. Xác minh hợp đồng OpenAPI (`/openapi/v1.json`), kiểm tra mã lỗi 401 khi chưa xác thực, gọi HTTP `POST /api/v1/funds` tạo quỹ, `POST /api/v1/funds/{id}/contributions` nạp tiền, `GET /api/v1/funds/{id}/equity` lấy vốn ròng, `GET /api/v1/funds/{id}/refund-preview` xem trước hoàn tiền, và 404/403 đối với thành viên ngoại vi.
 2. **`FreeFundApiContractNotificationTests`** (9 tests - PASS):
    - Đảm bảo quyền riêng tư thông báo (Notification) và nhật ký hoạt động (Activity Feed) cho các yêu cầu cá nhân (Rút vốn / Hủy tự động / Chi tiêu).
    - Che giấu mô tả nhạy cảm trong lịch sử giao dịch đối với các thành viên khác (`"Rút vốn thành viên"`, `RelatedRequestId = null`).
 3. **`FreeFundMembershipRefundTests`** (15 tests - PASS):
-   - Rời nhóm, kick, giải tán, cô lập membership episode idempotency (`v1-fund-refund:{fundId}:{membershipId}`), hủy quyền chi tiêu ApprovedUnused mới nhất trước khi quỹ thiếu thanh khoản.
+   - Rời nhóm, kick, giải tán, cô lập membership episode idempotency, hủy quyền chi tiêu ApprovedUnused mới nhất trước khi quỹ thiếu thanh khoản.
 4. **`FreeFundRequestWorkflowTests`** (17 tests - PASS):
    - Luồng duyệt chi tiêu/rút vốn, quản lý bảo lưu ApprovedUnused, chặn rút vốn khi có chi tiêu chưa hoàn tất, tự động hủy rút vốn khi vốn không đủ sau chi tiêu chung.
 5. **`FreeFundEquityEngineTests` & `FreeFundEquityIntegrationTests`** (20 tests - PASS):
@@ -56,7 +58,6 @@ Filter `FullyQualifiedName~FreeFund|FullyQualifiedName~FixedFundV2` khớp chín
    - `Task16_2_AdversarialAuditTests.CaseR1_FreeFund_...` (1 test)
    - `Task16_2_AdversarialAuditTests.CaseR7_FreeFund_...` (1 test)
    - `V1FundRefundRegressionTests.CaseC_FreeFund_...` (2 tests)
-   - Tổng cộng: $95 + 5 = 100$ tests.
 
 ---
 
@@ -119,4 +120,4 @@ $$\sum \text{Ví cuối} + \text{Số dư quỹ} = 1.050.000 + 970.000 + 980.000
 
 ## 5. KẾT LUẬN
 
-Backend SpendWise Free Fund V1 đã hoàn thành đầy đủ các tiêu chuẩn kiến trúc, an toàn tài chính, tính nhất quán dữ liệu, xử lý tranh chấp đồng thời đa DbContext và bảo mật thông tin cá nhân. Nhánh `feature/free-fund-v1-remake` hoàn tất toàn bộ 5 Stages và sẵn sàng đóng nghiệm thu chính thức (`SW_GATE: COMPLETE`).
+Backend SpendWise Free Fund V1 đã hoàn thành đầy đủ các tiêu chuẩn kiến trúc, an toàn tài chính, tính nhất quán dữ liệu, xử lý tranh chấp đồng thời đa kết nối SQL Server, tương thích ngược với legacy refund scope và kiểm chứng HTTP / OpenAPI thực tế. Nhánh `feature/free-fund-v1-remake` hoàn tất toàn bộ 5 Stages và sẵn sàng đóng nghiệm thu chính thức (`SW_GATE: COMPLETE`).

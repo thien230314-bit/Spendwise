@@ -193,10 +193,11 @@ public sealed partial class V1FundService
 
         var requests = await db.V1FundRequests.AsNoTracking()
             .Where(r => r.FundId == fundId)
-            .Select(r => new { r.Id, r.Kind, r.RequestedByUserId, r.CreatedAt })
+            .Select(r => new { r.Id, r.Kind, r.RequestedByUserId, r.CreatedAt, r.OwnershipRevision })
             .ToDictionaryAsync(r => r.Id, ct);
         var requestIds = requests.Keys.ToList();
         var actorRequestIds = requests.Values.Where(r => r.RequestedByUserId == actor).Select(r => r.Id).ToHashSet();
+        var oldTenureRequestIds = requests.Values.Where(r => r.OwnershipRevision < fund.OwnershipRevision && r.RequestedByUserId != actor).Select(r => r.Id).ToHashSet();
 
         var rows = await (
             from ft in db.FinancialTransactions.AsNoTracking()
@@ -204,8 +205,8 @@ public sealed partial class V1FundService
             from user in uGroup.DefaultIfEmpty()
             where (ft.RelatedBusinessId == fundId || (ft.RelatedBusinessId.HasValue && requestIds.Contains(ft.RelatedBusinessId.Value)))
                   && ft.Status == FinancialTransactionStatus.Completed
-                  && ((isOwner && !becameOwnerAt.HasValue)
-                      || (becameOwnerAt.HasValue && ft.OccurredAt >= becameOwnerAt.Value)
+                  && ((isOwner && fund.OwnershipRevision == 0)
+                      || (isOwner && fund.OwnershipRevision > 0 && (!ft.RelatedBusinessId.HasValue || !oldTenureRequestIds.Contains(ft.RelatedBusinessId.Value)) && (!becameOwnerAt.HasValue || ft.OccurredAt >= becameOwnerAt.Value))
                       || db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == actor
                           && m.JoinedAt <= ft.OccurredAt && (m.LeftAt == null || ft.OccurredAt <= m.LeftAt)))
                   && (isCurrentMember || ft.OwnerUserId == actor || (ft.RelatedBusinessId.HasValue && actorRequestIds.Contains(ft.RelatedBusinessId.Value)))
@@ -224,7 +225,9 @@ public sealed partial class V1FundService
         return rows.Select(r =>
         {
             var req = r.RelatedRequestId.HasValue && requests.TryGetValue(r.RelatedRequestId.Value, out var foundReq) ? foundReq : null;
-            var isHistoricalBeforeOwnership = isOwner && becameOwnerAt.HasValue && r.Transaction.OccurredAt < becameOwnerAt.Value;
+            var isHistoricalBeforeOwnership = isOwner && fund.OwnershipRevision > 0 &&
+                ((req != null && req.OwnershipRevision < fund.OwnershipRevision) ||
+                 (becameOwnerAt.HasValue && r.Transaction.OccurredAt < becameOwnerAt.Value));
             var isPrivileged = (!isHistoricalBeforeOwnership && isOwner) || (req != null && req.RequestedByUserId == actor);
 
             var description = r.Transaction.Description ?? "";

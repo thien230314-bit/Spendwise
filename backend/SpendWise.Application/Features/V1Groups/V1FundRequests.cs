@@ -653,9 +653,9 @@ public sealed partial class V1FundService
         {
             query = query.Where(x => x.RequestedByUserId == actor);
         }
-        else if (becameOwnerAt.HasValue)
+        else if (fund.OwnershipRevision > 0)
         {
-            query = query.Where(x => x.CreatedAt >= becameOwnerAt.Value || x.RequestedByUserId == actor);
+            query = query.Where(x => (x.OwnershipRevision >= fund.OwnershipRevision && (!becameOwnerAt.HasValue || x.CreatedAt >= becameOwnerAt.Value)) || x.RequestedByUserId == actor);
         }
 
         var rows = await query

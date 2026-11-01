@@ -203,9 +203,14 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
 
         var isOwner = fund.OwnerUserId == userId;
         DateTime? becameOwnerAt = null;
+        var oldTenureRequestIds = new List<Guid>();
         if (isOwner && fund.OwnershipRevision > 0)
         {
             becameOwnerAt = await GetOwnerTenureStartedAtAsync(fund.Id, userId, fund.OwnershipRevision, ct);
+            oldTenureRequestIds = await db.V1FundRequests.AsNoTracking()
+                .Where(r => r.FundId == fundId && r.OwnershipRevision < fund.OwnershipRevision && r.RequestedByUserId != userId)
+                .Select(r => r.Id)
+                .ToListAsync(ct);
         }
 
         var privateRequestEvents = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -233,9 +238,14 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         {
             query = query.Where(a => !privateRequestEvents.Contains(a.Event) || a.ActorUserId == userId || a.SubjectUserId == userId);
         }
-        else if (becameOwnerAt.HasValue)
+        else if (fund.OwnershipRevision > 0)
         {
-            query = query.Where(a => !privateRequestEvents.Contains(a.Event) || a.CreatedAt >= becameOwnerAt.Value || a.ActorUserId == userId || a.SubjectUserId == userId);
+            query = query.Where(a =>
+                (!privateRequestEvents.Contains(a.Event) && (!becameOwnerAt.HasValue || a.CreatedAt >= becameOwnerAt.Value))
+                || (privateRequestEvents.Contains(a.Event)
+                    && (!a.ReferenceId.HasValue || !oldTenureRequestIds.Contains(a.ReferenceId.Value))
+                    && (!becameOwnerAt.HasValue || a.CreatedAt >= becameOwnerAt.Value))
+                || a.ActorUserId == userId || a.SubjectUserId == userId);
         }
 
         return await query

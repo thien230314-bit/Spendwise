@@ -588,6 +588,9 @@ public sealed class FixedFundV2Stage4Tests
         var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
         await using var _ = f;
 
+        // Set member A's required obligation to 2,000,000 VND (paid was only 1,000,000 VND), creating an actual deficit
+        var oblA = await f.Db.V1FundObligations.SingleAsync(o => o.FundId == fund.Id && o.UserId == memberA.Id);
+        oblA.RequiredVnd = 2_000_000;
         // Set contribution deadlines on members
         var memA = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberA.Id);
         memA.ContributionDeadline = clock.UtcNow.AddHours(2);
@@ -606,7 +609,7 @@ public sealed class FixedFundV2Stage4Tests
         Assert.False(res.Dissolved);
         Assert.Empty(res.AutoKickedUserIds);
 
-        // Verify member A was NOT kicked and remains active
+        // Verify member A was NOT kicked and remains active despite the deficit
         var memACheck = await f.Db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.Id == memA.Id);
         Assert.Null(memACheck.LeftAt);
 
@@ -629,7 +632,9 @@ public sealed class FixedFundV2Stage4Tests
         await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
 
         // Now election failed. FinishedAt is now.
-        // Set an expired owner deadline
+        // Set owner's required obligation to 2,000,000 VND (paid was only 1,000,000 VND), creating an actual deficit
+        var oblOwner = await f.Db.V1FundObligations.SingleAsync(o => o.FundId == fund.Id && o.UserId == owner.Id);
+        oblOwner.RequiredVnd = 2_000_000;
         var ownerMem = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == owner.Id);
         ownerMem.ContributionDeadline = clock.UtcNow.AddMinutes(30);
         await f.Db.SaveChangesAsync();
@@ -727,7 +732,9 @@ public sealed class FixedFundV2Stage4Tests
         await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
 
         // 1. Member A opts out voluntarily during the 24h window after failed election
-        await service.LeaveFundAsync(memberA.Id, fund.Id, new V1LeaveFundRequest(Pin, Guid.NewGuid().ToString("N")), default);
+        var refund = await service.LeaveFundAsync(memberA.Id, fund.Id, new V1LeaveFundRequest(Pin, Guid.NewGuid().ToString("N")), default);
+        Assert.True(refund.RefundAmountVnd > 0);
+        Assert.NotNull(refund.LedgerTransactionId);
 
         // Verify Member A has LeftAt != null
         var memA = await f.Db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fund.Id && m.UserId == memberA.Id);
@@ -760,7 +767,9 @@ public sealed class FixedFundV2Stage4Tests
         // 3. Former Member A queries fund transactions
         var txs = await service.FundTransactionsAsync(memberA.Id, fund.Id, 1, 50, default);
 
-        // Former member CAN query and see their own transactions (or refund receipts)
+        // Former member CAN query and see their own transactions (and refund receipts)
+        Assert.NotEmpty(txs);
+        Assert.Contains(txs, t => t.AmountVnd == refund.RefundAmountVnd);
         // BUT CANNOT see post-leave transaction
         Assert.DoesNotContain(txs, t => t.Id == postLeaveTx.Id);
         // And cannot see other members' transactions occurred after left
@@ -773,5 +782,42 @@ public sealed class FixedFundV2Stage4Tests
         var stranger = await f.AddUserAsync("Stranger User");
         await Assert.ThrowsAsync<NotFoundException>(() =>
             service.FundTransactionsAsync(stranger.Id, fund.Id, 1, 50, default));
+    }
+
+    [Fact]
+    public async Task T39_P1_SameTimestamp_RequestAndOwnershipTransfer_ConsistentlyProtectedAcrossAll4Apis()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // 1. Founder creates private expense request at timestamp T (OwnershipRevision = 0)
+        var req1 = await service.CreateFundRequestAsync(owner.Id, fund.Id,
+            new V1FundRequestInput("Expense", 500_000, owner.Id, "Founder Secret Expense", Guid.NewGuid().ToString("N"), Pin), default);
+
+        // 2. Founder offers and member A accepts ownership at THE EXACT SAME TIMESTAMP T (clock is NOT advanced!)
+        var offer = await service.OfferOwnershipAsync(owner.Id, fund.Id, memberA.Id, Pin, default);
+        await service.AcceptOwnershipAsync(memberA.Id, offer.Id, Pin, default);
+
+        // Verify fund is now revision 1 and owner is member A
+        var fundDb = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.Equal(memberA.Id, fundDb.OwnerUserId);
+        Assert.Equal(1, fundDb.OwnershipRevision);
+
+        // 3. API 1: GetFundRequestAsync - throws ForbiddenException because req1 belongs to Revision 0
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.GetFundRequestAsync(memberA.Id, req1.Id, default));
+
+        // 4. API 2: FundRequestsAsync - does NOT return req1 even though CreatedAt == becameOwnerAt!
+        var requestsA = await service.FundRequestsAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.DoesNotContain(requestsA, r => r.Id == req1.Id);
+
+        // 5. API 3: ActivitiesAsync - does NOT return private request events for req1
+        var activitiesA = await service.ActivitiesAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.DoesNotContain(activitiesA, a => a.ReferenceId == req1.Id);
+
+        // 6. API 4: FundTransactionsAsync - transactions tied to req1 are not privileged, description masked or omitted
+        var txs = await service.FundTransactionsAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.DoesNotContain(txs, t => t.RelatedRequestId == req1.Id);
+        Assert.DoesNotContain(txs, t => t.Description.Contains("Founder Secret Expense"));
     }
 }

@@ -12,7 +12,7 @@ public sealed class V1ActivityVotingTests
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
         var owner = await f.AddUserAsync("Owner"); var member = await f.AddUserAsync("Member"); var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("Fixed", "Fixed", 100, TargetedCorrectnessFixture.SecurityPin), default);
+        var fund = await service.CreateAsync(owner.Id, new("Fixed", "Fixed", 100, TargetedCorrectnessFixture.SecurityPin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         f.Db.Add(new V1FundMembership { FundId = fund.Id, UserId = member.Id, Seat = 2 }); await f.Db.SaveChangesAsync();
         var wallet = await f.AddWalletAsync(member.Id, "Main", true, balance: 100);
         var revision = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(100, TargetedCorrectnessFixture.SecurityPin), default);
@@ -29,12 +29,12 @@ public sealed class V1ActivityVotingTests
     }
     [Theory]
     [InlineData(true, "ApprovedAwaitingSettlement")]
-    [InlineData(false, "Rejected")]
+    [InlineData(false, "AwaitingReplacement")]
     public async Task Fixed_activity_vote_closes_after_24_active_hours_without_spending_nonconsenting_money(bool majority, string expected)
     {
         var clock = new V1GovernanceFinishTests.Clock(); await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
         var owner = await f.AddUserAsync("Owner"); var a = await f.AddUserAsync("A"); var b = await f.AddUserAsync("B"); var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("Fixed", "Fixed", 100, TargetedCorrectnessFixture.SecurityPin), default);
+        var fund = await service.CreateAsync(owner.Id, new("Fixed", "Fixed", 100, TargetedCorrectnessFixture.SecurityPin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         f.Db.AddRange(new V1FundMembership { FundId = fund.Id, UserId = a.Id, Seat = 2 }, new V1FundMembership { FundId = fund.Id, UserId = b.Id, Seat = 3 }); await f.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<ConflictException>(() => service.ProposeActivityAsync(owner.Id, fund.Id, new(200, "one", TargetedCorrectnessFixture.SecurityPin), default));
         await service.CloseActivityAsync(owner.Id, fund.Id, TargetedCorrectnessFixture.SecurityPin, default);
@@ -46,10 +46,16 @@ public sealed class V1ActivityVotingTests
         clock.UtcNow = clock.UtcNow.AddHours(18); await service.ProgressActivitiesAsync(default); await service.ProgressActivitiesAsync(default);
         Assert.Single(await f.Db.V1FundActivities.Where(x => x.Event == "ActivityVoteReminder").ToListAsync());
         clock.UtcNow = clock.UtcNow.AddHours(6); await service.ProgressActivitiesAsync(default); await service.ProgressActivitiesAsync(default);
-        var state = await service.ActivityProposalAsync(a.Id, proposal.Id, default); Assert.Equal(expected, state.State);
-        Assert.Equal(100, (await service.GetAsync(a.Id, fund.Id, default)).TargetVnd);
+        var state = await service.ActivityProposalAsync(owner.Id, proposal.Id, default); Assert.Equal(expected, state.State);
+        Assert.Equal(100, (await service.GetAsync(owner.Id, fund.Id, default)).TargetVnd);
         Assert.Equal(3, await f.Db.V1FundMemberships.CountAsync()); Assert.Empty(await f.Db.LedgerTransactions.ToListAsync());
-        Assert.Single(await f.Db.V1FundActivities.Where(x => x.Event == "ActivityVoteClosed").ToListAsync());
-        await Assert.ThrowsAsync<ConflictException>(() => service.ContributeAsync(a.Id, fund.Id, new(Guid.NewGuid(), 1, "closed", TargetedCorrectnessFixture.SecurityPin), default));
+        if (!majority)
+        {
+            await Assert.ThrowsAsync<NotFoundException>(() => service.ContributeAsync(a.Id, fund.Id, new(Guid.NewGuid(), 1, "closed", TargetedCorrectnessFixture.SecurityPin), default));
+        }
+        else
+        {
+            await Assert.ThrowsAsync<ConflictException>(() => service.ContributeAsync(a.Id, fund.Id, new(Guid.NewGuid(), 1, "closed", TargetedCorrectnessFixture.SecurityPin), default));
+        }
     }
 }

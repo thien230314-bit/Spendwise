@@ -83,6 +83,10 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
         return funds.VoteActivityAsync(Actor, id, support, ct);
     }
 
+    [HttpPost("activity-proposals/{id:guid}/cancel"), EnableRateLimiting("financial")]
+    public Task<V1ActivityProposalDto> CancelActivity(Guid id, V1PinRequest request, CancellationToken ct) =>
+        funds.CancelActivityProposalAsync(Actor, id, request.SecurityPin, ct);
+
     [HttpPost("{id:guid}/elections")]
     [EnableRateLimiting("financial")]
     public Task<V1ElectionDto> OpenElection(Guid id, V1OpenElectionRequest request, CancellationToken ct) => funds.OpenElectionAsync(Actor, id, request, ct);

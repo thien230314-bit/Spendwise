@@ -585,4 +585,102 @@ public sealed class FixedFundV2Stage2Tests
             service.AcceptAsync(replacement.Id, invRep.Id, true, "v2.0", default));
         Assert.Equal("replacement_window_expired", ex.Code);
     }
+
+    [Fact]
+    public async Task T16_Worker_FundA_Fails_FundB_ProcessesSuccessfully_WithIsolatedDbContexts()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerT16A");
+        var memberA = await f.AddUserAsync("MemberT16A");
+        var ownerB = await f.AddUserAsync("OwnerT16B");
+        var memberB = await f.AddUserAsync("MemberT16B");
+
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberA.Id);
+        await V1FundMembershipTests.MakeFriends(f, ownerB.Id, memberB.Id);
+
+        var service = CreateService(f.Db, clock, f);
+
+        // Fund A
+        var fundA = await service.CreateAsync(ownerA.Id, new("FundT16A", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var invA = await service.InviteAsync(ownerA.Id, fundA.Id, memberA.Id, default);
+        await service.AcceptAsync(memberA.Id, invA.Id, true, "v2.0", default);
+        var configA = await service.ConfirmObligationsAsync(ownerA.Id, fundA.Id, new(4_000_000, Pin), default);
+        var oWalletA = await f.AddWalletAsync(ownerA.Id, "OWalletT16A", true, balance: 2_000_000);
+        await service.ContributeAsync(ownerA.Id, fundA.Id, new(oWalletA.Id, 2_000_000, "o-a-t16", Pin, configA.Revision), default);
+
+        // Fund B
+        var fundB = await service.CreateAsync(ownerB.Id, new("FundT16B", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var invB = await service.InviteAsync(ownerB.Id, fundB.Id, memberB.Id, default);
+        await service.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
+        var configB = await service.ConfirmObligationsAsync(ownerB.Id, fundB.Id, new(4_000_000, Pin), default);
+        var oWalletB = await f.AddWalletAsync(ownerB.Id, "OWalletT16B", true, balance: 2_000_000);
+        await service.ContributeAsync(ownerB.Id, fundB.Id, new(oWalletB.Id, 2_000_000, "o-b-t16", Pin, configB.Revision), default);
+
+        // Advance 25h past deadline
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+
+        // Delete Member A's wallets so Auto-Kick refund throws an exception during Fund A processing
+        var aWallets = await f.Db.Wallets.Where(w => w.OwnerUserId == memberA.Id).ToListAsync();
+        f.Db.Wallets.RemoveRange(aWallets);
+        await f.Db.SaveChangesAsync();
+
+        // Worker executes ProgressFixedFundDeadlinesAsync:
+        // Fund A fails and is caught/isolated safely
+        // Fund B MUST succeed completely without being affected by Fund A's failure!
+        var processed = await service.ProgressFixedFundDeadlinesAsync(default);
+        Assert.True(processed >= 1);
+
+        // Verify Fund B succeeded: Member B was auto-kicked and 72h window opened
+        var treasuryB = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fundB.Id);
+        Assert.NotNull(treasuryB.ReplacementWindowExpiresAt);
+        var membersB = await service.MembersAsync(ownerB.Id, fundB.Id, default);
+        Assert.Single(membersB);
+    }
+
+    [Fact]
+    public async Task T17_SystemEvents_AutoKickAndFundingFailure_DoNotUpdateUserLastActionAt()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT17");
+        var member = await f.AddUserAsync("MemberT17");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT17", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT17", true, balance: 2_000_000);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-t17", Pin, config.Revision), default);
+
+        // Record member's baseline LastActionAt
+        var initialAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member.Id);
+        var baselineLastActionAt = initialAction?.LastActionAt;
+
+        // Advance 25h past deadline
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+
+        // Auto-Kick triggered by system worker
+        var result = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("MembersAutoKicked", result.Status);
+
+        // 1. Audit Activity recorded with ActorUserId == null (System Event) and SubjectUserId == member.Id
+        var autoKickActivity = await f.Db.V1FundActivities.AsNoTracking()
+            .SingleAsync(a => a.FundId == fund.Id && a.Event == "MemberAutoKicked");
+        Assert.Null(autoKickActivity.ActorUserId);
+        Assert.Equal(member.Id, autoKickActivity.SubjectUserId);
+
+        // 2. Member's LastActionAt in V1UserActivities was NOT updated by Auto-Kick!
+        var afterAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member.Id);
+        Assert.Equal(baselineLastActionAt, afterAction?.LastActionAt);
+
+        // 3. Notification was delivered to the auto-kicked member
+        var notifications = await f.Db.Notifications.AsNoTracking()
+            .Where(n => n.UserId == member.Id)
+            .ToListAsync();
+        Assert.NotEmpty(notifications);
+    }
 }

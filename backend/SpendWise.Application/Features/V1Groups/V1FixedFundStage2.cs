@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.V1Groups;
@@ -22,15 +24,29 @@ public sealed partial class V1FundService
             if (ct.IsCancellationRequested) break;
             try
             {
-                var res = await ProcessFixedFundDeadlinesAsync(fundId, ct);
-                if (res.Status != "NoAction")
+                if (scopes is not null)
                 {
-                    processed++;
+                    using var fundScope = scopes.CreateScope();
+                    var scopedService = fundScope.ServiceProvider.GetRequiredService<V1FundService>();
+                    var res = await scopedService.ProcessFixedFundDeadlinesAsync(fundId, ct);
+                    if (res.Status != "NoAction")
+                    {
+                        processed++;
+                    }
+                }
+                else
+                {
+                    var res = await ProcessFixedFundDeadlinesAsync(fundId, ct);
+                    if (res.Status != "NoAction")
+                    {
+                        processed++;
+                    }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Isolate per-fund failure so scheduler continues safely
+                logger?.LogError(ex, "Failed processing fixed fund deadlines for FundId {FundId} ({ErrorType}): {Message}",
+                    fundId, ex.GetType().Name, ex.Message);
             }
         }
         return processed;
@@ -68,9 +84,12 @@ public sealed partial class V1FundService
                 var ownerPaid = paidDict.GetValueOrDefault(ownerMem.Id, 0L);
                 if (ownerPaid < ownerReq)
                 {
+                    var allMembersOnFailure = activeMembers.Select(x => x.UserId).ToList();
                     await AutoDissolveFixedFundAsync(fund, treasury, activeMembers, "OwnerFundingFailure", token);
-                    await ActivityAsync(fundId, fund.OwnerUserId, "OwnerFundingFailed", token,
-                        detail: $"Chủ nhóm không góp đủ nghĩa vụ khi hết hạn ({ownerPaid:N0}/{ownerReq:N0} đ). Kỳ góp thất bại, hệ thống tự giải tán và hoàn tiền.");
+                    await ActivityAsync(fundId, null, "OwnerFundingFailed", token,
+                        subject: fund.OwnerUserId,
+                        detail: $"Chủ nhóm không góp đủ nghĩa vụ khi hết hạn ({ownerPaid:N0}/{ownerReq:N0} đ). Kỳ góp thất bại, hệ thống tự giải tán và hoàn tiền.",
+                        audience: allMembersOnFailure);
                     return new V1DeadlineProcessingResultDto(fundId, "OwnerFundingFailed", Array.Empty<Guid>(), true);
                 }
             }
@@ -132,8 +151,11 @@ public sealed partial class V1FundService
                             treasury.ReplacementWindowExpiresAt = clock.UtcNow.AddHours(72);
                         }
 
-                        await ActivityAsync(fundId, m.UserId, "MemberAutoKicked", token,
-                            detail: $"Thành viên hết hạn đóng góp ({paid:N0}/{req:N0} đ). Hệ thống tự loại (Auto-Kick), hoàn {paid:N0} đ, mở cửa sổ thay thế 72 giờ.");
+                        var allMembersBeforeKick = activeMembers.Select(x => x.UserId).ToList();
+                        await ActivityAsync(fundId, null, "MemberAutoKicked", token,
+                            subject: m.UserId,
+                            detail: $"Thành viên hết hạn đóng góp ({paid:N0}/{req:N0} đ). Hệ thống tự loại (Auto-Kick), hoàn {paid:N0} đ, mở cửa sổ thay thế 72 giờ.",
+                            audience: allMembersBeforeKick);
                     }
                 }
             }
@@ -153,9 +175,12 @@ public sealed partial class V1FundService
             {
                 if (remainingActive.Count < confirmedSeats.Count)
                 {
+                    var allRemainingMembers = activeMembers.Select(x => x.UserId).ToList();
                     await AutoDissolveFixedFundAsync(fund, treasury, remainingActive, "ReplacementWindowExpired", token);
-                    await ActivityAsync(fundId, fund.OwnerUserId, "ReplacementWindowExpired", token,
-                        detail: "Hết cửa sổ tìm người thay thế 72 giờ nhưng vẫn thiếu người. Kỳ góp thất bại, hệ thống tự giải tán và hoàn tiền.");
+                    await ActivityAsync(fundId, null, "ReplacementWindowExpired", token,
+                        subject: null,
+                        detail: "Hết cửa sổ tìm người thay thế 72 giờ nhưng vẫn thiếu người. Kỳ góp thất bại, hệ thống tự giải tán và hoàn tiền.",
+                        audience: allRemainingMembers);
                     return new V1DeadlineProcessingResultDto(fundId, "ReplacementWindowExpired", autoKicked, true);
                 }
             }

@@ -375,14 +375,17 @@ public class FreeFundFinalAcceptanceTests
         await s.ContributeAsync(memberB.Id, fund.Id,
             new(walletB.Id, 100_000, "contrib-compat-b", TargetedCorrectnessFixture.SecurityPin, config.Revision), default);
 
-        // 3. Member B leaves fund -> verify Legacy Refund Scope format:
+        // Advance clock past personal 24h deadline so departure/refund is permitted
+        clock.UtcNow += TimeSpan.FromHours(25);
+
+        // 3. Member B departs fund via KickMemberAsync -> verify Legacy Refund Scope format:
         // Scope is strictly formatted as "v1-fund-refund:{fundId:N}:{membershipId:N}"
         var membershipB = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id);
         var expectedLegacyScope = $"v1-fund-refund:{fund.Id:N}:{membershipB.Id:N}";
 
         var leaveKey = "legacy-scope-leave-key";
-        var leaveResult = await s.LeaveFundAsync(memberB.Id, fund.Id,
-            new(TargetedCorrectnessFixture.SecurityPin, leaveKey), default);
+        var leaveResult = await s.KickMemberAsync(ownerA.Id, fund.Id, memberB.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "Kick for legacy scope test", leaveKey), default);
 
         Assert.Equal(100_000, leaveResult.RefundAmountVnd);
         Assert.Equal("CaseA_Unspent", leaveResult.CaseType);
@@ -399,11 +402,10 @@ public class FreeFundFinalAcceptanceTests
         refundTx.IdempotencyScope = historicalLegacyScope;
         await f.Db.SaveChangesAsync();
 
-        // Member B is already left (membership is null).
         // Idempotent retry with the historical key MUST identify the legacy transaction,
         // MUST NOT double-post, and MUST return the original refund amount (100k, NOT 0):
-        var replayResult = await s.LeaveFundAsync(memberB.Id, fund.Id,
-            new(TargetedCorrectnessFixture.SecurityPin, leaveKey), default);
+        var replayResult = await s.KickMemberAsync(ownerA.Id, fund.Id, memberB.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "Kick replay test", leaveKey), default);
         Assert.Equal("Replayed", replayResult.CaseType);
         Assert.Equal(refundTx.Id, replayResult.LedgerTransactionId);
         Assert.Equal(100_000, replayResult.RefundAmountVnd);
@@ -426,9 +428,13 @@ public class FreeFundFinalAcceptanceTests
         await s.ContributeAsync(memberB.Id, fund.Id,
             new(walletB.Id, 100_000, "contrib-compat-b-ep2", TargetedCorrectnessFixture.SecurityPin, config2.Revision), default);
 
+        // Advance clock past 24h deadline:
+        clock.UtcNow += TimeSpan.FromHours(25);
+
         // Reusing the legacy idempotency key from Episode 1 MUST be strictly rejected with idempotency_conflict:
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            s.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, leaveKey), default));
+            s.KickMemberAsync(ownerA.Id, fund.Id, memberB.Id,
+                new(TargetedCorrectnessFixture.SecurityPin, "Kick reuse key", leaveKey), default));
         Assert.Equal("idempotency_conflict", ex.Code);
 
         // Active membership in Episode 2 is completely protected and still active:

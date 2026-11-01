@@ -67,6 +67,28 @@ public sealed partial class V1FundService
             if (activeProposal)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
 
+            // 0. FAILED ELECTION COMPULSORY DISSOLUTION AFTER 24H (Section 8 & P1-2)
+            var lastFailedElection = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(token);
+
+            if (lastFailedElection != null && lastFailedElection.FinishedAt.HasValue)
+            {
+                var activeMembersSettlement = await ActiveMembersAsync(fundId, token);
+                var onlyOwnerRemaining = activeMembersSettlement.Count == 1 && activeMembersSettlement[0].UserId == fund.OwnerUserId;
+                var isExpired = clock.UtcNow >= lastFailedElection.FinishedAt.Value.AddHours(24);
+
+                if (isExpired || onlyOwnerRemaining)
+                {
+                    var treasurySettlement = await TreasuryAsync(fund, token);
+                    var (totalRefunded, refunds) = await AutoDissolveFixedFundAsync(fund, treasurySettlement, activeMembersSettlement, "FailedElectionSettlement", token);
+                    await ActivityAsync(fundId, null, "FailedElectionSettled", token,
+                        detail: $"Quỹ tự động quyết toán và giải tán sau khi bầu cử thất bại (hoàn {totalRefunded:N0} đ cho {refunds.Count} thành viên).");
+                    return new V1DeadlineProcessingResultDto(fundId, "FailedElectionSettled", Array.Empty<Guid>(), true);
+                }
+            }
+
             var treasury = await TreasuryAsync(fund, token);
             if (treasury.Revision == 0)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
@@ -351,16 +373,20 @@ public sealed partial class V1FundService
             if (activeMembers.All(m => m.UserId != actorUserId))
                 throw new ForbiddenException("not_member", "Only active fund members can trigger settlement.");
 
+            var hasActiveElection = await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
+            if (hasActiveElection)
+                throw new ConflictException("election_in_progress", "An election is currently in progress.");
+
             var lastFailedElection = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null)
+                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
                 .OrderByDescending(e => e.FinishedAt)
                 .FirstOrDefaultAsync(token);
 
             if (lastFailedElection is null)
-                throw new ConflictException("no_failed_election", "Fund does not have a failed election.");
+                throw new ConflictException("no_failed_election", "Fund does not have an active failed election in the current epoch.");
 
             var onlyOwnerRemaining = activeMembers.Count == 1 && activeMembers[0].UserId == fund.OwnerUserId;
-            var isWithin24hOptOut = clock.UtcNow <= lastFailedElection.FinishedAt.Value.AddHours(24);
+            var isWithin24hOptOut = lastFailedElection.FinishedAt.HasValue && clock.UtcNow <= lastFailedElection.FinishedAt.Value.AddHours(24);
 
             if (isWithin24hOptOut && !onlyOwnerRemaining)
             {

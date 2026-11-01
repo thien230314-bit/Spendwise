@@ -115,6 +115,15 @@ public sealed partial class V1FundService
             throw new ConflictException("activity_transition_in_progress", "Membership is frozen until activity voting and settlement finish.");
         if (await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, ct))
             throw new ConflictException("election_in_progress", "Membership and voluntary ownership changes are frozen during an election.");
+
+        var fund = await db.V1Funds.AsNoTracking().FirstOrDefaultAsync(f => f.Id == fundId, ct);
+        if (fund != null && fund.Kind == V1FundKind.Fixed)
+        {
+            var hasFailedElectionPendingSettlement = await db.V1Elections.AnyAsync(e =>
+                e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision, ct);
+            if (hasFailedElectionPendingSettlement)
+                throw new ConflictException("election_failed_pending_settlement", "Operations are frozen following a failed election pending compulsory settlement.");
+        }
     }
     private async Task<bool> PhaseExpiredAsync(V1Election e, CancellationToken ct)
     {

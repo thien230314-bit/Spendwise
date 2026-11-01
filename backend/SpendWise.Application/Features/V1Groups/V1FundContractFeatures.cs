@@ -155,6 +155,18 @@ public sealed partial class V1FundService
         var isOwner = fund.OwnerUserId == actor;
         var isRequester = req.RequestedByUserId == actor;
 
+        if (isOwner && fund.OwnershipRevision > 0 && !isRequester)
+        {
+            var electionWon = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fund.Id && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(ct);
+            if (electionWon != null && electionWon.FinishedAt.HasValue && req.CreatedAt < electionWon.FinishedAt.Value)
+            {
+                throw new ForbiddenException();
+            }
+        }
+
         if (!isOwner && !isRequester)
         {
             throw new ForbiddenException();
@@ -173,10 +185,22 @@ public sealed partial class V1FundService
         var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fundId, ct)
             ?? throw new NotFoundException("fund_not_found", "Fund not found.");
         var isOwner = fund.OwnerUserId == actor;
+        DateTime? becameOwnerAt = null;
+        if (isOwner && fund.OwnershipRevision > 0)
+        {
+            var electionWon = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(ct);
+            if (electionWon != null)
+            {
+                becameOwnerAt = electionWon.FinishedAt;
+            }
+        }
 
         var requests = await db.V1FundRequests.AsNoTracking()
             .Where(r => r.FundId == fundId)
-            .Select(r => new { r.Id, r.Kind, r.RequestedByUserId })
+            .Select(r => new { r.Id, r.Kind, r.RequestedByUserId, r.CreatedAt })
             .ToDictionaryAsync(r => r.Id, ct);
         var requestIds = requests.Keys.ToList();
 
@@ -186,6 +210,8 @@ public sealed partial class V1FundService
             from user in uGroup.DefaultIfEmpty()
             where (ft.RelatedBusinessId == fundId || (ft.RelatedBusinessId.HasValue && requestIds.Contains(ft.RelatedBusinessId.Value)))
                   && ft.Status == FinancialTransactionStatus.Completed
+                  && (isOwner || db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == actor
+                      && m.JoinedAt <= ft.OccurredAt && (m.LeftAt == null || ft.OccurredAt <= m.LeftAt)))
             orderby ft.OccurredAt descending, ft.Id descending
             select new
             {
@@ -201,12 +227,20 @@ public sealed partial class V1FundService
         return rows.Select(r =>
         {
             var req = r.RelatedRequestId.HasValue && requests.TryGetValue(r.RelatedRequestId.Value, out var foundReq) ? foundReq : null;
-            var isPrivileged = isOwner || (req != null && req.RequestedByUserId == actor);
+            var isHistoricalBeforeOwnership = isOwner && becameOwnerAt.HasValue && r.Transaction.OccurredAt < becameOwnerAt.Value;
+            var isPrivileged = (!isHistoricalBeforeOwnership && isOwner) || (req != null && req.RequestedByUserId == actor);
 
             var description = r.Transaction.Description ?? "";
-            if (req != null && req.Kind == "Withdrawal" && !isPrivileged)
+            if (!isPrivileged)
             {
-                description = "Rút vốn thành viên";
+                if (req != null && req.Kind == "Withdrawal")
+                {
+                    description = "Rút vốn thành viên";
+                }
+                else if (isHistoricalBeforeOwnership)
+                {
+                    description = "Chi tiêu quỹ";
+                }
             }
 
             var relatedRequestId = isPrivileged ? r.RelatedRequestId : null;

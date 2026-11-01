@@ -53,8 +53,10 @@ public sealed partial class V1FundService
 
             if (fund.ActivityClosedAt is not null) throw new ConflictException("activity_closed", "Activity is closed.");
             if (fund.DissolvedAt is not null) throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
-            if (await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, token))
-                throw new ConflictException("election_finance_paused", "Financial operations are paused during an active election.");
+            var hasActiveElection = await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
+            var hasFailedElectionPendingSettlement = fund.Kind == V1FundKind.Fixed && await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.OwnershipRevision == fund.OwnershipRevision, token);
+            if (hasActiveElection || hasFailedElectionPendingSettlement)
+                throw new ConflictException("election_finance_paused", "Financial operations are paused during or following a failed election pending settlement.");
 
             if (request.Kind == "Withdrawal" && (fund.Kind != V1FundKind.Free || request.RecipientUserId != actor))
                 throw new ForbiddenException("withdrawal_not_allowed", "Free fund members may request only their own withdrawal.");
@@ -638,6 +640,18 @@ public sealed partial class V1FundService
         }
 
         var isOwner = actor == fund.OwnerUserId;
+        DateTime? becameOwnerAt = null;
+        if (isOwner && fund.OwnershipRevision > 0)
+        {
+            var electionWon = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(ct);
+            if (electionWon != null)
+            {
+                becameOwnerAt = electionWon.FinishedAt;
+            }
+        }
 
         var query = db.V1FundRequests.AsNoTracking()
             .Where(x => x.FundId == fundId);
@@ -645,6 +659,10 @@ public sealed partial class V1FundService
         if (!isOwner)
         {
             query = query.Where(x => x.RequestedByUserId == actor);
+        }
+        else if (becameOwnerAt.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt >= becameOwnerAt.Value || x.RequestedByUserId == actor);
         }
 
         var rows = await query

@@ -164,19 +164,13 @@ public sealed partial class V1FundService
             {
                 var isActivityClosed = fund.ActivityClosedAt != null;
                 var lastFailedElection = await db.V1Elections.AsNoTracking()
-                    .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null)
+                    .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
                     .OrderByDescending(e => e.FinishedAt)
                     .FirstOrDefaultAsync(token);
 
-                var isWithin24hOptOut = lastFailedElection is not null && clock.UtcNow <= lastFailedElection.FinishedAt.Value.AddHours(24);
+                var isWithin24hOptOut = lastFailedElection is not null && lastFailedElection.FinishedAt.HasValue && clock.UtcNow <= lastFailedElection.FinishedAt.Value.AddHours(24);
 
-                var treasuryFixed = await TreasuryAsync(fund, token);
-                var paidDictFixed = await ActivityPaidAsync(fundId, token);
-                var totalPaidFixed = paidDictFixed.Values.Sum();
-                var targetVndFixed = (treasuryFixed.TargetVnd ?? fund.TargetVnd) ?? 0L;
-                var isGroupFundedFixed = targetVndFixed > 0 && totalPaidFixed >= targetVndFixed;
-
-                if (!isWithin24hOptOut && !isActivityClosed && isGroupFundedFixed)
+                if (!isWithin24hOptOut && !isActivityClosed)
                 {
                     throw new ConflictException("fixed_fund_voluntary_leave_disallowed",
                         "Thành viên không được tự ý rời quỹ trong kỳ hoạt động bình thường của Quỹ Cố định.");

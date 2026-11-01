@@ -53,7 +53,10 @@ public sealed partial class V1FundService
                     .FirstOrDefaultAsync(token);
 
                 var ownerLastSeen = lastOwnerActivity ?? fund.CreatedAt;
-                if (clock.UtcNow - ownerLastSeen >= TimeSpan.FromDays(15))
+                var fifteenDaysAgo = clock.UtcNow.AddDays(-15);
+                var hasActiveSessionRecently = await db.UserSessions.AsNoTracking()
+                    .AnyAsync(s => s.UserId == fund.OwnerUserId && s.RevokedAt == null && (s.LastSeenAt >= fifteenDaysAgo || s.CreatedAt >= fifteenDaysAgo), token);
+                if (ownerLastSeen <= fifteenDaysAgo && !hasActiveSessionRecently)
                 {
                     proof = new V1InactivityProof(true, true, $"inactivity:15days:{ownerLastSeen.Ticks}");
                 }

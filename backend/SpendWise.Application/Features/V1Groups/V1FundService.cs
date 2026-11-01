@@ -256,6 +256,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             await LockUsersAsync([ownerId, targetId], token);
             var fund = await LockFundAsync(fundId, token);
             await RequireMemberAsync(ownerId, fundId, token);
+            await RequireNoActiveElectionAsync(fundId, token, allowReplacement: true);
 
             int? replacementSeat = null;
             if (fund.Kind == V1FundKind.Fixed)
@@ -453,6 +454,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 throw new ConflictException("free_fund_ownership_transfer_disallowed", "Quỹ Tự do không cho phép chuyển quyền sở hữu.");
             if (fund.Kind != V1FundKind.Fixed) throw new ConflictException("fixed_fund_required", "Free funds use withdrawal approval, not direct spending permission.");
             if (memberId == fund.OwnerUserId) throw new ConflictException("owner_spending_permission_invalid", "Owner does not need spending permission and cannot be modified.");
+            await RequireNoActiveElectionAsync(fundId, token);
 
             var targetMembership = await db.V1FundMemberships.SingleOrDefaultAsync(m => m.FundId == fundId && m.UserId == memberId && m.LeftAt == null, token)
                 ?? throw new NotFoundException("fund_member_not_found", "Active member not found.");
@@ -496,6 +498,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 throw new ConflictException("free_fund_ownership_transfer_disallowed", "Quỹ Tự do không cho phép chuyển quyền sở hữu.");
             if (ownerId == recipientId) throw new AppException("ownership_self_forbidden", "Choose another member.");
             await RequireMemberAsync(recipientId, fundId, token);
+            await RequireNoActiveElectionAsync(fundId, token);
             var existing = await db.V1OwnershipOffers.AsNoTracking().SingleOrDefaultAsync(o => o.FundId == fundId
                 && o.FromUserId == ownerId && o.ToUserId == recipientId && o.ExpectedOwnershipRevision == fund.OwnershipRevision
                 && o.AcceptedAt == null, token);

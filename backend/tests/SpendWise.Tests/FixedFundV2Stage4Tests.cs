@@ -356,4 +356,157 @@ public sealed class FixedFundV2Stage4Tests
         var listMemberA = await service.ListAsync(memberA.Id, default);
         Assert.DoesNotContain(listMemberA, x => x.Id == fund.Id);
     }
+
+    [Fact]
+    public async Task T28_P1_1_VoluntaryLeaveDisallowed_UnlessOptOutOrClosed()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // In normal operating cycle, voluntary leave is strictly disallowed
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.LeaveFundAsync(memberA.Id, fund.Id, new V1LeaveFundRequest(Pin, "leave-now"), default));
+        Assert.Equal("fixed_fund_voluntary_leave_disallowed", ex.Code);
+    }
+
+    [Fact]
+    public async Task T29_P1_2_AutomatedWorkerCompulsorySettlement_After24h()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // Advance 25 hours past election failure
+        clock.Advance(TimeSpan.FromHours(25));
+
+        // Background worker deadline progression runs
+        var processedCount = await service.ProgressFixedFundDeadlinesAsync(default);
+        Assert.True(processedCount >= 1);
+
+        // Verify fund is dissolved
+        var dbFund = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.NotNull(dbFund.DissolvedAt);
+
+        // Treasury balance is 0
+        var treasury = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+        var treasuryAcc = await f.Db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(0, treasuryAcc.Balance);
+    }
+
+    [Fact]
+    public async Task T30_P1_3_IncumbentOwnerOperationsFrozen_AfterElectionFailure()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // Within the 24h failed election window:
+        // 1. Incumbent owner expense request is frozen
+        var exExp = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(owner.Id, fund.Id, new V1FundRequestInput("Expense", 100_000, owner.Id, "Freeze test", "freeze-exp", Pin), default));
+        Assert.Equal("election_finance_paused", exExp.Code);
+
+        // 2. Incumbent owner kick member is frozen
+        var exKick = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.KickMemberAsync(owner.Id, fund.Id, memberA.Id, new V1KickMemberRequest(Pin, "freeze-kick", "freeze reason"), default));
+        Assert.Equal("election_failed_pending_settlement", exKick.Code);
+
+        // 3. Incumbent owner close activity is frozen
+        var exClose = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CloseActivityAsync(owner.Id, fund.Id, Pin, default));
+        Assert.Equal("election_failed_pending_settlement", exClose.Code);
+
+        // 4. Incumbent owner invite member is frozen
+        var newUser = await f.AddUserAsync("New Invited User");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, newUser.Id);
+        var exInvite = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.InviteAsync(owner.Id, fund.Id, newUser.Id, default));
+        Assert.Equal("election_failed_pending_settlement", exInvite.Code);
+    }
+
+    [Fact]
+    public async Task T31_P1_4_RequestAndTransactionPrivacy_ElectedOwner()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        clock.Advance(TimeSpan.FromHours(1));
+        var expReq = await service.CreateFundRequestAsync(owner.Id, fund.Id,
+            new V1FundRequestInput("Expense", 100_000, owner.Id, "Old owner secret purchase", "secret-buy-2", Pin), default);
+
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, memberA.Id, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, memberA.Id, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+        await service.AcceptElectedOwnershipAsync(memberA.Id, election.Id, Pin, default);
+
+        // 1. Elected owner calling FundRequestsAsync cannot see previous owner's requests
+        var requests = await service.FundRequestsAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.DoesNotContain(requests, r => r.Id == expReq.Id);
+
+        // 2. Elected owner calling GetFundRequestAsync for previous owner's request gets ForbiddenException
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.GetFundRequestAsync(memberA.Id, expReq.Id, default));
+
+        // 3. Elected owner calling FundTransactionsAsync sees transactions before tenure masked
+        var txs = await service.FundTransactionsAsync(memberA.Id, fund.Id, 1, 50, default);
+        var oldTx = txs.FirstOrDefault(t => t.Description?.Contains("Old owner secret purchase") == true);
+        Assert.Null(oldTx);
+    }
+
+    [Fact]
+    public async Task T32_P1_5_InactivityEvidence_RequiresUserSessionInactivity_And_NoReactivationDuringElection()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // 1. Owner inactive in fund for 16 days, BUT active session exists within 15 days
+        clock.Advance(TimeSpan.FromDays(16));
+        f.Db.UserSessions.Add(new UserSession
+        {
+            UserId = owner.Id,
+            LastSeenAt = clock.UtcNow.AddDays(-2),
+            RevokedAt = null
+        });
+        await f.Db.SaveChangesAsync();
+
+        var exSessionActive = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default));
+        Assert.Equal("ACTIVITY_EVIDENCE_BLOCKED", exSessionActive.Code);
+
+        // Revoke the session so evidence becomes valid
+        var session = await f.Db.UserSessions.SingleAsync(s => s.UserId == owner.Id);
+        session.RevokedAt = clock.UtcNow;
+        await f.Db.SaveChangesAsync();
+
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, memberA.Id, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, memberA.Id, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // 2. During AwaitingAcceptance, incumbent owner logs in (new session)
+        f.Db.UserSessions.Add(new UserSession
+        {
+            UserId = owner.Id,
+            LastSeenAt = clock.UtcNow,
+            RevokedAt = null
+        });
+        await f.Db.SaveChangesAsync();
+
+        // Elected member accepts ownership -> throws ConflictException("incumbent_reactivated")
+        var exReactivated = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.AcceptElectedOwnershipAsync(memberA.Id, election.Id, Pin, default));
+        Assert.Equal("incumbent_reactivated", exReactivated.Code);
+    }
 }

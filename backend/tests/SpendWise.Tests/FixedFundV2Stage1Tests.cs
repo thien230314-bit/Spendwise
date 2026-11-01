@@ -592,7 +592,8 @@ public sealed class FixedFundV2Stage1Tests
     [Fact]
     public async Task F10_MultipleReplacementsOnSameSeat_AndPartialPaidDeparture()
     {
-        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
         var owner = await f.AddUserAsync("OwnerF10");
         var departed1 = await f.AddUserAsync("Departed1F10");
         var departed2 = await f.AddUserAsync("Departed2F10");
@@ -611,8 +612,11 @@ public sealed class FixedFundV2Stage1Tests
         var d1Wallet = await f.AddWalletAsync(departed1.Id, "D1Wallet", true, balance: 1_000_000);
         await service.ContributeAsync(departed1.Id, fund.Id, new(d1Wallet.Id, 500_000, "c-part-d1", Pin, config.Revision), default);
 
-        // Departed1 leaves with REAL REFUND through LeaveFundAsync
-        var refund1 = await service.LeaveFundAsync(departed1.Id, fund.Id, new(Pin, "leave-d1-f10", d1Wallet.Id), default);
+        // Advance clock past personal 24h deadline so kick is permitted
+        clock.UtcNow += TimeSpan.FromHours(25);
+
+        // Departed1 leaves with REAL REFUND through KickMemberAsync (voluntary leave disallowed in Fixed Fund during normal operation)
+        var refund1 = await service.KickMemberAsync(owner.Id, fund.Id, departed1.Id, new(Pin, "kick-d1-f10", "Seat 2 departed 1"), default);
         Assert.Equal("Completed", refund1.Status);
         Assert.Equal(500_000, refund1.RefundAmountVnd);
 
@@ -644,7 +648,8 @@ public sealed class FixedFundV2Stage1Tests
 
         // Departed2 also leaves without contributing (refund 0)
         var d2Wallet = await f.AddWalletAsync(departed2.Id, "D2Wallet", true, balance: 100_000);
-        var refund2 = await service.LeaveFundAsync(departed2.Id, fund.Id, new(Pin, "leave-d2-f10", d2Wallet.Id), default);
+        clock.UtcNow += TimeSpan.FromHours(25);
+        var refund2 = await service.KickMemberAsync(owner.Id, fund.Id, departed2.Id, new(Pin, "kick-d2-f10", "Seat 2 departed 2"), default);
         Assert.Equal("Completed", refund2.Status);
         Assert.Equal(0, refund2.RefundAmountVnd);
 

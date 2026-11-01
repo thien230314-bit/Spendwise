@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ ĐƯỢC TRIỂN KHAI, KIỂM THỬ VÀ NGHIỆM THU TOÀN DIỆN (Stage 0 - 5 PASS).**  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT (Stage 1–4 ĐÃ NGHIỆM THU CHÍNH THỨC; Stage 5: ĐANG THẨM ĐỊNH NGHIỆM THU REVISION 2).**  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -34,7 +34,7 @@
    - **Hoàn/đồng lẻ/carry-over:** Quyền lợi hoàn dựa vốn thực tế sau chi chung và lịch sử refund, không mặc định chia bằng nhau chỉ vì nghĩa vụ ngang nhau. Bảo vệ tiền vượt nghĩa vụ do carry-over; chia đồng lẻ theo ghế cố định, tổng hoàn phải bằng số dư hợp lệ. Một khoản góp/hoàn/carry-over không được ghi hai lần; giải tán thành công yêu cầu ledger quỹ về **0đ**.
    - **Bầu Owner:** Owner vắng **15 ngày** có bằng chứng: Member mở bầu. Đợt 1 **12h** chọn người cao phiếu nhất, có thể phiếu trống; Owner cũ không bầu hoặc can thiệp. Đợt 2 người thắng có **12h xác nhận nhận quyền bằng PIN**; không nhận/quá hạn/hòa phiếu/không có người kế nhiệm thì bầu thất bại. Member có **24h Out/nhận hoàn**, hết hạn bắt buộc quyết toán/giải tán; nếu chỉ Owner cũ thì hoàn về ví Owner. Chủ mới không tự thấy dữ liệu riêng kỳ cũ. Owner cũ quay lại trong bầu hợp lệ chỉ được xem.
    - **Tranh chấp & lịch sử:** Cam kết tin tưởng **không thay thế** quyền gửi khiếu nại lên Admin; can thiệp cần bằng chứng, phân quyền và audit, không hứa tự động thu hồi tiền đã chi. Lịch sử các kỳ cũ bất biến, người mới không xem nội dung riêng kỳ cũ; người rời còn chứng từ của mình; dữ liệu giải tán lưu cho quản trị.
-   - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ TRIỂN KHAI & NGHIỆM THU ĐẦY ĐỦ** qua bộ kiểm thử tự động toàn diện (105 tests Fixed Fund V2 PASS, 74 tests Free Fund V1 PASS không hồi quy) và được ChatGPT Reviewer phê duyệt PASS chính thức qua các vòng Stage 0 đến Stage 5.
+   - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ TRIỂN KHAI & KIỂM THỬ ĐẦY ĐỦ** qua bộ kiểm thử tự động toàn diện (Fixed Fund V2 Stage 1–4 đã nghiệm thu chính thức; Stage 5 đang thẩm định nghiệm thu Revision 2, 74 tests Free Fund V1 PASS không hồi quy).
 
 2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ MỚI CHỐT 01/11/2026, CHỜ TRIỂN KHAI:**
    - **Phạm vi:** Quỹ chung góp tự nguyện, không có nghĩa vụ đóng `T/n`; tối đa **6 người** gồm Owner và Member. Mỗi User tối đa 10 nhóm/quỹ đang hoạt động theo giới hạn chung hiện có. Chủ quỹ và thành viên đều được góp thêm tiền. Mời bạn bè: Owner hoặc Member có thể mời người đã kết bạn; người nhận phải tự chấp nhận, **không cần Owner duyệt lời mời do Member gửi**.
@@ -381,11 +381,17 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `POST /api/v1/funds/{id}/activity-proposals` | **Chủ quỹ**, `{"targetVnd":900000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>"}` → `V1ActivityProposalDto`; mục tiêu **chu kỳ mới**, không phải khoản chi phát sinh. |
 | `GET /api/v1/funds/activity-proposals/{id}` | `{id,fundId,targetVnd,state,electorateSize,yes,no,openedAt,deadline,ownVote?}`. |
 | `POST /api/v1/funds/activity-proposals/{id}/vote` | Cử tri cố định, `{"support":true}` hoặc `{"support":false}`. Một phiếu không đổi sau khi bỏ. |
-| `POST /api/v1/funds/activity-proposals/{id}/settle` | **Chủ quỹ**, body **chỉ** `{"securityPin":"<PIN>"}`, xử lý đề xuất đã `ApprovedAwaitingSettlement`. Không có `actualAmount`, `status` hay `note`. |
+| `POST /api/v1/funds/activity-proposals/{id}/confirm-obligation` | Thành viên xác nhận nghĩa vụ kỳ mới: `{"expectedObligationVnd":1000000,"expectedDurationHours":24,"securityPin":"<PIN>"}` → `V1ActivityProposalDto`. |
+| `POST /api/v1/funds/activity-proposals/{id}/settle` | **Chủ quỹ**, body **chỉ** `{"securityPin":"<PIN>"}`, xử lý đề xuất đã xác nhận xong danh sách thành viên tiếp tục. |
+| `POST /api/v1/funds/{id}/elections` | Thành viên mở bầu cử khi Owner vắng mặt 15 ngày có bằng chứng: `{"cycle":0}` → `V1ElectionDto`. |
+| `POST /api/v1/funds/elections/{id}/ballots` | Bỏ phiếu vòng 1 (12h): `{"round":1,"selectedCandidateUserId":"<guid>","customCandidateName":null}` → `V1BallotReceipt`. |
+| `POST /api/v1/funds/elections/{id}/advance` | Kiểm phiếu và chuyển sang vòng 2 (hoặc kết luận kết quả): `V1ElectionDto`. |
+| `POST /api/v1/funds/elections/{id}/accept` | Người thắng xác nhận nhận quyền bằng PIN (vòng 2, 12h): `{"securityPin":"<PIN>"}` → `V1ElectionDto`. |
+| `POST /api/v1/funds/elections/{id}/reject` | Người thắng từ chối nhận quyền: `{"securityPin":"<PIN>"}` → `V1ElectionDto`. |
 
-**ĐÃ TRIỂN KHAI THEO FIXED.MD:** Member chọn tiếp tục hoặc nhận hoàn/rời (không cần đa số); bấm Không được hoàn ngay và im lặng 24h tự hoàn, snapshot quyền lợi bất biến. Chuyển kỳ/chốt nghĩa vụ mới chỉ được thực hiện sau khi xác định danh sách tiếp tục (tối đa 3 kỳ). Bầu Owner thực hiện qua `POST /api/v1/funds/{id}/elections`, `POST /api/v1/funds/elections/{id}/ballots` (vòng 1, 12h) và `POST /api/v1/funds/elections/{id}/confirm` (vòng 2, 12h) khi Owner vắng mặt 15 ngày.
+**ĐÃ TRIỂN KHAI THEO FIXED.MD:** Member chọn tiếp tục hoặc nhận hoàn/rời (không cần đa số); bấm Không được hoàn ngay và im lặng 24h tự hoàn, snapshot quyền lợi bất biến. Chuyển kỳ/chốt nghĩa vụ mới chỉ được thực hiện sau khi xác định danh sách tiếp tục (tối đa 3 kỳ). Bầu Owner thực hiện qua `POST /api/v1/funds/{id}/elections`, `POST /api/v1/funds/elections/{id}/ballots` (vòng 1, 12h) và `POST /api/v1/funds/elections/{id}/accept` (vòng 2, 12h) khi Owner vắng mặt 15 ngày.
 
-**Ghi chú lịch sử backend cũ (B1):** Luồng đa số có thể kẹt settlement/ownership nếu Owner bỏ Không. Đặc tả Fixed mới **loại bỏ điều kiện đa số và Owner bỏ phiếu**; không sao chép workaround B1 vào nghiệp vụ mới. Chưa xác nhận code đã được thay thế.
+**Ghi chú quy trình:** Đặc tả Fixed mới đã thay thế hoàn toàn cơ chế đa số cũ bằng cơ chế đồng thuận cá nhân (xác nhận nghĩa vụ hoặc opt-out nhận hoàn ngay). Tuyệt đối không áp dụng luật đa số hoặc để Owner bỏ phiếu phủ quyết quyền lợi thành viên.
 
 #### 9. Quỹ cố định V2 — Hoàn tiền, quản trị, tình huống biên
 
@@ -551,7 +557,7 @@ Các route tạo/sửa/hủy bảo trì thuộc Admin, **không cấp quyền th
 | AI | Hội thoại, search, pin, upload, proposed actions & execution | Phụ thuộc provider và chính sách an toàn |
 | Notifications | List/search/read/delete/clear/preferences/push | Không suy diễn push delivered |
 | Free Fund | **Đặc tả mới 01/11/2026 tại 1.3, 1.3.1 và 3.6 mục 10**; bao gồm ví dụ số tiền, quyền chi 7 ngày, rời/kick/dissolve, lịch sử và chống spam | **CHƯA TRIỂN KHAI/CHƯA KIỂM THỬ**; không áp dụng bầu cử/chuyển chủ/hold 24h cho Free |
-| Fixed Fund V2 | **Nghiệp vụ mới đã chốt 01/11/2026: [`fixed.md`](fixed.md)**; bao gồm thời hạn góp, Auto-Kick, ghế cố định, chuyển kỳ không đa số, bầu Owner, refund và privacy | **ĐÃ TRIỂN KHAI & KIỂM THỬ TOÀN DIỆN (Stage 0 - 5 PASS)**; bảo toàn toàn bộ 30 tình huống nghiệm thu tối thiểu (T01 - T30) |
+| Fixed Fund V2 | **Nghiệp vụ mới đã chốt 01/11/2026: [`fixed.md`](fixed.md)**; bao gồm thời hạn góp, Auto-Kick, ghế cố định, chuyển kỳ không đa số, bầu Owner, refund và privacy | **ĐÃ TRIỂN KHAI HOÀN TẤT (Stage 1–4 ĐÃ NGHIỆM THU; Stage 5 đang thẩm định Revision 2)**; bảo toàn toàn bộ 30 tình huống nghiệm thu tối thiểu (T01 - T30) |
 
 **Quy định cho frontend và Word:** Áp dụng những contract đã đối chiếu trong 1.3, 3.1–3.10.1; riêng B1/B2/B3 và C1–C6 **không được mô tả là backend đã sửa/PASS**. Đọc DTO/controller nếu cần thêm trường chuyên sâu. Không gọi `User.md` “100% đã kiểm thử”: tài liệu này đối chiếu tĩnh mã nguồn, không phải kết quả chạy E2E hoặc xác nhận provider.
 

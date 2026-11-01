@@ -388,17 +388,30 @@ public class FreeFundFinalAcceptanceTests
         Assert.Equal("CaseA_Unspent", leaveResult.CaseType);
         Assert.Equal("Completed", leaveResult.Status);
 
-        // Verify LedgerTransaction recorded with the exact legacy idempotency scope:
+        // Verify LedgerTransaction recorded with episode scope:
         var refundTx = await f.Db.LedgerTransactions.SingleAsync(t => t.Id == leaveResult.LedgerTransactionId);
         Assert.Equal(expectedLegacyScope, refundTx.IdempotencyScope);
 
-        // 4. Verify Idempotent Replay with legacy refund scope:
-        // Retrying with same key returns Replayed without creating any new transaction
+        // 4. Verify Backward Compatibility with true historical pre-Stage-3 scope (fundId:userId):
+        // Historically, before Stage 3, refund transactions were recorded using: $"v1-fund-refund:{fundId:N}:{userId:N}".
+        // We explicitly simulate a true historical transaction by updating IdempotencyScope to legacy user format:
+        var historicalLegacyScope = $"v1-fund-refund:{fund.Id:N}:{memberB.Id:N}";
+        refundTx.IdempotencyScope = historicalLegacyScope;
+        await f.Db.SaveChangesAsync();
+
+        // Member B is already left (membership is null).
+        // Idempotent retry with the historical key MUST identify the legacy transaction,
+        // MUST NOT double-post, and MUST return the original refund amount (100k, NOT 0):
         var replayResult = await s.LeaveFundAsync(memberB.Id, fund.Id,
             new(TargetedCorrectnessFixture.SecurityPin, leaveKey), default);
         Assert.Equal("Replayed", replayResult.CaseType);
-        Assert.Equal(leaveResult.LedgerTransactionId, replayResult.LedgerTransactionId);
+        Assert.Equal(refundTx.Id, replayResult.LedgerTransactionId);
         Assert.Equal(100_000, replayResult.RefundAmountVnd);
+        Assert.Equal("Completed", replayResult.Status);
+
+        // Verify exactly 1 LedgerTransaction exists for this refund (zero double-posting)
+        var refundTxCount = await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id);
+        Assert.Equal(1, refundTxCount);
 
         // 5. Subsequent calculation compatibility:
         // When owner previews remaining refund, verify treasury accounting is strictly reconciled:

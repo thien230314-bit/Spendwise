@@ -30,7 +30,10 @@ Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\
 A total of 1 test files matched the specified pattern.
 Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\spendwise_freefund_v1_acceptance.trx
 
-Passed!  - Failed:     0, Passed:   100, Skipped:     0, Total:   100, Duration: 1 m 14 s - SpendWise.Tests.dll (net10.0)
+WARNING: Overwriting results file: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\spendwise_freefund_v1_acceptance.trx
+Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\spendwise_freefund_v1_acceptance.trx
+
+Passed!  - Failed:     0, Passed:   100, Skipped:     0, Total:   100, Duration: 1 m 20 s - SpendWise.Tests.dll (net10.0)
 ```
 
 ### Phân rã cấu trúc bài kiểm thử (100 Tests):
@@ -39,7 +42,7 @@ Filter `FullyQualifiedName~FreeFund|FullyQualifiedName~FixedFundV2` khớp chín
 1. **`FreeFundFinalAcceptanceTests`** (4 tests - PASS):
    - `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`: Kiểm thử toàn diện vòng đời thực tế gồm chi tiêu đã giải ngân (`Completed` 100k), rút vốn cá nhân (`Withdrawal` 50k), bảo lưu chi tiêu (`ApprovedUnused` 50k), tự động hủy bảo lưu khi thành viên rời quỹ, kick thành viên, giải tán quỹ (`Dissolve`), và đối soát bảo toàn vốn tuyệt đối.
    - `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_OnSqlServer_WithIndependentConnections`: Kiểm thử đồng thời đa kết nối thực tế trên SQL Server (`DESKTOP-B5KA3LT\SQLEXPRESS02`), sử dụng catalog độc lập (`SpendWise_GroupFundS052_Test_*`). 5 luồng worker chạy song song với 5 kết nối SQL Server và `SpendWiseDbContext` độc lập cùng gửi đóng góp với IDENTICAL idempotency key. Xác minh đúng 1 `LedgerTransaction` và 1 `FinancialTransaction`, số dư quỹ và ví khớp tuyệt đối. Dọn dẹp sạch sẽ catalog sau kiểm thử.
-   - `FixedFundV2_BackwardCompatibility_WithLegacyRefundScope_PreservedAndUnmodified`: Kiểm thử tính tương thích ngược của Quỹ Cố định (Fixed Fund V2) với định dạng refund scope lịch sử `v1-fund-refund:{fundId:N}:{membershipId:N}`, kiểm tra cơ chế replay trả về `CaseType == "Replayed"` mà không tạo bút toán trùng lặp, và khấu trừ chính xác trong các kỳ tính toán tiếp theo.
+   - `FixedFundV2_BackwardCompatibility_WithLegacyRefundScope_PreservedAndUnmodified`: Kiểm thử tính tương thích ngược hoàn chỉnh của Quỹ Cố định (Fixed Fund V2) với giao dịch refund lịch sử trước Stage 3 theo scope `v1-fund-refund:{fundId:N}:{userId:N}` (định dạng dùng `userId`). Kiểm tra trường hợp thành viên đã rời quỹ (`membership.LeftAt != null`), API replay nhận diện chính xác giao dịch lịch sử, trả về `CaseType == "Replayed"`, trả đúng `LedgerTransactionId` và `Amount` gốc (100.000 VND, không bị trả về 0), không ghi đúp giao dịch (`refundTxCount == 1`), và bảo toàn đối soát kho quỹ.
    - `FreeFund_HttpApi_OpenApiContract_RealServerSmokeTest`: Kiểm thử HTTP server thực tế qua `SpendWiseApiFactory`. Xác minh hợp đồng OpenAPI (`/openapi/v1.json`), kiểm tra mã lỗi 401 khi chưa xác thực, gọi HTTP `POST /api/v1/funds` tạo quỹ, `POST /api/v1/funds/{id}/contributions` nạp tiền, `GET /api/v1/funds/{id}/equity` lấy vốn ròng, `GET /api/v1/funds/{id}/refund-preview` xem trước hoàn tiền, và 404/403 đối với thành viên ngoại vi.
 2. **`FreeFundApiContractNotificationTests`** (9 tests - PASS):
    - Đảm bảo quyền riêng tư thông báo (Notification) và nhật ký hoạt động (Activity Feed) cho các yêu cầu cá nhân (Rút vốn / Hủy tự động / Chi tiêu).

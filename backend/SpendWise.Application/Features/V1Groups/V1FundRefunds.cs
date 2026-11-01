@@ -85,11 +85,12 @@ public sealed partial class V1FundService
             if (membership is not null)
             {
                 var episodeScope = $"v1-fund-refund:{fundId:N}:{membership.Id:N}";
+                var legacyUserScope = $"v1-fund-refund:{fundId:N}:{actorUserId:N}";
                 var existingTx = await db.LedgerTransactions.AsNoTracking()
                     .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
                 if (existingTx is not null)
                 {
-                    if (existingTx.IdempotencyScope == episodeScope)
+                    if (existingTx.IdempotencyScope == episodeScope || existingTx.IdempotencyScope == legacyUserScope)
                     {
                         var ft = await db.FinancialTransactions.AsNoTracking()
                             .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
@@ -118,7 +119,9 @@ public sealed partial class V1FundService
                         .Where(m => m.FundId == fundId && m.UserId == actorUserId)
                         .Select(m => m.Id)
                         .ToListAsync(token);
-                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}"))
+                    var legacyUserScope = $"v1-fund-refund:{fundId:N}:{actorUserId:N}";
+                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}")
+                        || existingTx.IdempotencyScope == legacyUserScope)
                     {
                         var ft = await db.FinancialTransactions.AsNoTracking()
                             .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
@@ -320,11 +323,12 @@ public sealed partial class V1FundService
             if (membership is not null)
             {
                 var episodeScope = $"v1-fund-refund:{fundId:N}:{membership.Id:N}";
+                var legacyUserScope = $"v1-fund-refund:{fundId:N}:{targetUserId:N}";
                 var existingTx = await db.LedgerTransactions.AsNoTracking()
                     .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
                 if (existingTx is not null)
                 {
-                    if (existingTx.IdempotencyScope == episodeScope)
+                    if (existingTx.IdempotencyScope == episodeScope || existingTx.IdempotencyScope == legacyUserScope)
                     {
                         var ft = await db.FinancialTransactions.AsNoTracking()
                             .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
@@ -353,7 +357,9 @@ public sealed partial class V1FundService
                         .Where(m => m.FundId == fundId && m.UserId == targetUserId)
                         .Select(m => m.Id)
                         .ToListAsync(token);
-                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}"))
+                    var legacyUserScope = $"v1-fund-refund:{fundId:N}:{targetUserId:N}";
+                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}")
+                        || existingTx.IdempotencyScope == legacyUserScope)
                     {
                         var ft = await db.FinancialTransactions.AsNoTracking()
                             .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);

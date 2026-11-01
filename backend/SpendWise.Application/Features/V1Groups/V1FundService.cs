@@ -406,6 +406,18 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                                 ConfirmedAt = null
                             });
                         }
+                        else
+                        {
+                            // P1-2: Rejoining member who already had a voter record in this active proposal (e.g. opted out and was refunded).
+                            // Their prior membership episode has ended and historical entitlement was already refunded.
+                            // Reset their voter record for the new membership episode:
+                            existingVoter.MembershipId = newMembership.Id;
+                            existingVoter.CarryOverVnd = 0L;
+                            existingVoter.Support = null;
+                            existingVoter.ConfirmedObligationVnd = null;
+                            existingVoter.ConfirmedDurationHours = null;
+                            existingVoter.ConfirmedAt = null;
+                                                    }
                     }
                 }
             }

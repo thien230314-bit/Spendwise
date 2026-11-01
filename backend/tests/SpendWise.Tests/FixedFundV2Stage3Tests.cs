@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SpendWise.Application.Common.Exceptions;
@@ -979,8 +981,8 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal("obligation_changed_requires_consent", ex.Code);
 
         // Re-confirmation: Continuing members can agree to the new 3M obligation!
-        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, Pin, default);
-        await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, Pin, default);
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+        await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
 
         // Now that all active members confirmed 3M, settlement SUCCEEDS!
         var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
@@ -1037,7 +1039,7 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal("obligation_changed_requires_consent", exUnconfirmed.Code);
 
         // Member D explicitly confirms their obligation (2M, 24h)
-        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, Pin, default);
+        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default);
 
         // Now settlement SUCCEEDS!
         var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
@@ -1106,8 +1108,8 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal("obligation_changed_requires_consent", exConsent.Code);
 
         // Owner and D confirm their 3M obligation (6M / 2)
-        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, Pin, default);
-        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, Pin, default);
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
 
         // Settle succeeds!
         var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
@@ -1233,6 +1235,31 @@ public sealed class FixedFundV2Stage3Tests
             service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 48, Pin), default));
         Assert.Equal("duration_outdated", exDur.Code);
 
+        // P1-1: Attempting to confirm with 0 VND, negative, or 0 hours is REJECTED and leaves ConfirmedAt as null!
+        var exZeroAmt = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(0, 24, Pin), default));
+        Assert.Equal("obligation_outdated", exZeroAmt.Code);
+
+        var exZeroBoth = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(0, 0, Pin), default));
+        Assert.Equal("obligation_outdated", exZeroBoth.Code);
+
+        var exZeroDur = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 0, Pin), default));
+        Assert.Equal("duration_outdated", exZeroDur.Code);
+
+        var exNegAmt = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(-1, 24, Pin), default));
+        Assert.Equal("obligation_outdated", exNegAmt.Code);
+
+        var exNegDur = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, -1, Pin), default));
+        Assert.Equal("duration_outdated", exNegDur.Code);
+
+        // Verify voter record was NOT modified by invalid requests: ConfirmedObligationVnd is STILL the stale 2M, not updated to 3M or 0!
+        var voterBCheck = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memB.Id);
+        Assert.Equal(2_000_000, voterBCheck.ConfirmedObligationVnd);
+
         // Member B confirms with accurate 3M and 24h -> SUCCEEDS!
         await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
         await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
@@ -1242,55 +1269,205 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal("Settled", settle.State);
     }
 
+    private static async Task ActorAsync(SpendWiseApiFactory factory, HttpClient client, SpendWise.Domain.Identity.User user)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SpendWise.Infrastructure.Persistence.SpendWiseDbContext>();
+        var session = new SpendWise.Domain.Identity.UserSession { UserId = user.Id, LastSeenAt = DateTime.UtcNow };
+        db.UserSessions.Add(session);
+        await db.SaveChangesAsync();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+            "Bearer", scope.ServiceProvider.GetRequiredService<ITokenService>().CreateAccessToken(user, session.Id).Token);
+    }
+
     // =========================================================================
-    // T31: Blocker P1-1 — V1FundsController HTTP endpoint confirm-obligation integration
+    // T31: Blocker P1-1 — Real ASP.NET Core HTTP Integration Test for confirm-obligation
     // =========================================================================
     [Fact]
-    public async Task T31_ControllerEndpoint_ConfirmObligation_HttpIntegration()
+    public async Task T31_ControllerEndpoint_ConfirmObligation_RealHttpIntegration()
+    {
+        using var factory = new SpendWiseApiFactory();
+        using var client = factory.CreateHttpsClient();
+        
+        SpendWise.Domain.Identity.User owner;
+        SpendWise.Domain.Identity.User memB;
+        SpendWise.Domain.Identity.User memC;
+        Guid proposalId;
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWise.Infrastructure.Persistence.SpendWiseDbContext>();
+            var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+            var funds = CoreAcceptanceData.Funds(db, clock);
+
+            owner = CoreAcceptanceHttpTests.SyntheticUser();
+            memB = CoreAcceptanceHttpTests.SyntheticUser();
+            memC = CoreAcceptanceHttpTests.SyntheticUser();
+            db.Users.AddRange(owner, memB, memC);
+            await db.SaveChangesAsync();
+
+            var fund = await funds.CreateAsync(owner.Id, new("FundT31Http", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+            db.V1FundMemberships.Add(new() { FundId = fund.Id, UserId = memB.Id, Seat = 2, JoinedAt = clock.UtcNow });
+            db.V1FundMemberships.Add(new() { FundId = fund.Id, UserId = memC.Id, Seat = 3, JoinedAt = clock.UtcNow });
+            await db.SaveChangesAsync();
+
+            await funds.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+            await funds.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+            var prop = await funds.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t31-http", Pin), default);
+            proposalId = prop.Id;
+            await funds.VoteActivityAsync(owner.Id, proposalId, true, default);
+            await funds.VoteActivityAsync(memB.Id, proposalId, true, default);
+            await funds.VoteActivityAsync(memC.Id, proposalId, false, default);
+        }
+
+        var endpoint = $"/api/v1/funds/activity-proposals/{proposalId}/confirm-obligation";
+
+        // 1. Unauthenticated request -> 401 Unauthorized
+        client.DefaultRequestHeaders.Authorization = null;
+        using var unauthResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin));
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthResp.StatusCode);
+
+        // 2. Authorize as Member B
+        await ActorAsync(factory, client, memB);
+
+        // 3. Outdated amount (2M instead of 3M) -> HTTP 409 Conflict with obligation_outdated
+        using var outdatedResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin));
+        Assert.Equal(HttpStatusCode.Conflict, outdatedResp.StatusCode);
+        var outdatedContent = await outdatedResp.Content.ReadAsStringAsync();
+        Assert.Contains("obligation_outdated", outdatedContent);
+
+        // 4. Zero amount -> HTTP 409 Conflict with obligation_outdated
+        using var zeroAmtResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(0, 24, Pin));
+        Assert.Equal(HttpStatusCode.Conflict, zeroAmtResp.StatusCode);
+        Assert.Contains("obligation_outdated", await zeroAmtResp.Content.ReadAsStringAsync());
+
+        // 5. Zero duration -> HTTP 409 Conflict with duration_outdated
+        using var zeroDurResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(3_000_000, 0, Pin));
+        Assert.Equal(HttpStatusCode.Conflict, zeroDurResp.StatusCode);
+        Assert.Contains("duration_outdated", await zeroDurResp.Content.ReadAsStringAsync());
+
+        // 6. Valid confirmation -> HTTP 200 OK with accurate DTO
+        using var validResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin));
+        Assert.Equal(HttpStatusCode.OK, validResp.StatusCode);
+        var validDto = await validResp.Content.ReadFromJsonAsync<V1ActivityProposalDto>();
+        Assert.NotNull(validDto);
+        Assert.Equal(3_000_000, validDto.ExpectedPerMemberVnd);
+
+        // 7. Authorize as Owner and confirm
+        await ActorAsync(factory, client, owner);
+        using var ownerConfirmResp = await client.PostAsJsonAsync(endpoint, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin));
+        Assert.Equal(HttpStatusCode.OK, ownerConfirmResp.StatusCode);
+
+        // 8. Settle activity proposal via HTTP -> HTTP 200 OK Settled!
+        using var settleResp = await client.PostAsJsonAsync($"/api/v1/funds/activity-proposals/{proposalId}/settle", new V1SettleActivityRequest(Pin));
+        Assert.Equal(HttpStatusCode.OK, settleResp.StatusCode);
+        var settledDto = await settleResp.Content.ReadFromJsonAsync<V1ActivityProposalDto>();
+        Assert.NotNull(settledDto);
+        Assert.Equal("Settled", settledDto.State);
+    }
+
+    // =========================================================================
+    // T32: Blocker P1-2 — Rejoining member after opt-out starts at CarryOverVnd = 0 and ledger reconciles
+    // =========================================================================
+    [Fact]
+    public async Task T32_RejoiningMember_AfterOptOut_StartsAtZeroCarryOver_AndLedgerReconciles()
     {
         var clock = new MutableClock(DateTime.UtcNow);
         await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var owner = await f.AddUserAsync("OwnerT31");
-        var memB = await f.AddUserAsync("MemBT31");
-        var memC = await f.AddUserAsync("MemCT31");
+        var owner = await f.AddUserAsync("OwnerT32");
+        var memB = await f.AddUserAsync("MemBT32");
+        var memC = await f.AddUserAsync("MemCT32");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
         await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
 
         var service = CreateService(f.Db, clock, f);
-        var fund = await service.CreateAsync(owner.Id, new("FundT31", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundT32", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
 
         var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
         await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
         var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
         await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
 
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+
+        var wOwner = await f.AddWalletAsync(owner.Id, "WOwnerT32", true, balance: 10_000_000);
+        var wB = await f.AddWalletAsync(memB.Id, "WBT32", true, balance: 10_000_000);
+        var wC = await f.AddWalletAsync(memC.Id, "WCT32", true, balance: 10_000_000);
+
+        await service.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 2_000_000, "c-owner-t32", Pin, config.Revision), default);
+        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 2_000_000, "c-b-t32", Pin, config.Revision), default);
+        await service.ContributeAsync(memC.Id, fund.Id, new(wC.Id, 2_000_000, "c-c-t32", Pin, config.Revision), default);
+
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var tAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(6_000_000, tAcc.Balance);
+
+        // Period 1 completes and closes
         await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
 
-        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t31", Pin), default);
-        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
-        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
+        // Owner proposes Period 2 with Target 6M
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t32", Pin), default);
+
+        // Snapshot has 2M for each of A, B, C
+        var voterCBefore = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memC.Id);
+        Assert.Equal(2_000_000, voterCBefore.CarryOverVnd);
+
+        // C votes NO (opts out and receives 2M refund)
+        var cWalletBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wC.Id)).Balance;
         await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
 
-        // Controller test with fake ICurrentUser
-        var stubUserB = new StubCurrentUser(memB.Id);
-        var controllerB = new SpendWise.API.Controllers.V1FundsController(service, stubUserB);
+        // Check refund posted to ledger
+        var cWalletAfter = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wC.Id)).Balance;
+        Assert.Equal(cWalletBefore + 2_000_000, cWalletAfter);
 
-        // Outdated obligation via controller throws obligation_outdated
-        var exOutdated = await Assert.ThrowsAsync<ConflictException>(() =>
-            controllerB.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default));
-        Assert.Equal("obligation_outdated", exOutdated.Code);
+        // Treasury balance decreased by 2M
+        var tAccAfterRefund = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(4_000_000, tAccAfterRefund.Balance);
 
-        // Accurate confirmation via controller returns updated DTO
-        var confirmedDto = await controllerB.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
-        Assert.Equal(3_000_000, confirmedDto.ExpectedPerMemberVnd);
+        // C's original membership is closed
+        var memCOriginal = await f.Db.V1FundMemberships.SingleAsync(m => m.UserId == memC.Id && m.FundId == fund.Id && m.LeftAt != null);
+        Assert.Equal(2_000_000, memCOriginal.RefundedVnd);
 
-        // Owner controller confirms and settles
-        var stubOwner = new StubCurrentUser(owner.Id);
-        var controllerOwner = new SpendWise.API.Controllers.V1FundsController(service, stubOwner);
-        await controllerOwner.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+        // Voting ends (A and B voted yes)
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
 
-        var settledDto = await controllerOwner.SettleActivity(proposal.Id, new V1SettleActivityRequest(Pin), default);
-        Assert.Equal("Settled", settledDto.State);
+        var propDb = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
+        Assert.Equal("ApprovedAwaitingSettlement", propDb.State);
+
+        // Owner invites C back to fill the empty seat!
+        var reinviteC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, reinviteC.Id, true, "v2.0", default);
+
+        // Verify C's voter record is reset for the new episode:
+        var voterCAfterRejoin = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memC.Id);
+        Assert.NotEqual(memCOriginal.Id, voterCAfterRejoin.MembershipId);
+        Assert.Equal(0L, voterCAfterRejoin.CarryOverVnd); // MUST BE 0!
+        Assert.Null(voterCAfterRejoin.Support); // Must confirm obligation anew!
+
+        // Active members is back to 3: Owner, MemB, MemC
+        // Target 6M / 3 = 2M each
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default);
+        await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default);
+        await service.ConfirmActivityObligationAsync(memC.Id, proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default);
+
+        // Owner settles proposal!
+        var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        Assert.Equal("Settled", settle.State);
+
+        // CRITICAL LEDGER AUDIT: Verify C's carry-over in Period 2 is exactly 0!
+        var voterCFinal = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memC.Id);
+        Assert.Equal(0L, voterCFinal.CarryOverVnd);
+
+        // C contributes 2M fresh to fulfill Period 2 obligation:
+        var treasuryPeriod2 = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        await service.ContributeAsync(memC.Id, fund.Id, new(wC.Id, 2_000_000, "c-rejoin-contrib", Pin, treasuryPeriod2.Revision), default);
+
+        // Treasury balance is now 4M + 2M = 6M
+        var finalTreasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(6_000_000, finalTreasuryAcc.Balance);
+
+        // Financial integrity: zero phantom balance, perfect reconciliation!
     }
 }

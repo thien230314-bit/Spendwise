@@ -249,8 +249,8 @@ public sealed partial class V1FundService
         }, ct);
     }
 
-    public Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
-        ConfirmActivityObligationAsync(actor, id, new V1ConfirmActivityObligationRequest(0, 0, pin), ct);
+
+
 
     public async Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, V1ConfirmActivityObligationRequest request, CancellationToken ct)
     {
@@ -279,13 +279,13 @@ public sealed partial class V1FundService
             var expectedDuration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
 
             // Blocker P1-2: If caller provided expected obligation or duration, ensure it is NOT outdated!
-            if (request.ExpectedObligationVnd > 0 && request.ExpectedObligationVnd != memberRequired)
+            if (request.ExpectedObligationVnd <= 0 || request.ExpectedObligationVnd != memberRequired)
             {
                 throw new ConflictException("obligation_outdated",
                     $"Nghĩa vụ thành viên đã thay đổi từ {request.ExpectedObligationVnd:N0} đ thành {memberRequired:N0} đ do số thành viên thay đổi. Vui lòng tải lại và xác nhận lại.");
             }
 
-            if (request.ExpectedDurationHours > 0 && request.ExpectedDurationHours != expectedDuration)
+            if (request.ExpectedDurationHours <= 0 || request.ExpectedDurationHours != expectedDuration)
             {
                 throw new ConflictException("duration_outdated", "Thời lượng đóng góp đã thay đổi. Vui lòng tải lại và xác nhận lại.");
             }
@@ -301,6 +301,14 @@ public sealed partial class V1FundService
                     CarryOverVnd = 0L
                 };
                 db.V1ActivityVoters.Add(voter);
+            }
+            else
+            {
+                voter.MembershipId = membership.Id;
+                if (membership.JoinedAt >= p.OpenedAt)
+                {
+                    voter.CarryOverVnd = 0L;
+                }
             }
 
             voter.Support = true;

@@ -37,20 +37,24 @@ public sealed partial class V1FundService
             if (request.TargetVnd % members.Count != 0)
                 throw new ConflictException("target_not_divisible_by_seats", "Mục tiêu đóng góp phải chia hết chính xác cho số ghế đã chốt đến từng VND.");
             var signature = MembershipSignature(members);
-            if (treasury.Revision == 0 || treasury.TargetVnd != request.TargetVnd || treasury.MembershipSignature != signature)
+            if (treasury.Revision > 0)
             {
-                treasury.Revision = checked(treasury.Revision + 1);
-                treasury.TargetVnd = request.TargetVnd; treasury.MembershipSignature = signature;
-                var amounts = FixedFundAllocation.Allocate(request.TargetVnd, members.Select(m => m.Seat).ToArray());
-                var duration = fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
-                var deadline = clock.UtcNow.AddHours(duration);
-                db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation { FundId = fundId, Revision = treasury.Revision,
-                    MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat], Deadline = deadline }));
-                await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.TargetVnd, (long?)request.TargetVnd), token);
-                await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null)
-                    .ExecuteUpdateAsync(s => s.SetProperty(m => m.ContributionDeadline, deadline), token);
-                await ActivityAsync(fundId, ownerId, "ObligationsConfirmed", token, detail: treasury.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                if (treasury.TargetVnd != request.TargetVnd || treasury.MembershipSignature != signature)
+                    throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể thay đổi target hoặc sửa nghĩa vụ.");
+                return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
             }
+
+            treasury.Revision = checked(treasury.Revision + 1);
+            treasury.TargetVnd = request.TargetVnd; treasury.MembershipSignature = signature;
+            var amounts = FixedFundAllocation.Allocate(request.TargetVnd, members.Select(m => m.Seat).ToArray());
+            var duration = fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
+            var deadline = clock.UtcNow.AddHours(duration);
+            db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation { FundId = fundId, Revision = treasury.Revision,
+                MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat], Deadline = deadline }));
+            await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.TargetVnd, (long?)request.TargetVnd), token);
+            await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(m => m.ContributionDeadline, deadline), token);
+            await ActivityAsync(fundId, ownerId, "ObligationsConfirmed", token, detail: treasury.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture));
             return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
         }, ct);
     }

@@ -5050,6 +5050,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<int>("ContributionDurationHours")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -5275,8 +5278,14 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AcceptedCommitmentVersion")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("CanSpend")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ContributionDeadline")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5295,6 +5304,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("Seat")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("TrustCommitmentAcceptedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5324,6 +5336,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("Deadline")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("FundId")

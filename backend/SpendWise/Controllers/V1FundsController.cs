@@ -158,7 +158,8 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     public Task<V1InvitationDto> Cancel(Guid id, CancellationToken ct) => funds.ResolveInvitationAsync(Actor, id, true, ct);
 
     [HttpPost("invitations/{id:guid}/accept")]
-    public Task<V1FundDto> Accept(Guid id, CancellationToken ct) => funds.AcceptAsync(Actor, id, ct);
+    public Task<V1FundDto> Accept(Guid id, [FromBody] V1AcceptInvitationRequest? request, CancellationToken ct) =>
+        funds.AcceptAsync(Actor, id, request?.TrustCommitmentAccepted, request?.CommitmentVersion, ct);
 
     [HttpPut("{id:guid}/members/{userId:guid}/spending-permission")]
     [EnableRateLimiting("financial")]

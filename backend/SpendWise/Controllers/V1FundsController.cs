@@ -26,6 +26,8 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     public Task<V1FundRequestDto> CreateRequest(Guid id, V1FundRequestInput request, CancellationToken ct) => funds.CreateFundRequestAsync(Actor, id, request, ct);
     [HttpGet("{id:guid}/requests")]
     public Task<IReadOnlyList<V1FundRequestDto>> Requests(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default) => funds.FundRequestsAsync(Actor, id, page, pageSize, ct);
+    [HttpGet("requests/{id:guid}")]
+    public Task<V1FundRequestDto> GetRequest(Guid id, CancellationToken ct) => funds.GetFundRequestAsync(Actor, id, ct);
     [HttpPost("requests/{id:guid}/review"), EnableRateLimiting("financial")]
     public Task<V1FundRequestDto> ReviewRequest(Guid id, V1RequestReview request, CancellationToken ct) => funds.ReviewFundRequestAsync(Actor, id,
         request.Approved ?? throw new AppException("explicit_decision_required", "An explicit decision is required."), request.Reason, request.SecurityPin, ct);
@@ -45,6 +47,9 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
 
     [HttpGet("{id:guid}")]
     public Task<V1FundDto> Get(Guid id, CancellationToken ct) => funds.GetAsync(Actor, id, ct);
+
+    [HttpGet("{id:guid}/equity")]
+    public Task<V1FundEquityDto> Equity(Guid id, CancellationToken ct) => funds.EquityAsync(Actor, id, ct);
 
     [HttpGet("{id:guid}/members")]
     public Task<IReadOnlyList<V1MemberDto>> Members(Guid id, CancellationToken ct) => funds.MembersAsync(Actor, id, ct);
@@ -126,6 +131,10 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [HttpGet("{id:guid}/activities")]
     public Task<IReadOnlyList<V1ActivityDto>> Activities(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default) =>
         funds.ActivitiesAsync(Actor, id, page, pageSize, ct);
+
+    [HttpGet("{id:guid}/transactions")]
+    public Task<IReadOnlyList<V1FundTransactionDto>> Transactions(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default) =>
+        funds.FundTransactionsAsync(Actor, id, page, pageSize, ct);
 
     [HttpPost("{id:guid}/invitations")]
     public Task<V1InvitationDto> Invite(Guid id, V1InviteRequest request, CancellationToken ct) => funds.InviteAsync(Actor, id, request.UserId, ct);

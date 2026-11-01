@@ -398,4 +398,71 @@ public sealed class FixedFundV2Stage1Tests
             service.AcceptAsync(replacementUser2.Id, invNullSeat.Id, true, "v2.0", default));
         Assert.Equal("replacement_seat_unavailable", exNullSeat.Code);
     }
+
+    [Fact]
+    public async Task F8_ReplacementMember_PreservesHistoricalObligation_AndCreatesNewEpisodeObligation()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerF8");
+        var departedMember = await f.AddUserAsync("DepartedF8");
+        var replacementUser = await f.AddUserAsync("ReplacementF8");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, departedMember.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, replacementUser.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF8", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv1 = await service.InviteAsync(owner.Id, fund.Id, departedMember.Id, default);
+        await service.AcceptAsync(departedMember.Id, inv1.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        var departedMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departedMember.Id);
+        var departedObligation = await f.Db.V1FundObligations.SingleAsync(o => o.FundId == fund.Id && o.UserId == departedMember.Id);
+        Assert.Equal(departedMembership.Id, departedObligation.MembershipId);
+        Assert.Equal(2, departedObligation.Seat);
+        Assert.Equal(2_000_000, departedObligation.RequiredVnd);
+
+        // Departed member leaves -> seat 2 becomes vacant
+        departedMembership.LeftAt = f.Clock.UtcNow;
+        await f.Db.SaveChangesAsync();
+
+        // Create replacement invite for seat 2
+        var replacementInvite = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = replacementUser.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(replacementInvite);
+        await f.Db.SaveChangesAsync();
+
+        // Replacement member accepts
+        await service.AcceptAsync(replacementUser.Id, replacementInvite.Id, true, "v2.0", default);
+
+        var replacementMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == replacementUser.Id && m.LeftAt == null);
+        Assert.Equal(2, replacementMembership.Seat);
+        Assert.NotNull(replacementMembership.ContributionDeadline);
+
+        // Verification of invariant:
+        // 1. Departed member historical obligation remains 100% intact (MembershipId & UserId untouched)
+        var departedObligationAfter = await f.Db.V1FundObligations.SingleAsync(o => o.Id == departedObligation.Id);
+        Assert.Equal(departedMembership.Id, departedObligationAfter.MembershipId);
+        Assert.Equal(departedMember.Id, departedObligationAfter.UserId);
+        Assert.Equal(2, departedObligationAfter.Seat);
+
+        // 2. A separate obligation record is created for replacement member episode
+        var replacementObligation = await f.Db.V1FundObligations.SingleAsync(o => o.FundId == fund.Id && o.UserId == replacementUser.Id);
+        Assert.Equal(replacementMembership.Id, replacementObligation.MembershipId);
+        Assert.Equal(2, replacementObligation.Seat);
+        Assert.Equal(2_000_000, replacementObligation.RequiredVnd);
+        Assert.Equal(replacementMembership.ContributionDeadline, replacementObligation.Deadline);
+        Assert.NotEqual(departedObligationAfter.Id, replacementObligation.Id);
+
+        // Total obligations for seat 2 across revisions/episodes is 2 (one historical, one active replacement)
+        var seat2Obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Seat == 2).ToListAsync();
+        Assert.Equal(2, seat2Obligations.Count);
+    }
 }

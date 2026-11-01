@@ -45,17 +45,8 @@ public sealed partial class V1FundService
                     var activeSeats = members.Select(m => m.Seat).ToList();
                     if (activeSeats.Count == confirmedSeats.Count && confirmedSeats.All(activeSeats.Contains))
                     {
+                        // Idempotent: preserve existing obligations and deadlines completely immutable
                         treasury.MembershipSignature = signature;
-                        foreach (var m in members)
-                        {
-                            var ob = await db.V1FundObligations.SingleOrDefaultAsync(o => o.FundId == fundId && o.Revision == treasury.Revision && o.Seat == m.Seat, token);
-                            if (ob is not null)
-                            {
-                                ob.MembershipId = m.Id;
-                                ob.UserId = m.UserId;
-                            }
-                        }
-                        await db.SaveChangesAsync(token);
                         return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
                     }
                 }

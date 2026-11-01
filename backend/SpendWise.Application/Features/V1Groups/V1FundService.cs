@@ -333,7 +333,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
             }
             await RequireNoActiveElectionAsync(fund.Id, token);
-            db.V1FundMemberships.Add(new V1FundMembership
+            var newMembership = new V1FundMembership
             {
                 FundId = fund.Id,
                 UserId = userId,
@@ -341,8 +341,37 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 JoinedAt = clock.UtcNow,
                 RefundedVnd = 0,
                 TrustCommitmentAcceptedAt = (fund.Kind == V1FundKind.Fixed && trustCommitmentAccepted == true) ? clock.UtcNow : null,
-                AcceptedCommitmentVersion = (fund.Kind == V1FundKind.Fixed && trustCommitmentAccepted == true) ? (commitmentVersion ?? "v2.0") : null
-            });
+                AcceptedCommitmentVersion = (fund.Kind == V1FundKind.Fixed && trustCommitmentAccepted == true) ? (commitmentVersion ?? "v2.0") : null,
+                ContributionDeadline = (fund.Kind == V1FundKind.Fixed && invite.IsReplacement)
+                    ? clock.UtcNow.AddHours(fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24)
+                    : null
+            };
+            db.V1FundMemberships.Add(newMembership);
+
+            if (fund.Kind == V1FundKind.Fixed && invite.IsReplacement)
+            {
+                var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
+                if (treasury is not null)
+                {
+                    var existingSeatObligation = await db.V1FundObligations.AsNoTracking()
+                        .FirstOrDefaultAsync(o => o.FundId == fund.Id && o.Revision == treasury.Revision && o.Seat == seat, token);
+                    if (existingSeatObligation is not null)
+                    {
+                        // Create a separate, new obligation record for the replacement member's episode
+                        // PRESERVING the departed member's historical obligation record intact
+                        db.V1FundObligations.Add(new V1FundObligation
+                        {
+                            FundId = fund.Id,
+                            Revision = treasury.Revision,
+                            MembershipId = newMembership.Id,
+                            UserId = userId,
+                            Seat = seat,
+                            RequiredVnd = existingSeatObligation.RequiredVnd,
+                            Deadline = newMembership.ContributionDeadline
+                        });
+                    }
+                }
+            }
             await db.V1FundInvitations.Where(i => i.Id == inviteId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Accepted)
                 .SetProperty(i => i.AcceptedAt, clock.UtcNow), token);
             await ActivityAsync(fund.Id, userId, "Joined", token, referenceId: invite.Id);

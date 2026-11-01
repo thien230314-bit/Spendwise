@@ -210,11 +210,20 @@ public sealed partial class V1FundService
         var rows = activeObligations.Select(o => new V1ObligationDto(o.UserId, o.Seat, o.RequiredVnd, paid.GetValueOrDefault(o.MembershipId),
             Math.Max(0, o.RequiredVnd - paid.GetValueOrDefault(o.MembershipId)), Math.Max(0, paid.GetValueOrDefault(o.MembershipId) - o.RequiredVnd))).ToList();
         var balance = await db.LedgerAccounts.AsNoTracking().Where(a => a.Id == treasury.LedgerAccountId).Select(a => a.Balance).SingleAsync(ct);
+        var confirmedSeats = obligations.Select(o => o.Seat).Distinct().ToList();
+        var allSeatsOccupied = confirmedSeats.Count >= 2 &&
+            members.Count == confirmedSeats.Count &&
+            confirmedSeats.All(s => members.Any(m => m.Seat == s));
+        var allActiveMembersPaid = allSeatsOccupied &&
+            rows.Count == confirmedSeats.Count &&
+            rows.All(o => o.RemainingVnd == 0);
+        var isFixedSpendOpen = current && allSeatsOccupied && allActiveMembersPaid && balance > 0;
+
         var spendingState = fund.DissolvedAt is not null
             ? "DISSOLVED"
             : fund.ActivityClosedAt is not null
                 ? "ACTIVITY_CLOSED"
-                : (fund.Kind == V1FundKind.Free || (current && rows.Count > 0 && rows.All(o => o.RemainingVnd == 0)))
+                : (fund.Kind == V1FundKind.Free || isFixedSpendOpen)
                     ? "OPEN"
                     : "FINANCE_BLOCKED";
         return new(fund.Id, treasury.Revision, treasury.TargetVnd, balance, current, current && fund.ActivityClosedAt is null && fund.DissolvedAt is null, spendingState, rows);

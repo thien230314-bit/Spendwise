@@ -328,7 +328,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                     throw new ConflictException("replacement_seat_unavailable", "Ghế chỉ định thay thế không còn trống hoặc không hợp lệ.");
 
                 var treasuryCheck = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
-                if (treasuryCheck?.ReplacementWindowExpiresAt is not null && clock.UtcNow > treasuryCheck.ReplacementWindowExpiresAt)
+                if (treasuryCheck?.ReplacementWindowExpiresAt is not null && clock.UtcNow >= treasuryCheck.ReplacementWindowExpiresAt)
                     throw new ConflictException("replacement_window_expired", "Cửa sổ tìm người thay thế 72 giờ của kỳ đã kết thúc.");
 
                 seat = invite.TargetSeat.Value;
@@ -355,7 +355,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
 
             if (fund.Kind == V1FundKind.Fixed && invite.IsReplacement)
             {
-                var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
+                var treasury = await db.V1FundTreasuries.SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
                 if (treasury is not null)
                 {
                     var existingSeatObligation = await db.V1FundObligations.AsNoTracking()
@@ -375,6 +375,12 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                             Deadline = newMembership.ContributionDeadline
                         });
                     }
+
+                    var activeMembers = await db.V1FundMemberships
+                        .Where(m => m.FundId == fund.Id && m.LeftAt == null && m.Id != newMembership.Id)
+                        .ToListAsync(token);
+                    activeMembers.Add(newMembership);
+                    treasury.MembershipSignature = MembershipSignature(activeMembers);
                 }
             }
             await db.V1FundInvitations.Where(i => i.Id == inviteId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Accepted)

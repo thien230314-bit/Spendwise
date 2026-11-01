@@ -9,6 +9,33 @@ public sealed record V1DeadlineProcessingResultDto(Guid FundId, string Status, I
 
 public sealed partial class V1FundService
 {
+    public async Task<int> ProgressFixedFundDeadlinesAsync(CancellationToken ct)
+    {
+        var activeFixedFundIds = await db.V1Funds.AsNoTracking()
+            .Where(f => f.Kind == V1FundKind.Fixed && f.DissolvedAt == null)
+            .Select(f => f.Id)
+            .ToListAsync(ct);
+
+        var processed = 0;
+        foreach (var fundId in activeFixedFundIds)
+        {
+            if (ct.IsCancellationRequested) break;
+            try
+            {
+                var res = await ProcessFixedFundDeadlinesAsync(fundId, ct);
+                if (res.Status != "NoAction")
+                {
+                    processed++;
+                }
+            }
+            catch (Exception)
+            {
+                // Isolate per-fund failure so scheduler continues safely
+            }
+        }
+        return processed;
+    }
+
     public Task<V1DeadlineProcessingResultDto> ProcessFixedFundDeadlinesAsync(Guid fundId, CancellationToken ct) =>
         db.ExecuteInTransactionAsync(async token =>
         {

@@ -203,4 +203,9 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [EnableRateLimiting("financial")]
     public Task<V1DissolveResultDto> Dissolve(Guid id, V1DissolveFundRequest request, CancellationToken ct) =>
         funds.DissolveFundAsync(Actor, id, request, ct);
+
+    [HttpPost("{id:guid}/fail-period-early")]
+    [EnableRateLimiting("financial")]
+    public Task<V1DissolveResultDto> FailPeriodEarly(Guid id, V1PinRequest request, CancellationToken ct) =>
+        funds.FailFixedPeriodEarlyAsync(Actor, id, request.SecurityPin, ct);
 }

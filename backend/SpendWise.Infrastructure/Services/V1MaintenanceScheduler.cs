@@ -19,6 +19,7 @@ public sealed class V1MaintenanceScheduler(IServiceScopeFactory scopes, ILogger<
                 await scope.ServiceProvider.GetRequiredService<V1MaintenanceReminders>().ProcessAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<SpendWise.Application.Features.V1Groups.V1FundService>().ProgressElectionsAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<SpendWise.Application.Features.V1Groups.V1FundService>().ProgressActivitiesAsync(ct);
+                await scope.ServiceProvider.GetRequiredService<SpendWise.Application.Features.V1Groups.V1FundService>().ProgressFixedFundDeadlinesAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<V1BroadcastService>().ProcessDueAsync(ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }

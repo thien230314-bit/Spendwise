@@ -394,4 +394,195 @@ public sealed class FixedFundV2Stage2Tests
         var oAcc = await f.Db.LedgerAccounts.AsNoTracking().SingleAsync(a => a.WalletId == oWallet.Id);
         Assert.Equal(3_000_000, oAcc.Balance);
     }
+
+    [Fact]
+    public async Task T12_ConsecutiveReplacements_PartialPaidAndRefunded_CannotOpenSpending()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT12");
+        var memberB = await f.AddUserAsync("MemberBT12");
+        var memberC = await f.AddUserAsync("MemberCT12");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberC.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT12", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memberB.Id, default);
+        await service.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Owner contributes full 2,000,000 VND
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT12", true, balance: 2_000_000);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-full-t12", Pin, config.Revision), default);
+
+        // Member B contributes 1,000,000 / 2,000,000 VND partial
+        var bWallet = await f.AddWalletAsync(memberB.Id, "BWalletT12", true, balance: 1_000_000);
+        await service.ContributeAsync(memberB.Id, fund.Id, new(bWallet.Id, 1_000_000, "b-part-t12", Pin, config.Revision), default);
+
+        // Advance 25h -> Member B auto-kicked, refunded 1,000,000 VND
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+        var res1 = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("MembersAutoKicked", res1.Status);
+        Assert.Contains(memberB.Id, res1.AutoKickedUserIds);
+
+        // Replacement member C joins seat 2 within 72h window
+        var invC = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = memberC.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(invC);
+        await f.Db.SaveChangesAsync();
+        await service.AcceptAsync(memberC.Id, invC.Id, true, "v2.0", default);
+
+        // Replacement member C contributes 1,000,000 / 2,000,000 VND partial
+        var cWallet = await f.AddWalletAsync(memberC.Id, "CWalletT12", true, balance: 1_000_000);
+        await service.ContributeAsync(memberC.Id, fund.Id, new(cWallet.Id, 1_000_000, "c-part-t12", Pin, config.Revision), default);
+
+        // Advance past C's 24h deadline -> Member C auto-kicked, refunded 1,000,000 VND
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+        var res2 = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("MembersAutoKicked", res2.Status);
+        Assert.Contains(memberC.Id, res2.AutoKickedUserIds);
+
+        // VERIFICATION:
+        // Historical payments sum to 2M (Owner) + 1M (B) + 1M (C) = 4M.
+        // BUT B and C were refunded! Real balance in treasury is ONLY 2,000,000 VND!
+        // Seat 2 is currently vacant!
+        var finance = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.Equal("FINANCE_BLOCKED", finance.SpendingState);
+
+        // Attempting to create an expense request MUST fail because vacant seats exist and active paid < target!
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateFundRequestAsync(owner.Id, fund.Id, new("Expense", 1_000_000, owner.Id, "Chi mua dụng cụ", "expense-t12", Pin), default));
+        Assert.True(ex.Code == "fixed_vacant_seats" || ex.Code == "fixed_group_funding_incomplete");
+    }
+
+    [Fact]
+    public async Task T13_Scheduler_ProgressFixedFundDeadlines_AutoKicksAndFailsDeadlines()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT13");
+        var member = await f.AddUserAsync("MemberT13");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT13", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Owner contributes full
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT13", true, balance: 2_000_000);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-full-t13", Pin, config.Revision), default);
+
+        // Advance 25h past deadline
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+
+        // Background worker executes ProgressFixedFundDeadlinesAsync without manual fund-specific trigger
+        var processed = await service.ProgressFixedFundDeadlinesAsync(default);
+        Assert.True(processed >= 1);
+
+        // Member is auto-kicked and 72h window opened
+        var treasury = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+        Assert.NotNull(treasury.ReplacementWindowExpiresAt);
+
+        var activeMembers = await service.MembersAsync(owner.Id, fund.Id, default);
+        Assert.Single(activeMembers);
+    }
+
+    [Fact]
+    public async Task T14_FailPeriodEarly_OwnerAndUnauthorizedChecks()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT14");
+        var memberB = await f.AddUserAsync("MemberBT14");
+        var stranger = await f.AddUserAsync("StrangerT14");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberB.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT14", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memberB.Id, default);
+        await service.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Advance 25h -> Member B auto-kicked
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT14", true, balance: 2_000_000);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-t14", Pin, config.Revision), default);
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+        await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+
+        // 1. Non-owner (stranger) attempts to fail period early -> rejected!
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.FailFixedPeriodEarlyAsync(stranger.Id, fund.Id, Pin, default));
+
+        // 2. Owner with wrong PIN -> rejected!
+        await Assert.ThrowsAsync<AppException>(() =>
+            service.FailFixedPeriodEarlyAsync(owner.Id, fund.Id, "999999", default));
+
+        // 3. Valid owner with correct PIN -> succeeds!
+        var result = await service.FailFixedPeriodEarlyAsync(owner.Id, fund.Id, Pin, default);
+        Assert.NotNull(result);
+        Assert.Equal(2_000_000, result.TotalRefundedVnd);
+
+        var dbFund = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.NotNull(dbFund.DissolvedAt);
+    }
+
+    [Fact]
+    public async Task T15_ReplacementWindow_ExactBoundaryExpired_RejectsAcceptance()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT15");
+        var member = await f.AddUserAsync("MemberT15");
+        var replacement = await f.AddUserAsync("ReplacementT15");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, replacement.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT15", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT15", true, balance: 2_000_000);
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-t15", Pin, config.Revision), default);
+
+        // Advance 25h -> member auto-kicked, opening 72h window
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+        await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+
+        var treasury = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+        var windowEnd = treasury.ReplacementWindowExpiresAt!.Value;
+
+        var invRep = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = replacement.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(invRep);
+        await f.Db.SaveChangesAsync();
+
+        // Advance clock to EXACT boundary of window expiration
+        clock.UtcNow = windowEnd;
+
+        // At exact windowEnd, acceptance must be rejected!
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.AcceptAsync(replacement.Id, invRep.Id, true, "v2.0", default));
+        Assert.Equal("replacement_window_expired", ex.Code);
+    }
 }

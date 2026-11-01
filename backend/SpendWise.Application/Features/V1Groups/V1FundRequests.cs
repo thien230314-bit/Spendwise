@@ -130,11 +130,25 @@ public sealed partial class V1FundService
                     throw new ConflictException("fixed_member_contribution_incomplete", "Cá nhân người yêu cầu chi chưa hoàn thành 100% nghĩa vụ đóng góp.");
                 }
 
-                var totalPaidContributions = paidDict.Values.Sum();
-                var targetVnd = (treasuryPre.TargetVnd ?? fund.TargetVnd) ?? 0L;
-                if (targetVnd <= 0 || totalPaidContributions < targetVnd)
+                // Verify ALL confirmed seats are occupied by active members (no vacant seats)
+                var activeMembers = await ActiveMembersAsync(fundId, token);
+                var confirmedSeats = await db.V1FundObligations.AsNoTracking()
+                    .Where(o => o.FundId == fundId && o.Revision == treasuryPre.Revision)
+                    .Select(o => o.Seat)
+                    .Distinct()
+                    .ToListAsync(token);
+
+                if (activeMembers.Count != confirmedSeats.Count || !confirmedSeats.All(s => activeMembers.Any(m => m.Seat == s)))
                 {
-                    throw new ConflictException("fixed_group_funding_incomplete", "Quỹ Cố định chưa hoàn thành 100% mục tiêu đóng góp của nhóm.");
+                    throw new ConflictException("fixed_vacant_seats", "Quỹ Cố định đang có ghế trống chưa được thay thế, không thể tạo yêu cầu chi tiêu.");
+                }
+
+                // Calculate total paid ONLY from CURRENT active members (historical refunded contributions of departed members CANNOT count towards target!)
+                var activePaid = activeMembers.Sum(m => paidDict.GetValueOrDefault(m.Id, 0L));
+                var targetVnd = (treasuryPre.TargetVnd ?? fund.TargetVnd) ?? 0L;
+                if (targetVnd <= 0 || activePaid < targetVnd)
+                {
+                    throw new ConflictException("fixed_group_funding_incomplete", "Quỹ Cố định chưa hoàn thành 100% mục tiêu đóng góp của nhóm từ các thành viên hiện hành.");
                 }
             }
 

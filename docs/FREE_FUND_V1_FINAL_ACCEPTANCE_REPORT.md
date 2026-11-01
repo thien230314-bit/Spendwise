@@ -20,22 +20,25 @@
 
 ---
 
-## 2. BẰNG CHỨNG KIỂM THỬ THỰC TẾ (99/99 PASS — 100% GREEN)
+## 2. BẰNG CHỨNG KIỂM THỬ THỰC TẾ (100/100 PASS — 100% GREEN)
 
-Toàn bộ 99 bài kiểm thử thuộc bộ kiểm thử quỹ SpendWise (Free Fund V1 + Fixed Fund V2) đã chạy và đạt **100% PASS (0 Failed, 0 Skipped)**:
+Toàn bộ 100 bài kiểm thử thuộc bộ kiểm thử quỹ SpendWise (Free Fund V1 + Fixed Fund V2 + Regression) đã chạy và đạt **100% PASS (0 Failed, 0 Skipped)**:
 
 ```text
 Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\Debug\net10.0\SpendWise.Tests.dll (.NETCoreApp,Version=v10.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:    99, Skipped:     0, Total:    99, Duration: 1 m 21 s - SpendWise.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:   100, Skipped:     0, Total:   100, Duration: 1 m 20 s - SpendWise.Tests.dll (net10.0)
 ```
 
-### Phân rã kết quả theo các Module kiểm thử:
-1. **`FreeFundFinalAcceptanceTests`** (3 tests - PASS):
-   - `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`: Kiểm thử toàn bộ vòng đời từ lúc khởi tạo quỹ, mời 2 thành viên, nạp tiền 3 bên, chi tiêu nhóm, rút vốn cá nhân, hủy tự động quyền chi tiêu khi thành viên rời, kick thành viên, giải tán quỹ và đối soát bảo toàn vốn $100\%$.
-   - `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_PreservesFinancialIntegrity`: Kiểm thử tranh chấp đồng thời (5 tác vụ song song với cùng một idempotency key), đảm bảo chỉ có 1 tác vụ ghi sổ thành công, số dư quỹ tăng chính xác tuyệt đối.
-   - `FixedFundV2_BackwardCompatibility_PreservedAndUnmodified`: Kiểm thử bảo toàn tính năng Fixed Fund V2, xác minh các ràng buộc ngân quỹ và phân quyền không bị ảnh hưởng.
+### Giải trình chi tiết phân rã số lượng bài kiểm thử (100 Tests):
+Filter `FullyQualifiedName~FreeFund|FullyQualifiedName~FixedFundV2` khớp chính xác 100 test cases, bao gồm **95 bài kiểm thử trọng tâm** thuộc 6 file test chính của V1 Funds và **5 bài kiểm thử hồi quy lịch sử** khớp từ khóa `FreeFund`:
+
+1. **`FreeFundFinalAcceptanceTests`** (4 tests - PASS):
+   - `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`: Kiểm thử toàn diện vòng đời thực tế gồm chi tiêu đã giải ngân (`Completed`), rút vốn cá nhân (`Withdrawal`), bảo lưu chi tiêu (`ApprovedUnused`), tự động hủy bảo lưu khi thành viên rời quỹ, kick thành viên, giải tán quỹ (`Dissolve`), và đối soát bảo toàn vốn tuyệt đối.
+   - `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_WithIndependentDbContexts`: Kiểm thử đồng thời đa DbContext (5 luồng chạy song song với các instance DbContext và Service độc lập trên cùng một kết nối) với cùng Idempotency Key, xác minh bảo vệ chống ghi đúp (deduplication) và toàn vẹn số dư sổ cái.
+   - `FixedFundV2_BackwardCompatibility_PreservedAndUnmodified`: Kiểm thử tính tương thích ngược của Quỹ Cố định (Fixed Fund V2), đảm bảo các quy tắc phân quyền, bắt buộc nghĩa vụ đóng góp và cấu trúc quỹ cũ không bị phá vỡ.
+   - `FreeFund_HttpApi_OpenApiContract_SmokeTest`: Kiểm thử smoke test các giao thức HTTP API theo OpenAPI contract (`GET /equity`, `GET /refund-preview`, `GET /requests/{id}`) với kiểm tra phân quyền bảo mật nhiều tầng.
 2. **`FreeFundApiContractNotificationTests`** (9 tests - PASS):
    - Đảm bảo quyền riêng tư thông báo (Notification) và nhật ký hoạt động (Activity Feed) cho các yêu cầu cá nhân (Rút vốn / Hủy tự động / Chi tiêu).
    - Che giấu mô tả nhạy cảm trong lịch sử giao dịch đối với các thành viên khác (`"Rút vốn thành viên"`, `RelatedRequestId = null`).
@@ -46,28 +49,54 @@ Passed!  - Failed:     0, Passed:    99, Skipped:     0, Total:    99, Duration:
 5. **`FreeFundEquityEngineTests` & `FreeFundEquityIntegrationTests`** (20 tests - PASS):
    - Công thức tính vốn ròng (Equity) chính xác theo tỷ lệ đóng góp $E_i = C_i - S_i - W_i$.
    - Đối soát bảo toàn: Tổng vốn ròng các thành viên luôn bằng đúng số dư khả dụng thực tế của quỹ.
-6. **`FixedFundV2BusinessRuleTests`** (35 tests - PASS):
-   - Toàn bộ 35 quy tắc nghiệp vụ của Fixed Fund V2 chạy thành công và không bị phá vỡ.
+6. **`FixedFundV2BusinessRuleTests`** (30 tests - PASS):
+   - Toàn bộ 30 quy tắc nghiệp vụ của Fixed Fund V2 chạy thành công và không bị phá vỡ.
+7. **Historical Regression Tests** (5 tests - PASS):
+   - `Task16_1_ApprovedDecisionsTests.Decision3_FreeFund_...` (1 test)
+   - `Task16_2_AdversarialAuditTests.CaseR1_FreeFund_...` (1 test)
+   - `Task16_2_AdversarialAuditTests.CaseR7_FreeFund_...` (1 test)
+   - `V1FundRefundRegressionTests.CaseC_FreeFund_...` (2 tests)
+   - Tổng cộng: $95 + 5 = 100$ tests.
 
 ---
 
 ## 3. ĐỐI SOÁT BẢO TOÀN TÀI CHÍNH (FINANCIAL CONSERVATION)
 
-Trong bài kiểm thử tổng thể `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`:
+Trong bài kiểm thử master E2E `FreeFund_FullLifecycle_EndToEnd_FromCreationToDissolution_WithFullAccountingReconciliation`:
+
+### Kịch bản chi tiết:
 - **Vốn ban đầu**: 3 thành viên sở hữu mỗi người 1.000.000 VND trong ví cá nhân $\rightarrow$ Tổng tài sản hệ thống: **3.000.000 VND**.
-- **Đóng góp vào quỹ**: Owner A (500k), Member B (300k), Member C (200k) $\rightarrow$ Quỹ có 1.000.000 VND.
-- **Rút vốn**: Member C rút 50.000 VND $\rightarrow$ Ví C nhận 50.000 VND, Quỹ còn 950.000 VND.
-- **Bảo lưu chi tiêu**: Member B xin chi 100.000 VND $\rightarrow$ ApprovedUnused giữ 100.000 VND, số dư khả dụng còn 850.000 VND.
-- **Rời quỹ**: Member B rời quỹ $\rightarrow$ ApprovedUnused của B bị hủy, B nhận hoàn đủ 300.000 VND vào ví cá nhân.
-- **Kick thành viên**: Owner A kick Member C $\rightarrow$ C nhận hoàn số vốn ròng còn lại là 150.000 VND ($200.000 - 50.000 = 150.000$ VND).
-- **Giải tán quỹ**: Owner A giải tán quỹ $\rightarrow$ A nhận toàn bộ 500.000 VND còn lại trong quỹ. Quỹ về 0 VND.
-- **Kết quả đối soát cuối cùng**:
-  $$\text{Ví Owner A: } 1.000.000\text{ VND}$$
-  $$\text{Ví Member B: } 1.000.000\text{ VND}$$
-  $$\text{Ví Member C: } 1.000.000\text{ VND}$$
-  $$\text{Số dư quỹ: } 0\text{ VND}$$
-  $$\sum \text{Tài sản sau giải tán} = 3.000.000\text{ VND} \equiv \text{Tổng vốn ban đầu}$$
-  **Sai lệch dòng tiền**: **0 VND (Bảo toàn tuyệt đối $100\%$)**.
+- **Đóng góp vào quỹ**: Owner A (500k), Member B (300k), Member C (200k) $\rightarrow$ Quỹ có 1.000.000 VND. Số dư ví: A (500k), B (700k), C (800k).
+- **Chi tiêu nhóm hoàn thành (`Completed`)**: Owner A thực hiện một khoản chi trực tiếp 100.000 VND cho "Thiết bị dùng chung". Khoản tiền 100.000 VND được giải ngân vào ví Owner A. Quỹ còn 900.000 VND. Chi phí được chia sẻ theo tỷ lệ đóng góp:
+  - Tỷ lệ: A (50%), B (30%), C (20%).
+  - Chi phí gánh: A (50k), B (30k), C (20k).
+  - Vốn ròng còn lại: A (450k), B (270k), C (180k).
+- **Rút vốn thành viên**: Member C rút 50.000 VND vốn cá nhân $\rightarrow$ Quỹ còn 850.000 VND. Vốn ròng C còn 130.000 VND. Ví C tăng lên 850.000 VND.
+- **Bảo lưu chi tiêu**: Member B yêu cầu chi tiêu 50.000 VND $\rightarrow$ Owner A duyệt $\rightarrow$ Trạng thái `ApprovedUnused` giữ 50.000 VND bảo lưu. Số dư khả dụng của quỹ là 800.000 VND.
+- **Rời quỹ**: Member B rời quỹ:
+  - Quyền chi tiêu bảo lưu 50.000 VND của B tự động chuyển thành `Cancelled`.
+  - Member B nhận hoàn lại toàn bộ vốn ròng thực tế: **270.000 VND** (Đóng 300k - Chi chung 30k = 270k).
+  - Quỹ còn lại 580.000 VND. Ví B đạt $700k + 270k =$ **970.000 VND**.
+- **Kick thành viên**: Owner A loại Member C khỏi quỹ:
+  - Member C nhận hoàn lại toàn bộ vốn ròng thực tế: **130.000 VND** (Đóng 200k - Chi chung 20k - Rút vốn 50k = 130k).
+  - Quỹ còn lại 450.000 VND. Ví C đạt $850k + 130k =$ **980.000 VND**.
+- **Giải tán quỹ**: Owner A giải tán quỹ:
+  - Owner A nhận hoàn lại số dư còn lại trong quỹ: **450.000 VND** (Khớp chính xác với vốn ròng của A: Đóng 500k - Chi chung 50k = 450k).
+  - Số dư quỹ về **0 VND**.
+  - Ví A đạt $500k (\text{vốn còn lại}) + 100k (\text{giải ngân chi}) + 450k (\text{hoàn tiền}) =$ **1.050.000 VND**.
+
+### Bảng cân đối tài sản hệ thống sau giải tán:
+| Chủ thể | Số dư ví ban đầu | Đóng góp quỹ | Nhận giải ngân chi | Rút vốn | Nhận hoàn tiền | Số dư ví cuối cùng |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Owner A** | 1.000.000 | -500.000 | +100.000 | 0 | +450.000 | **1.050.000** |
+| **Member B** | 1.000.000 | -300.000 | 0 | 0 | +270.000 | **970.000** |
+| **Member C** | 1.000.000 | -200.000 | 0 | +50.000 | +130.000 | **980.000** |
+| **Quỹ Free Fund** | 0 | +1.000.000 | -100.000 | -50.000 | -850.000 | **0** |
+| **TỔNG HỆ THỐNG** | **3.000.000** | **0** | **0** | **0** | **0** | **3.000.000** |
+
+$$\sum \text{Ví cuối} + \text{Số dư quỹ} = 1.050.000 + 970.000 + 980.000 + 0 = 3.000.000\text{ VND} \equiv \text{Tổng vốn ban đầu}$$
+
+**Độ lệch tài chính**: **0 VND (Bảo toàn tuyệt đối 100%)**.
 
 ---
 
@@ -90,4 +119,4 @@ Trong bài kiểm thử tổng thể `FreeFund_FullLifecycle_EndToEnd_FromCreati
 
 ## 5. KẾT LUẬN
 
-Backend SpendWise Free Fund V1 đã hoàn thành đầy đủ các tiêu chuẩn kiến trúc, an toàn tài chính, tính nhất quán dữ liệu và bảo mật thông tin cá nhân. Nhánh `feature/free-fund-v1-remake` sẵn sàng cho việc nghiệm thu cuối cùng.
+Backend SpendWise Free Fund V1 đã hoàn thành đầy đủ các tiêu chuẩn kiến trúc, an toàn tài chính, tính nhất quán dữ liệu, xử lý tranh chấp đồng thời đa DbContext và bảo mật thông tin cá nhân. Nhánh `feature/free-fund-v1-remake` hoàn tất toàn bộ 5 Stages và sẵn sàng đóng nghiệm thu chính thức (`SW_GATE: COMPLETE`).

@@ -537,6 +537,12 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null)
                 throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
 
+            if (fund.Kind == V1FundKind.Fixed && fund.ActivityClosedAt is null)
+            {
+                throw new ConflictException("active_activity_not_closed",
+                    "Hoạt động của quỹ đang mở. Chủ quỹ phải kết thúc hoạt động trước khi giải tán quỹ.");
+            }
+
             if (fund.Kind == V1FundKind.Free)
             {
                 var hasPaymentProcessing = await db.V1FundRequests.AsNoTracking()

@@ -1494,6 +1494,14 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal(2, proposalDtoCheck.Yes); // Owner + B voted Yes
         Assert.Equal(1, proposalDtoCheck.No); // C-episode1 voted No
 
+        // Dissolution lifecycle validation: attempting voluntary dissolution while activity is open MUST BE REJECTED!
+        var exActiveDissolve = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.DissolveFundAsync(owner.Id, fund.Id, new V1DissolveFundRequest(Pin, "dissolve-mid-cycle-blocked"), default));
+        Assert.Equal("active_activity_not_closed", exActiveDissolve.Code);
+
+        // Owner officially closes activity before dissolution:
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
         // Fund dissolution audit: run official Owner dissolution flow (DissolveFundAsync)
         var wOwnerBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wOwner.Id)).Balance;
         var wBBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wB.Id)).Balance;

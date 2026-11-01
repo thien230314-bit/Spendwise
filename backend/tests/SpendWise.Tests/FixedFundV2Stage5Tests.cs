@@ -93,6 +93,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         public TaskCompletionSource ExecutingReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource LockAcquired { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int SessionId { get; private set; }
 
         private int executingTriggered;
         private int executedTriggered;
@@ -110,6 +111,10 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         {
             if (IsFundLockCommand(command.CommandText) && Interlocked.Exchange(ref executingTriggered, 1) == 0)
             {
+                if (command.Connection is SqlConnection sqlConn)
+                {
+                    SessionId = sqlConn.ServerProcessId;
+                }
                 ExecutingReached.TrySetResult();
             }
             return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
@@ -157,7 +162,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         }
     }
 
-    private static async Task WaitForPhysicalSqlLockWaitAsync(string connectionString, TimeSpan timeout)
+    private static async Task WaitForPhysicalSqlLockWaitAsync(string connectionString, int waitingSessionId, TimeSpan timeout)
     {
         var start = DateTime.UtcNow;
         await using var conn = new SqlConnection(connectionString);
@@ -165,12 +170,21 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         while (DateTime.UtcNow - start < timeout)
         {
             await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(1) FROM sys.dm_os_waiting_tasks WHERE wait_type LIKE 'LCK_%' AND blocking_session_id > 0";
+            cmd.CommandText = @"
+                SELECT COUNT(1)
+                FROM sys.dm_os_waiting_tasks AS wt
+                JOIN sys.dm_exec_requests AS r
+                    ON r.session_id = wt.session_id
+                WHERE wt.session_id = @waitingSessionId
+                  AND r.database_id = DB_ID()
+                  AND wt.wait_type LIKE 'LCK[_]%'
+                  AND wt.blocking_session_id > 0;";
+            cmd.Parameters.Add(new SqlParameter("@waitingSessionId", waitingSessionId));
             var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             if (count > 0) return;
             await Task.Delay(50);
         }
-        throw new TimeoutException("Timed out waiting for physical SQL Server lock wait contention in sys.dm_os_waiting_tasks.");
+        throw new TimeoutException($"Timed out waiting for physical SQL Server lock wait contention on session {waitingSessionId}.");
     }
 
     private static V1FundService CreateService(SpendWiseDbContext db, IClock clock, IV1InactivityEvidence? evidence = null)
@@ -513,8 +527,9 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             // Assert Contribute has NOT acquired the lock while Worker holds it
             Assert.False(contributeGate.LockAcquired.Task.IsCompleted);
 
-            // Verify physical SQL Server lock wait contention via sys.dm_os_waiting_tasks observer connection
-            await WaitForPhysicalSqlLockWaitAsync(database.ConnectionString, TimeSpan.FromSeconds(10));
+            // Verify physical SQL Server lock wait contention on contributeGate.SessionId via sys.dm_os_waiting_tasks observer connection
+            Assert.True(contributeGate.SessionId > 0);
+            await WaitForPhysicalSqlLockWaitAsync(database.ConnectionString, contributeGate.SessionId, TimeSpan.FromSeconds(10));
         }
         finally
         {
@@ -682,8 +697,9 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             // Assert Worker is STILL BLOCKED and has NOT acquired the lock while Contribution is holding it
             Assert.False(workerGate2.LockAcquired.Task.IsCompleted);
 
-            // Verify physical SQL Server lock wait contention via sys.dm_os_waiting_tasks observer connection
-            await WaitForPhysicalSqlLockWaitAsync(database2.ConnectionString, TimeSpan.FromSeconds(10));
+            // Verify physical SQL Server lock wait contention on workerGate2.SessionId via sys.dm_os_waiting_tasks observer connection
+            Assert.True(workerGate2.SessionId > 0);
+            await WaitForPhysicalSqlLockWaitAsync(database2.ConnectionString, workerGate2.SessionId, TimeSpan.FromSeconds(10));
         }
         finally
         {

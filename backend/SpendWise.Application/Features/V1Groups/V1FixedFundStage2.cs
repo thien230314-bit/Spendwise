@@ -59,6 +59,14 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null || fund.Kind != V1FundKind.Fixed)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
 
+            if (fund.ActivityClosedAt is not null)
+                return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
+
+            var activeProposal = await db.V1ActivityProposals
+                .AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "AwaitingReplacement" || p.State == "ApprovedAwaitingSettlement"), token);
+            if (activeProposal)
+                return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
+
             var treasury = await TreasuryAsync(fund, token);
             if (treasury.Revision == 0)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);

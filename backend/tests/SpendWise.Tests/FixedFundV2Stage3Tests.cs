@@ -22,6 +22,7 @@ public sealed class FixedFundV2Stage3Tests
     private sealed class MutableClock(DateTime initial) : IClock
     {
         public DateTime UtcNow { get; set; } = initial;
+        public void Advance(TimeSpan d) => UtcNow += d;
     }
 
     private sealed class TestInactivity : IV1InactivityEvidence
@@ -524,6 +525,12 @@ public sealed class FixedFundV2Stage3Tests
 
     // =========================================================================
     // T19: Multi-period carry-over + protected excess + partial spend + dissolution
+    // Matches fixed.md line 83:
+    // A has 3M, B has 1M; new target 4M (2M each).
+    // A has 1M protected excess. B contributes 1M to reach 2M.
+    // Fund total balance = 5M, spendable = 4M.
+    // Spend 2M on expense -> balance leaves 3M.
+    // Settle / dissolve: A gets 2M (1M protected + 1M unspent), B gets 1M.
     // =========================================================================
     [Fact]
     public async Task T19_MultiPeriodCarryOver_ProtectedExcess_PartialSpend_Dissolution()
@@ -547,11 +554,7 @@ public sealed class FixedFundV2Stage3Tests
         var wB = await f.AddWalletAsync(memB.Id, "WB", true, balance: 10_000_000);
         await f.AddWalletAsync(merchant.Id, "WMerchant", true, balance: 0);
 
-        // Period 1: Owner pays 2M, B pays 2M. Total 4M.
-        await service.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 2_000_000, "c-o-19", Pin, config.Revision), default);
-        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 2_000_000, "c-b-19", Pin, config.Revision), default);
-
-        // Close Period 1. Balance is 4M. Both have 2M entitlement.
+        // Close Period 1.
         await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
 
         // Propose Period 2 with target 4M (2M required each).
@@ -559,27 +562,56 @@ public sealed class FixedFundV2Stage3Tests
         await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
         await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
 
+        // Simulate asymmetric carry-over per fixed.md line 83: Owner A has 3M, Member B has 1M carry-over
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var vOwner = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == owner.Id);
+        var vB = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memB.Id);
+        vOwner.CarryOverVnd = 3_000_000;
+        vB.CarryOverVnd = 1_000_000;
+        // Seed treasury ledger via double-entry post with 4_000_000 (3M from A + 1M from B)
+        var accOwner = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wOwner.Id);
+        var accB = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wB.Id);
+        var ledger = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, clock);
+        await ledger.PostAsync(accOwner.Id, treasury.LedgerAccountId, 3_000_000, "VND", "V1FundContribution", fund.Id, "p1-a", "p1-a", "P1 A", default);
+        await ledger.PostAsync(accB.Id, treasury.LedgerAccountId, 1_000_000, "VND", "V1FundContribution", fund.Id, "p1-b", "p1-b", "P1 B", default);
+        await f.Db.SaveChangesAsync();
+
+        // Settle proposal
         await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
 
-        // Both carried over 2M. Target is 4M. 100% satisfied with zero new contributions!
+        // Check finance state:
+        // Target is 4M. A has 3M carry-over (2M required + 1M locked excess).
+        // B has 1M carry-over (2M required -> 1M remaining).
         var financeP2 = await service.FinanceAsync(owner.Id, fund.Id, default);
-        Assert.Equal("OPEN", financeP2.SpendingState);
-        Assert.Equal(4_000_000, financeP2.BalanceVnd);
+        var obA = financeP2.Obligations.Single(o => o.UserId == owner.Id);
+        var obB = financeP2.Obligations.Single(o => o.UserId == memB.Id);
+        Assert.Equal(1_000_000, obA.LockedExcessVnd);
+        Assert.Equal(0, obA.RemainingVnd);
+        Assert.Equal(0, obB.LockedExcessVnd);
+        Assert.Equal(1_000_000, obB.RemainingVnd);
 
-        // Spend 2M on expense
+        // Member B contributes 1M to satisfy obligation
+        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 1_000_000, "c-b-19-complete", Pin, financeP2.Revision), default);
+
+        // Now fund has 5M balance (4M target + 1M locked excess)
+        var financeFunded = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.Equal(5_000_000, financeFunded.BalanceVnd);
+        Assert.Equal("OPEN", financeFunded.SpendingState);
+
+        // Spend 2M on expense to merchant
         var exp = new V1FundRequestInput("Expense", 2_000_000, merchant.Id, "Supplies P2", "exp-t19", Pin);
         await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
 
-        // Treasury balance is now 2M. Close Period 2 and dissolve fund.
+        // Treasury balance is now 3M (5M - 2M). Close activity and dissolve.
         await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
         var dissolve = await service.DissolveFundAsync(owner.Id, fund.Id, new(Pin, "dissolve-t19"), default);
         Assert.Equal(0, dissolve.FinalBalanceVnd);
 
-        // Each gets 1M unspent refund
-        var oFinal = await f.Db.Wallets.Where(w => w.Id == wOwner.Id).Select(w => w.AvailableBalance).SingleAsync();
-        var bFinal = await f.Db.Wallets.Where(w => w.Id == wB.Id).Select(w => w.AvailableBalance).SingleAsync();
-        Assert.Equal(9_000_000, oFinal); // 8M + 1M refund = 9M
-        Assert.Equal(9_000_000, bFinal); // 8M + 1M refund = 9M
+        // Per line 83: Owner A gets 2M (1M protected excess + 1M unspent share), B gets 1M (unspent share)!
+        var refA = dissolve.Refunds.Single(r => r.UserId == owner.Id).RefundAmountVnd;
+        var refB = dissolve.Refunds.Single(r => r.UserId == memB.Id).RefundAmountVnd;
+        Assert.Equal(2_000_000, refA);
+        Assert.Equal(1_000_000, refB);
     }
 
     // =========================================================================
@@ -686,5 +718,150 @@ public sealed class FixedFundV2Stage3Tests
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p4-t21", Pin), default));
         Assert.Equal("maximum_periods_exceeded", ex.Code);
+    }
+
+    // =========================================================================
+    // T22: Stage 2 worker isolation: No action when activity closed or proposal active
+    // =========================================================================
+    [Fact]
+    public async Task T22_WorkerIsolation_Stage2WorkerTakesNoAction_WhenActivityClosedOrInTransition()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT22");
+        var memA = await f.AddUserAsync("MemAT22");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memA.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT22", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, memA.Id, default);
+        await service.AcceptAsync(memA.Id, inv.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Close activity
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        // Advance clock way past the old period's deadline
+        clock.Advance(TimeSpan.FromHours(50));
+
+        // Process Stage 2 deadlines worker: must return NoAction and not auto-kick anyone!
+        var res = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("NoAction", res.Status);
+        Assert.Empty(res.AutoKickedUserIds);
+        Assert.False(res.Dissolved);
+
+        // Propose activity and advance to AwaitingReplacement
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p2-t22", Pin), default);
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memA.Id, proposal.Id, false, default); // MemA opts out
+
+        // Now proposal is in AwaitingReplacement
+        var pCheck = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
+        Assert.Equal("AwaitingReplacement", pCheck.State);
+
+        // Stage 2 worker still must return NoAction and not touch the fund!
+        var res2 = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("NoAction", res2.Status);
+        Assert.Empty(res2.AutoKickedUserIds);
+        Assert.False(res2.Dissolved);
+    }
+
+    // =========================================================================
+    // T23: Proposal Lifecycle: Cannot cancel once voting ends or in AwaitingReplacement
+    // =========================================================================
+    [Fact]
+    public async Task T23_ProposalLifecycle_CannotCancelAfterVotingClosedOrInAwaitingReplacement()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT23");
+        var memA = await f.AddUserAsync("MemAT23");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memA.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT23", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, memA.Id, default);
+        await service.AcceptAsync(memA.Id, inv.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p2-t23", Pin), default);
+
+        // Advancing clock past 24 hours prevents cancel
+        clock.Advance(TimeSpan.FromHours(25));
+        var exTimeout = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CancelActivityProposalAsync(owner.Id, proposal.Id, Pin, default));
+        Assert.Equal("proposal_voting_closed", exTimeout.Code);
+    }
+
+    // =========================================================================
+    // T24: Unique Active Proposal: Cannot create duplicate proposals
+    // =========================================================================
+    [Fact]
+    public async Task T24_UniqueProposal_CannotCreateSecondProposalWhileActive()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT24");
+        var memA = await f.AddUserAsync("MemAT24");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memA.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT24", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, memA.Id, default);
+        await service.AcceptAsync(memA.Id, inv.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        var p1 = await service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p1-t24", Pin), default);
+        Assert.Equal("Voting", p1.State);
+
+        // Attempt second proposal while p1 is Voting
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p2-t24", Pin), default));
+        Assert.Equal("active_proposal_exists", ex.Code);
+    }
+
+    // =========================================================================
+    // T25: New Period Final Obligation Consent and Duration
+    // =========================================================================
+    [Fact]
+    public async Task T25_NewPeriodFinalObligationConsentAndDuration()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT25");
+        var memA = await f.AddUserAsync("MemAT25");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memA.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT25", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, memA.Id, default);
+        await service.AcceptAsync(memA.Id, inv.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        // Propose with 48 hours duration
+        var p = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t25", Pin, 48), default);
+        Assert.Equal(24, p.ContributionDurationHours); // Current fund duration
+        Assert.Equal(3_000_000, p.ExpectedPerMemberVnd); // 6M / 2 = 3M
+
+        await service.VoteActivityAsync(owner.Id, p.Id, true, default);
+        await service.VoteActivityAsync(memA.Id, p.Id, true, default);
+
+        // Settle with custom duration 72h, new target 8M, and renamed fund
+        var settle = await service.SettleActivityAsync(owner.Id, p.Id, new V1SettleActivityRequest(Pin, TargetVnd: 8_000_000, ContributionDurationHours: 72, NewName: "RenamedT25"), default);
+        Assert.Equal("Settled", settle.State);
+
+        var updatedFund = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.Equal("RenamedT25", updatedFund.Name);
+        Assert.Equal(8_000_000, updatedFund.TargetVnd);
+        Assert.Equal(72, updatedFund.ContributionDurationHours);
+
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).ToListAsync();
+        Assert.Equal(2, obligations.Count);
+        Assert.All(obligations, o => Assert.Equal(4_000_000, o.RequiredVnd));
+        Assert.All(obligations, o => Assert.Equal(clock.UtcNow.AddHours(72), o.Deadline));
     }
 }

@@ -5,6 +5,12 @@ using SpendWise.Domain.V1Groups;
 
 namespace SpendWise.Application.Features.V1Groups;
 
+public sealed record V1SettleActivityRequest(
+    string SecurityPin,
+    long? TargetVnd = null,
+    int? ContributionDurationHours = null,
+    string? NewName = null);
+
 public sealed partial class V1FundService
 {
     private Task<V1ActivityProposal?> CurrentActivityAsync(Guid fundId, CancellationToken ct) =>
@@ -22,9 +28,12 @@ public sealed partial class V1FundService
         return paid;
     }
 
-    public async Task<V1ActivityProposalDto> SettleActivityAsync(Guid actor, Guid id, string pin, CancellationToken ct)
+    public Task<V1ActivityProposalDto> SettleActivityAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
+        SettleActivityAsync(actor, id, new V1SettleActivityRequest(pin), ct);
+
+    public async Task<V1ActivityProposalDto> SettleActivityAsync(Guid actor, Guid id, V1SettleActivityRequest request, CancellationToken ct)
     {
-        await RequireActorAsync(actor, ct); await security.VerifyAsync(actor, pin, ct);
+        await RequireActorAsync(actor, ct); await security.VerifyAsync(actor, request.SecurityPin, ct);
         return await db.ExecuteInTransactionAsync(async token =>
         {
             var snapshot = await db.V1ActivityProposals.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id, token)
@@ -44,7 +53,15 @@ public sealed partial class V1FundService
             if (activeMembers.Count < 2)
                 throw new ConflictException("insufficient_members", "Kỳ mới phải có ít nhất hai người.");
 
-            if (proposal.TargetVnd % activeMembers.Count != 0)
+            var finalTarget = request.TargetVnd ?? proposal.TargetVnd;
+            if (finalTarget <= 0 || finalTarget > MaximumVnd)
+                throw new AppException("invalid_amount", "Use positive integer VND.");
+
+            var finalDuration = request.ContributionDurationHours ?? (fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24);
+            if (finalDuration < 1 || finalDuration > 720)
+                throw new AppException("invalid_duration", "Contribution duration must be between 1 and 720 hours.");
+
+            if (finalTarget % activeMembers.Count != 0)
                 throw new ConflictException("target_not_divisible", "Mục tiêu kỳ mới bắt buộc phải chia hết cho số ghế.");
 
             var treasury = await TreasuryAsync(fund, token);
@@ -84,20 +101,20 @@ public sealed partial class V1FundService
             if (activeMembers.Count < 2)
                 throw new ConflictException("insufficient_members", "Kỳ mới phải có ít nhất hai người.");
 
-            if (proposal.TargetVnd % activeMembers.Count != 0)
+            if (finalTarget % activeMembers.Count != 0)
                 throw new ConflictException("target_not_divisible", "Mục tiêu kỳ mới bắt buộc phải chia hết cho số ghế.");
 
+            proposal.TargetVnd = finalTarget;
             proposal.SettledAt = clock.UtcNow;
             proposal.StartedRevision = checked(treasury.Revision + 1);
             proposal.State = "Settled";
             treasury.Revision = checked(treasury.Revision + 1);
-            treasury.TargetVnd = proposal.TargetVnd;
+            treasury.TargetVnd = finalTarget;
             treasury.ReplacementWindowExpiresAt = null;
 
             treasury.MembershipSignature = MembershipSignature(activeMembers);
-            var required = FixedFundAllocation.Allocate(proposal.TargetVnd, activeMembers.Select(m => m.Seat).ToArray());
-            var duration = fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
-            var deadline = clock.UtcNow.AddHours(duration);
+            var required = FixedFundAllocation.Allocate(finalTarget, activeMembers.Select(m => m.Seat).ToArray());
+            var deadline = clock.UtcNow.AddHours(finalDuration);
 
             foreach (var m in activeMembers)
             {
@@ -111,8 +128,12 @@ public sealed partial class V1FundService
                 RequiredVnd = required[m.Seat], Deadline = deadline
             }));
 
+            var newName = !string.IsNullOrWhiteSpace(request.NewName) ? request.NewName.Trim() : fund.Name;
+
             await db.V1Funds.Where(f => f.Id == fund.Id).ExecuteUpdateAsync(s => s
-                .SetProperty(f => f.TargetVnd, (long?)proposal.TargetVnd)
+                .SetProperty(f => f.Name, newName)
+                .SetProperty(f => f.TargetVnd, (long?)finalTarget)
+                .SetProperty(f => f.ContributionDurationHours, finalDuration)
                 .SetProperty(f => f.ActivityClosedAt, (DateTime?)null)
                 .SetProperty(f => f.OwnerRespondedAt, (DateTime?)null)
                 .SetProperty(f => f.OwnerResponseCaseId, (Guid?)null), token);

@@ -9,8 +9,8 @@ using SpendWise.Domain.Identity;
 
 namespace SpendWise.Application.Features.V1Groups;
 
-public sealed record V1ProposeActivityRequest(long TargetVnd, string IdempotencyKey, string SecurityPin);
-public sealed record V1ActivityProposalDto(Guid Id, Guid FundId, long TargetVnd, string State, int ElectorateSize, int Yes, int No, DateTime OpenedAt, DateTime Deadline, bool? OwnVote, long? OwnCarryOverVnd = null);
+public sealed record V1ProposeActivityRequest(long TargetVnd, string IdempotencyKey, string SecurityPin, int? ContributionDurationHours = null, string? NewName = null);
+public sealed record V1ActivityProposalDto(Guid Id, Guid FundId, long TargetVnd, string State, int ElectorateSize, int Yes, int No, DateTime OpenedAt, DateTime Deadline, bool? OwnVote, long? OwnCarryOverVnd = null, int? ContributionDurationHours = null, long? ExpectedPerMemberVnd = null);
 
 public sealed partial class V1FundService
 {
@@ -49,6 +49,18 @@ public sealed partial class V1FundService
             if (settledCount >= 2)
             {
                 throw new ConflictException("maximum_periods_exceeded", "Fixed Fund chỉ được tối đa 3 kỳ hoạt động. Kỳ hiện tại là kỳ cuối cùng, chỉ được quyết toán và giải tán.");
+            }
+
+            var hasActiveProposal = await db.V1ActivityProposals
+                .AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "AwaitingReplacement" || p.State == "ApprovedAwaitingSettlement"), token);
+            if (hasActiveProposal)
+            {
+                throw new ConflictException("active_proposal_exists", "An active activity proposal already exists for this fund.");
+            }
+
+            if (request.ContributionDurationHours is not null && (request.ContributionDurationHours < 1 || request.ContributionDurationHours > 720))
+            {
+                throw new AppException("invalid_duration", "Contribution duration must be between 1 and 720 hours.");
             }
 
             var replay = await db.V1ActivityProposals.AsNoTracking().SingleOrDefaultAsync(p => p.FundId == fundId && p.IdempotencyKey == key, token);
@@ -204,8 +216,8 @@ public sealed partial class V1FundService
             var fund = await LockFundAsync(p.FundId, token);
             RequireOwner(fund, actor);
 
-            if (p.State is "Settled" or "Cancelled" or "Failed")
-                throw new ConflictException("proposal_already_finished", "Only active or pending proposals can be cancelled.");
+            if (p.State != "Voting" || clock.UtcNow - p.OpenedAt >= TimeSpan.FromHours(24))
+                throw new ConflictException("proposal_voting_closed", "Proposal can only be cancelled while voting window is open.");
 
             p.State = "Cancelled";
             p.FinishedAt = clock.UtcNow;
@@ -233,7 +245,10 @@ public sealed partial class V1FundService
     {
         var voters = await db.V1ActivityVoters.AsNoTracking().Where(v => v.ProposalId == p.Id).ToListAsync(ct);
         var own = voters.SingleOrDefault(v => v.UserId == actor);
+        var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == p.FundId, ct);
+        var duration = fund?.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
+        var expectedPerMember = voters.Count > 0 ? p.TargetVnd / voters.Count : p.TargetVnd;
         return new(p.Id, p.FundId, p.TargetVnd, p.State, voters.Count, voters.Count(v => v.Support == true), voters.Count(v => v.Support == false), p.OpenedAt,
-            await V1MaintenanceGate.DeadlineAsync(db, p.OpenedAt, TimeSpan.FromHours(24), clock.UtcNow, ct, "Groups"), own?.Support, own?.CarryOverVnd);
+            await V1MaintenanceGate.DeadlineAsync(db, p.OpenedAt, TimeSpan.FromHours(24), clock.UtcNow, ct, "Groups"), own?.Support, own?.CarryOverVnd, duration, expectedPerMember);
     }
 }

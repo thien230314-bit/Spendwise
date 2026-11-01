@@ -6,24 +6,34 @@ namespace SpendWise.Tests;
 public sealed class V1FixedAllocationTests
 {
     [Theory]
-    [InlineData(10_000_000, 19, 526316, 15)]
-    [InlineData(20_000_000, 19, 1052632, 11)]
-    [InlineData(1, 30, 1, 1)]
-    [InlineData(long.MaxValue, 1, long.MaxValue, 1)]
-    public void Integer_allocation_exactly_conserves_target(long target, int count, long firstAmount, int sameAmountCount)
+    [InlineData(9_000_000, 3, 3_000_000)]
+    [InlineData(10_000_000, 2, 5_000_000)]
+    [InlineData(30, 30, 1)]
+    [InlineData(long.MaxValue, 1, long.MaxValue)]
+    public void Exactly_divisible_allocation_assigns_identical_amounts(long target, int count, long expectedEach)
     {
         var result = FixedFundAllocation.Allocate(target, Enumerable.Range(1, count).ToArray());
         Assert.Equal(target, result.Values.Sum());
-        Assert.Equal(firstAmount, result[1]);
-        Assert.Equal(sameAmountCount, result.Values.Count(a => a == firstAmount));
+        Assert.All(result.Values, v => Assert.Equal(expectedEach, v));
+    }
+
+    [Theory]
+    [InlineData(10_000_000, 3)]
+    [InlineData(101, 3)]
+    [InlineData(1, 30)]
+    public void Indivisible_target_throws_argument_exception(long target, int count)
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            FixedFundAllocation.Allocate(target, Enumerable.Range(1, count).ToArray()));
+        Assert.Contains("exactly divisible", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Vacancies_and_replacement_preserve_seat_order_without_shifting()
+    public void Vacancies_and_replacement_preserve_seat_order_when_divisible()
     {
-        var first = FixedFundAllocation.Allocate(101, [9, 1, 3]);
-        var second = FixedFundAllocation.Allocate(101, [3, 9, 1]);
-        Assert.Equal(34, first[1]); Assert.Equal(34, first[3]); Assert.Equal(33, first[9]);
+        var first = FixedFundAllocation.Allocate(90, [9, 1, 3]);
+        var second = FixedFundAllocation.Allocate(90, [3, 9, 1]);
+        Assert.Equal(30, first[1]); Assert.Equal(30, first[3]); Assert.Equal(30, first[9]);
         Assert.All(first, item => Assert.Equal(item.Value, second[item.Key]));
     }
 

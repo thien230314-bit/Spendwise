@@ -12,9 +12,10 @@ using SpendWise.Domain.V1Groups;
 
 namespace SpendWise.Application.Features.V1Groups;
 
-public sealed record CreateV1FundRequest(string Name, string Kind, long? TargetVnd, string SecurityPin);
+public sealed record CreateV1FundRequest(string Name, string Kind, long? TargetVnd, string SecurityPin, int? ContributionDurationHours = null);
 public sealed record V1FundDto(Guid Id, string Code, string Name, string Kind, Guid FounderUserId,
-    Guid OwnerUserId, long? TargetVnd, string FinanceAvailability, DateTime? ActivityClosedAt = null);
+    Guid OwnerUserId, long? TargetVnd, string FinanceAvailability, DateTime? ActivityClosedAt = null,
+    int ContributionDurationHours = 24);
 public sealed record V1InvitationDto(Guid Id, Guid FundId, Guid InvitedUserId, string Status, DateTime ExpiresAt, Guid? InvitedByUserId = null);
 public sealed record V1OwnershipOfferDto(Guid Id, Guid FundId, Guid ToUserId, bool Accepted);
 public sealed record V1MemberDto(
@@ -28,7 +29,10 @@ public sealed record V1MemberDto(
     bool EffectiveCanSpend = false,
     bool IndividualContributionCompleted = false,
     bool GroupFundingCompleted = false,
-    bool CanManageSpendingPermission = false)
+    bool CanManageSpendingPermission = false,
+    DateTime? ContributionDeadline = null,
+    DateTime? TrustCommitmentAcceptedAt = null,
+    string? AcceptedCommitmentVersion = null)
 {
     public string DisplayName => FullName;
 }
@@ -55,9 +59,19 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 .ExecuteUpdateAsync(s => s.SetProperty(c => c.NextValue, c => c.NextValue + 1), token);
             if (allocated != 1) throw new ConflictException("fund_code_unavailable", "Fund code allocator is unavailable.");
             var number = await db.V1FundCodeCounters.Where(c => c.Id == 1).Select(c => c.NextValue - 1).SingleAsync(token);
-            var fund = new V1Fund(name, "SPW" + number.ToString("D6", System.Globalization.CultureInfo.InvariantCulture), kind, userId, request.TargetVnd);
+            var duration = request.ContributionDurationHours is >= 1 and <= 720 ? request.ContributionDurationHours.Value : 24;
+            var fund = new V1Fund(name, "SPW" + number.ToString("D6", System.Globalization.CultureInfo.InvariantCulture), kind, userId, request.TargetVnd, duration);
             db.V1Funds.Add(fund);
-            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = 1, JoinedAt = clock.UtcNow, RefundedVnd = 0 });
+            db.V1FundMemberships.Add(new V1FundMembership
+            {
+                FundId = fund.Id,
+                UserId = userId,
+                Seat = 1,
+                JoinedAt = clock.UtcNow,
+                RefundedVnd = 0,
+                TrustCommitmentAcceptedAt = clock.UtcNow,
+                AcceptedCommitmentVersion = "v2.0"
+            });
             await ActivityAsync(fund.Id, userId, "Created", token);
             await db.SaveChangesAsync(token);
             return Map(fund);
@@ -139,7 +153,10 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 effectiveCanSpend,
                 individualCompleted,
                 groupFundingCompleted,
-                canManage));
+                canManage,
+                row.Membership.ContributionDeadline,
+                row.Membership.TrustCommitmentAcceptedAt,
+                row.Membership.AcceptedCommitmentVersion));
         }
 
         return result;
@@ -223,13 +240,18 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         return await AvailableInvitationsAsync(rows, page, pageSize, ct);
     }
 
-    public async Task<V1FundDto> AcceptAsync(Guid userId, Guid inviteId, CancellationToken ct) =>
+    public Task<V1FundDto> AcceptAsync(Guid userId, Guid inviteId, CancellationToken ct) =>
+        AcceptAsync(userId, inviteId, true, "v2.0", ct);
+
+    public async Task<V1FundDto> AcceptAsync(Guid userId, Guid inviteId, bool trustCommitmentAccepted, string? commitmentVersion, CancellationToken ct) =>
         await db.ExecuteInTransactionAsync(async token =>
         {
             await LockUsersAsync([userId], token);
             var invite = await db.V1FundInvitations.AsNoTracking().SingleOrDefaultAsync(i => i.Id == inviteId && i.InvitedUserId == userId, token)
                 ?? throw new NotFoundException("fund_invitation_not_found", "Invitation not found.");
             var fund = await LockFundAsync(invite.FundId, token);
+            if (fund.Kind == V1FundKind.Fixed && !trustCommitmentAccepted)
+                throw new ConflictException("trust_commitment_required", "Bạn cần đồng ý cam kết tin tưởng để tham gia Fixed Fund.");
             await RequireNoActiveElectionAsync(fund.Id, token);
             invite = await db.V1FundInvitations.AsNoTracking().SingleAsync(i => i.Id == inviteId, token);
             if (invite.Status == V1InvitationStatus.Accepted)
@@ -246,7 +268,16 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var occupied = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
             var seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
             await RequireNoActiveElectionAsync(fund.Id, token);
-            db.V1FundMemberships.Add(new V1FundMembership { FundId = fund.Id, UserId = userId, Seat = seat, JoinedAt = clock.UtcNow, RefundedVnd = 0 });
+            db.V1FundMemberships.Add(new V1FundMembership
+            {
+                FundId = fund.Id,
+                UserId = userId,
+                Seat = seat,
+                JoinedAt = clock.UtcNow,
+                RefundedVnd = 0,
+                TrustCommitmentAcceptedAt = trustCommitmentAccepted ? clock.UtcNow : null,
+                AcceptedCommitmentVersion = trustCommitmentAccepted ? (commitmentVersion ?? "v2.0") : null
+            });
             await db.V1FundInvitations.Where(i => i.Id == inviteId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Accepted)
                 .SetProperty(i => i.AcceptedAt, clock.UtcNow), token);
             await ActivityAsync(fund.Id, userId, "Joined", token, referenceId: invite.Id);
@@ -453,6 +484,6 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 new { FundId = fundId, ActivityId = activity.Id, ActorUserId = actor, SubjectUserId = subject, Event = kind, ReferenceId = referenceId })).ToList(), ct);
     }
 
-    private static V1FundDto Map(V1Fund f) => new(f.Id, f.Code, f.Name, f.Kind.ToString(), f.FounderUserId, f.OwnerUserId, f.TargetVnd, f.ActivityClosedAt is null ? "CONTRIBUTIONS_ONLY" : "ACTIVITY_CLOSED", f.ActivityClosedAt);
+    private static V1FundDto Map(V1Fund f) => new(f.Id, f.Code, f.Name, f.Kind.ToString(), f.FounderUserId, f.OwnerUserId, f.TargetVnd, f.ActivityClosedAt is null ? "CONTRIBUTIONS_ONLY" : "ACTIVITY_CLOSED", f.ActivityClosedAt, f.ContributionDurationHours > 0 ? f.ContributionDurationHours : 24);
     private static V1InvitationDto Map(V1FundInvitation i) => new(i.Id, i.FundId, i.InvitedUserId, i.Status.ToString(), i.ExpiresAt, i.InvitedByUserId);
 }

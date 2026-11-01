@@ -19,6 +19,7 @@ public sealed class V1FundObligation : BaseEntity
     public Guid UserId { get; set; }
     public int Seat { get; set; }
     public long RequiredVnd { get; set; }
+    public DateTime? Deadline { get; set; }
 }
 
 public sealed class V1FundContribution : BaseEntity

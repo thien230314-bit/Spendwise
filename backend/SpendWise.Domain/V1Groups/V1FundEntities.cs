@@ -9,10 +9,11 @@ public enum V1InvitationStatus { Pending, Accepted, Rejected, Cancelled, Propose
 public sealed class V1Fund : BaseEntity
 {
     private V1Fund() { }
-    public V1Fund(string name, string code, V1FundKind kind, Guid founderUserId, long? targetVnd)
+    public V1Fund(string name, string code, V1FundKind kind, Guid founderUserId, long? targetVnd, int contributionDurationHours = 24)
     {
         Name = name; Code = code; Kind = kind;
         FounderUserId = OwnerUserId = founderUserId; TargetVnd = targetVnd;
+        ContributionDurationHours = contributionDurationHours > 0 ? contributionDurationHours : 24;
     }
     public string Name { get; private set; } = string.Empty;
     public string Code { get; private set; } = string.Empty;
@@ -21,6 +22,7 @@ public sealed class V1Fund : BaseEntity
     public Guid OwnerUserId { get; private set; }
     public long OwnershipRevision { get; private set; }
     public long? TargetVnd { get; private set; }
+    public int ContributionDurationHours { get; set; } = 24;
     public DateTime? DissolvedAt { get; set; }
     public DateTime? ActivityClosedAt { get; private set; }
     public DateTime? OwnerRespondedAt { get; private set; }
@@ -37,6 +39,9 @@ public sealed class V1FundMembership : BaseEntity
     public DateTime? LeftAt { get; set; }
     // Null preserves legacy history-based calculation; new episodes track their own refunds.
     public long? RefundedVnd { get; set; }
+    public DateTime? ContributionDeadline { get; set; }
+    public DateTime? TrustCommitmentAcceptedAt { get; set; }
+    public string? AcceptedCommitmentVersion { get; set; }
 }
 
 public sealed class V1FundInvitation : BaseEntity

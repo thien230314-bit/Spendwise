@@ -32,15 +32,23 @@ public sealed partial class V1FundService
             var treasury = await TreasuryAsync(fund, token);
             await RequireContributionAccountingAsync(treasury, token);
             var members = await ActiveMembersAsync(fundId, token);
+            if (members.Count < 2)
+                throw new ConflictException("insufficient_members", "Fixed fund requires at least 2 members including owner to confirm obligations.");
+            if (request.TargetVnd % members.Count != 0)
+                throw new ConflictException("target_not_divisible_by_seats", "Mục tiêu đóng góp phải chia hết chính xác cho số ghế đã chốt đến từng VND.");
             var signature = MembershipSignature(members);
             if (treasury.Revision == 0 || treasury.TargetVnd != request.TargetVnd || treasury.MembershipSignature != signature)
             {
                 treasury.Revision = checked(treasury.Revision + 1);
                 treasury.TargetVnd = request.TargetVnd; treasury.MembershipSignature = signature;
                 var amounts = FixedFundAllocation.Allocate(request.TargetVnd, members.Select(m => m.Seat).ToArray());
+                var duration = fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
+                var deadline = clock.UtcNow.AddHours(duration);
                 db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation { FundId = fundId, Revision = treasury.Revision,
-                    MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat] }));
+                    MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat], Deadline = deadline }));
                 await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.TargetVnd, (long?)request.TargetVnd), token);
+                await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null)
+                    .ExecuteUpdateAsync(s => s.SetProperty(m => m.ContributionDeadline, deadline), token);
                 await ActivityAsync(fundId, ownerId, "ObligationsConfirmed", token, detail: treasury.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
             return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);

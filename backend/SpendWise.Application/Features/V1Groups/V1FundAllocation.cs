@@ -20,6 +20,8 @@ public sealed partial class V1FundService
                 throw new ConflictException("fixed_fund_required", "Free funds have no fixed contribution obligation.");
             var members = await db.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundId && m.LeftAt == null)
                 .OrderBy(m => m.Seat).Select(m => new { m.UserId, m.Seat }).ToListAsync(token);
+            if (members.Count == 0 || fund.TargetVnd.Value % members.Count != 0)
+                throw new ConflictException("target_not_divisible_by_seats", "Mục tiêu đóng góp phải chia hết chính xác cho số ghế đã chốt đến từng VND.");
             var allocation = FixedFundAllocation.Allocate(fund.TargetVnd.Value, members.Select(m => m.Seat).ToArray());
             // Preview is not a persisted obligation revision, entitlement, balance or payment result.
             return new V1ContributionAllocationDto(fundId, fund.TargetVnd.Value, "CurrentMembershipPreview", false,

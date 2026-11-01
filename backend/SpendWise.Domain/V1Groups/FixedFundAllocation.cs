@@ -10,7 +10,8 @@ public static class FixedFundAllocation
             throw new ArgumentException("Use distinct occupied Fixed fund seats 1–30.", nameof(activeSeats));
         var quotient = targetVnd / ordered.Length;
         var remainder = targetVnd % ordered.Length;
-        return ordered.Select((seat, index) => (seat, amount: quotient + (index < remainder ? 1 : 0)))
-            .ToDictionary(item => item.seat, item => item.amount);
+        if (remainder != 0)
+            throw new ArgumentException("Target amount must be exactly divisible by the number of active seats.", nameof(targetVnd));
+        return ordered.ToDictionary(seat => seat, _ => quotient);
     }
 }

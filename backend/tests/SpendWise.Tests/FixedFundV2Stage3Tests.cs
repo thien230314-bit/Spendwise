@@ -1174,4 +1174,123 @@ public sealed class FixedFundV2Stage3Tests
         var ownerBalance = await f.Db.Wallets.Where(w => w.Id == wOwner.Id).Select(w => w.AvailableBalance).SingleAsync();
         Assert.Equal(5_000_000, ownerBalance);
     }
+
+    private sealed class StubCurrentUser(Guid? userId, string? sessionId = null) : SpendWise.Application.Common.Interfaces.ICurrentUser
+    {
+        public Guid? UserId { get; } = userId;
+        public string? SessionId { get; } = sessionId ?? Guid.NewGuid().ToString("N");
+        public string SystemRole { get; } = "User";
+        public string Locale { get; } = "vi-VN";
+    }
+
+    // =========================================================================
+    // T30: Blocker P1-2 — DTO accurate calculation & outdated obligation consent rejection
+    // =========================================================================
+    [Fact]
+    public async Task T30_DtoAccuratePerMember_And_OutdatedObligationRejected()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT30");
+        var memB = await f.AddUserAsync("MemBT30");
+        var memC = await f.AddUserAsync("MemCT30");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT30", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+        var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
+
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t30", Pin), default);
+
+        // Initially with 3 members, DTO returns 2,000,000 VND
+        var dtoInitial = await service.ActivityProposalAsync(memB.Id, proposal.Id, default);
+        Assert.Equal(2_000_000, dtoInitial.ExpectedPerMemberVnd);
+
+        // Owner votes YES, B votes YES, C rejects and leaves
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
+
+        // After C departs, active members = 2 -> DTO returns accurately 3,000,000 VND!
+        var dtoUpdated = await service.ActivityProposalAsync(memB.Id, proposal.Id, default);
+        Assert.Equal(3_000_000, dtoUpdated.ExpectedPerMemberVnd);
+
+        // Member B attempts to confirm with outdated amount 2,000,000 VND -> BLOCKED with obligation_outdated!
+        var exOutdated = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default));
+        Assert.Equal("obligation_outdated", exOutdated.Code);
+
+        // Member B attempts to confirm with outdated duration 48h -> BLOCKED with duration_outdated!
+        var exDur = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 48, Pin), default));
+        Assert.Equal("duration_outdated", exDur.Code);
+
+        // Member B confirms with accurate 3M and 24h -> SUCCEEDS!
+        await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+
+        // Settlement SUCCEEDS!
+        var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        Assert.Equal("Settled", settle.State);
+    }
+
+    // =========================================================================
+    // T31: Blocker P1-1 — V1FundsController HTTP endpoint confirm-obligation integration
+    // =========================================================================
+    [Fact]
+    public async Task T31_ControllerEndpoint_ConfirmObligation_HttpIntegration()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT31");
+        var memB = await f.AddUserAsync("MemBT31");
+        var memC = await f.AddUserAsync("MemCT31");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT31", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+        var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
+
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t31", Pin), default);
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
+
+        // Controller test with fake ICurrentUser
+        var stubUserB = new StubCurrentUser(memB.Id);
+        var controllerB = new SpendWise.API.Controllers.V1FundsController(service, stubUserB);
+
+        // Outdated obligation via controller throws obligation_outdated
+        var exOutdated = await Assert.ThrowsAsync<ConflictException>(() =>
+            controllerB.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(2_000_000, 24, Pin), default));
+        Assert.Equal("obligation_outdated", exOutdated.Code);
+
+        // Accurate confirmation via controller returns updated DTO
+        var confirmedDto = await controllerB.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+        Assert.Equal(3_000_000, confirmedDto.ExpectedPerMemberVnd);
+
+        // Owner controller confirms and settles
+        var stubOwner = new StubCurrentUser(owner.Id);
+        var controllerOwner = new SpendWise.API.Controllers.V1FundsController(service, stubOwner);
+        await controllerOwner.ConfirmObligation(proposal.Id, new V1ConfirmActivityObligationRequest(3_000_000, 24, Pin), default);
+
+        var settledDto = await controllerOwner.SettleActivity(proposal.Id, new V1SettleActivityRequest(Pin), default);
+        Assert.Equal("Settled", settledDto.State);
+    }
 }

@@ -42,6 +42,17 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                 table: "V1ActivityVoters",
                 type: "datetime2",
                 nullable: true);
+
+            migrationBuilder.DropIndex(
+                name: "IX_V1ActivityProposals_FundId",
+                table: "V1ActivityProposals");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_V1ActivityProposals_FundId",
+                table: "V1ActivityProposals",
+                column: "FundId",
+                unique: true,
+                filter: "[State] IN ('Voting', 'ApprovedAwaitingSettlement', 'AwaitingReplacement')");
         }
 
         /// <inheritdoc />
@@ -62,6 +73,17 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
             migrationBuilder.DropColumn(
                 name: "NewName",
                 table: "V1ActivityProposals");
+
+            migrationBuilder.DropIndex(
+                name: "IX_V1ActivityProposals_FundId",
+                table: "V1ActivityProposals");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_V1ActivityProposals_FundId",
+                table: "V1ActivityProposals",
+                column: "FundId",
+                unique: true,
+                filter: "[State] IN ('Voting', 'ApprovedAwaitingSettlement')");
 
             migrationBuilder.DropColumn(
                 name: "ContributionDurationHours",

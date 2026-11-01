@@ -4828,7 +4828,7 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("FundId")
                         .IsUnique()
-                        .HasFilter("[State] IN ('Voting', 'ApprovedAwaitingSettlement')");
+                        .HasFilter("[State] IN ('Voting', 'ApprovedAwaitingSettlement', 'AwaitingReplacement')");
 
                     b.HasIndex("ProposedByUserId");
 

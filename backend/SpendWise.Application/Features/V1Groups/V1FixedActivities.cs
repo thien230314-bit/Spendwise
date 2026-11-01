@@ -10,6 +10,7 @@ using SpendWise.Domain.Identity;
 namespace SpendWise.Application.Features.V1Groups;
 
 public sealed record V1ProposeActivityRequest(long TargetVnd, string IdempotencyKey, string SecurityPin, int? ContributionDurationHours = null, string? NewName = null);
+public sealed record V1ConfirmActivityObligationRequest(long ExpectedObligationVnd, int ExpectedDurationHours, string SecurityPin);
 public sealed record V1ActivityProposalDto(Guid Id, Guid FundId, long TargetVnd, string State, int ElectorateSize, int Yes, int No, DateTime OpenedAt, DateTime Deadline, bool? OwnVote, long? OwnCarryOverVnd = null, int? ContributionDurationHours = null, long? ExpectedPerMemberVnd = null);
 
 public sealed partial class V1FundService
@@ -248,10 +249,13 @@ public sealed partial class V1FundService
         }, ct);
     }
 
-    public async Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, string pin, CancellationToken ct)
+    public Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, string pin, CancellationToken ct) =>
+        ConfirmActivityObligationAsync(actor, id, new V1ConfirmActivityObligationRequest(0, 0, pin), ct);
+
+    public async Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, V1ConfirmActivityObligationRequest request, CancellationToken ct)
     {
         await RequireActorAsync(actor, ct);
-        await security.VerifyAsync(actor, pin, ct);
+        await security.VerifyAsync(actor, request.SecurityPin, ct);
         return await db.ExecuteInTransactionAsync(async token =>
         {
             var p = await db.V1ActivityProposals.SingleOrDefaultAsync(p => p.Id == id, token)
@@ -272,6 +276,19 @@ public sealed partial class V1FundService
             var required = FixedFundAllocation.Allocate(p.TargetVnd, activeMembers.Select(m => m.Seat).ToArray());
             var membership = activeMembers.Single(m => m.UserId == actor);
             var memberRequired = required[membership.Seat];
+            var expectedDuration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
+
+            // Blocker P1-2: If caller provided expected obligation or duration, ensure it is NOT outdated!
+            if (request.ExpectedObligationVnd > 0 && request.ExpectedObligationVnd != memberRequired)
+            {
+                throw new ConflictException("obligation_outdated",
+                    $"Nghĩa vụ thành viên đã thay đổi từ {request.ExpectedObligationVnd:N0} đ thành {memberRequired:N0} đ do số thành viên thay đổi. Vui lòng tải lại và xác nhận lại.");
+            }
+
+            if (request.ExpectedDurationHours > 0 && request.ExpectedDurationHours != expectedDuration)
+            {
+                throw new ConflictException("duration_outdated", "Thời lượng đóng góp đã thay đổi. Vui lòng tải lại và xác nhận lại.");
+            }
 
             var voter = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.UserId == actor, token);
             if (voter is null)
@@ -288,7 +305,7 @@ public sealed partial class V1FundService
 
             voter.Support = true;
             voter.ConfirmedObligationVnd = memberRequired;
-            voter.ConfirmedDurationHours = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
+            voter.ConfirmedDurationHours = expectedDuration;
             voter.ConfirmedAt = clock.UtcNow;
 
             await ActivityAsync(fund.Id, actor, "ActivityObligationConfirmed", token, detail: memberRequired.ToString(), referenceId: id);
@@ -322,7 +339,8 @@ public sealed partial class V1FundService
         var voters = await db.V1ActivityVoters.AsNoTracking().Where(v => v.ProposalId == p.Id).ToListAsync(ct);
         var own = voters.SingleOrDefault(v => v.UserId == actor);
         var duration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
-        var expectedPerMember = voters.Count > 0 ? p.TargetVnd / voters.Count : p.TargetVnd;
+        var activeCount = await db.V1FundMemberships.CountAsync(m => m.FundId == p.FundId && m.LeftAt == null, ct);
+        var expectedPerMember = activeCount > 0 ? p.TargetVnd / activeCount : p.TargetVnd;
         return new(p.Id, p.FundId, p.TargetVnd, p.State, voters.Count, voters.Count(v => v.Support == true), voters.Count(v => v.Support == false), p.OpenedAt,
             await V1MaintenanceGate.DeadlineAsync(db, p.OpenedAt, TimeSpan.FromHours(24), clock.UtcNow, ct, "Groups"), own?.Support, own?.CarryOverVnd, duration, expectedPerMember);
     }

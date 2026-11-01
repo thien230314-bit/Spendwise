@@ -73,7 +73,7 @@ public sealed partial class V1FundService
             foreach (var voter in voters.Where(v => v.Support == null))
             {
                 var membership = await db.V1FundMemberships.SingleOrDefaultAsync(m => m.Id == voter.MembershipId, token);
-                if (membership is not null && membership.LeftAt == null)
+                if (membership is not null && membership.JoinedAt < proposal.OpenedAt && membership.LeftAt == null)
                 {
                     var amount = voter.CarryOverVnd ?? 0L;
                     if (amount > 0)
@@ -105,19 +105,23 @@ public sealed partial class V1FundService
             if (finalTarget % activeMembers.Count != 0)
                 throw new ConflictException("target_not_divisible", "Mục tiêu kỳ mới bắt buộc phải chia hết cho số ghế.");
 
-            // Guard: Check member obligation consent (Blocker 2)
-            // Expected obligation that continuing members consented to when proposal was voted:
-            var consentedObligationPerMember = voters.Count > 0 ? proposal.TargetVnd / voters.Count : proposal.TargetVnd;
+            // Guard: Check member obligation consent for ALL active members (Blocker P1)
             var required = FixedFundAllocation.Allocate(finalTarget, activeMembers.Select(m => m.Seat).ToArray());
+            var allVoters = await db.V1ActivityVoters.Where(v => v.ProposalId == id).ToListAsync(token);
 
-            // If any continuing member's final obligation differs from the consented obligation, member consent is required!
-            var continuingSupporters = voters.Where(v => v.Support == true).Select(v => v.UserId).ToHashSet();
-            foreach (var m in activeMembers.Where(m => continuingSupporters.Contains(m.UserId) && m.UserId != actor))
+            foreach (var m in activeMembers)
             {
-                if (required[m.Seat] != consentedObligationPerMember)
+                var voter = allVoters.SingleOrDefault(v => v.UserId == m.UserId);
+                if (voter is null || voter.Support != true || voter.ConfirmedObligationVnd == null)
                 {
                     throw new ConflictException("obligation_changed_requires_consent",
-                        $"Nghĩa vụ thành viên thay đổi từ {consentedObligationPerMember:N0} đ lên {required[m.Seat]:N0} đ do số thành viên thay đổi. Phải được thành viên đồng ý trước khi chốt kỳ.");
+                        $"Thành viên {m.UserId} chưa xác nhận nghĩa vụ tài chính cuối cùng {required[m.Seat]:N0} đ cho kỳ mới.");
+                }
+
+                if (voter.ConfirmedObligationVnd.Value != required[m.Seat] || voter.ConfirmedDurationHours != finalDuration)
+                {
+                    throw new ConflictException("obligation_changed_requires_consent",
+                        $"Nghĩa vụ thành viên thay đổi từ {voter.ConfirmedObligationVnd.Value:N0} đ lên {required[m.Seat]:N0} đ do số thành viên thay đổi. Phải được thành viên đồng ý trước khi chốt kỳ.");
                 }
             }
 

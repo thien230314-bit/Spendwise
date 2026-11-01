@@ -95,7 +95,9 @@ public sealed partial class V1FundService
 
     private async Task RequireNoActiveElectionAsync(Guid fundId, CancellationToken ct, bool allowReplacement = false)
     {
-        if (!allowReplacement && await db.V1ActivityProposals.AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "ApprovedAwaitingSettlement" || p.State == "AwaitingReplacement"), ct))
+        if (await db.V1ActivityProposals.AnyAsync(p => p.FundId == fundId && p.State == "Voting", ct))
+            throw new ConflictException("activity_transition_in_progress", "Membership is frozen while activity voting is in progress.");
+        if (!allowReplacement && await db.V1ActivityProposals.AnyAsync(p => p.FundId == fundId && (p.State == "ApprovedAwaitingSettlement" || p.State == "AwaitingReplacement"), ct))
             throw new ConflictException("activity_transition_in_progress", "Membership is frozen until activity voting and settlement finish.");
         if (await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, ct))
             throw new ConflictException("election_in_progress", "Membership and voluntary ownership changes are frozen during an election.");

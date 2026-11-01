@@ -4792,7 +4792,8 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("NewName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime2");
@@ -4844,6 +4845,15 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long?>("CarryOverVnd")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ConfirmedDurationHours")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ConfirmedObligationVnd")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")

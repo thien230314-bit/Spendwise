@@ -94,13 +94,17 @@ public sealed partial class V1FundService
             };
             db.V1ActivityProposals.Add(proposal);
 
+            var initialExpectedPerMember = request.TargetVnd / current.Count;
             db.V1ActivityVoters.AddRange(current.Select(m => new V1ActivityVoter
             {
                 ProposalId = proposal.Id,
                 UserId = m.UserId,
                 MembershipId = m.Id,
                 Support = m.UserId == actor ? true : (bool?)null,
-                CarryOverVnd = allocation.MemberRefunds.GetValueOrDefault(m.UserId).Amount // Immutable Snapshot!
+                CarryOverVnd = allocation.MemberRefunds.GetValueOrDefault(m.UserId).Amount, // Immutable Snapshot!
+                ConfirmedObligationVnd = m.UserId == actor ? initialExpectedPerMember : (long?)null,
+                ConfirmedDurationHours = m.UserId == actor ? duration : (int?)null,
+                ConfirmedAt = m.UserId == actor ? clock.UtcNow : (DateTime?)null
             }));
 
             await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.OwnerRespondedAt, (DateTime?)clock.UtcNow), token);
@@ -176,7 +180,12 @@ public sealed partial class V1FundService
         }
         else
         {
+            var activeMemberCount = await db.V1FundMemberships.CountAsync(m => m.FundId == fund.Id && m.LeftAt == null, token);
+            var expectedPerMember = p.TargetVnd / (activeMemberCount > 0 ? activeMemberCount : 1);
             vote.Support = true;
+            vote.ConfirmedObligationVnd = expectedPerMember;
+            vote.ConfirmedDurationHours = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
+            vote.ConfirmedAt = clock.UtcNow;
             await ActivityAsync(fund.Id, actor, "ActivityVoteCast", token, referenceId: id);
         }
 
@@ -235,6 +244,68 @@ public sealed partial class V1FundService
 
             await ActivityAsync(fund.Id, actor, "ActivityProposalCancelled", token, referenceId: id);
             await db.SaveChangesAsync(token);
+            return await ActivityDtoAsync(p, actor, token);
+        }, ct);
+    }
+
+    public async Task<V1ActivityProposalDto> ConfirmActivityObligationAsync(Guid actor, Guid id, string pin, CancellationToken ct)
+    {
+        await RequireActorAsync(actor, ct);
+        await security.VerifyAsync(actor, pin, ct);
+        return await db.ExecuteInTransactionAsync(async token =>
+        {
+            var p = await db.V1ActivityProposals.SingleOrDefaultAsync(p => p.Id == id, token)
+                ?? throw new NotFoundException("activity_proposal_not_found", "Proposal not found.");
+            var fund = await LockFundAsync(p.FundId, token);
+            await RequireMemberAsync(actor, fund.Id, token);
+
+            if (p.State != "ApprovedAwaitingSettlement" && p.State != "AwaitingReplacement")
+                throw new ConflictException("activity_not_awaiting_confirmation", "Proposal is not awaiting confirmation.");
+
+            var activeMembers = await ActiveMembersAsync(fund.Id, token);
+            if (activeMembers.Count < 2)
+                throw new ConflictException("insufficient_members", "Kỳ mới phải có ít nhất hai người.");
+
+            if (p.TargetVnd % activeMembers.Count != 0)
+                throw new ConflictException("target_not_divisible", "Mục tiêu kỳ mới bắt buộc phải chia hết cho số ghế.");
+
+            var required = FixedFundAllocation.Allocate(p.TargetVnd, activeMembers.Select(m => m.Seat).ToArray());
+            var membership = activeMembers.Single(m => m.UserId == actor);
+            var memberRequired = required[membership.Seat];
+
+            var voter = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.UserId == actor, token);
+            if (voter is null)
+            {
+                voter = new V1ActivityVoter
+                {
+                    ProposalId = id,
+                    UserId = actor,
+                    MembershipId = membership.Id,
+                    CarryOverVnd = 0L
+                };
+                db.V1ActivityVoters.Add(voter);
+            }
+
+            voter.Support = true;
+            voter.ConfirmedObligationVnd = memberRequired;
+            voter.ConfirmedDurationHours = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
+            voter.ConfirmedAt = clock.UtcNow;
+
+            await ActivityAsync(fund.Id, actor, "ActivityObligationConfirmed", token, detail: memberRequired.ToString(), referenceId: id);
+            await db.SaveChangesAsync(token);
+
+            // If proposal was in AwaitingReplacement and we now have >= 2 active members who have confirmed:
+            if (p.State == "AwaitingReplacement" && activeMembers.Count >= 2)
+            {
+                var allVoters = await db.V1ActivityVoters.Where(v => v.ProposalId == id).ToListAsync(token);
+                var activeSupporters = activeMembers.Where(m => allVoters.Any(v => v.UserId == m.UserId && v.Support == true)).ToList();
+                if (activeSupporters.Count >= 2)
+                {
+                    p.State = "ApprovedAwaitingSettlement";
+                    await db.SaveChangesAsync(token);
+                }
+            }
+
             return await ActivityDtoAsync(p, actor, token);
         }, ct);
     }

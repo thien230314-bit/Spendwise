@@ -977,13 +977,26 @@ public sealed class FixedFundV2Stage3Tests
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default));
         Assert.Equal("obligation_changed_requires_consent", ex.Code);
+
+        // Re-confirmation: Continuing members can agree to the new 3M obligation!
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, Pin, default);
+        await service.ConfirmActivityObligationAsync(memB.Id, proposal.Id, Pin, default);
+
+        // Now that all active members confirmed 3M, settlement SUCCEEDS!
+        var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        Assert.Equal("Settled", settle.State);
+
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).ToListAsync();
+        Assert.Equal(2, obligations.Count);
+        Assert.All(obligations, o => Assert.Equal(3_000_000, o.RequiredVnd));
     }
 
     // =========================================================================
-    // T27: Blocker 2 — Replacement member in 72h window restores expected obligation -> Settlement SUCCEEDS
+    // T27: Replacement member fills vacant seat -> must confirm obligation before settlement succeeds
     // =========================================================================
     [Fact]
-    public async Task T27_ReplacementMemberIn72hWindow_RestoresObligation_SettlementSucceeds()
+    public async Task T27_ReplacementMember_MustConfirmObligation_BeforeSettlementSucceeds()
     {
         var clock = new MutableClock(DateTime.UtcNow);
         await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
@@ -1012,17 +1025,21 @@ public sealed class FixedFundV2Stage3Tests
         await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
 
         // Member C rejects and leaves
-        var memCMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memC.Id);
-        var seatC = memCMembership.Seat;
         await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
 
-        // Owner invites Member D as replacement within 72h window
+        // Owner invites Member D as replacement for vacant seat
         var invD = await service.InviteAsync(owner.Id, fund.Id, memD.Id, default);
         await service.AcceptAsync(memD.Id, invD.Id, true, "v2.0", default);
 
-        // Active members is back to 3: Owner, Member B, Member D.
-        // Each member's final obligation is 6M / 3 = 2,000,000 VND!
-        // Member B's consented obligation (2M) matches final obligation (2M)!
+        // Settle immediately is BLOCKED because Member D has NOT confirmed their obligation yet!
+        var exUnconfirmed = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default));
+        Assert.Equal("obligation_changed_requires_consent", exUnconfirmed.Code);
+
+        // Member D explicitly confirms their obligation (2M, 24h)
+        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, Pin, default);
+
+        // Now settlement SUCCEEDS!
         var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
         Assert.Equal("Settled", settle.State);
 
@@ -1030,5 +1047,131 @@ public sealed class FixedFundV2Stage3Tests
         var obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).ToListAsync();
         Assert.Equal(3, obligations.Count);
         Assert.All(obligations, o => Assert.Equal(2_000_000, o.RequiredVnd));
+    }
+
+    // =========================================================================
+    // T28: True 72h window when only Owner remains -> Replacement member joins & confirms within window -> Settles
+    // =========================================================================
+    [Fact]
+    public async Task T28_AwaitingReplacement_72hWindow_ReplacementJoinsAndConfirms_Settles()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT28");
+        var memB = await f.AddUserAsync("MemBT28");
+        var memC = await f.AddUserAsync("MemCT28");
+        var memD = await f.AddUserAsync("MemDT28");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memD.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT28", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+        var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
+
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        // Propose Period 2 with 6M target
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t28", Pin), default);
+
+        // Owner votes YES, but BOTH members B and C reject!
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, false, default);
+        await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
+
+        // Proposal MUST transition to AwaitingReplacement!
+        var pUpdated = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
+        Assert.Equal("AwaitingReplacement", pUpdated.State);
+
+        // Treasury MUST have 72h replacement window set!
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        Assert.NotNull(treasury.ReplacementWindowExpiresAt);
+        Assert.Equal(clock.UtcNow.AddHours(72), treasury.ReplacementWindowExpiresAt.Value);
+
+        // Advance 24 hours into the 72h window
+        clock.UtcNow = clock.UtcNow.AddHours(24);
+
+        // Owner invites Member D as replacement
+        var invD = await service.InviteAsync(owner.Id, fund.Id, memD.Id, default);
+        await service.AcceptAsync(memD.Id, invD.Id, true, "v2.0", default);
+
+        // Settle blocked until obligations confirmed for the 2 members
+        var exConsent = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default));
+        Assert.Equal("obligation_changed_requires_consent", exConsent.Code);
+
+        // Owner and D confirm their 3M obligation (6M / 2)
+        await service.ConfirmActivityObligationAsync(owner.Id, proposal.Id, Pin, default);
+        await service.ConfirmActivityObligationAsync(memD.Id, proposal.Id, Pin, default);
+
+        // Settle succeeds!
+        var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        Assert.Equal("Settled", settle.State);
+
+        var updatedTreasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == updatedTreasury.Revision).ToListAsync();
+        Assert.Equal(2, obligations.Count);
+        Assert.All(obligations, o => Assert.Equal(3_000_000, o.RequiredVnd));
+    }
+
+    // =========================================================================
+    // T29: True 72h window timeout -> Worker auto-dissolves and refunds Owner
+    // =========================================================================
+    [Fact]
+    public async Task T29_AwaitingReplacement_72hWindow_Timeout_AutoDissolves()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT29");
+        var memB = await f.AddUserAsync("MemBT29");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT29", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        var wOwner = await f.AddWalletAsync(owner.Id, "WOwner29", true, balance: 5_000_000);
+        var wB = await f.AddWalletAsync(memB.Id, "WB29", true, balance: 5_000_000);
+
+        await service.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 2_000_000, "c-o-29", Pin, config.Revision), default);
+        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 2_000_000, "c-b-29", Pin, config.Revision), default);
+
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p2-t29", Pin), default);
+
+        // Owner votes YES, B rejects and leaves
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, false, default);
+
+        // Proposal enters AwaitingReplacement
+        var p = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
+        Assert.Equal("AwaitingReplacement", p.State);
+
+        // Advance past 72 hours
+        clock.UtcNow = clock.UtcNow.AddHours(73);
+
+        // Worker runs and processes expired 72h replacement window
+        var processed = await service.ProgressActivitiesAsync(default);
+        Assert.True(processed >= 1);
+
+        // Proposal is Failed, fund is Dissolved, Owner is refunded
+        var pFailed = await f.Db.V1ActivityProposals.AsNoTracking().SingleAsync(p => p.Id == proposal.Id);
+        Assert.Equal("Failed", pFailed.State);
+
+        var fundDissolved = await f.Db.V1Funds.AsNoTracking().SingleAsync(fu => fu.Id == fund.Id);
+        Assert.NotNull(fundDissolved.DissolvedAt);
+
+        var ownerBalance = await f.Db.Wallets.Where(w => w.Id == wOwner.Id).Select(w => w.AvailableBalance).SingleAsync();
+        Assert.Equal(5_000_000, ownerBalance);
     }
 }

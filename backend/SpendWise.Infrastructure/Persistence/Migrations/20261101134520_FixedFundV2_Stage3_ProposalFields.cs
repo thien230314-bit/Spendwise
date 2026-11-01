@@ -21,7 +21,26 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "NewName",
                 table: "V1ActivityProposals",
-                type: "nvarchar(max)",
+                type: "nvarchar(100)",
+                maxLength: 100,
+                nullable: true);
+
+            migrationBuilder.AddColumn<long>(
+                name: "ConfirmedObligationVnd",
+                table: "V1ActivityVoters",
+                type: "bigint",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "ConfirmedDurationHours",
+                table: "V1ActivityVoters",
+                type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "ConfirmedAt",
+                table: "V1ActivityVoters",
+                type: "datetime2",
                 nullable: true);
         }
 
@@ -29,11 +48,23 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ContributionDurationHours",
-                table: "V1ActivityProposals");
+                name: "ConfirmedAt",
+                table: "V1ActivityVoters");
+
+            migrationBuilder.DropColumn(
+                name: "ConfirmedDurationHours",
+                table: "V1ActivityVoters");
+
+            migrationBuilder.DropColumn(
+                name: "ConfirmedObligationVnd",
+                table: "V1ActivityVoters");
 
             migrationBuilder.DropColumn(
                 name: "NewName",
+                table: "V1ActivityProposals");
+
+            migrationBuilder.DropColumn(
+                name: "ContributionDurationHours",
                 table: "V1ActivityProposals");
         }
     }

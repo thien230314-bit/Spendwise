@@ -25,4 +25,7 @@ public sealed class V1ActivityVoter : BaseEntity
     public Guid MembershipId { get; set; }
     public bool? Support { get; set; }
     public long? CarryOverVnd { get; set; }
+    public long? ConfirmedObligationVnd { get; set; }
+    public int? ConfirmedDurationHours { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
 }

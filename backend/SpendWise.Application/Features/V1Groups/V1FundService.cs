@@ -385,6 +385,28 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                         .ToListAsync(token);
                     activeMembers.Add(newMembership);
                     treasury.MembershipSignature = MembershipSignature(activeMembers);
+
+                    var activeProposal = await db.V1ActivityProposals
+                        .SingleOrDefaultAsync(p => p.FundId == fund.Id && (p.State == "ApprovedAwaitingSettlement" || p.State == "AwaitingReplacement"), token);
+                    if (activeProposal is not null)
+                    {
+                        var existingVoter = await db.V1ActivityVoters
+                            .SingleOrDefaultAsync(v => v.ProposalId == activeProposal.Id && v.UserId == userId, token);
+                        if (existingVoter is null)
+                        {
+                            db.V1ActivityVoters.Add(new V1ActivityVoter
+                            {
+                                ProposalId = activeProposal.Id,
+                                UserId = userId,
+                                MembershipId = newMembership.Id,
+                                Support = null,
+                                CarryOverVnd = 0L,
+                                ConfirmedObligationVnd = null,
+                                ConfirmedDurationHours = null,
+                                ConfirmedAt = null
+                            });
+                        }
+                    }
                 }
             }
             await db.V1FundInvitations.Where(i => i.Id == inviteId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Accepted)

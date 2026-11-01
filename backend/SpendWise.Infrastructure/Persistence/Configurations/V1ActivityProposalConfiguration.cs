@@ -10,8 +10,9 @@ public sealed class V1ActivityProposalConfiguration : IEntityTypeConfiguration<V
     public void Configure(EntityTypeBuilder<V1ActivityProposal> b)
     {
         b.Property(p => p.State).HasMaxLength(40); b.Property(p => p.IdempotencyKey).HasMaxLength(100);
+        b.Property(p => p.NewName).HasMaxLength(100);
         b.HasIndex(p => new { p.FundId, p.IdempotencyKey }).IsUnique();
-        b.HasIndex(p => p.FundId).IsUnique().HasFilter("[State] IN ('Voting', 'ApprovedAwaitingSettlement')");
+        b.HasIndex(p => p.FundId).IsUnique().HasFilter("[State] IN ('Voting', 'ApprovedAwaitingSettlement', 'AwaitingReplacement')");
         b.HasOne<V1Fund>().WithMany().HasForeignKey(p => p.FundId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey(p => p.ProposedByUserId).OnDelete(DeleteBehavior.Restrict);
     }

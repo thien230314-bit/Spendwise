@@ -31,6 +31,8 @@ public sealed partial class V1FundService
             await RequireActorAsync(actor, token);
             await AdmitActorSessionAsync(actor, token);
             var fund = await LockFundAsync(fundId, token); await RequireMemberAsync(actor, fundId, token);
+            if (fund.Kind == V1FundKind.Free)
+                throw new ConflictException("free_fund_election_disallowed", "Quỹ Tự do không hỗ trợ cơ chế bầu cử.");
             var currentUsers = await db.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundId && m.LeftAt == null).Select(m => m.UserId).ToListAsync(token);
             if (!currentUsers.ToHashSet().SetEquals(admittedUsers)) throw new ConflictException("election_membership_changed", "Membership changed during admission; retry with the current electorate.");
             if (fund.OwnershipRevision != request.ExpectedOwnershipRevision) throw new ConflictException("stale_ownership_epoch", "Ownership changed.");

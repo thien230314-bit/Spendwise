@@ -238,6 +238,8 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             await LockUsersAsync([ownerId], token);
             var fund = await LockFundAsync(fundId, token);
             RequireOwner(fund, ownerId);
+            if (fund.Kind == V1FundKind.Free)
+                throw new ConflictException("free_fund_ownership_transfer_disallowed", "Quỹ Tự do không cho phép chuyển quyền sở hữu.");
             if (fund.Kind != V1FundKind.Fixed) throw new ConflictException("fixed_fund_required", "Free funds use withdrawal approval, not direct spending permission.");
             if (memberId == fund.OwnerUserId) throw new ConflictException("owner_spending_permission_invalid", "Owner does not need spending permission and cannot be modified.");
 
@@ -279,6 +281,8 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             await LockUsersAsync([ownerId, recipientId], token);
             var fund = await LockFundAsync(fundId, token);
             RequireOwner(fund, ownerId);
+            if (fund.Kind == V1FundKind.Free)
+                throw new ConflictException("free_fund_ownership_transfer_disallowed", "Quỹ Tự do không cho phép chuyển quyền sở hữu.");
             if (ownerId == recipientId) throw new AppException("ownership_self_forbidden", "Choose another member.");
             await RequireMemberAsync(recipientId, fundId, token);
             var existing = await db.V1OwnershipOffers.AsNoTracking().SingleOrDefaultAsync(o => o.FundId == fundId
@@ -304,6 +308,8 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 ?? throw new NotFoundException("ownership_offer_not_found", "Ownership offer not found.");
             await LockUsersAsync([userId], token);
             var fund = await LockFundAsync(offer.FundId, token);
+            if (fund.Kind == V1FundKind.Free)
+                throw new ConflictException("free_fund_ownership_transfer_disallowed", "Quỹ Tự do không cho phép chuyển quyền sở hữu.");
             offer = await db.V1OwnershipOffers.AsNoTracking().SingleAsync(o => o.Id == offerId, token);
             if (offer.AcceptedAt is not null)
             {

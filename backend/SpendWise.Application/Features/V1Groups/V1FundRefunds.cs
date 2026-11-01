@@ -113,6 +113,9 @@ public sealed partial class V1FundService
             var activeMembers = await ActiveMembersAsync(fundId, token);
             if (fund.OwnerUserId == actorUserId)
             {
+                if (fund.Kind == V1FundKind.Free)
+                    throw new ConflictException("owner_cannot_leave_free_fund", "Chủ quỹ Tự do không thể tự rời; chỉ có thể rời bằng cách giải tán quỹ.");
+
                 if (activeMembers.Count > 1)
                     throw new AppException("owner_transfer_required", "Chủ nhóm phải chuyển quyền trước khi rời nhóm.");
                 else
@@ -123,11 +126,72 @@ public sealed partial class V1FundService
             if (election is not null)
                 throw new ConflictException("election_leave_paused", "Voluntary leave is paused during an active election.");
 
+            if (fund.Kind == V1FundKind.Free)
+            {
+                var hasPaymentProcessing = await db.V1FundRequests.AsNoTracking()
+                    .AnyAsync(r => r.FundId == fundId && r.State == "PaymentProcessing", token);
+                if (hasPaymentProcessing)
+                    throw new ConflictException("fund_payment_processing",
+                        "Không thể rời quỹ hoặc hoàn tiền khi quỹ đang có khoản chi đang trong quá trình xử lý thanh toán bên ngoài chưa đối soát.");
+
+                var hasPendingReview = await db.V1FundRequests.AsNoTracking()
+                    .AnyAsync(r => r.FundId == fundId && r.RequestedByUserId == actorUserId && r.State == "AwaitingOwnerReview", token);
+                if (hasPendingReview)
+                    throw new ConflictException("member_pending_requests",
+                        "Thành viên phải tự hủy hoặc chờ giải quyết các yêu cầu đang chờ duyệt trước khi rời quỹ.");
+
+                await ExpireStaleApprovedUnusedRequestsAsync(fundId, token);
+
+                var memberApprovedRequests = await db.V1FundRequests
+                    .Where(r => r.FundId == fundId && r.RequestedByUserId == actorUserId && r.State == "ApprovedUnused")
+                    .ToListAsync(token);
+                foreach (var ar in memberApprovedRequests)
+                {
+                    ar.State = "Cancelled";
+                    ar.CancelledAt = clock.UtcNow;
+                    ar.ReviewReason = "Thành viên rời quỹ, tự động hủy quyền chi.";
+                    await ActivityAsync(fund.Id, actorUserId, "FundRequestCancelled", token, actorUserId,
+                        detail: $"Quyền chi {ar.AmountVnd:N0} đ tự động hủy khi rời quỹ.",
+                        referenceId: ar.Id);
+                }
+            }
+
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
 
             var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [actorUserId], token);
             var (refundAmount, caseType) = calc.MemberRefunds.GetValueOrDefault(actorUserId, (0, "ZeroBalance"));
+
+            if (fund.Kind == V1FundKind.Free && refundAmount > 0)
+            {
+                var treasuryAcc = await FreshAccountAsync(treasury.LedgerAccountId, token);
+                var balanceAfterRefund = treasuryAcc.Balance - refundAmount;
+
+                var otherActiveRequests = await db.V1FundRequests
+                    .Where(r => r.FundId == fundId && r.Kind == "Expense" && r.State == "ApprovedUnused"
+                        && r.ReviewedAt != null && r.ReviewedAt > clock.UtcNow.AddDays(-7))
+                    .OrderByDescending(r => r.ReviewedAt)
+                    .ThenByDescending(r => r.CreatedAt)
+                    .ThenByDescending(r => r.Id)
+                    .ToListAsync(token);
+
+                var totalActiveReserved = otherActiveRequests.Sum(r => r.AmountVnd);
+                if (totalActiveReserved > balanceAfterRefund)
+                {
+                    foreach (var reqToCancel in otherActiveRequests)
+                    {
+                        if (totalActiveReserved <= balanceAfterRefund) break;
+                        reqToCancel.State = "Cancelled";
+                        reqToCancel.CancelledAt = clock.UtcNow;
+                        reqToCancel.ReviewReason = "Tự động hủy do quỹ hoàn tiền cho thành viên rời, không còn đủ số dư dự trù.";
+                        totalActiveReserved -= reqToCancel.AmountVnd;
+
+                        await ActivityAsync(fund.Id, actorUserId, "FundRequestCancelled", token, reqToCancel.RequestedByUserId,
+                            detail: $"Quyền chi {reqToCancel.AmountVnd:N0} đ tự động hủy do quỹ hoàn tiền cho thành viên rời.",
+                            referenceId: reqToCancel.Id);
+                    }
+                }
+            }
 
             Guid? ledgerTxId = null;
             Guid? destinationWalletId = null;
@@ -249,11 +313,72 @@ public sealed partial class V1FundService
                 throw new NotFoundException("member_not_found", "Target member not found in fund.");
             }
 
+            if (fund.Kind == V1FundKind.Free)
+            {
+                var hasPaymentProcessing = await db.V1FundRequests.AsNoTracking()
+                    .AnyAsync(r => r.FundId == fundId && r.State == "PaymentProcessing", token);
+                if (hasPaymentProcessing)
+                    throw new ConflictException("fund_payment_processing",
+                        "Không thể kick thành viên hoặc hoàn tiền khi quỹ đang có khoản chi đang trong quá trình xử lý thanh toán bên ngoài chưa đối soát.");
+
+                var hasPendingReview = await db.V1FundRequests.AsNoTracking()
+                    .AnyAsync(r => r.FundId == fundId && r.RequestedByUserId == targetUserId && r.State == "AwaitingOwnerReview", token);
+                if (hasPendingReview)
+                    throw new ConflictException("member_pending_requests",
+                        "Không thể kick thành viên khi thành viên vẫn còn yêu cầu đang chờ duyệt. Chủ quỹ phải xử lý (duyệt/từ chối/hủy) yêu cầu trước.");
+
+                await ExpireStaleApprovedUnusedRequestsAsync(fundId, token);
+
+                var targetApprovedRequests = await db.V1FundRequests
+                    .Where(r => r.FundId == fundId && r.RequestedByUserId == targetUserId && r.State == "ApprovedUnused")
+                    .ToListAsync(token);
+                foreach (var ar in targetApprovedRequests)
+                {
+                    ar.State = "Cancelled";
+                    ar.CancelledAt = clock.UtcNow;
+                    ar.ReviewReason = "Thành viên bị kick khỏi quỹ, quyền chi tự động hủy.";
+                    await ActivityAsync(fund.Id, actorUserId, "FundRequestCancelled", token, targetUserId,
+                        detail: $"Quyền chi {ar.AmountVnd:N0} đ tự động hủy khi thành viên bị kick.",
+                        referenceId: ar.Id);
+                }
+            }
+
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
 
             var calc = await CalculateUnifiedRefundsAsync(fund, treasury, [targetUserId], token);
             var (refundAmount, caseType) = calc.MemberRefunds.GetValueOrDefault(targetUserId, (0, "ZeroBalance"));
+
+            if (fund.Kind == V1FundKind.Free && refundAmount > 0)
+            {
+                var treasuryAcc = await FreshAccountAsync(treasury.LedgerAccountId, token);
+                var balanceAfterRefund = treasuryAcc.Balance - refundAmount;
+
+                var otherActiveRequests = await db.V1FundRequests
+                    .Where(r => r.FundId == fundId && r.Kind == "Expense" && r.State == "ApprovedUnused"
+                        && r.ReviewedAt != null && r.ReviewedAt > clock.UtcNow.AddDays(-7))
+                    .OrderByDescending(r => r.ReviewedAt)
+                    .ThenByDescending(r => r.CreatedAt)
+                    .ThenByDescending(r => r.Id)
+                    .ToListAsync(token);
+
+                var totalActiveReserved = otherActiveRequests.Sum(r => r.AmountVnd);
+                if (totalActiveReserved > balanceAfterRefund)
+                {
+                    foreach (var reqToCancel in otherActiveRequests)
+                    {
+                        if (totalActiveReserved <= balanceAfterRefund) break;
+                        reqToCancel.State = "Cancelled";
+                        reqToCancel.CancelledAt = clock.UtcNow;
+                        reqToCancel.ReviewReason = "Tự động hủy do quỹ hoàn tiền cho thành viên bị kick, không còn đủ số dư dự trù.";
+                        totalActiveReserved -= reqToCancel.AmountVnd;
+
+                        await ActivityAsync(fund.Id, actorUserId, "FundRequestCancelled", token, reqToCancel.RequestedByUserId,
+                            detail: $"Quyền chi {reqToCancel.AmountVnd:N0} đ tự động hủy do quỹ hoàn tiền cho thành viên bị kick.",
+                            referenceId: reqToCancel.Id);
+                    }
+                }
+            }
 
             Guid? ledgerTxId = null;
             Guid? destinationWalletId = null;
@@ -339,6 +464,28 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null)
                 throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
 
+            if (fund.Kind == V1FundKind.Free)
+            {
+                var hasPaymentProcessing = await db.V1FundRequests.AsNoTracking()
+                    .AnyAsync(r => r.FundId == fundId && r.State == "PaymentProcessing", token);
+                if (hasPaymentProcessing)
+                    throw new ConflictException("fund_payment_processing",
+                        "Không thể giải tán quỹ khi quỹ đang có khoản chi đang trong quá trình xử lý thanh toán bên ngoài chưa đối soát.");
+
+                var activeRequests = await db.V1FundRequests
+                    .Where(r => r.FundId == fundId && (r.State == "AwaitingOwnerReview" || r.State == "ApprovedUnused"))
+                    .ToListAsync(token);
+                foreach (var ar in activeRequests)
+                {
+                    ar.State = "Cancelled";
+                    ar.CancelledAt = clock.UtcNow;
+                    ar.ReviewReason = "Quỹ bị giải tán, yêu cầu tự động hủy.";
+                    await ActivityAsync(fund.Id, actorUserId, "FundRequestCancelled", token, ar.RequestedByUserId,
+                        detail: $"Yêu cầu {ar.Kind} {ar.AmountVnd:N0} đ tự động hủy do giải tán quỹ.",
+                        referenceId: ar.Id);
+                }
+            }
+
             var activeMembers = await ActiveMembersAsync(fundId, token);
             var treasury = await TreasuryAsync(fund, token);
             await RequireReconciledAccountingAsync(treasury, token);
@@ -400,6 +547,7 @@ public sealed partial class V1FundService
                     }
 
                     var mem = await db.V1FundMemberships.SingleAsync(x => x.Id == m.Id, token);
+                    mem.RefundedVnd = checked((mem.RefundedVnd ?? 0) + amount);
                     mem.LeftAt = clock.UtcNow;
 
                     refunds.Add(new V1RefundResultDto(

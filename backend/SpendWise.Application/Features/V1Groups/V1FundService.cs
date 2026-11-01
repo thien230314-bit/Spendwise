@@ -150,12 +150,34 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         InputBoundary.Page(page, pageSize);
         if (page - 1 > int.MaxValue / pageSize) throw new AppException("invalid_pagination", "Page is too large.");
         await RequireActorAsync(userId, ct);
+        var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fundId, ct)
+            ?? throw new NotFoundException("fund_not_found", "Fund not found.");
+
         if (!await db.V1FundMemberships.AsNoTracking().AnyAsync(m => m.FundId == fundId && m.UserId == userId, ct))
             throw new NotFoundException("fund_not_found", "Fund not found.");
+
+        var isOwner = fund.OwnerUserId == userId;
+        var privateRequestEvents = new HashSet<string>
+        {
+            "FundRequestCreated",
+            "FundRequestCancelled",
+            "FundRequestRejected",
+            "FundExpenseApproved",
+            "FundWithdrawalExecuted",
+            "FundRequestExpired"
+        };
+
         // Historical readers see only intervals in which they were members, never later activity.
-        return await db.V1FundActivities.AsNoTracking().Where(a => a.FundId == fundId
+        var query = db.V1FundActivities.AsNoTracking().Where(a => a.FundId == fundId
                 && db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == userId && m.JoinedAt <= a.CreatedAt
-                    && (m.LeftAt == null || a.CreatedAt <= m.LeftAt)))
+                    && (m.LeftAt == null || a.CreatedAt <= m.LeftAt)));
+
+        if (!isOwner)
+        {
+            query = query.Where(a => !privateRequestEvents.Contains(a.Event) || a.ActorUserId == userId || a.SubjectUserId == userId);
+        }
+
+        return await query
             .OrderByDescending(a => a.CreatedAt).ThenBy(a => a.Id).Skip((page - 1) * pageSize).Take(pageSize)
             .Select(a => new V1ActivityDto(a.Id, a.ActorUserId, a.SubjectUserId, a.Event, a.Detail, a.CreatedAt, a.ReferenceId)).ToListAsync(ct);
     }
@@ -406,11 +428,18 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         db.V1FundActivities.Add(activity);
         if (actor is { } userId) await RecordActionAsync(userId, ct);
         await db.SaveChangesAsync(ct);
+        var ownerId = await db.V1Funds.Where(f => f.Id == fundId).Select(f => f.OwnerUserId).FirstOrDefaultAsync(ct);
         var recipients = kind switch
         {
             "Invited" => new List<Guid> { subject!.Value },
-            "InvitationProposed" => await db.V1Funds.Where(f => f.Id == fundId).Select(f => f.OwnerUserId).ToListAsync(ct),
+            "InvitationProposed" => new List<Guid> { ownerId },
             "InvitationCancelled" => new List<Guid> { subject!.Value },
+            "FundRequestCreated" => new List<Guid> { ownerId },
+            "FundRequestCancelled" => new List<Guid> { ownerId },
+            "FundRequestRejected" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
+            "FundExpenseApproved" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
+            "FundWithdrawalExecuted" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
+            "FundRequestExpired" => subject.HasValue ? new List<Guid> { subject.Value, ownerId } : new List<Guid> { ownerId },
             _ => await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null).Select(m => m.UserId).ToListAsync(ct)
         };
         await notifications.CreateManyAsync((audience ?? recipients).Where(id => id != actor).Distinct().Select(id =>

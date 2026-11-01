@@ -1,6 +1,6 @@
 # SPENDWISE FREE FUND V1 — MOBILE API INTEGRATION & HANDOFF SPECIFICATION
 
-Tài liệu bàn giao API và nghiệp vụ Free Fund V1 cho Mobile UI, tuân thủ tuyệt đối quy định nghiệp vụ tại `User.md` (chốt ngày 01/11/2026) và đã được kiểm chứng bằng 92/92 automated integration tests.
+Tài liệu bàn giao API và nghiệp vụ Free Fund V1 cho Mobile UI, tuân thủ tuyệt đối quy định nghiệp vụ tại `User.md` (chốt ngày 01/11/2026) và đã được kiểm chứng bằng automated integration tests.
 
 ---
 
@@ -16,7 +16,8 @@ Tài liệu bàn giao API và nghiệp vụ Free Fund V1 cho Mobile UI, tuân th
 3. **Bảo mật và phân quyền riêng tư**:
    - Thành viên thường chỉ thấy danh sách yêu cầu do chính mình tạo ra (`GET /api/v1/funds/{id}/requests`).
    - Chỉ Trưởng nhóm (Owner) và người tạo yêu cầu (Requester) mới có quyền truy cập chi tiết yêu cầu (`GET /api/v1/funds/requests/{id}`). Thành viên khác truy cập sẽ nhận `403 Forbidden`.
-   - Lịch sử giao dịch chung của quỹ (`GET /api/v1/funds/{id}/transactions`) hiển thị minh bạch cho tất cả thành viên trong nhóm nhưng **không làm lộ ID ví cá nhân hoặc token nhạy cảm**.
+   - Lịch sử giao dịch chung của quỹ (`GET /api/v1/funds/{id}/transactions`) hiển thị minh bạch cho tất cả thành viên trong nhóm (gồm nạp tiền, hoàn tiền, chi tiêu, rút vốn) nhưng **không làm lộ ID ví cá nhân hoặc token nhạy cảm**.
+   - Các thông báo (`Notification`) và dòng hoạt động (`Activity`) của yêu cầu riêng tư (như rút vốn, chi tiêu) được định tuyến nghiêm ngặt giữa Người yêu cầu và Trưởng quỹ; thành viên khác không nhận thông báo và không đọc được trong activity feed.
 4. **Bảo toàn hoàn tiền khi rời quỹ (Leave / Kick / Dissolve)**:
    - Thành viên nhận lại đúng số vốn ròng (Equity) của lượt tham gia hiện tại.
    - Khi hoàn tiền làm giảm số dư kho quỹ dưới mức tạm giữ các quyền chi `ApprovedUnused`, hệ thống tự động hủy các quyền chi theo thứ tự **mới nhất trước** (`ReviewedAt DESC, CreatedAt DESC, Id DESC`) để bảo toàn quyền chi cũ hơn.
@@ -80,7 +81,7 @@ Lấy tổng quan tài chính, vốn ròng của quỹ và của người dùng 
 ### 2.2. Lịch sử Giao dịch Chung của Quỹ
 
 #### `GET /api/v1/funds/{id}/transactions?page=1&pageSize=20`
-Lịch sử dòng tiền kho quỹ (nạp quỹ, thanh toán chi tiêu, hoàn tiền).
+Lịch sử đầy đủ dòng tiền kho quỹ (Nạp tiền, Chi tiêu, Rút vốn, Hoàn tiền).
 - **Quyền**: Thành viên hoặc Trưởng nhóm.
 - **Response `200 OK`**:
 ```json
@@ -93,7 +94,17 @@ Lịch sử dòng tiền kho quỹ (nạp quỹ, thanh toán chi tiêu, hoàn ti
     "description": "Thanh toán ăn trưa nhóm",
     "occurredAt": "2026-11-01T10:15:00Z",
     "actorName": "Nguyễn Văn B",
-    "relatedRequestId": null
+    "relatedRequestId": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  {
+    "id": "2d3e4f5a-6b7c-8d9e-0f1a-223344556677",
+    "fundId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "type": "Withdrawal",
+    "amountVnd": 100000,
+    "description": "Rút vốn cá nhân",
+    "occurredAt": "2026-11-01T09:45:00Z",
+    "actorName": "Nguyễn Văn B",
+    "relatedRequestId": "660e8400-e29b-41d4-a716-446655440001"
   },
   {
     "id": "1b2c3d4e-5f6a-7b8c-9d0e-112233445566",
@@ -129,7 +140,7 @@ Tạo yêu cầu Chi tiêu (`Expense`) hoặc Rút tiền (`Withdrawal`).
 
 #### `GET /api/v1/funds/{id}/requests?page=1&pageSize=20`
 Lấy danh sách yêu cầu.
-- **Quyền**: Trưởng nhóm thấy toàn bộ yêu cầu; Thành viên thường chỉ thấy yêu cầu do mình tạo.
+- **Quyền**: Trưởng nhóm thấy toàn bộ yêu cầu; Thành viên thường chỉ thấy yêu cầu do chính mình tạo.
 
 #### `GET /api/v1/funds/requests/{id}`
 Lấy chi tiết một yêu cầu cụ thể.
@@ -156,7 +167,9 @@ Người tạo tự hủy yêu cầu đang chờ duyệt hoặc đã duyệt nh�
 ```
 
 #### `POST /api/v1/funds/requests/{id}/initiate-payment`
-Thực hiện thanh toán khoản chi đã được cấp quyền (`ApprovedUnused` -> `PaymentProcessing`).
+Bắt đầu thanh toán hóa đơn chi tiêu đối ngoại từ quyền chi `ApprovedUnused`.
+- **Hành vi thực tế tại Backend hiện tại**:
+  Khi cổng thanh toán đối ngoại (External Payment Provider) chưa sẵn sàng hoặc chưa được cấu hình, Backend trả về HTTP `409 Conflict` với mã lỗi `fund_payment_provider_unavailable`. Quyền chi tiêu an toàn giữ nguyên trạng thái `ApprovedUnused` và không bị khóa quỹ.
 - **Body**:
 ```json
 {
@@ -170,19 +183,19 @@ Thực hiện thanh toán khoản chi đã được cấp quyền (`ApprovedUnus
 
 #### `GET /api/v1/funds/{id}/refund-preview`
 Xem trước số tiền hoàn lại trước khi rời nhóm.
-- **Query**: `memberUserId` (nếu Trưởng nhóm xem cho thành viên).
-- **Response**:
+- **Query**: `memberUserId` (nếu Trưởng nhóm xem cho thành viên; để trống nếu thành viên xem cho chính mình).
+- **Response `200 OK`**:
 ```json
 {
   "fundId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "userId": "b4c238b1-36aa-4e9e-9988-123456789abc",
+  "currentFundBalanceVnd": 1000000.0,
   "eligibleRefundAmountVnd": 400000,
-  "currentFundBalanceVnd": 1000000,
   "caseType": "CaseC_FreeEquityRefund",
-  "contributedVnd": 400000,
-  "spentVnd": 0
+  "status": "Available"
 }
 ```
+*(Ghi chú: Để tra cứu chi tiết số tiền đã nạp và phần chi phí đã gánh, Mobile UI gọi endpoint `GET /api/v1/funds/{id}/equity`).*
 
 #### `POST /api/v1/funds/{id}/leave`
 Thành viên tự rời quỹ và nhận hoàn tiền về ví cá nhân.
@@ -227,6 +240,7 @@ Trưởng nhóm giải tán quỹ. Hoàn toàn bộ số dư cho tất cả thà
 | **403** | `Forbidden` | Không có quyền truy cập yêu cầu của người khác |
 | **409** | `member_pending_requests` | Thành viên còn yêu cầu đang chờ duyệt, phải hủy trước khi rời/kick |
 | **409** | `fund_payment_processing` | Quỹ đang có khoản chi đang xử lý thanh toán chưa đối soát |
+| **409** | `fund_payment_provider_unavailable` | Cổng thanh toán hóa đơn đối ngoại chưa sẵn sàng |
 | **409** | `owner_cannot_leave_free_fund` | Trưởng nhóm không thể tự rời quỹ Free Fund |
 | **409** | `insufficient_unreserved_fund_balance` | Số dư khả dụng chưa phân bổ của quỹ không đủ để cấp quyền chi |
 | **409** | `idempotency_conflict` | Idempotency key đã được dùng ở lượt tham gia trước hoặc mục đích khác |
@@ -241,11 +255,11 @@ Trưởng nhóm giải tán quỹ. Hoàn toàn bộ số dư cho tất cả thà
 ## 4. HỆ THỐNG THÔNG BÁO (NOTIFICATIONS & OUTBOX)
 
 Tất cả các thông báo của quỹ được phân phối với `NotificationType = V1FundActivity`:
-- `FundRequestCreated`: Gửi Trưởng nhóm khi thành viên tạo yêu cầu mới.
-- `FundExpenseApproved`: Gửi Thành viên khi yêu cầu chi tiêu được duyệt.
-- `FundRequestRejected`: Gửi Thành viên khi yêu cầu bị từ chối kèm lý do.
-- `FundRequestCancelled`: Gửi Trưởng nhóm khi thành viên hủy yêu cầu.
+- `FundRequestCreated`: Gửi riêng cho Trưởng nhóm khi thành viên tạo yêu cầu mới. Thành viên khác không nhận.
+- `FundExpenseApproved` / `FundWithdrawalExecuted`: Gửi riêng cho Thành viên tạo yêu cầu khi được duyệt.
+- `FundRequestRejected`: Gửi riêng cho Thành viên tạo yêu cầu kèm lý do.
+- `FundRequestCancelled`: Gửi riêng cho Trưởng nhóm khi thành viên tự hủy.
 - `FundRequestExpired`: Gửi Thành viên và Trưởng nhóm khi quyền chi quá hạn 7 ngày tự động hết hạn.
-- `MemberLeft`: Gửi Trưởng nhóm khi thành viên tự rời nhóm.
-- `MemberKicked`: Gửi Thành viên khi bị kick khỏi nhóm.
+- `MemberLeft`: Gửi Trưởng nhóm và các thành viên khi có người tự rời nhóm.
+- `MemberKicked`: Gửi riêng cho Thành viên bị kick khỏi nhóm.
 - `FundDissolved`: Gửi toàn bộ thành viên khi nhóm được giải tán.

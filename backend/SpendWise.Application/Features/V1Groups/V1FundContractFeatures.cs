@@ -170,13 +170,24 @@ public sealed partial class V1FundService
         await RequireActorAsync(actor, ct);
         await RequireMemberAsync(actor, fundId, ct);
 
+        var requestIds = await db.V1FundRequests.AsNoTracking()
+            .Where(r => r.FundId == fundId)
+            .Select(r => r.Id)
+            .ToListAsync(ct);
+
         var rows = await (
             from ft in db.FinancialTransactions.AsNoTracking()
             join u in db.Users.AsNoTracking() on ft.OwnerUserId equals u.Id into uGroup
             from user in uGroup.DefaultIfEmpty()
-            where ft.RelatedBusinessId == fundId && ft.Status == FinancialTransactionStatus.Completed
+            where (ft.RelatedBusinessId == fundId || (ft.RelatedBusinessId.HasValue && requestIds.Contains(ft.RelatedBusinessId.Value)))
+                  && ft.Status == FinancialTransactionStatus.Completed
             orderby ft.OccurredAt descending, ft.Id descending
-            select new { Transaction = ft, FullName = user != null ? user.FullName : "Hệ thống" }
+            select new
+            {
+                Transaction = ft,
+                FullName = user != null ? user.FullName : "Hệ thống",
+                RelatedRequestId = (ft.RelatedBusinessId.HasValue && requestIds.Contains(ft.RelatedBusinessId.Value)) ? ft.RelatedBusinessId : null
+            }
         )
         .Skip((page - 1) * pageSize)
         .Take(pageSize)
@@ -190,7 +201,7 @@ public sealed partial class V1FundService
             r.Transaction.Description ?? "",
             r.Transaction.OccurredAt,
             r.FullName,
-            null
+            r.RelatedRequestId
         )).ToList();
     }
 }

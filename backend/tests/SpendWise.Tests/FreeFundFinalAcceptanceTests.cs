@@ -359,11 +359,11 @@ public class FreeFundFinalAcceptanceTests
 
         var s = V1FundMembershipTests.Service(f);
         // 1. Fixed fund creation (Kind == Fixed)
-        var fund = await s.CreateAsync(ownerA.Id, new("FixedFundV2_Compat", "Fixed", 200_000, TargetedCorrectnessFixture.SecurityPin), default);
+        var fund = await s.CreateAsync(ownerA.Id, new("FixedFundV2_Compat", "Fixed", 200_000, TargetedCorrectnessFixture.SecurityPin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         Assert.Equal("Fixed", (await s.GetAsync(ownerA.Id, fund.Id, default)).Kind);
 
         var invB = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
-        await s.AcceptAsync(memberB.Id, invB.Id, default);
+        await s.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
 
         // 2. Fixed Fund V2 Obligation Confirmation
         var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
@@ -416,7 +416,7 @@ public class FreeFundFinalAcceptanceTests
         // 5. Cross-Episode Idempotency Isolation Verification:
         // Member B rejoins the fund (creating a NEW membership episode).
         var invB2 = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
-        await s.AcceptAsync(memberB.Id, invB2.Id, default);
+        await s.AcceptAsync(memberB.Id, invB2.Id, true, "v2.0", default);
         var activeMemB = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id && m.LeftAt == null);
         Assert.NotEqual(membershipB.Id, activeMemB.Id);
 

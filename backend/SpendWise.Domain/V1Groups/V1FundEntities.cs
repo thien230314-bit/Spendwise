@@ -52,6 +52,8 @@ public sealed class V1FundInvitation : BaseEntity
     public V1InvitationStatus Status { get; set; }
     public DateTime ExpiresAt { get; set; }
     public DateTime? AcceptedAt { get; set; }
+    public int? TargetSeat { get; set; }
+    public bool IsReplacement { get; set; }
 }
 
 public sealed class V1OwnershipOffer : BaseEntity

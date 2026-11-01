@@ -235,6 +235,20 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             var fund = await LockFundAsync(fundId, token);
             await RequireMemberAsync(ownerId, fundId, token);
             await RequireNoActiveElectionAsync(fundId, token);
+            int? replacementSeat = null;
+            if (fund.Kind == V1FundKind.Fixed)
+            {
+                var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fundId && t.Revision > 0, token);
+                if (treasury is not null)
+                {
+                    var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fundId && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
+                    var activeSeats = await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
+                    var vacantSeats = confirmedSeats.Where(s => !activeSeats.Contains(s)).ToList();
+                    if (vacantSeats.Count == 0)
+                        throw new ConflictException("fund_obligations_locked", "Quỹ cố định đã chốt danh sách và nghĩa vụ kỳ, không thể mời thêm thành viên thông thường.");
+                    replacementSeat = vacantSeats.First();
+                }
+            }
             var proposed = fund.Kind == V1FundKind.Fixed && fund.OwnerUserId != ownerId;
             await RequireCapacityAsync(targetId, token);
             await RequireRoomAsync(fund, token);
@@ -249,7 +263,8 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             if (existing is not null)
                 await db.V1FundInvitations.Where(i => i.Id == existing.Id).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Cancelled), token);
             var invitation = new V1FundInvitation { FundId = fundId, InvitedByUserId = ownerId, InvitedUserId = targetId,
-                Status = proposed ? V1InvitationStatus.Proposed : V1InvitationStatus.Pending, ExpiresAt = clock.UtcNow.AddDays(7) };
+                Status = proposed ? V1InvitationStatus.Proposed : V1InvitationStatus.Pending, ExpiresAt = clock.UtcNow.AddDays(7),
+                IsReplacement = replacementSeat.HasValue, TargetSeat = replacementSeat };
             db.V1FundInvitations.Add(invitation);
             await ActivityAsync(fundId, ownerId, proposed ? "InvitationProposed" : "Invited", token, targetId,
                 referenceId: invitation.Id);
@@ -280,6 +295,15 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             {
                 if (trustCommitmentAccepted != true || commitmentVersion != "v2.0")
                     throw new ConflictException("trust_commitment_required", "Bạn cần đồng ý cam kết tin tưởng v2.0 để tham gia Fixed Fund.");
+
+                var treasury = await db.V1FundTreasuries.AsNoTracking().SingleOrDefaultAsync(t => t.FundId == fund.Id && t.Revision > 0, token);
+                if (treasury is not null)
+                {
+                    var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
+                    var activeSeats = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
+                    if (!invite.IsReplacement || activeSeats.Count >= confirmedSeats.Count)
+                        throw new ConflictException("fund_obligations_locked", "Quỹ cố định đã chốt danh sách và nghĩa vụ kỳ, không thể tham gia thêm thành viên thông thường.");
+                }
             }
             await RequireNoActiveElectionAsync(fund.Id, token);
             invite = await db.V1FundInvitations.AsNoTracking().SingleAsync(i => i.Id == inviteId, token);
@@ -295,7 +319,15 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             if (await db.V1FundMemberships.AnyAsync(m => m.FundId == fund.Id && m.UserId == userId && m.LeftAt == null, token))
                 throw new ConflictException("already_member", "User is already a member.");
             var occupied = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
-            var seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
+            int seat;
+            if (invite.IsReplacement && invite.TargetSeat.HasValue && !occupied.Contains(invite.TargetSeat.Value))
+            {
+                seat = invite.TargetSeat.Value;
+            }
+            else
+            {
+                seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
+            }
             await RequireNoActiveElectionAsync(fund.Id, token);
             db.V1FundMemberships.Add(new V1FundMembership
             {

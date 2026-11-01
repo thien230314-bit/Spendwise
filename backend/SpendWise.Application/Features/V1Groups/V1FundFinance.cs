@@ -39,9 +39,14 @@ public sealed partial class V1FundService
             var signature = MembershipSignature(members);
             if (treasury.Revision > 0)
             {
-                if (treasury.TargetVnd != request.TargetVnd || treasury.MembershipSignature != signature)
+                if (treasury.TargetVnd != request.TargetVnd)
                     throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể thay đổi target hoặc sửa nghĩa vụ.");
-                return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
+                if (treasury.MembershipSignature == signature)
+                    return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
+
+                var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fundId && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
+                if (members.Count != confirmedSeats.Count)
+                    throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể thay đổi số lượng ghế.");
             }
 
             treasury.Revision = checked(treasury.Revision + 1);
@@ -52,8 +57,10 @@ public sealed partial class V1FundService
             db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation { FundId = fundId, Revision = treasury.Revision,
                 MembershipId = m.Id, UserId = m.UserId, Seat = m.Seat, RequiredVnd = amounts[m.Seat], Deadline = deadline }));
             await db.V1Funds.Where(f => f.Id == fundId).ExecuteUpdateAsync(s => s.SetProperty(f => f.TargetVnd, (long?)request.TargetVnd), token);
-            await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null)
+            await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null && m.ContributionDeadline == null)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.ContributionDeadline, deadline), token);
+            await db.V1FundInvitations.Where(i => i.FundId == fundId && i.Status == V1InvitationStatus.Pending && !i.IsReplacement)
+                .ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, V1InvitationStatus.Cancelled), token);
             await ActivityAsync(fundId, ownerId, "ObligationsConfirmed", token, detail: treasury.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture));
             return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
         }, ct);

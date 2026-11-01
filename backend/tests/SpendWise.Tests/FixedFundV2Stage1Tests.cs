@@ -245,4 +245,56 @@ public sealed class FixedFundV2Stage1Tests
         Assert.Null(memberM.TrustCommitmentAcceptedAt);
         Assert.Null(memberM.AcceptedCommitmentVersion);
     }
+
+    [Fact]
+    public async Task F5_MembershipLock_AfterObligationsConfirmed_RejectsNewInviteAndPreExistingAcceptance()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerF5");
+        var member1 = await f.AddUserAsync("Member1F5");
+        var member2 = await f.AddUserAsync("Member2F5");
+        var member3 = await f.AddUserAsync("Member3F5");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member1.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member2.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member3.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF5", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+
+        // Invite member1 and member2 BEFORE confirmation
+        var inv1 = await service.InviteAsync(owner.Id, fund.Id, member1.Id, default);
+        var inv2 = await service.InviteAsync(owner.Id, fund.Id, member2.Id, default);
+
+        // Member 1 accepts
+        await service.AcceptAsync(member1.Id, inv1.Id, true, "v2.0", default);
+
+        // Owner confirms obligations for 2 members (Owner + Member 1) with 4,000,000 VND
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        Assert.Equal(1, config.Revision);
+
+        // Scenario 1: Owner attempts to invite member3 AFTER confirmation -> REJECTED
+        var exInvite = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.InviteAsync(owner.Id, fund.Id, member3.Id, default));
+        Assert.Equal("fund_obligations_locked", exInvite.Code);
+
+        // Scenario 2: Member 2 attempts to accept pre-existing invitation AFTER confirmation -> REJECTED
+        var exAccept = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.AcceptAsync(member2.Id, inv2.Id, true, "v2.0", default));
+        Assert.Equal("fund_obligations_locked", exAccept.Code);
+
+        // Scenario 3: Existing confirmed members can still contribute cleanly with their deadlines preserved
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletF5", true, balance: 5_000_000);
+        var m1Wallet = await f.AddWalletAsync(member1.Id, "MWalletF5", true, balance: 5_000_000);
+
+        var oContrib = await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "c-o-f5", Pin, config.Revision), default);
+        Assert.Equal(2_000_000, oContrib.AmountVnd);
+
+        var m1Contrib = await service.ContributeAsync(member1.Id, fund.Id, new(m1Wallet.Id, 2_000_000, "c-m1-f5", Pin, config.Revision), default);
+        Assert.Equal(2_000_000, m1Contrib.AmountVnd);
+
+        // Deadlines remain unchanged
+        var members = await service.MembersAsync(owner.Id, fund.Id, default);
+        var m1 = Assert.Single(members, m => m.UserId == member1.Id);
+        Assert.NotNull(m1.ContributionDeadline);
+    }
 }

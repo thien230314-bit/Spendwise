@@ -3251,6 +3251,12 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("InvitedUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsReplacement")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("TargetSeat")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)

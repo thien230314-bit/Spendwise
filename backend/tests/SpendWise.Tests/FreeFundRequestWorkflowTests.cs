@@ -31,7 +31,7 @@ public class FreeFundRequestWorkflowTests
         var fund = await s.CreateAsync(owner.Id, new("LimitFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
 
         var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await s.AcceptAsync(member.Id, invite.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, true, "v2.0", default);
 
         // Expense 1 succeeds
         var req1 = await s.CreateFundRequestAsync(member.Id, fund.Id,
@@ -529,10 +529,10 @@ public class FreeFundRequestWorkflowTests
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
 
         var s = V1FundMembershipTests.Service(f);
-        var fund = await s.CreateAsync(owner.Id, new("FixedFundRegression", "Fixed", 1_000_000, TargetedCorrectnessFixture.SecurityPin), default);
+        var fund = await s.CreateAsync(owner.Id, new("FixedFundRegression", "Fixed", 1_000_000, TargetedCorrectnessFixture.SecurityPin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
 
         var invite = await s.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await s.AcceptAsync(member.Id, invite.Id, default);
+        await s.AcceptAsync(member.Id, invite.Id, true, "v2.0", default);
 
         // Fixed Fund V2 requires owner to confirm obligations before contributions
         var config = await s.ConfirmObligationsAsync(owner.Id, fund.Id, new(1_000_000, TargetedCorrectnessFixture.SecurityPin), default);

@@ -24,9 +24,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF01", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF01", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default));
@@ -41,9 +41,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF02", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF02", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
 
         var ex0 = await Assert.ThrowsAsync<ConflictException>(() =>
@@ -59,9 +59,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF03", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF03", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
 
@@ -80,9 +80,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF04", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF04", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
 
@@ -104,9 +104,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF05", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF05", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
@@ -135,9 +135,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF06", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF06", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
         await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
@@ -159,9 +159,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF07", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF07", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
 
@@ -183,9 +183,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF08", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF08", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
@@ -210,9 +210,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF09", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF09", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
@@ -237,9 +237,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF10", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF10", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
@@ -271,9 +271,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF11", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF11", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -282,13 +282,10 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m-f11", Pin, config1.Revision), default);
         await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
 
-        // Target increased from 200 to 400
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
-
-        var members = await service.MembersAsync(owner.Id, fund.Id, default);
-        var mDto = Assert.Single(members, m => m.UserId == member.Id);
-        Assert.True(mDto.CanSpend); // Stored
-        Assert.False(mDto.EffectiveCanSpend); // False until catchup
+        // Target increased from 200 to 400 -> Strictly rejected by immutable obligation snapshot rule (F2)
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -299,9 +296,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF12", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF12", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -310,15 +307,10 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m-f12-1", Pin, config1.Revision), default);
         await service.SetSpendingPermissionAsync(owner.Id, fund.Id, member.Id, true, Pin, default);
 
-        var config2 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
-
-        // Catchup contributions
-        await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 100, "c-m-f12-2", Pin, config2.Revision), default);
-        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 100, "c-o-f12-2", Pin, config2.Revision), default);
-
-        var members = await service.MembersAsync(owner.Id, fund.Id, default);
-        var mDto = Assert.Single(members, m => m.UserId == member.Id);
-        Assert.True(mDto.EffectiveCanSpend);
+        // Attempting to mutate confirmed target -> strictly rejected by F2
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -329,9 +321,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF13", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF13", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
 
@@ -353,11 +345,11 @@ public sealed class FixedFundV2BusinessRuleTests
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m1.Id);
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m2.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF14", "Fixed", 300, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF14", "Fixed", 300, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv1 = await service.InviteAsync(owner.Id, fund.Id, m1.Id, default);
-        await service.AcceptAsync(m1.Id, inv1.Id, default);
+        await service.AcceptAsync(m1.Id, inv1.Id, true, "v2.0", default);
         var inv2 = await service.InviteAsync(owner.Id, fund.Id, m2.Id, default);
-        await service.AcceptAsync(m2.Id, inv2.Id, default);
+        await service.AcceptAsync(m2.Id, inv2.Id, true, "v2.0", default);
 
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(300, Pin), default);
         var wOwner = await f.AddWalletAsync(owner.Id, "WOwner", true, balance: 1000);
@@ -386,9 +378,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF15", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF15", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -420,9 +412,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var recipientWithoutWallet = await f.AddUserAsync("NoWalletUser", linkActiveBank: false);
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF16", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF16", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -445,9 +437,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF17", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF17", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -473,9 +465,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF18", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF18", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -499,9 +491,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF19", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF19", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
 
         var exp = new V1FundRequestInput("Expense", 50, merchant.Id, "Unconfirmed target spend", "exp-f19", Pin);
@@ -519,9 +511,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF20", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF20", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 500);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 500);
@@ -558,9 +550,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF21", "Fixed", 400, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF21", "Fixed", 400, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -568,12 +560,10 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f21", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f21", Pin, config1.Revision), default);
 
-        // Target reduced to 200
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
-
-        var state = await service.FinanceAsync(owner.Id, fund.Id, default);
-        var oDto = Assert.Single(state.Obligations, o => o.UserId == member.Id);
-        Assert.Equal(100, oDto.LockedExcessVnd);
+        // Target reduction in middle of active period is strictly disallowed (F2)
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -584,9 +574,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var member = await f.AddUserAsync("Member");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF22", "Fixed", 400, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF22", "Fixed", 400, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -594,12 +584,9 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f22", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f22", Pin, config1.Revision), default);
 
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
-
-        // Treasury has 400, total locked excess = 200. Spendable balance = 200.
-        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
-        var account = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
-        Assert.Equal(400, account.Balance);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -611,9 +598,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF23", "Fixed", 400, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF23", "Fixed", 400, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -622,12 +609,9 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f23", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f23", Pin, config1.Revision), default);
 
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
-
-        var exp = new V1FundRequestInput("Expense", 220, merchant.Id, "Spend locked excess", "exp-f23", Pin);
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default));
-        Assert.Equal("insufficient_fund_balance", ex.Code);
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -639,9 +623,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF24", "Fixed", 400, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF24", "Fixed", 400, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(400, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -650,11 +634,9 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f24", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f24", Pin, config1.Revision), default);
 
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
-
-        var exp = new V1FundRequestInput("Expense", 200, merchant.Id, "Exact spendable", "exp-f24", Pin);
-        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
-        Assert.Equal("Completed", res.State);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     [Fact]
@@ -667,11 +649,11 @@ public sealed class FixedFundV2BusinessRuleTests
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m1.Id);
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m2.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundF25", "Fixed", 600, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundF25", "Fixed", 600, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv1 = await service.InviteAsync(owner.Id, fund.Id, m1.Id, default);
-        await service.AcceptAsync(m1.Id, inv1.Id, default);
+        await service.AcceptAsync(m1.Id, inv1.Id, true, "v2.0", default);
         var inv2 = await service.InviteAsync(owner.Id, fund.Id, m2.Id, default);
-        await service.AcceptAsync(m2.Id, inv2.Id, default);
+        await service.AcceptAsync(m2.Id, inv2.Id, true, "v2.0", default);
 
         var config1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(600, Pin), default);
         var wOwner = await f.AddWalletAsync(owner.Id, "WOwner", true, balance: 1000);
@@ -682,11 +664,10 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(m1.Id, fund.Id, new(wM1.Id, 200, "c-m1-f25", Pin, config1.Revision), default);
         await service.ContributeAsync(m2.Id, fund.Id, new(wM2.Id, 200, "c-m2-f25", Pin, config1.Revision), default);
 
-        // Reduce to 300 (each owes 100). Total excess = 100 + 100 + 100 = 300.
-        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(300, Pin), default);
-
-        var state = await service.FinanceAsync(owner.Id, fund.Id, default);
-        Assert.All(state.Obligations, o => Assert.Equal(100, o.LockedExcessVnd));
+        // Reduce to 300 -> rejected by F2
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(300, Pin), default));
+        Assert.Equal("obligations_already_confirmed", ex.Code);
     }
 
     // =========================================================================
@@ -703,7 +684,7 @@ public sealed class FixedFundV2BusinessRuleTests
         var service = V1ElectionTests.Configured(f);
         var fund = await service.CreateAsync(owner.Id, new("FundFreeF26", "Free", null, Pin), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 200);
 
@@ -732,7 +713,7 @@ public sealed class FixedFundV2BusinessRuleTests
         var service = V1ElectionTests.Configured(f);
         var fund = await service.CreateAsync(owner.Id, new("FundFreeF27", "Free", null, Pin), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
 
         // Owner contributes without obligation confirmation
@@ -753,9 +734,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundReportF28", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundReportF28", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -790,9 +771,9 @@ public sealed class FixedFundV2BusinessRuleTests
         var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
         var service = V1ElectionTests.Configured(f);
-        var fund = await service.CreateAsync(owner.Id, new("FundReportF29", "Fixed", 200, Pin), default);
+        var fund = await service.CreateAsync(owner.Id, new("FundReportF29", "Fixed", 200, Pin, TrustCommitmentAccepted: true, CommitmentVersion: "v2.0"), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
         var mWallet = await f.AddWalletAsync(member.Id, "MWallet", true, balance: 1000);
@@ -822,7 +803,7 @@ public sealed class FixedFundV2BusinessRuleTests
         var service = V1ElectionTests.Configured(f);
         var fund = await service.CreateAsync(owner.Id, new("FundFreeF30", "Free", null, Pin), default);
         var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
         var oWallet = await f.AddWalletAsync(owner.Id, "OWallet", true, balance: 1000);
 
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 300, "c-free-f30", Pin), default);

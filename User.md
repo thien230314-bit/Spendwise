@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT (Stage 1–4 ĐÃ NGHIỆM THU CHÍNH THỨC; Stage 5: ĐANG THẨM ĐỊNH NGHIỆM THU REVISION 3).**  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT (Stage 1–4 ĐÃ NGHIỆM THU CHÍNH THỨC; Stage 5: ĐANG THẨM ĐỊNH NGHIỆM THU REVISION 4).**  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -34,7 +34,7 @@
    - **Hoàn/đồng lẻ/carry-over:** Quyền lợi hoàn dựa vốn thực tế sau chi chung và lịch sử refund, không mặc định chia bằng nhau chỉ vì nghĩa vụ ngang nhau. Bảo vệ tiền vượt nghĩa vụ do carry-over; chia đồng lẻ theo ghế cố định, tổng hoàn phải bằng số dư hợp lệ. Một khoản góp/hoàn/carry-over không được ghi hai lần; giải tán thành công yêu cầu ledger quỹ về **0đ**.
    - **Bầu Owner:** Owner vắng **15 ngày** có bằng chứng: Member mở bầu. Đợt 1 **12h** chọn người cao phiếu nhất, có thể phiếu trống; Owner cũ không bầu hoặc can thiệp. Đợt 2 người thắng có **12h xác nhận nhận quyền bằng PIN**; không nhận/quá hạn/hòa phiếu/không có người kế nhiệm thì bầu thất bại. Member có **24h Out/nhận hoàn**, hết hạn bắt buộc quyết toán/giải tán; nếu chỉ Owner cũ thì hoàn về ví Owner. Chủ mới không tự thấy dữ liệu riêng kỳ cũ. Owner cũ quay lại trong bầu hợp lệ chỉ được xem.
    - **Tranh chấp & lịch sử:** Cam kết tin tưởng **không thay thế** quyền gửi khiếu nại lên Admin; can thiệp cần bằng chứng, phân quyền và audit, không hứa tự động thu hồi tiền đã chi. Lịch sử các kỳ cũ bất biến, người mới không xem nội dung riêng kỳ cũ; người rời còn chứng từ của mình; dữ liệu giải tán lưu cho quản trị.
-   - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ TRIỂN KHAI & KIỂM THỬ ĐẦY ĐỦ** qua bộ kiểm thử tự động toàn diện (Fixed Fund V2 Stage 1–4 đã nghiệm thu chính thức; Stage 5 đang thẩm định nghiệm thu Revision 3, 74 tests Free Fund V1 PASS không hồi quy).
+   - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ TRIỂN KHAI & KIỂM THỬ ĐẦY ĐỦ** qua bộ kiểm thử tự động toàn diện (Fixed Fund V2 Stage 1–4 đã nghiệm thu chính thức; Stage 5 đang thẩm định nghiệm thu Revision 4, 74 tests Free Fund V1 PASS không hồi quy).
 
 2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ MỚI CHỐT 01/11/2026, CHỜ TRIỂN KHAI:**
    - **Phạm vi:** Quỹ chung góp tự nguyện, không có nghĩa vụ đóng `T/n`; tối đa **6 người** gồm Owner và Member. Mỗi User tối đa 10 nhóm/quỹ đang hoạt động theo giới hạn chung hiện có. Chủ quỹ và thành viên đều được góp thêm tiền. Mời bạn bè: Owner hoặc Member có thể mời người đã kết bạn; người nhận phải tự chấp nhận, **không cần Owner duyệt lời mời do Member gửi**.

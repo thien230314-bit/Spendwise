@@ -116,7 +116,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
     public async Task<IReadOnlyList<V1FundDto>> ListAsync(Guid userId, CancellationToken ct)
     {
         await RequireActorAsync(userId, ct);
-        var funds = await db.V1Funds.AsNoTracking().Where(f => db.V1FundMemberships.Any(m => m.FundId == f.Id
+        var funds = await db.V1Funds.AsNoTracking().Where(f => f.DissolvedAt == null && db.V1FundMemberships.Any(m => m.FundId == f.Id
                 && m.UserId == userId && m.LeftAt == null)).OrderBy(f => f.CreatedAt).ToListAsync(ct);
         return funds.Select(Map).ToList();
     }
@@ -202,6 +202,19 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             throw new NotFoundException("fund_not_found", "Fund not found.");
 
         var isOwner = fund.OwnerUserId == userId;
+        DateTime? becameOwnerAt = null;
+        if (isOwner && fund.OwnershipRevision > 0)
+        {
+            var electionWon = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.WinnerUserId == userId && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(ct);
+            if (electionWon != null)
+            {
+                becameOwnerAt = electionWon.FinishedAt;
+            }
+        }
+
         var privateRequestEvents = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "FundRequestCreated",
@@ -209,7 +222,10 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             "FundRequestAutoCancelled",
             "FundRequestRejected",
             "FundExpenseApproved",
+            "ExpenseExecuted",
+            "FundExpenseExecuted",
             "FundWithdrawalExecuted",
+            "WithdrawalExecuted",
             "FundRequestExpired",
             "FundExpenseReported",
             "FundExpenseSuspended"
@@ -223,6 +239,10 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         if (!isOwner)
         {
             query = query.Where(a => !privateRequestEvents.Contains(a.Event) || a.ActorUserId == userId || a.SubjectUserId == userId);
+        }
+        else if (becameOwnerAt.HasValue)
+        {
+            query = query.Where(a => !privateRequestEvents.Contains(a.Event) || a.CreatedAt >= becameOwnerAt.Value || a.ActorUserId == userId || a.SubjectUserId == userId);
         }
 
         return await query

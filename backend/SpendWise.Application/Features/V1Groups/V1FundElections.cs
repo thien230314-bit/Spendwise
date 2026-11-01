@@ -43,14 +43,50 @@ public sealed partial class V1FundService
             if (await OwnerResponseOverdueAsync(fund, token)
                 && await db.V1FundContributions.AnyAsync(c => c.FundId == fundId && c.UserId == actor && c.AmountVnd > 0, token))
                 proof = new(true, true, "owner-response:" + fund.ActivityClosedAt!.Value.Ticks);
+
+            if (fund.Kind == V1FundKind.Fixed && !proof.Eligible)
+            {
+                var lastOwnerActivity = await db.V1FundActivities.AsNoTracking()
+                    .Where(a => a.FundId == fundId && a.ActorUserId == fund.OwnerUserId)
+                    .OrderByDescending(a => a.CreatedAt)
+                    .Select(a => (DateTime?)a.CreatedAt)
+                    .FirstOrDefaultAsync(token);
+
+                var ownerLastSeen = lastOwnerActivity ?? fund.CreatedAt;
+                if (clock.UtcNow - ownerLastSeen >= TimeSpan.FromDays(15))
+                {
+                    proof = new V1InactivityProof(true, true, $"inactivity:15days:{ownerLastSeen.Ticks}");
+                }
+            }
+
             if (!proof.CoverageComplete || !proof.Eligible || string.IsNullOrWhiteSpace(proof.EvidenceId) || proof.EvidenceId.Length > 200)
                 throw new ConflictException("ACTIVITY_EVIDENCE_BLOCKED", "Complete authoritative inactivity evidence is required.");
             var voters = await db.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundId && m.LeftAt == null && m.UserId != fund.OwnerUserId
                 && db.Users.Any(u => u.Id == m.UserId && u.SystemRole == SystemRole.User && u.Status == UserStatus.Active && u.EmailVerifiedAt != null && !u.MustChangePassword)).ToListAsync(token);
             if (voters.All(v => v.UserId != actor)) throw new ForbiddenException("not_elector", "Eligible electorate required.");
+
+            if (fund.Kind == V1FundKind.Fixed)
+            {
+                policy = new V1ElectionPolicySnapshot(
+                    "V2.0-Fixed",
+                    RegistrationSeconds: 43200,
+                    NominationSeconds: 43200,
+                    RunoffSeconds: 43200,
+                    ConfirmationSeconds: 43200,
+                    AcceptanceSeconds: 43200,
+                    AllowContributions: false);
+            }
+
             var election = new V1Election { FundId = fundId, IncumbentUserId = fund.OwnerUserId, OpenedByUserId = actor,
-                OwnershipRevision = fund.OwnershipRevision, PhaseStartedAt = clock.UtcNow, PolicyJson = JsonSerializer.Serialize(policy), InactivityEvidenceId = proof.EvidenceId };
-            db.V1Elections.Add(election); db.V1ElectionVoters.AddRange(voters.Select(v => new V1ElectionVoter { ElectionId = election.Id, UserId = v.UserId, MembershipId = v.Id }));
+                OwnershipRevision = fund.OwnershipRevision, PhaseStartedAt = clock.UtcNow,
+                Phase = fund.Kind == V1FundKind.Fixed ? V1ElectionPhase.Nomination : V1ElectionPhase.Registration,
+                PolicyJson = JsonSerializer.Serialize(policy), InactivityEvidenceId = proof.EvidenceId };
+            db.V1Elections.Add(election);
+            db.V1ElectionVoters.AddRange(voters.Select(v => new V1ElectionVoter { ElectionId = election.Id, UserId = v.UserId, MembershipId = v.Id }));
+            if (fund.Kind == V1FundKind.Fixed)
+            {
+                db.V1ElectionCandidates.AddRange(voters.Select(v => new V1ElectionCandidate { ElectionId = election.Id, UserId = v.UserId }));
+            }
             await ActivityAsync(fundId, actor, "ElectionOpened", token, referenceId: election.Id);
             return ElectionDto(election);
         }, ct);

@@ -216,4 +216,12 @@ public sealed class V1FundsController(V1FundService funds, ICurrentUser currentU
     [EnableRateLimiting("financial")]
     public Task<V1DissolveResultDto> FailPeriodEarly(Guid id, V1PinRequest request, CancellationToken ct) =>
         funds.FailFixedPeriodEarlyAsync(Actor, id, request.SecurityPin, ct);
+
+    [HttpPost("{id:guid}/elections/failed-settlement")]
+    [EnableRateLimiting("financial")]
+    public async Task<V1DissolveResultDto> ResolveFailedElectionSettlement(Guid id, CancellationToken ct)
+    {
+        var (totalRefunded, refunds) = await funds.ResolveFailedElectionSettlementAsync(Actor, id, ct);
+        return new V1DissolveResultDto(id, totalRefunded, 0, refunds, DateTime.UtcNow);
+    }
 }

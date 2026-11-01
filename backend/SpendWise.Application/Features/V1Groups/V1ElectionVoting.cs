@@ -41,8 +41,22 @@ public sealed partial class V1FundService
             {
                 if (request.CandidateUserId is not null || request.Support is null) throw new AppException("invalid_ballot", "Confirmation requires an explicit Yes or No.");
             }
-            else if (request.Support is not null || request.CandidateUserId is null || !await db.V1ElectionCandidates.AnyAsync(c => c.ElectionId == id
-                && c.UserId == request.CandidateUserId && (round != 2 || c.InRunoff), token)) throw new AppException("invalid_ballot", "Select an eligible consented candidate.");
+            else
+            {
+                if (request.Support is not null) throw new AppException("invalid_ballot", "Select an eligible consented candidate.");
+                if (request.CandidateUserId is not null)
+                {
+                    if (request.CandidateUserId == fund.OwnerUserId)
+                        throw new AppException("invalid_ballot", "Không được chọn Owner đang vắng mặt.");
+                    if (!await db.V1ElectionCandidates.AnyAsync(c => c.ElectionId == id
+                        && c.UserId == request.CandidateUserId && (round != 2 || c.InRunoff), token))
+                        throw new AppException("invalid_ballot", "Select an eligible consented candidate.");
+                }
+                else if (fund.Kind != V1FundKind.Fixed)
+                {
+                    throw new AppException("invalid_ballot", "Select an eligible consented candidate.");
+                }
+            }
             var ballot = new V1ElectionBallot { ElectionId = id, VoterUserId = actor, Round = round, CandidateUserId = request.CandidateUserId, Support = request.Support };
             db.V1ElectionBallots.Add(ballot); await ActivityAsync(e.FundId, actor, "ElectionBallotCast", token, referenceId: ballot.Id);
             return new V1BallotReceipt(ballot.Id, ballot.Round, false);

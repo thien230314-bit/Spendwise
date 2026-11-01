@@ -333,4 +333,42 @@ public sealed partial class V1FundService
         await db.SaveChangesAsync(token);
         return (totalRefunded, refunds);
     }
+
+    public Task<(long TotalRefunded, List<V1RefundResultDto> Refunds)> ResolveFailedElectionSettlementAsync(
+        Guid actorUserId,
+        Guid fundId,
+        CancellationToken ct) =>
+        db.ExecuteInTransactionAsync(async token =>
+        {
+            var fund = await LockFundAsync(fundId, token);
+            if (fund.DissolvedAt is not null)
+                throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
+
+            if (fund.Kind != V1FundKind.Fixed)
+                throw new ConflictException("fixed_fund_only", "Failed election settlement is only applicable to Fixed Funds.");
+
+            var activeMembers = await ActiveMembersAsync(fundId, token);
+            if (activeMembers.All(m => m.UserId != actorUserId))
+                throw new ForbiddenException("not_member", "Only active fund members can trigger settlement.");
+
+            var lastFailedElection = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(token);
+
+            if (lastFailedElection is null)
+                throw new ConflictException("no_failed_election", "Fund does not have a failed election.");
+
+            var onlyOwnerRemaining = activeMembers.Count == 1 && activeMembers[0].UserId == fund.OwnerUserId;
+            var isWithin24hOptOut = clock.UtcNow <= lastFailedElection.FinishedAt.Value.AddHours(24);
+
+            if (isWithin24hOptOut && !onlyOwnerRemaining)
+            {
+                throw new ConflictException("election_opt_out_window_active",
+                    "Cửa sổ 24 giờ cho thành viên tự nguyện rút khỏi quỹ vẫn đang mở.");
+            }
+
+            var treasury = await TreasuryAsync(fund, token);
+            return await AutoDissolveFixedFundAsync(fund, treasury, activeMembers, "FailedElectionSettlement", token);
+        }, ct);
 }

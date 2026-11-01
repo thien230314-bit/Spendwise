@@ -16,8 +16,15 @@ public sealed partial class V1FundService
     {
         var id = e.Id;
         if (e.FinishedAt is not null) return ElectionDto(e);
-        if (!await PhaseExpiredAsync(e, token)) throw new ConflictException("election_round_open", "Election phase is still open.");
-        var nextStart = await SpendWise.Application.Features.Operations.V1MaintenanceGate.DeadlineAsync(db, e.PhaseStartedAt, TimeSpan.FromSeconds(PhaseSeconds(e)), clock.UtcNow, token, "Groups");
+        var votersCount = await db.V1ElectionVoters.CountAsync(v => v.ElectionId == id, token);
+        var currentRound = e.Phase switch { V1ElectionPhase.Nomination => 1, V1ElectionPhase.Runoff => 2, V1ElectionPhase.Confirmation => 3, _ => 0 };
+        var ballotsCount = currentRound > 0 ? await db.V1ElectionBallots.CountAsync(b => b.ElectionId == id && b.Round == currentRound, token) : 0;
+        var allVoted = currentRound > 0 && votersCount > 0 && ballotsCount >= votersCount;
+
+        if (!allVoted && !await PhaseExpiredAsync(e, token)) throw new ConflictException("election_round_open", "Election phase is still open.");
+        var nextStart = allVoted
+            ? clock.UtcNow
+            : await SpendWise.Application.Features.Operations.V1MaintenanceGate.DeadlineAsync(db, e.PhaseStartedAt, TimeSpan.FromSeconds(PhaseSeconds(e)), clock.UtcNow, token, "Groups");
         if (e.Phase == V1ElectionPhase.Registration)
         {
             if (!await db.V1ElectionCandidates.AnyAsync(c => c.ElectionId == id, token)) FailElection(e, "NoCandidates");
@@ -27,18 +34,14 @@ public sealed partial class V1FundService
         {
             var round = e.Phase == V1ElectionPhase.Nomination ? 1 : 2;
             var ballots = await db.V1ElectionBallots.AsNoTracking().Where(b => b.ElectionId == id && b.Round == round).ToListAsync(token);
-            if (ballots.Count == 0) FailElection(e, "NoVotes");
+            var nonBlankBallots = ballots.Where(b => b.CandidateUserId != null).ToList();
+            if (nonBlankBallots.Count == 0) FailElection(e, "NoVotes");
             else
             {
-                var counts = ballots.GroupBy(b => b.CandidateUserId!.Value).ToDictionary(g => g.Key, g => g.Count()); var max = counts.Values.Max();
+                var counts = nonBlankBallots.GroupBy(b => b.CandidateUserId!.Value).ToDictionary(g => g.Key, g => g.Count()); var max = counts.Values.Max();
                 var top = counts.Where(c => c.Value == max).Select(c => c.Key).ToArray();
-                if (top.Length > 1 && round == 2) FailElection(e, "RunoffTie");
-                else if (top.Length > 1)
-                {
-                    await db.V1ElectionCandidates.Where(c => c.ElectionId == id && top.Contains(c.UserId)).ExecuteUpdateAsync(s => s.SetProperty(c => c.InRunoff, true), token);
-                    e.Phase = V1ElectionPhase.Runoff;
-                }
-                else { e.WinnerUserId = top[0]; e.Phase = V1ElectionPhase.Confirmation; }
+                if (top.Length > 1) FailElection(e, "RunoffTie");
+                else { e.WinnerUserId = top[0]; e.Phase = V1ElectionPhase.AwaitingAcceptance; }
             }
         }
         else if (e.Phase == V1ElectionPhase.Confirmation)
@@ -65,6 +68,8 @@ public sealed partial class V1FundService
             if (e.Phase != V1ElectionPhase.AwaitingAcceptance || await PhaseExpiredAsync(e, token)) throw new ConflictException("election_acceptance_closed", "Acceptance is unavailable.");
             var proof = await (inactivityEvidence ?? new IncompleteInactivityEvidence()).GetAsync(e.IncumbentUserId, token);
             if (e.InactivityEvidenceId == "owner-response:" + fund.ActivityClosedAt?.Ticks && await OwnerResponseOverdueAsync(fund, token))
+                proof = new(true, true, e.InactivityEvidenceId);
+            if (fund.Kind == V1FundKind.Fixed && e.InactivityEvidenceId.StartsWith("inactivity:15days:"))
                 proof = new(true, true, e.InactivityEvidenceId);
             if (!proof.CoverageComplete || !proof.Eligible || string.IsNullOrWhiteSpace(proof.EvidenceId))
                 throw new ConflictException("ACTIVITY_EVIDENCE_BLOCKED", "Complete authoritative inactivity evidence is required.");

@@ -62,28 +62,35 @@ public sealed partial class V1FundService
             // 0. FAILED ELECTION COMPULSORY DISSOLUTION AFTER 24H (Section 8 & P1-1, P1-2)
             // Checked first regardless of ActivityClosedAt or active proposals; never executes if a new election is active
             var hasActiveElection = await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
-            if (!hasActiveElection)
+            if (hasActiveElection)
             {
-                var lastFailedElection = await db.V1Elections.AsNoTracking()
-                    .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
-                    .OrderByDescending(e => e.FinishedAt)
-                    .FirstOrDefaultAsync(token);
+                // Protect frozen electorate across all worker deadlines while an election is active.
+                // No funding transitions, member kicks, or dissolutions can occur.
+                return new V1DeadlineProcessingResultDto(fundId, "ElectionActiveFrozen", Array.Empty<Guid>(), false);
+            }
 
-                if (lastFailedElection != null && lastFailedElection.FinishedAt.HasValue)
+            var lastFailedElection = await db.V1Elections.AsNoTracking()
+                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
+                .OrderByDescending(e => e.FinishedAt)
+                .FirstOrDefaultAsync(token);
+
+            if (lastFailedElection != null && lastFailedElection.FinishedAt.HasValue)
+            {
+                var activeMembersSettlement = await ActiveMembersAsync(fundId, token);
+                var onlyOwnerRemaining = activeMembersSettlement.Count == 1 && activeMembersSettlement[0].UserId == fund.OwnerUserId;
+                var isExpired = clock.UtcNow >= lastFailedElection.FinishedAt.Value.AddHours(24);
+
+                if (isExpired || onlyOwnerRemaining)
                 {
-                    var activeMembersSettlement = await ActiveMembersAsync(fundId, token);
-                    var onlyOwnerRemaining = activeMembersSettlement.Count == 1 && activeMembersSettlement[0].UserId == fund.OwnerUserId;
-                    var isExpired = clock.UtcNow >= lastFailedElection.FinishedAt.Value.AddHours(24);
-
-                    if (isExpired || onlyOwnerRemaining)
-                    {
-                        var treasurySettlement = await TreasuryAsync(fund, token);
-                        var (totalRefunded, refunds) = await AutoDissolveFixedFundAsync(fund, treasurySettlement, activeMembersSettlement, "FailedElectionSettlement", token);
-                        await ActivityAsync(fundId, null, "FailedElectionSettled", token,
-                            detail: $"Quỹ tự động quyết toán và giải tán sau khi bầu cử thất bại (hoàn {totalRefunded:N0} đ cho {refunds.Count} thành viên).");
-                        return new V1DeadlineProcessingResultDto(fundId, "FailedElectionSettled", Array.Empty<Guid>(), true);
-                    }
+                    var treasurySettlement = await TreasuryAsync(fund, token);
+                    var (totalRefunded, refunds) = await AutoDissolveFixedFundAsync(fund, treasurySettlement, activeMembersSettlement, "FailedElectionSettlement", token);
+                    await ActivityAsync(fundId, null, "FailedElectionSettled", token,
+                        detail: $"Quỹ tự động quyết toán và giải tán sau khi bầu cử thất bại (hoàn {totalRefunded:N0} đ cho {refunds.Count} thành viên).");
+                    return new V1DeadlineProcessingResultDto(fundId, "FailedElectionSettled", Array.Empty<Guid>(), true);
                 }
+
+                // Protect 24-hour opt-out window after failed election from premature funding dissolution or auto-kick
+                return new V1DeadlineProcessingResultDto(fundId, "FailedElectionPendingOptOut", Array.Empty<Guid>(), false);
             }
 
             if (fund.ActivityClosedAt is not null)
@@ -240,6 +247,8 @@ public sealed partial class V1FundService
                 throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
             if (fund.Kind != V1FundKind.Fixed)
                 throw new ConflictException("fixed_fund_required", "Only fixed funds support period failure.");
+
+            await RequireNoActiveElectionAsync(fundId, token);
 
             var treasury = await TreasuryAsync(fund, token);
             if (treasury.Revision == 0)

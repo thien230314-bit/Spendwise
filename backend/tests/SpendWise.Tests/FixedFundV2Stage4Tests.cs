@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.V1Groups;
+using SpendWise.Domain.Finance;
 using SpendWise.Domain.Identity;
 using SpendWise.Domain.V1Groups;
 using Xunit;
@@ -579,5 +580,198 @@ public sealed class FixedFundV2Stage4Tests
         // Verify fund is NOT dissolved because active election protected it
         var dbFund = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
         Assert.Null(dbFund.DissolvedAt);
+    }
+
+    [Fact]
+    public async Task T34_P1_1_FundingDeadline_DuringActiveElection_FrozenElectorateProtected()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // Set contribution deadlines on members
+        var memA = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberA.Id);
+        memA.ContributionDeadline = clock.UtcNow.AddHours(2);
+        await f.Db.SaveChangesAsync();
+
+        // 16 days inactive to allow opening election
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+
+        // Advance clock past Member A's contribution deadline
+        clock.Advance(TimeSpan.FromHours(5));
+
+        // Process deadlines
+        var res = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("ElectionActiveFrozen", res.Status);
+        Assert.False(res.Dissolved);
+        Assert.Empty(res.AutoKickedUserIds);
+
+        // Verify member A was NOT kicked and remains active
+        var memACheck = await f.Db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.Id == memA.Id);
+        Assert.Null(memACheck.LeftAt);
+
+        // Verify fund is NOT dissolved
+        var fundCheck = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.Null(fundCheck.DissolvedAt);
+    }
+
+    [Fact]
+    public async Task T35_P1_1_FundingDeadline_DuringFailedElectionOptOutWindow_ProtectedFromFundingDissolution()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        // Fail election
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // Now election failed. FinishedAt is now.
+        // Set an expired owner deadline
+        var ownerMem = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == owner.Id);
+        ownerMem.ContributionDeadline = clock.UtcNow.AddMinutes(30);
+        await f.Db.SaveChangesAsync();
+
+        // Advance 1 hour (inside 24h opt-out window, but past owner contribution deadline)
+        clock.Advance(TimeSpan.FromHours(1));
+
+        var res = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
+        Assert.Equal("FailedElectionPendingOptOut", res.Status);
+        Assert.False(res.Dissolved);
+
+        var fundCheck = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.Null(fundCheck.DissolvedAt);
+    }
+
+    [Fact]
+    public async Task T36_P1_1_FailFixedPeriodEarly_BlockedDuringActiveElectionAndPendingSettlement()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // Set member B's contribution deadline to past, then owner kicks member B to create a vacant seat
+        var memB = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id);
+        memB.ContributionDeadline = clock.UtcNow.AddMinutes(5);
+        await f.Db.SaveChangesAsync();
+
+        clock.Advance(TimeSpan.FromMinutes(10));
+        await service.KickMemberAsync(owner.Id, fund.Id, memberB.Id, new V1KickMemberRequest(Pin, "missed deadline", Guid.NewGuid().ToString("N")), default);
+
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+
+        // 1. Owner tries to sabotage active election via early period failure
+        var exActive = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.FailFixedPeriodEarlyAsync(owner.Id, fund.Id, Pin, default));
+        Assert.Equal("election_in_progress", exActive.Code);
+
+        // 2. Election fails
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // Owner tries to call early period failure during failed election pending settlement
+        var exFailed = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.FailFixedPeriodEarlyAsync(owner.Id, fund.Id, Pin, default));
+        Assert.Equal("election_failed_pending_settlement", exFailed.Code);
+    }
+
+    [Fact]
+    public async Task T37_P1_2_VoluntaryOwnershipTransfer_EstablishesTenureAndHidesPastPrivateRecords()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // 1. Founder creates private request in Period 1
+        var req1 = await service.CreateFundRequestAsync(owner.Id, fund.Id,
+            new V1FundRequestInput("Expense", 500_000, owner.Id, "Founder Private Request", Guid.NewGuid().ToString("N"), Pin), default);
+
+        // 2. Founder transfers ownership to member A voluntarily
+        var offer = await service.OfferOwnershipAsync(owner.Id, fund.Id, memberA.Id, Pin, default);
+        clock.Advance(TimeSpan.FromMinutes(5));
+        await service.AcceptOwnershipAsync(memberA.Id, offer.Id, Pin, default);
+
+        // Member A is now Owner with Revision 1
+        var fundDb = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.Equal(memberA.Id, fundDb.OwnerUserId);
+        Assert.Equal(1, fundDb.OwnershipRevision);
+
+        // 3. Member A queries requests: cannot see Founder's pre-tenure private request
+        var requestsA = await service.FundRequestsAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.DoesNotContain(requestsA, r => r.Id == req1.Id);
+
+        // 4. Member A tries to GetFundRequestAsync on req1: forbidden!
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.GetFundRequestAsync(memberA.Id, req1.Id, default));
+
+        // 5. Member A creates a new request in their tenure
+        var req2 = await service.CreateFundRequestAsync(memberA.Id, fund.Id,
+            new V1FundRequestInput("Expense", 200_000, memberA.Id, "New Owner Request", Guid.NewGuid().ToString("N"), Pin), default);
+        var requestsAAfter = await service.FundRequestsAsync(memberA.Id, fund.Id, 1, 50, default);
+        Assert.Contains(requestsAAfter, r => r.Id == req2.Id);
+        Assert.DoesNotContain(requestsAAfter, r => r.Id == req1.Id);
+    }
+
+    [Fact]
+    public async Task T38_P1_3_FormerMember_CanQueryOwnTransactionsAndRefundReceipts_ExcludesOtherMembersAndPostLeave()
+    {
+        var (f, clock, service, fund, owner, memberA, memberB) = await Setup3MemberFixedFundAsync();
+        await using var _ = f;
+
+        // Advance 16 days and run an election that fails, opening the 24h opt-out window
+        clock.Advance(TimeSpan.FromDays(16));
+        var election = await service.OpenElectionAsync(memberA.Id, fund.Id, new V1OpenElectionRequest(0), default);
+        await service.CastBallotAsync(memberA.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.CastBallotAsync(memberB.Id, election.Id, new V1BallotRequest(1, null, null), default);
+        await service.AdvanceElectionAsync(memberA.Id, election.Id, default);
+
+        // 1. Member A opts out voluntarily during the 24h window after failed election
+        await service.LeaveFundAsync(memberA.Id, fund.Id, new V1LeaveFundRequest(Pin, Guid.NewGuid().ToString("N")), default);
+
+        // Verify Member A has LeftAt != null
+        var memA = await f.Db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fund.Id && m.UserId == memberA.Id);
+        Assert.NotNull(memA.LeftAt);
+
+        // 2. Later, after Member A has left, another transaction occurs in the fund
+        clock.Advance(TimeSpan.FromDays(2));
+        var ltx = new LedgerTransaction
+        {
+            IdempotencyKey = Guid.NewGuid().ToString("N"),
+            Status = LedgerTransactionStatus.Completed,
+            CompletedAt = clock.UtcNow
+        };
+        f.Db.LedgerTransactions.Add(ltx);
+        var postLeaveTx = new FinancialTransaction
+        {
+            OwnerUserId = owner.Id,
+            RelatedBusinessId = fund.Id,
+            LedgerTransactionId = ltx.Id,
+            LedgerTransaction = ltx,
+            Type = FinancialTransactionType.Expense,
+            Status = FinancialTransactionStatus.Completed,
+            Amount = 100_000,
+            Description = "Chi tieu sau khi A roi quy",
+            OccurredAt = clock.UtcNow
+        };
+        f.Db.FinancialTransactions.Add(postLeaveTx);
+        await f.Db.SaveChangesAsync();
+
+        // 3. Former Member A queries fund transactions
+        var txs = await service.FundTransactionsAsync(memberA.Id, fund.Id, 1, 50, default);
+
+        // Former member CAN query and see their own transactions (or refund receipts)
+        // BUT CANNOT see post-leave transaction
+        Assert.DoesNotContain(txs, t => t.Id == postLeaveTx.Id);
+        // And cannot see other members' transactions occurred after left
+        foreach (var t in txs)
+        {
+            Assert.True(t.OccurredAt <= memA.LeftAt.Value);
+        }
+
+        // Non-member (stranger) is rejected with NotFoundException
+        var stranger = await f.AddUserAsync("Stranger User");
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.FundTransactionsAsync(stranger.Id, fund.Id, 1, 50, default));
     }
 }

@@ -643,14 +643,7 @@ public sealed partial class V1FundService
         DateTime? becameOwnerAt = null;
         if (isOwner && fund.OwnershipRevision > 0)
         {
-            var electionWon = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fundId && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
-                .OrderByDescending(e => e.FinishedAt)
-                .FirstOrDefaultAsync(ct);
-            if (electionWon != null)
-            {
-                becameOwnerAt = electionWon.FinishedAt;
-            }
+            becameOwnerAt = await GetOwnerTenureStartedAtAsync(fund.Id, actor, fund.OwnershipRevision, ct);
         }
 
         var query = db.V1FundRequests.AsNoTracking()

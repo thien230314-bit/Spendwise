@@ -157,11 +157,8 @@ public sealed partial class V1FundService
 
         if (isOwner && fund.OwnershipRevision > 0 && !isRequester)
         {
-            var electionWon = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fund.Id && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
-                .OrderByDescending(e => e.FinishedAt)
-                .FirstOrDefaultAsync(ct);
-            if (electionWon != null && electionWon.FinishedAt.HasValue && req.CreatedAt < electionWon.FinishedAt.Value)
+            var becameOwnerAt = await GetOwnerTenureStartedAtAsync(fund.Id, actor, fund.OwnershipRevision, ct);
+            if (!becameOwnerAt.HasValue || req.CreatedAt < becameOwnerAt.Value || req.OwnershipRevision < fund.OwnershipRevision)
             {
                 throw new ForbiddenException();
             }
@@ -180,7 +177,7 @@ public sealed partial class V1FundService
     {
         ValidatePage(page, pageSize);
         await RequireActorAsync(actor, ct);
-        await RequireMemberAsync(actor, fundId, ct);
+        await RequireCurrentOrPastMemberAsync(actor, fundId, ct);
 
         var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fundId, ct)
             ?? throw new NotFoundException("fund_not_found", "Fund not found.");
@@ -188,21 +185,18 @@ public sealed partial class V1FundService
         DateTime? becameOwnerAt = null;
         if (isOwner && fund.OwnershipRevision > 0)
         {
-            var electionWon = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fundId && e.WinnerUserId == actor && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
-                .OrderByDescending(e => e.FinishedAt)
-                .FirstOrDefaultAsync(ct);
-            if (electionWon != null)
-            {
-                becameOwnerAt = electionWon.FinishedAt;
-            }
+            becameOwnerAt = await GetOwnerTenureStartedAtAsync(fund.Id, actor, fund.OwnershipRevision, ct);
         }
+
+        var isCurrentMember = isOwner || await db.V1FundMemberships.AsNoTracking()
+            .AnyAsync(m => m.FundId == fundId && m.UserId == actor && m.LeftAt == null, ct);
 
         var requests = await db.V1FundRequests.AsNoTracking()
             .Where(r => r.FundId == fundId)
             .Select(r => new { r.Id, r.Kind, r.RequestedByUserId, r.CreatedAt })
             .ToDictionaryAsync(r => r.Id, ct);
         var requestIds = requests.Keys.ToList();
+        var actorRequestIds = requests.Values.Where(r => r.RequestedByUserId == actor).Select(r => r.Id).ToHashSet();
 
         var rows = await (
             from ft in db.FinancialTransactions.AsNoTracking()
@@ -214,6 +208,7 @@ public sealed partial class V1FundService
                       || (becameOwnerAt.HasValue && ft.OccurredAt >= becameOwnerAt.Value)
                       || db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == actor
                           && m.JoinedAt <= ft.OccurredAt && (m.LeftAt == null || ft.OccurredAt <= m.LeftAt)))
+                  && (isCurrentMember || ft.OwnerUserId == actor || (ft.RelatedBusinessId.HasValue && actorRequestIds.Contains(ft.RelatedBusinessId.Value)))
             orderby ft.OccurredAt descending, ft.Id descending
             select new
             {

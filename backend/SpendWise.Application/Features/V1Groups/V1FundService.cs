@@ -205,14 +205,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
         DateTime? becameOwnerAt = null;
         if (isOwner && fund.OwnershipRevision > 0)
         {
-            var electionWon = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fundId && e.WinnerUserId == userId && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
-                .OrderByDescending(e => e.FinishedAt)
-                .FirstOrDefaultAsync(ct);
-            if (electionWon != null)
-            {
-                becameOwnerAt = electionWon.FinishedAt;
-            }
+            becameOwnerAt = await GetOwnerTenureStartedAtAsync(fund.Id, userId, fund.OwnershipRevision, ct);
         }
 
         var privateRequestEvents = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -598,6 +591,44 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
     {
         if (!await db.V1FundMemberships.AsNoTracking().AnyAsync(m => m.FundId == fundId && m.UserId == userId && m.LeftAt == null, ct))
             throw new NotFoundException("fund_not_found", "Fund not found.");
+    }
+
+    private async Task RequireCurrentOrPastMemberAsync(Guid userId, Guid fundId, CancellationToken ct)
+    {
+        if (!await db.V1Funds.AsNoTracking().AnyAsync(f => f.Id == fundId && f.OwnerUserId == userId, ct) &&
+            !await db.V1FundMemberships.AsNoTracking().AnyAsync(m => m.FundId == fundId && m.UserId == userId, ct))
+            throw new NotFoundException("fund_not_found", "Fund not found.");
+    }
+
+    private async Task<DateTime?> GetOwnerTenureStartedAtAsync(Guid fundId, Guid ownerUserId, long ownershipRevision, CancellationToken ct)
+    {
+        if (ownershipRevision == 0) return null; // Original founder has full history access
+
+        var electionWon = await db.V1Elections.AsNoTracking()
+            .Where(e => e.FundId == fundId && e.WinnerUserId == ownerUserId && e.Phase == V1ElectionPhase.Completed && e.FinishedAt != null)
+            .OrderByDescending(e => e.FinishedAt)
+            .FirstOrDefaultAsync(ct);
+
+        var offerAccepted = await db.V1OwnershipOffers.AsNoTracking()
+            .Where(o => o.FundId == fundId && o.ToUserId == ownerUserId && o.AcceptedAt != null)
+            .OrderByDescending(o => o.AcceptedAt)
+            .FirstOrDefaultAsync(ct);
+
+        var activity = await db.V1FundActivities.AsNoTracking()
+            .Where(a => a.FundId == fundId && a.ActorUserId == ownerUserId && (a.Event == "OwnershipAccepted" || a.Event == "ElectedOwnershipAccepted"))
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        var candidateDates = new List<DateTime>();
+        if (electionWon?.FinishedAt != null) candidateDates.Add(electionWon.FinishedAt.Value);
+        if (offerAccepted?.AcceptedAt != null) candidateDates.Add(offerAccepted.AcceptedAt.Value);
+        if (activity != null) candidateDates.Add(activity.CreatedAt);
+
+        if (candidateDates.Count > 0)
+            return candidateDates.Max();
+
+        var fund = await db.V1Funds.AsNoTracking().FirstOrDefaultAsync(f => f.Id == fundId, ct);
+        return fund?.UpdatedAt ?? fund?.CreatedAt ?? clock.UtcNow;
     }
 
     private static void RequireOwner(V1Fund fund, Guid actor)

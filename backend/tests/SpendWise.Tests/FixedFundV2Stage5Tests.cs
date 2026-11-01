@@ -87,24 +87,72 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         }
     }
 
-    private sealed class ConcurrencyGate(string triggerKeyword) : DbCommandInterceptor
+    private sealed class LockContentionGate(bool pauseAfterLock = false) : DbCommandInterceptor
     {
-        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ExecutingReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource LockAcquired { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private int executingTriggered;
+        private int executedTriggered;
+
+        private static bool IsFundLockCommand(string commandText) =>
+            commandText.Contains("UPDATE", StringComparison.OrdinalIgnoreCase) &&
+            commandText.Contains("V1Funds", StringComparison.OrdinalIgnoreCase) &&
+            commandText.Contains("UpdatedAt", StringComparison.OrdinalIgnoreCase);
+
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            System.Data.Common.DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (IsFundLockCommand(command.CommandText) && Interlocked.Exchange(ref executingTriggered, 1) == 0)
+            {
+                ExecutingReached.TrySetResult();
+            }
+            return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
+        public override async ValueTask<int> NonQueryExecutedAsync(
+            System.Data.Common.DbCommand command,
+            CommandExecutedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            if (IsFundLockCommand(command.CommandText) && Interlocked.Exchange(ref executedTriggered, 1) == 0)
+            {
+                LockAcquired.TrySetResult();
+                if (pauseAfterLock)
+                {
+                    await Release.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+                }
+            }
+            return await base.NonQueryExecutedAsync(command, eventData, result, cancellationToken);
+        }
+    }
+
+    private sealed class TransactionCommitGate(bool pauseBeforeCommit = false) : DbTransactionInterceptor
+    {
+        public TaskCompletionSource HoldingLock { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int triggered;
 
-        public override async ValueTask<InterceptionResult<System.Data.Common.DbDataReader>> ReaderExecutingAsync(
-            System.Data.Common.DbCommand command,
-            CommandEventData eventData,
-            InterceptionResult<System.Data.Common.DbDataReader> result,
+        public override async ValueTask<InterceptionResult> TransactionCommittingAsync(
+            System.Data.Common.DbTransaction transaction,
+            TransactionEventData eventData,
+            InterceptionResult result,
             CancellationToken cancellationToken = default)
         {
-            if (command.CommandText.Contains(triggerKeyword, StringComparison.OrdinalIgnoreCase) && Interlocked.Exchange(ref triggered, 1) == 0)
+            if (Interlocked.Exchange(ref triggered, 1) == 0)
             {
-                Entered.TrySetResult();
-                await Release.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+                HoldingLock.TrySetResult();
+                if (pauseBeforeCommit)
+                {
+                    await Release.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+                }
             }
-            return await base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+            return await base.TransactionCommittingAsync(transaction, eventData, result, cancellationToken);
         }
     }
 
@@ -392,10 +440,16 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // Advance clock to 25 hours (1 hour past the 24-hour contribution deadline)
         clock.Advance(TimeSpan.FromHours(25));
 
-        // Synchronization Gate on Worker: ensures Worker enters transaction and acquires the fund lock FIRST
-        var workerGate = new ConcurrencyGate("V1Funds");
+        // Synchronization Gates for Order 1:
+        // workerGate pauses in NonQueryExecutedAsync after the UPDATE on V1Funds completes,
+        // proving the exclusive lock on V1Funds is held on SQL Server within its active transaction.
+        var workerGate = new LockContentionGate(pauseAfterLock: true);
+        // contributeGate signals ExecutingReached in NonQueryExecutingAsync when the UPDATE is about
+        // to execute on SQL Server, proving it has arrived at the lock contention point.
+        var contributeGate = new LockContentionGate(pauseAfterLock: false);
+
         await using var dbWorker = database.Context(workerGate);
-        await using var dbContribute = database.Context();
+        await using var dbContribute = database.Context(contributeGate);
 
         var serviceWorker = CreateService(dbWorker, clock);
         var serviceContribute = CreateService(dbContribute, clock);
@@ -417,8 +471,8 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Deterministically wait until Worker has acquired the lock on the fund table
-        await workerGate.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        // Deterministically wait until Worker has executed the UPDATE and acquired the exclusive fund lock on SQL Server
+        await workerGate.LockAcquired.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
         // Start late contribute task while Worker is holding the transaction lock
         var contributeTask = Task.Run(async () =>
@@ -434,7 +488,10 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Release the worker to complete its auto-kick transaction
+        // Deterministically wait until Contribute has reached the lock contention point on SQL Server
+        await contributeGate.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        // Release the worker to complete its auto-kick transaction and release the lock
         workerGate.Release.TrySetResult();
 
         await Task.WhenAll(workerTask, contributeTask);
@@ -462,6 +519,10 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             var memAWallet = await dbVerify.Wallets.AsNoTracking().SingleAsync(w => w.Id == wAId);
             Assert.Equal(5_000_000, memAWallet.AvailableBalance);
 
+            // Owner wallet: 4,000,000 VND (5M - 1M contribution)
+            var ownerWallet = await dbVerify.Wallets.AsNoTracking().SingleAsync(w => w.Id == wOwnerId);
+            Assert.Equal(4_000_000, ownerWallet.AvailableBalance);
+
             // Fund treasury ledger account has exactly 1,000,000 VND (Owner's share)
             var treasuryAcc = await dbVerify.LedgerAccounts.SingleAsync(a => a.Code == "V1-FUND:" + fundId.ToString("N"));
             Assert.Equal(1_000_000, treasuryAcc.Balance);
@@ -469,6 +530,14 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             // Verify financial transaction and refund ledger entries: exactly 1 refund posting
             var refundLedgerCount = await dbVerify.LedgerTransactions.CountAsync(lt => lt.BusinessType == "V1FundRefund" && lt.BusinessId == fundId);
             Assert.Equal(1, refundLedgerCount);
+
+            // Verify FinancialTransaction maps to LedgerTransaction
+            var finRefund = await dbVerify.FinancialTransactions.SingleAsync(ft => ft.OwnerUserId == memberAId && ft.Type == FinancialTransactionType.Refund);
+            Assert.Equal(500_000, finRefund.Amount);
+            Assert.NotEqual(Guid.Empty, finRefund.LedgerTransactionId);
+            var ledgerRefund = await dbVerify.LedgerTransactions.SingleAsync(lt => lt.Id == finRefund.LedgerTransactionId);
+            Assert.Equal("V1FundRefund", ledgerRefund.BusinessType);
+            Assert.Equal(fundId, ledgerRefund.BusinessId);
 
             // STRICT MUTUAL EXCLUSION ASSERTION:
             // Under no circumstances can Member A be kicked AND have full 1,000,000 VND contributions registered
@@ -518,13 +587,21 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             config2Revision = config2.Revision;
         }
 
-        // Clock is at hour 2 (well before 24h deadline)
-        clock.Advance(TimeSpan.FromHours(2));
+        // Clock is at hour 23 (before 24h deadline: contribution is on time)
+        clock.Advance(TimeSpan.FromHours(23));
 
-        // Synchronization Gate on Contribution: ensures Member B's on-time contribution acquires lock FIRST
-        var contributeGate = new ConcurrencyGate("V1Funds");
-        await using var dbContribute2 = database.Context(contributeGate);
-        await using var dbWorker2 = database.Context();
+        // Synchronization Gates for Order 2:
+        // contributeCommitGate pauses in TransactionCommittingAsync:
+        // this proves Contribution has checked its deadline on-time (hour 23 < 24h),
+        // executed LockFundAsync, posted ledger entries, and is holding the active transaction
+        // right before commit.
+        var contributeCommitGate = new TransactionCommitGate(pauseBeforeCommit: true);
+        // workerGate2 signals ExecutingReached in NonQueryExecutingAsync when the UPDATE is about
+        // to execute on SQL Server, proving it has arrived at the lock contention point.
+        var workerGate2 = new LockContentionGate(pauseAfterLock: false);
+
+        await using var dbContribute2 = database.Context(contributeCommitGate);
+        await using var dbWorker2 = database.Context(workerGate2);
 
         var sContribute2 = CreateService(dbContribute2, clock);
         var sWorker2 = CreateService(dbWorker2, clock);
@@ -545,10 +622,15 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Deterministically wait until Contribution has acquired the transaction lock
-        await contributeGate.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        // Deterministically wait until Contribution has validated on-time deadline,
+        // acquired the lock, processed postings, and reached the pre-commit state
+        await contributeCommitGate.HoldingLock.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
-        // Start Worker concurrently while Contribution is holding lock
+        // Advance clock past the deadline (now at hour 25, past the 24h deadline)
+        // while Contribution is actively holding the fund transaction lock!
+        clock.Advance(TimeSpan.FromHours(2));
+
+        // Start Worker concurrently: it will scan funds, enter transaction, and attempt to lock fund2
         var worker2Task = Task.Run(async () =>
         {
             try
@@ -561,8 +643,11 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Release Contribution to commit successfully
-        contributeGate.Release.TrySetResult();
+        // Deterministically wait until Worker has reached the lock contention point on SQL Server
+        await workerGate2.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        // Release Contribution to commit successfully and release the lock to Worker
+        contributeCommitGate.Release.TrySetResult();
 
         await Task.WhenAll(contribute2Task, worker2Task);
 
@@ -570,26 +655,44 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         Assert.Null(contribute2Ex);
         Assert.Null(worker2Ex);
 
-        // Now advance clock past deadline (to hour 25)
-        clock.Advance(TimeSpan.FromHours(23));
-
-        // Worker runs again after deadline
+        // Verify state in independent DbContext
         await using (var dbWorker2Verify = database.Context())
         {
             var sWorker2Verify = CreateService(dbWorker2Verify, clock);
-            await sWorker2Verify.ProgressFixedFundDeadlinesAsync(default);
 
             var memBDb = await dbWorker2Verify.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fund2Id && m.UserId == memberBId);
             // Member B was NOT kicked because full obligation was paid on time
             Assert.Null(memBDb.LeftAt);
 
+            // Member B wallet: 4,000,000 VND (5M - 1M)
+            var memBWallet = await dbWorker2Verify.Wallets.AsNoTracking().SingleAsync(w => w.Id == wB2Id);
+            Assert.Equal(4_000_000, memBWallet.AvailableBalance);
+
+            // Owner 2 wallet: 4,000,000 VND (5M - 1M)
+            var owner2Wallet = await dbWorker2Verify.Wallets.AsNoTracking().SingleAsync(w => w.Id == wO2Id);
+            Assert.Equal(4_000_000, owner2Wallet.AvailableBalance);
+
+            // Fund treasury ledger account has exactly 2,000,000 VND
+            var treasuryAcc2 = await dbWorker2Verify.LedgerAccounts.SingleAsync(a => a.Code == "V1-FUND:" + fund2Id.ToString("N"));
+            Assert.Equal(2_000_000, treasuryAcc2.Balance);
+
             var fin2 = await sWorker2Verify.FinanceAsync(memberBId, fund2Id, default);
             Assert.Equal(2_000_000, fin2.BalanceVnd);
             Assert.Equal("OPEN", fin2.SpendingState);
 
-            // Zero refund ledger entries for fund 2
+            // Exactly 0 refund ledger entries for fund 2
             var refundsFund2 = await dbWorker2Verify.LedgerTransactions.CountAsync(lt => lt.BusinessType == "V1FundRefund" && lt.BusinessId == fund2Id);
             Assert.Equal(0, refundsFund2);
+
+            // Verify contribution FinancialTransaction maps to LedgerTransaction
+            var finContribB = await dbWorker2Verify.FinancialTransactions.SingleAsync(ft => ft.OwnerUserId == memberBId && ft.Type == FinancialTransactionType.GroupFundContribution);
+            Assert.Equal(1_000_000, finContribB.Amount);
+            Assert.Equal(fund2Id, finContribB.RelatedBusinessId);
+            Assert.NotEqual(Guid.Empty, finContribB.LedgerTransactionId);
+            var ledgerContribB = await dbWorker2Verify.LedgerTransactions.SingleAsync(lt => lt.Id == finContribB.LedgerTransactionId);
+            Assert.Equal("V1FundContribution", ledgerContribB.BusinessType);
+            var contribB = await dbWorker2Verify.V1FundContributions.SingleAsync(c => c.FundId == fund2Id && c.UserId == memberBId);
+            Assert.Equal(contribB.Id, ledgerContribB.BusinessId);
         }
     }
 

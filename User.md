@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Đặc tả Free Fund mới chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10; toàn bộ thay đổi đang chờ code và test**; Fixed V2 được đồng bộ mô tả contract theo backend hiện tại nhưng vẫn có trường hợp xung đột logic quyết toán chưa sửa và một số ca chưa kiểm thử.  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` ngày 30/10/2026. Kết quả Newman 306 requests / 343 assertions là bằng chứng kiểm thử lịch sử, không tự chứng nhận mọi luồng vận hành hiện tại. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10 (phân biệt với nghiệm thu code). Fixed Fund V2: đặc tả nghiệp vụ mục tiêu chốt 01/11/2026 tại [`fixed.md`](fixed.md); các bảng API Fixed ở mục 3.6 phản ánh backend cũ trước khi triển khai logic mới.**  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -24,17 +24,17 @@
 - P2P là chuyển tiền **nội bộ SpendWise**; bank-direct là tạo lệnh/hướng dẫn chuyển khoản ngân hàng, **không tự ghi giảm ví SpendWise**. SePay Test Mode cho kiểm chứng luồng sandbox và ledger; không đồng nghĩa API rút/chuyển tiền ngân hàng thật đã được cấp quyền.
 
 ### 1.3. Quỹ nhóm Cố định V2 & Quỹ nhóm Tự do (Group Funds)
-1. **Quỹ nhóm Cố định V2 (Fixed Fund V2) — mô tả theo backend hiện tại:**
-   - Quỹ Fixed có `targetVnd` dương, tối đa **30 thành viên** tính cả chủ nhóm. Mỗi thành viên giữ một `seat`; phân chia nghĩa vụ theo vị trí ghế hiện còn hoạt động. Số tiền mục tiêu được chia gần đều theo phép chia nguyên, phần đồng lẻ được phân bổ lần lượt cho ghế có thứ tự nhỏ.
-   - **Mời người:** Chủ quỹ mời bạn bè trực tiếp; nếu B là thành viên thường đề xuất mời C thì lời mời là `Proposed`, **phải được chủ quỹ duyệt** thành `Pending` trước khi C tự chấp nhận. Không nhầm với Free Fund (B mời C không cần A duyệt).
-   - **Chủ nhóm xác nhận nghĩa vụ** bằng `POST /api/v1/funds/{id}/obligations/confirm`. Có `revision` gắn với `targetVnd` và chữ ký danh sách thành viên. `GET .../contribution-allocation` chỉ xem trước các khoản `requiredVnd`, **không xác nhận nghĩa vụ**, không phải hạn mức chi.
-   - **Góp tiền** từ ví VND đang `Active` thuộc thành viên, không bắt buộc chỉ ví chính, sử dụng `walletId,amountVnd,idempotencyKey,securityPin,obligationRevision`; một lần không được đóng vượt nghĩa vụ còn thiếu. Thay đổi cấu hình/thành viên có thể buộc xác nhận lại và sử dụng revision mới.
-   - **`CanSpend` là quyền boolean do chủ nhóm cấp/tắt**, **không phải số tiền**. Với thành viên thường, `effectiveCanSpend` chỉ đúng khi đã đóng đủ nghĩa vụ cá nhân, nhóm đạt đủ mục tiêu, chủ đã bật `canSpend` và chu kỳ còn mở; chủ quỹ không cần `CanSpend` nhưng vẫn phải góp đủ phần cá nhân và đạt đủ mục tiêu nhóm.
-   - **Chi Fixed:** `Expense` hợp lệ ghi ledger **trực tiếp `Completed`**, không qua chủ duyệt, không có hạn mức cá nhân dựa trên tổng tiền đã góp và không áp dụng giữ 20% hay giữ chỗ `Pending24h` cho giao dịch mới. Số dư chi dùng chung = `max(0, balanceVnd - tổng lockedExcessVnd - các hold legacy còn tồn tại)`, với `spendingState` phải `OPEN`. Fixed không cho `Withdrawal` cá nhân.
-   - **Chu kỳ:** chủ quỹ đóng kỳ bằng PIN, sau đó đề xuất **mục tiêu chu kỳ tiếp theo** (Activity Proposal), không phải đề xuất xin duyệt chi. Cử tri cố định bỏ `support:true/false` trong **24 giờ hoạt động**. Cần **Yes > 50% tổng cử tri**, người im lặng không được tính Có; đề xuất được thông qua cần quyết toán bằng PIN. Người bỏ Có giữ quyền lợi chuyển tiếp, người bỏ Không hoặc không bỏ phiếu được hoàn tiền hợp lệ rồi rời quỹ; tạo revision nghĩa vụ mới.
-   - **Hoàn tiền Fixed:** cùng một bộ tính cho preview, rời, loại và giải tán. Chưa chi: xét đóng góp chưa hoàn. Đã chi: bảo vệ phần đóng vượt nghĩa vụ còn hợp lệ, phần số dư còn lại được phân chia theo trọng số `min(paid, required)` với quy tắc phân bổ đồng lẻ theo ghế; **khác** công thức hoàn tiền của Free Fund.
-   - **Trạng thái đã có:** `OPEN`, `FINANCE_BLOCKED`, `ACTIVITY_CLOSED`, `DISSOLVED` cho tài chính; `Voting`, `ApprovedAwaitingSettlement`, `Rejected`, `Invalidated`, `Settled` cho Activity Proposal. `Pending24h` vẫn tồn tại trong code xử lý **request legacy**, không đồng nghĩa luồng chi Fixed V2 mới giữ tiền 24 giờ.
-   - **B1 — Chưa xử lý backend:** Proposal đạt đa số nhưng chủ quỹ đã bỏ Không có thể không quyết toán được, trong khi chuyển chủ tự nguyện cũng bị chặn bởi trạng thái proposal chờ. Không mô tả đây là luồng đã hoàn thiện. Các ca mục tiêu thấp/đổi thành viên sau chi/carry-over cần kiểm thử riêng.
+1. **Quỹ nhóm Cố định V2 (Fixed Fund V2) — ĐẶC TẢ NGHIỆP VỤ MỤC TIÊU ĐÃ CHỐT NGÀY 01/11/2026 (CHƯA XÁC NHẬN TRIỂN KHAI):**
+   - **Tài liệu nguồn chính thức:** [`fixed.md`](fixed.md), gồm vòng đời, ví dụ tiền, ngoại lệ, bầu Owner, cam kết tin tưởng và ma trận 30 tình huống. Nếu bảng API theo code cũ dưới mục 3.6 khác đặc tả nghiệp vụ, **`fixed.md` là quy tắc sản phẩm cần triển khai**, không khẳng định API đã hỗ trợ.
+   - **Tạo quỹ:** Owner đặt mục tiêu, tên và thời lượng góp cá nhân; trước khi Owner chốt danh sách/phân bổ, quỹ hiển thị `0đ/target`, chưa chạy deadline. Ít nhất 2 người để chốt, tối đa 30 thành viên theo giới hạn Fixed. Target **phải chia hết đúng 1 VND cho số ghế** (9 triệu/3 hợp lệ, 10 triệu/3 từ chối), không tự rải 1đ phần dư ở bước xác nhận nghĩa vụ. Đã chốt thì khóa target, nghĩa vụ và hạn góp của kỳ.
+   - **Lời mời và cam kết:** Owner mời trực tiếp; Member đề xuất mời phải qua Owner duyệt; người được mời tự chấp nhận. Trước khi vào Fixed cần hộp cam kết **"Bạn có tin tưởng nhóm này không?"** với lựa chọn từ chối/tham gia; cam kết không xóa quyền khiếu nại hay hợp thức hóa chi sai. Người vào kỳ mới phải thấy nghĩa vụ, mục tiêu và hạn góp trước khi bị ràng buộc.
+   - **Góp/Auto-Kick:** Chưa đủ target thì không được chi. Member không góp đủ đúng hạn: hệ thống tự Kick và hoàn entitlement hợp lệ, để lại ghế trống **giữ nguyên nghĩa vụ**, người cũ không phải góp bù. Từ Auto-Kick đầu mở **72 giờ tìm người thay** cho toàn kỳ, không reset; người nhận ghế hợp lệ sát hạn vẫn được **đủ thời lượng góp cá nhân**. Người thay là membership episode mới. Nếu không thay được, kỳ thất bại và giải tán; Owner có quyền kết thúc thất bại sớm khi còn ghế trống. **Nếu chính Owner thiếu nghĩa vụ khi hết hạn**, tự động quyết toán hoàn và giải tán, không đòi Owner online/PIN.
+   - **Chi tiền:** Đạt target thì báo Owner, không tự đóng kỳ. Owner ON/OFF `CanSpend` cho Member. Người có quyền chi được thực hiện Expense trực tiếp nhưng bắt buộc có **người nhận + mục đích hợp lệ**, không rút vốn cá nhân trá hình; khóa protected excess, các khoản giữ/đang hoàn và khoản chưa đối soát. Member không tùy ý Out trong kỳ bình thường; Owner không được tùy ý Kick người còn entitlement để chiếm dụng tiền.
+   - **Đóng kỳ/chuyển kỳ:** Owner chủ động đóng hoạt động, sau đó giải tán/hoàn tiền hoặc đề xuất kỳ mới. **Không áp dụng đa số Yes > 50%**: Member tự chọn Có tiếp tục hoặc Không (hoàn tiền ngay rồi rời); không phản hồi **24 giờ** thì tự hoàn và rời. Entitlement snapshot phải cố định từ trước khi mở phản hồi; khoản đã hoàn không đảo ngược dù Owner hủy đề xuất. Kỳ mới ít nhất 2 người; nếu chỉ còn Owner, cho **72 giờ tìm thành viên** hoặc giải tán. Owner chọn lại tên, target, hạn góp cho kỳ mới; kỳ cũ bất biến; tổng cộng **tối đa 3 kỳ**, không có kỳ 4.
+   - **Hoàn/đồng lẻ/carry-over:** Quyền lợi hoàn dựa vốn thực tế sau chi chung và lịch sử refund, không mặc định chia bằng nhau chỉ vì nghĩa vụ ngang nhau. Bảo vệ tiền vượt nghĩa vụ do carry-over; chia đồng lẻ theo ghế cố định, tổng hoàn phải bằng số dư hợp lệ. Một khoản góp/hoàn/carry-over không được ghi hai lần; giải tán thành công yêu cầu ledger quỹ về **0đ**.
+   - **Bầu Owner:** Owner vắng **15 ngày** có bằng chứng: Member mở bầu. Đợt 1 **12h** chọn người cao phiếu nhất, có thể phiếu trống; Owner cũ không bầu hoặc can thiệp. Đợt 2 người thắng có **12h xác nhận nhận quyền bằng PIN**; không nhận/quá hạn/hòa phiếu/không có người kế nhiệm thì bầu thất bại. Member có **24h Out/nhận hoàn**, hết hạn bắt buộc quyết toán/giải tán; nếu chỉ Owner cũ thì hoàn về ví Owner. Chủ mới không tự thấy dữ liệu riêng kỳ cũ. Owner cũ quay lại trong bầu hợp lệ chỉ được xem.
+   - **Tranh chấp & lịch sử:** Cam kết tin tưởng **không thay thế** quyền gửi khiếu nại lên Admin; can thiệp cần bằng chứng, phân quyền và audit, không hứa tự động thu hồi tiền đã chi. Lịch sử các kỳ cũ bất biến, người mới không xem nội dung riêng kỳ cũ; người rời còn chứng từ của mình; dữ liệu giải tán lưu cho quản trị.
+   - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ CHỐT NGHIỆP VỤ, CHƯA TRIỂN KHAI/CHƯA KIỂM THỬ theo logic mới**. Các API ở mục 3.6 mục 6–9 tiếp tục mô tả code hiện có để đối chiếu, không được áp logic đa số cũ vào đặc tả mới.
 
 2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ MỚI CHỐT 01/11/2026, CHỜ TRIỂN KHAI:**
    - **Phạm vi:** Quỹ chung góp tự nguyện, không có nghĩa vụ đóng `T/n`; tối đa **6 người** gồm Owner và Member. Mỗi User tối đa 10 nhóm/quỹ đang hoạt động theo giới hạn chung hiện có. Chủ quỹ và thành viên đều được góp thêm tiền. Mời bạn bè: Owner hoặc Member có thể mời người đã kết bạn; người nhận phải tự chấp nhận, **không cần Owner duyệt lời mời do Member gửi**.
@@ -80,7 +80,7 @@
 
 **Lịch sử và hiển thị:** Member có hai nút chi/rút, nút đang có request/quyền chi hiệu lực phải vô hiệu; thêm `Xem yêu cầu` (đã chấp nhận/đang xử lý/từ chối/đã hủy, phân biệt đã duyệt với đã thanh toán). Owner có hàng chờ phê duyệt và lịch sử mọi yêu cầu. Toàn nhóm thấy lịch sử góp/chi/rút/hoàn thực tế (không nhầm request với giao dịch thành công). Giữ thông tin requester, reviewer, thời gian, lý do, mã đối soát và thông báo thay đổi.
 
-**Ranh giới bảo toàn:** không sửa Fixed Fund V2, legacy `/api/groups`, SePay, ví và dữ liệu tài chính thật chỉ vì việc thay logic Free. Phải phân biệt **`ĐÃ CHỐT NGHIỆP VỤ`** và **`ĐÃ TRIỂN KHAI / ĐÃ KIỂM THỬ`** trong mọi tài liệu, UI và báo cáo.
+**Ranh giới bảo toàn:** thay đổi nghiệp vụ Fixed Fund V2 được phê duyệt độc lập trong [`fixed.md`](fixed.md); không sửa Fixed, legacy `/api/groups`, SePay, ví và dữ liệu tài chính thật chỉ vì việc thay logic Free. Phải phân biệt **`ĐÃ CHỐT NGHIỆP VỤ`** và **`ĐÃ TRIỂN KHAI / ĐÃ KIỂM THỬ`** trong mọi tài liệu, UI và báo cáo.
 
 ### 1.4. Hỗ trợ, tranh chấp, khiếu nại
 
@@ -95,7 +95,7 @@
 3. **Thời gian:** Backend trả ISO 8601 UTC/offset; client chỉ đổi múi giờ khi hiển thị. Số tiền VND truyền dưới dạng JSON number theo DTO `decimal`/`long`, không gửi chuỗi đã định dạng có dấu chấm/phẩy.
 4. **Lỗi:** Phân biệt 400 input, 401 hết phiên, 403 hạn chế quyền, 404 ID không thuộc chủ sở hữu, 409 trạng thái xung đột và 429 giới hạn yêu cầu. Không tự retry lệnh ghi tiền bằng idempotency key mới. UI phải hiển thị lỗi rõ và không giả lập thành công.
 5. **Realtime/thông báo:** Dùng API notifications làm dữ liệu gốc, realtime/push chỉ là tín hiệu làm mới; không coi push đã giao thành ledger commit.
-6. **Phạm vi:** Mục `/api/groups` là **legacy compatibility**, khác quỹ `/api/v1/funds`. Hệ thống chỉ có vai trò hoạt động `User`/`Admin`. **Fixed V2: áp dụng contract đã đối chiếu tại 3.6, nhưng chưa coi B1 hoặc các ca C1–C3 là đã nghiệm thu**.
+6. **Phạm vi:** Mục `/api/groups` là **legacy compatibility**, khác quỹ `/api/v1/funds`. Hệ thống chỉ có vai trò hoạt động `User`/`Admin`. **Fixed V2: dùng [`fixed.md`](fixed.md) làm đặc tả nghiệp vụ chốt; bảng mục 3.6 là contract backend cũ và chưa nghiệm thu các luồng mới**.
 
 ## 3. DANH MỤC API PHÂN HỆ USER
 
@@ -346,7 +346,9 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `GET /api/groups/{groupId}/deletion-request`; `POST /api/groups/{groupId}/deletion-requests`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/vote` | Yêu cầu xóa nhóm và bỏ phiếu |
 | `POST /api/groups/{groupId}/deletion-requests/{requestId}/cancel`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/refunds/{refundId}/payment`; `POST /api/groups/{groupId}/deletion-requests/{requestId}/finalize` | Hủy xóa, xác nhận hoàn tiền và hoàn tất giải thể |
 
-#### 6. Quỹ cố định V2 — Hợp đồng xác nhận và đóng góp
+#### 6. Quỹ cố định V2 — Hợp đồng API HIỆN HỮU trước khi triển khai logic mới: xác nhận và đóng góp
+
+> **Không nhầm API hiện hữu với nghiệp vụ đã chốt:** Theo [`fixed.md`](fixed.md), tạo Fixed cần thời hạn góp cá nhân, chốt danh sách >=2, chia hết tuyệt đối và khóa nghĩa vụ/ghế; sau hạn có Auto-Kick, 72 giờ tìm thay, giải tán khi thất bại. Những hành vi này **chưa có đủ trong các route/DTO hiện tại**; bảng bên dưới là bằng chứng đối chiếu trước khi sửa code.
 
 | API | DTO/body và điều kiện |
 |---|---|
@@ -371,7 +373,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 **Các cờ khác nhau:** `canSpend` chỉ là quyền boolean do chủ cấp; `effectiveCanSpend` là điều kiện tổng hợp; `canManageSpendingPermission` không thay quyền của chủ nhóm trong API. Không có công thức hạn mức chi tiền cá nhân dựa trên đóng góp. `spendingState:"OPEN"` và số dư thực trừ `lockedExcessVnd`/hold legacy mới xác định có thể chi.
 
-#### 8. Quỹ cố định V2 — Đóng kỳ và đề xuất kỳ tiếp theo
+#### 8. Quỹ cố định V2 — Đóng kỳ và đề xuất kỳ tiếp theo (API CŨ; nghiệp vụ mới tại fixed.md)
 
 | API | Body, ý nghĩa |
 |---|---|
@@ -381,9 +383,9 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `POST /api/v1/funds/activity-proposals/{id}/vote` | Cử tri cố định, `{"support":true}` hoặc `{"support":false}`. Một phiếu không đổi sau khi bỏ. |
 | `POST /api/v1/funds/activity-proposals/{id}/settle` | **Chủ quỹ**, body **chỉ** `{"securityPin":"<PIN>"}`, xử lý đề xuất đã `ApprovedAwaitingSettlement`. Không có `actualAmount`, `status` hay `note`. |
 
-**Trạng thái biểu quyết:** `Voting` trong **24 giờ hoạt động** (không tính thời gian bảo trì hệ thống nhóm); `Yes * 2 > electorateSize` → `ApprovedAwaitingSettlement`, ngược lại `Rejected`. Nếu tập cử tri mất hợp lệ có `Invalidated`. Khi quyết toán thành công, người bỏ Có mang phần quyền lợi tiếp sang revision mới; người bỏ Không hoặc im lặng được hoàn tiền hợp lệ và rời quỹ.
+**CHỈ ĐÚNG VỚI BACKEND CŨ, KHÔNG CÒN LÀ QUY TẮC SẢN PHẨM:** `Voting` 24 giờ hoạt động; `Yes * 2 > electorateSize` mới được `ApprovedAwaitingSettlement`. **Nghiệp vụ mới tại fixed.md không cần đa số**; Member chọn tiếp tục hoặc nhận hoàn/rời; bấm Không hoàn ngay và im lặng 24h tự hoàn, snapshot quyền lợi bất biến. Chuyển kỳ/chốt nghĩa vụ mới chỉ được thực hiện sau khi xác định danh sách tiếp tục.
 
-**B1 — Backend chưa xử lý:** Nếu đa số thông qua nhưng chủ quỹ bỏ Không, code có thể chặn quyết toán bằng `owner_transfer_required`, và chuyển chủ tự nguyện cũng có thể bị chặn trong `ApprovedAwaitingSettlement`. **Không tuyên bố trường hợp này đã xử lý hoặc nghiệm thu.**
+**Ghi chú lịch sử backend cũ (B1):** Luồng đa số có thể kẹt settlement/ownership nếu Owner bỏ Không. Đặc tả Fixed mới **loại bỏ điều kiện đa số và Owner bỏ phiếu**; không sao chép workaround B1 vào nghiệp vụ mới. Chưa xác nhận code đã được thay thế.
 
 #### 9. Quỹ cố định V2 — Hoàn tiền, quản trị, tình huống biên
 
@@ -399,7 +401,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 **Hoàn tiền theo nhánh đã triển khai:** `CaseA_Unspent` nếu chưa phát sinh chi (đóng góp chưa hoàn), `CaseB_FixedSpentClearShare` khi rời/loại sau chi, `CaseB_DissolveFixed` khi giải tán sau chi. Khi đã chi, giữ lại `protectedExcess=max(0,max(0,paid-required)-refundsBefore)` cho mỗi người, rồi phân bổ phần số dư còn lại theo trọng số `min(paid,required)` và đồng lẻ theo ghế. Cần xét quyền lợi theo **membership episode**; không dùng công thức Free Fund. Các mã như `zero_entitlement_dissolution_blocked` ngăn giải tán nếu số dư còn nhưng không có người có quyền nhận.
 
-**Chưa nghiệm thu B/C:** Xung đột B1 ở quyết toán/chuyển chủ; C1 khi target quá thấp có ghế nghĩa vụ 0; C2 thay thành viên sau khi đã chi; C3 chuyển chu kỳ/carry-over/hoàn tiền. `Pending24h`/`Suspended` còn trong đường xử lý request legacy, không phải luồng chi Fixed mới.
+**Chưa nghiệm thu theo đặc tả mới:** API cũ chưa đáp ứng đầy đủ chia hết nghĩa vụ, Auto-Kick, thay ghế 72h, hòa giải/bầu Owner 12h+12h, chuyển kỳ không đa số, hoàn ngay khi chọn Không, giới hạn ba kỳ, cam kết tin tưởng và quyền đọc lịch sử. `Pending24h`/`Suspended` còn trong đường xử lý request legacy, không phải luồng chi Fixed mới.
 
 > **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5a là **legacy**, không phải V1 Fixed/Free. Mục 6–9 đã cập nhật theo DTO Fixed V2 nhưng **không chứng nhận B1/C1–C3 đã PASS**. Free Fund dùng bản đồ API ở mục 10; không áp dụng cơ chế token của lời mời legacy.
 
@@ -549,7 +551,7 @@ Các route tạo/sửa/hủy bảo trì thuộc Admin, **không cấp quyền th
 | AI | Hội thoại, search, pin, upload, proposed actions & execution | Phụ thuộc provider và chính sách an toàn |
 | Notifications | List/search/read/delete/clear/preferences/push | Không suy diễn push delivered |
 | Free Fund | **Đặc tả mới 01/11/2026 tại 1.3, 1.3.1 và 3.6 mục 10**; bao gồm ví dụ số tiền, quyền chi 7 ngày, rời/kick/dissolve, lịch sử và chống spam | **CHƯA TRIỂN KHAI/CHƯA KIỂM THỬ**; không áp dụng bầu cử/chuyển chủ/hold 24h cho Free |
-| Fixed Fund V2 | Đã cập nhật CanSpend, nghĩa vụ, quyền chi, API góp/chi, Activity Proposal, biểu quyết, hoàn tiền và legacy API theo controller/DTO | **B1 còn xung đột logic; C1–C3 chưa được nghiệm thu**; không gọi Fixed V2 đã PASS toàn bộ |
+| Fixed Fund V2 | **Nghiệp vụ mới đã chốt 01/11/2026: [`fixed.md`](fixed.md)**; bảng API cũ ở 3.6 chỉ phản ánh code trước thay đổi | **CHƯA TRIỂN KHAI/CHƯA KIỂM THỬ theo logic mới**: thời hạn góp, Auto-Kick, ghế cố định, chuyển kỳ không đa số, bầu Owner, refund và privacy |
 
 **Quy định cho frontend và Word:** Áp dụng những contract đã đối chiếu trong 1.3, 3.1–3.10.1; riêng B1/B2/B3 và C1–C6 **không được mô tả là backend đã sửa/PASS**. Đọc DTO/controller nếu cần thêm trường chuyên sâu. Không gọi `User.md` “100% đã kiểm thử”: tài liệu này đối chiếu tĩnh mã nguồn, không phải kết quả chạy E2E hoặc xác nhận provider.
 

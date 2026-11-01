@@ -157,14 +157,17 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             throw new NotFoundException("fund_not_found", "Fund not found.");
 
         var isOwner = fund.OwnerUserId == userId;
-        var privateRequestEvents = new HashSet<string>
+        var privateRequestEvents = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "FundRequestCreated",
             "FundRequestCancelled",
+            "FundRequestAutoCancelled",
             "FundRequestRejected",
             "FundExpenseApproved",
             "FundWithdrawalExecuted",
-            "FundRequestExpired"
+            "FundRequestExpired",
+            "FundExpenseReported",
+            "FundExpenseSuspended"
         };
 
         // Historical readers see only intervals in which they were members, never later activity.
@@ -436,10 +439,13 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             "InvitationCancelled" => new List<Guid> { subject!.Value },
             "FundRequestCreated" => new List<Guid> { ownerId },
             "FundRequestCancelled" => new List<Guid> { ownerId },
+            "FundRequestAutoCancelled" => subject.HasValue ? new List<Guid> { subject.Value, ownerId } : (actor.HasValue ? new List<Guid> { actor.Value, ownerId } : new List<Guid> { ownerId }),
             "FundRequestRejected" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
             "FundExpenseApproved" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
             "FundWithdrawalExecuted" => subject.HasValue ? new List<Guid> { subject.Value } : new List<Guid>(),
             "FundRequestExpired" => subject.HasValue ? new List<Guid> { subject.Value, ownerId } : new List<Guid> { ownerId },
+            "FundExpenseReported" => subject.HasValue ? new List<Guid> { subject.Value, ownerId } : new List<Guid> { ownerId },
+            "FundExpenseSuspended" => subject.HasValue ? new List<Guid> { subject.Value, ownerId } : new List<Guid> { ownerId },
             _ => await db.V1FundMemberships.Where(m => m.FundId == fundId && m.LeftAt == null).Select(m => m.UserId).ToListAsync(ct)
         };
         await notifications.CreateManyAsync((audience ?? recipients).Where(id => id != actor).Distinct().Select(id =>

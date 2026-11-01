@@ -738,7 +738,8 @@ public sealed partial class V1FundService
                 pw.State = "Cancelled";
                 pw.CancelledAt = clock.UtcNow;
                 pw.ReviewReason = "Tự động hủy do vốn cá nhân không còn đủ sau khi quỹ phát sinh chi tiêu chung.";
-                await ActivityAsync(fund.Id, pw.RequestedByUserId, "FundRequestAutoCancelled", token,
+                await ActivityAsync(fund.Id, null, "FundRequestAutoCancelled", token,
+                    subject: pw.RequestedByUserId,
                     detail: $"Yêu cầu rút {pw.AmountVnd:N0} đ tự động hủy do vốn còn lại ({equity:N0} đ) không đủ.",
                     referenceId: pw.Id);
             }

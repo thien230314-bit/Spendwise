@@ -412,4 +412,135 @@ public class FreeFundApiContractNotificationTests
         var activitiesA = await s.ActivitiesAsync(ownerA.Id, fund.Id, 1, 20, default);
         Assert.Contains(activitiesA, a => a.Event == "FundWithdrawalExecuted");
     }
+[Fact]
+    public async Task FreeFund_AutoCancelExcessWithdrawals_PrivateActivityAndNotification_DoNotLeakToOtherMembers()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        var memberC = await f.AddUserAsync("MemberC");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberC.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("AutoCancelPrivacyFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invB = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invB.Id, default);
+        var invC = await s.InviteAsync(ownerA.Id, fund.Id, memberC.Id, default);
+        await s.AcceptAsync(memberC.Id, invC.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 2_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+        var walletC = await f.AddWalletAsync(memberC.Id, "WalletC", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 500_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 200_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberC.Id, fund.Id, new(walletC.Id, 200_000, "c-c", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Member B requests withdrawal of 150,000 VND (AwaitingOwnerReview)
+        var wthReq = await s.CreateFundRequestAsync(memberB.Id, fund.Id,
+            new("Withdrawal", 150_000, memberB.Id, "Personal withdrawal needing 150k", "wth-excess", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Owner A executes a direct expense of 700,000 VND -> B's equity drops significantly below 150k
+        await s.CreateFundRequestAsync(ownerA.Id, fund.Id,
+            new("Expense", 700_000, ownerA.Id, "Team equipment purchase", "exp-equip", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Verify request was auto-cancelled
+        var updatedReq = await s.GetFundRequestAsync(ownerA.Id, wthReq.Id, default);
+        Assert.Equal("Cancelled", updatedReq.State);
+
+        // 1. Notification isolation check:
+        // Member B (requester) and Owner A must receive FundRequestAutoCancelled notification
+        var notifsB = await f.Db.Notifications.AsNoTracking().Where(n => n.UserId == memberB.Id).ToListAsync();
+        Assert.Contains(notifsB, n => n.Message == "FundRequestAutoCancelled");
+
+        var notifsA = await f.Db.Notifications.AsNoTracking().Where(n => n.UserId == ownerA.Id).ToListAsync();
+        Assert.Contains(notifsA, n => n.Message == "FundRequestAutoCancelled");
+
+        // Member C must NOT receive FundRequestAutoCancelled notification
+        var notifsC = await f.Db.Notifications.AsNoTracking().Where(n => n.UserId == memberC.Id).ToListAsync();
+        Assert.DoesNotContain(notifsC, n => n.Message == "FundRequestAutoCancelled");
+
+        // 2. Activity Feed isolation check:
+        // Member C calling ActivitiesAsync must NOT see FundRequestAutoCancelled
+        var activitiesC = await s.ActivitiesAsync(memberC.Id, fund.Id, 1, 20, default);
+        Assert.DoesNotContain(activitiesC, a => a.Event == "FundRequestAutoCancelled");
+
+        // Member B and Owner A can see it in their activity feeds
+        var activitiesB = await s.ActivitiesAsync(memberB.Id, fund.Id, 1, 20, default);
+        Assert.Contains(activitiesB, a => a.Event == "FundRequestAutoCancelled");
+
+        var activitiesA = await s.ActivitiesAsync(ownerA.Id, fund.Id, 1, 20, default);
+        Assert.Contains(activitiesA, a => a.Event == "FundRequestAutoCancelled");
+    }
+
+    [Fact]
+    public async Task FreeFund_TransactionsEndpoint_MasksPrivateWithdrawalDetailsForOtherMembers()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        var memberC = await f.AddUserAsync("MemberC");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberC.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("MaskingFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invB = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invB.Id, default);
+        var invC = await s.InviteAsync(ownerA.Id, fund.Id, memberC.Id, default);
+        await s.AcceptAsync(memberC.Id, invC.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+        var walletC = await f.AddWalletAsync(memberC.Id, "WalletC", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 500_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 500_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberC.Id, fund.Id, new(walletC.Id, 500_000, "c-c", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Member B requests withdrawal of 100,000 VND with private reason
+        var wthReq = await s.CreateFundRequestAsync(memberB.Id, fund.Id,
+            new("Withdrawal", 100_000, memberB.Id, "Secret medical debt", "wth-secret-note", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Owner approves with custom reason
+        await s.ReviewFundRequestAsync(ownerA.Id, wthReq.Id, true, "Approved confidential medical payment", TargetedCorrectnessFixture.SecurityPin, default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // 1. Owner queries transactions: Sees full description and RelatedRequestId
+        var ownerTxs = await s.FundTransactionsAsync(ownerA.Id, fund.Id, 1, 10, default);
+        var ownerWithdrawalTx = ownerTxs.Single(t => t.Type == "Withdrawal");
+        Assert.Equal(100_000, ownerWithdrawalTx.AmountVnd);
+        Assert.Equal(wthReq.Id, ownerWithdrawalTx.RelatedRequestId);
+        Assert.Contains("Approved confidential medical payment", ownerWithdrawalTx.Description);
+
+        // 2. Requester (Member B) queries transactions: Sees full description and RelatedRequestId
+        var requesterTxs = await s.FundTransactionsAsync(memberB.Id, fund.Id, 1, 10, default);
+        var requesterWithdrawalTx = requesterTxs.Single(t => t.Type == "Withdrawal");
+        Assert.Equal(100_000, requesterWithdrawalTx.AmountVnd);
+        Assert.Equal(wthReq.Id, requesterWithdrawalTx.RelatedRequestId);
+        Assert.Contains("Approved confidential medical payment", requesterWithdrawalTx.Description);
+
+        // 3. Other member (Member C) queries transactions:
+        // Cashflow transparency preserved (Amount = 100k, Type = Withdrawal, OccurredAt, FullName),
+        // BUT Description is masked to neutral and RelatedRequestId is null!
+        var memberCTxs = await s.FundTransactionsAsync(memberC.Id, fund.Id, 1, 10, default);
+        var memberCWithdrawalTx = memberCTxs.Single(t => t.Type == "Withdrawal");
+        Assert.Equal(100_000, memberCWithdrawalTx.AmountVnd);
+        Assert.Equal("Rút vốn thành viên", memberCWithdrawalTx.Description);
+        Assert.Null(memberCWithdrawalTx.RelatedRequestId);
+    }
 }

@@ -192,7 +192,7 @@ Xem trước số tiền hoàn lại trước khi rời nhóm.
   "currentFundBalanceVnd": 1000000.0,
   "eligibleRefundAmountVnd": 400000,
   "caseType": "CaseC_FreeEquityRefund",
-  "status": "Available"
+  "status": "Eligible"
 }
 ```
 *(Ghi chú: Để tra cứu chi tiết số tiền đã nạp và phần chi phí đã gánh, Mobile UI gọi endpoint `GET /api/v1/funds/{id}/equity`).*

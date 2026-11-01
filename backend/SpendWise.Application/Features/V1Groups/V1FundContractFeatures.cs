@@ -170,10 +170,15 @@ public sealed partial class V1FundService
         await RequireActorAsync(actor, ct);
         await RequireMemberAsync(actor, fundId, ct);
 
-        var requestIds = await db.V1FundRequests.AsNoTracking()
+        var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fundId, ct)
+            ?? throw new NotFoundException("fund_not_found", "Fund not found.");
+        var isOwner = fund.OwnerUserId == actor;
+
+        var requests = await db.V1FundRequests.AsNoTracking()
             .Where(r => r.FundId == fundId)
-            .Select(r => r.Id)
-            .ToListAsync(ct);
+            .Select(r => new { r.Id, r.Kind, r.RequestedByUserId })
+            .ToDictionaryAsync(r => r.Id, ct);
+        var requestIds = requests.Keys.ToList();
 
         var rows = await (
             from ft in db.FinancialTransactions.AsNoTracking()
@@ -193,15 +198,29 @@ public sealed partial class V1FundService
         .Take(pageSize)
         .ToListAsync(ct);
 
-        return rows.Select(r => new V1FundTransactionDto(
-            r.Transaction.Id,
-            fundId,
-            r.Transaction.Type.ToString(),
-            (long)r.Transaction.Amount,
-            r.Transaction.Description ?? "",
-            r.Transaction.OccurredAt,
-            r.FullName,
-            r.RelatedRequestId
-        )).ToList();
+        return rows.Select(r =>
+        {
+            var req = r.RelatedRequestId.HasValue && requests.TryGetValue(r.RelatedRequestId.Value, out var foundReq) ? foundReq : null;
+            var isPrivileged = isOwner || (req != null && req.RequestedByUserId == actor);
+
+            var description = r.Transaction.Description ?? "";
+            if (req != null && req.Kind == "Withdrawal" && !isPrivileged)
+            {
+                description = "Rút vốn thành viên";
+            }
+
+            var relatedRequestId = isPrivileged ? r.RelatedRequestId : null;
+
+            return new V1FundTransactionDto(
+                r.Transaction.Id,
+                fundId,
+                r.Transaction.Type.ToString(),
+                (long)r.Transaction.Amount,
+                description,
+                r.Transaction.OccurredAt,
+                r.FullName,
+                relatedRequestId
+            );
+        }).ToList();
     }
 }

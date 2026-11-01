@@ -465,4 +465,159 @@ public sealed class FixedFundV2Stage1Tests
         var seat2Obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Seat == 2).ToListAsync();
         Assert.Equal(2, seat2Obligations.Count);
     }
+
+    [Fact]
+    public async Task F9_ReplacementMember_FullFlow_Reconfirm_Contribute_CompleteFund_OpenSpending()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerF9");
+        var departedMember = await f.AddUserAsync("DepartedF9");
+        var replacementUser = await f.AddUserAsync("ReplacementF9");
+        var merchant = await f.AddUserAsync("MerchantF9");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, departedMember.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, replacementUser.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF9", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv1 = await service.InviteAsync(owner.Id, fund.Id, departedMember.Id, default);
+        await service.AcceptAsync(departedMember.Id, inv1.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Departed member leaves -> seat 2 becomes vacant
+        var departedMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departedMember.Id);
+        departedMembership.LeftAt = f.Clock.UtcNow;
+        await f.Db.SaveChangesAsync();
+
+        // Create replacement invite for seat 2
+        var replacementInvite = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = replacementUser.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(replacementInvite);
+        await f.Db.SaveChangesAsync();
+
+        // Replacement member accepts -> gets their own episode obligation
+        await service.AcceptAsync(replacementUser.Id, replacementInvite.Id, true, "v2.0", default);
+
+        // Reconfirm obligations: updates membership signature and persists it to database
+        var reconfirmed = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        Assert.True(reconfirmed.ConfigurationCurrent);
+
+        // Verify signature is persisted in database and matches SHA256 length
+        var dbTreasury = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+        Assert.NotNull(dbTreasury.MembershipSignature);
+        Assert.Equal(64, dbTreasury.MembershipSignature.Length);
+
+        // Setup wallets and fund them
+        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletF9", true, balance: 5_000_000);
+        var rWallet = await f.AddWalletAsync(replacementUser.Id, "RWalletF9", true, balance: 5_000_000);
+        await f.AddWalletAsync(merchant.Id, "MerchWalletF9", true, balance: 0);
+
+        // Owner contributes 2,000,000 VND
+        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "c-owner-f9", Pin, reconfirmed.Revision), default);
+
+        // Replacement member contributes 2,000,000 VND
+        await service.ContributeAsync(replacementUser.Id, fund.Id, new(rWallet.Id, 2_000_000, "c-rep-f9", Pin, reconfirmed.Revision), default);
+
+        // Verify finance state:
+        // 1. Obligations list contains only the 2 active members (departed member obligation does not pollute list)
+        var finance = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.Equal(2, finance.Obligations.Count);
+        Assert.All(finance.Obligations, o => Assert.Equal(0, o.RemainingVnd));
+        Assert.Equal(4_000_000, finance.BalanceVnd);
+
+        // 2. Spending state is OPEN!
+        Assert.Equal("OPEN", finance.SpendingState);
+
+        // 3. Spending request succeeds without throwing obligations_not_completed!
+        var exp = new V1FundRequestInput("Expense", 1_000_000, merchant.Id, "Team expense after replacement", "exp-f9-01", Pin);
+        var req = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+        Assert.NotNull(req);
+        Assert.Equal("Executed", req.ExecutionAvailability);
+    }
+
+    [Fact]
+    public async Task F10_MultipleReplacementsOnSameSeat_AndPartialPaidDeparture()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerF10");
+        var departed1 = await f.AddUserAsync("Departed1F10");
+        var departed2 = await f.AddUserAsync("Departed2F10");
+        var finalUser = await f.AddUserAsync("FinalUserF10");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, departed1.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, departed2.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, finalUser.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF10", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv1 = await service.InviteAsync(owner.Id, fund.Id, departed1.Id, default);
+        await service.AcceptAsync(departed1.Id, inv1.Id, true, "v2.0", default);
+        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Departed1 contributes partial (500,000 VND)
+        var d1Wallet = await f.AddWalletAsync(departed1.Id, "D1Wallet", true, balance: 1_000_000);
+        await service.ContributeAsync(departed1.Id, fund.Id, new(d1Wallet.Id, 500_000, "c-part-d1", Pin, config.Revision), default);
+
+        // Departed1 leaves (kicked or refunded)
+        var mem1 = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departed1.Id);
+        mem1.LeftAt = f.Clock.UtcNow;
+        mem1.RefundedVnd = 500_000;
+        await f.Db.SaveChangesAsync();
+
+        // Departed2 replaces seat 2
+        var inv2 = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = departed2.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(inv2);
+        await f.Db.SaveChangesAsync();
+        await service.AcceptAsync(departed2.Id, inv2.Id, true, "v2.0", default);
+
+        // Departed2 also departs without contributing
+        var mem2 = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departed2.Id && m.LeftAt == null);
+        mem2.LeftAt = f.Clock.UtcNow;
+        await f.Db.SaveChangesAsync();
+
+        // FinalUser replaces seat 2
+        var inv3 = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = finalUser.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = 2
+        };
+        f.Db.V1FundInvitations.Add(inv3);
+        await f.Db.SaveChangesAsync();
+        await service.AcceptAsync(finalUser.Id, inv3.Id, true, "v2.0", default);
+
+        // Verification of database records:
+        // Exactly 3 historical/active obligations for Seat 2: Departed1, Departed2, FinalUser
+        var seat2Obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Seat == 2).ToListAsync();
+        Assert.Equal(3, seat2Obligations.Count);
+        Assert.Contains(seat2Obligations, o => o.UserId == departed1.Id);
+        Assert.Contains(seat2Obligations, o => o.UserId == departed2.Id);
+        Assert.Contains(seat2Obligations, o => o.UserId == finalUser.Id);
+
+        // Verification of active Finance state:
+        var finance = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.Equal(2, finance.Obligations.Count);
+        var activeSeat2 = finance.Obligations.Single(o => o.Seat == 2);
+        Assert.Equal(finalUser.Id, activeSeat2.UserId);
+        Assert.Equal(2_000_000, activeSeat2.RequiredVnd);
+    }
 }

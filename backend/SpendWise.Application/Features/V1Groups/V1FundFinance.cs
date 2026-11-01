@@ -47,6 +47,7 @@ public sealed partial class V1FundService
                     {
                         // Idempotent: preserve existing obligations and deadlines completely immutable
                         treasury.MembershipSignature = signature;
+                        await db.SaveChangesAsync(token);
                         return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
                     }
                 }
@@ -193,7 +194,9 @@ public sealed partial class V1FundService
         var current = fund.Kind == V1FundKind.Free || (treasury.Revision > 0 && treasury.TargetVnd == fund.TargetVnd && treasury.MembershipSignature == MembershipSignature(members));
         var paid = await ActivityPaidAsync(fund.Id, ct);
         var obligations = await db.V1FundObligations.AsNoTracking().Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).OrderBy(o => o.Seat).ToListAsync(ct);
-        var rows = obligations.Select(o => new V1ObligationDto(o.UserId, o.Seat, o.RequiredVnd, paid.GetValueOrDefault(o.MembershipId),
+        var activeMembershipIds = members.Select(m => m.Id).ToHashSet();
+        var activeObligations = obligations.Where(o => activeMembershipIds.Contains(o.MembershipId)).ToList();
+        var rows = activeObligations.Select(o => new V1ObligationDto(o.UserId, o.Seat, o.RequiredVnd, paid.GetValueOrDefault(o.MembershipId),
             Math.Max(0, o.RequiredVnd - paid.GetValueOrDefault(o.MembershipId)), Math.Max(0, paid.GetValueOrDefault(o.MembershipId) - o.RequiredVnd))).ToList();
         var balance = await db.LedgerAccounts.AsNoTracking().Where(a => a.Id == treasury.LedgerAccountId).Select(a => a.Balance).SingleAsync(ct);
         var spendingState = fund.DissolvedAt is not null

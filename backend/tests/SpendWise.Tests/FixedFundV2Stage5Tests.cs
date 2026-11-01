@@ -50,6 +50,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         private readonly string connection;
         private bool ownsCatalog;
         public MutableClock Clock { get; }
+        public string ConnectionString => connection;
 
         public Stage5SqlDatabase(MutableClock clock)
         {
@@ -154,6 +155,22 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
             return await base.TransactionCommittingAsync(transaction, eventData, result, cancellationToken);
         }
+    }
+
+    private static async Task WaitForPhysicalSqlLockWaitAsync(string connectionString, TimeSpan timeout)
+    {
+        var start = DateTime.UtcNow;
+        await using var conn = new SqlConnection(connectionString);
+        await conn.OpenAsync();
+        while (DateTime.UtcNow - start < timeout)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(1) FROM sys.dm_os_waiting_tasks WHERE wait_type LIKE 'LCK_%' AND blocking_session_id > 0";
+            var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            if (count > 0) return;
+            await Task.Delay(50);
+        }
+        throw new TimeoutException("Timed out waiting for physical SQL Server lock wait contention in sys.dm_os_waiting_tasks.");
     }
 
     private static V1FundService CreateService(SpendWiseDbContext db, IClock clock, IV1InactivityEvidence? evidence = null)
@@ -393,7 +410,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
     public async Task T29_ConcurrencyAndOrdering_SimultaneousDeadlineWorkerAndContribution_StrictStateIntegrity()
     {
         var clock = new MutableClock(new DateTime(2026, 11, 2, 0, 0, 0, DateTimeKind.Utc));
-        var database = await OwnAsync(Stage5SqlDatabase.CreateAsync(clock));
+        await using var database = await Stage5SqlDatabase.CreateAsync(clock);
 
         // ---------------------------------------------------------------------
         // DETERMINISTIC ORDER 1: Worker Acquires Lock First -> Auto-Kicks Member A
@@ -488,14 +505,22 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Deterministically wait until Contribute has reached the lock contention point on SQL Server
-        await contributeGate.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        try
+        {
+            // Deterministically wait until Contribute has reached the lock contention point on SQL Server
+            await contributeGate.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
-        // Assert Contribute has NOT acquired the lock while Worker holds it
-        Assert.False(contributeGate.LockAcquired.Task.IsCompleted);
+            // Assert Contribute has NOT acquired the lock while Worker holds it
+            Assert.False(contributeGate.LockAcquired.Task.IsCompleted);
 
-        // Release the worker to complete its auto-kick transaction and release the lock
-        workerGate.Release.TrySetResult();
+            // Verify physical SQL Server lock wait contention via sys.dm_os_waiting_tasks observer connection
+            await WaitForPhysicalSqlLockWaitAsync(database.ConnectionString, TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            // Release the worker to complete its auto-kick transaction and release the lock
+            workerGate.Release.TrySetResult();
+        }
 
         await Task.WhenAll(workerTask, contributeTask);
 
@@ -554,9 +579,10 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // DETERMINISTIC ORDER 2: Valid On-Time Contribution Acquires Lock First
         // Worker arrives concurrently, waits for contribution to complete, then inspects -> No kick!
         // Uses dedicated isolated SQL Server database to ensure Fund 2 is the ONLY fund in database.
+        // Managed via await using to guarantee deterministic database deletion.
         // ---------------------------------------------------------------------
         clock.UtcNow = new DateTime(2026, 11, 10, 0, 0, 0, DateTimeKind.Utc);
-        var database2 = await OwnAsync(Stage5SqlDatabase.CreateAsync(clock));
+        await using var database2 = await Stage5SqlDatabase.CreateAsync(clock);
         Guid fund2Id;
         Guid owner2Id;
         Guid memberBId;
@@ -648,14 +674,22 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
             }
         });
 
-        // Deterministically wait until Worker has reached the lock contention point on SQL Server
-        await workerGate2.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        try
+        {
+            // Deterministically wait until Worker has reached the lock contention point on SQL Server
+            await workerGate2.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
-        // Assert Worker is STILL BLOCKED and has NOT acquired the lock while Contribution is holding it
-        Assert.False(workerGate2.LockAcquired.Task.IsCompleted);
+            // Assert Worker is STILL BLOCKED and has NOT acquired the lock while Contribution is holding it
+            Assert.False(workerGate2.LockAcquired.Task.IsCompleted);
 
-        // Release Contribution to commit successfully and release the lock to Worker
-        contributeCommitGate.Release.TrySetResult();
+            // Verify physical SQL Server lock wait contention via sys.dm_os_waiting_tasks observer connection
+            await WaitForPhysicalSqlLockWaitAsync(database2.ConnectionString, TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            // Release Contribution to commit successfully and release the lock to Worker
+            contributeCommitGate.Release.TrySetResult();
+        }
 
         // Worker unblocks on SQL Server and acquires the lock
         await workerGate2.LockAcquired.Task.WaitAsync(TimeSpan.FromSeconds(10));

@@ -543,7 +543,7 @@ public sealed class FixedFundV2BusinessRuleTests
     // =========================================================================
 
     [Fact]
-    public async Task F21_TargetReduction_CreatesLockedExcessForContributingMembers()
+    public async Task F21_TargetImmutability_MidPeriodReduction_IsStrictlyDisallowed()
     {
         await using var f = await TargetedCorrectnessFixture.CreateAsync();
         var owner = await f.AddUserAsync("Owner");
@@ -560,7 +560,7 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f21", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f21", Pin, config1.Revision), default);
 
-        // Target reduction in middle of active period is strictly disallowed (F2)
+        // Section 3.6: Target VND là bất biến trong suốt kỳ hoạt động, mọi nỗ lực sửa target giữa kỳ bị từ chối
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
         Assert.Equal("obligations_already_confirmed", ex.Code);
@@ -584,9 +584,30 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f22", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f22", Pin, config1.Revision), default);
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
-        Assert.Equal("obligations_already_confirmed", ex.Code);
+        // Simulate Period 2 carry-over obligations state (Stage 3 lifecycle model)
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        treasury.Revision = 2;
+        treasury.TargetVnd = 200;
+        await f.Db.V1Funds.Where(x => x.Id == fund.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.TargetVnd, 200L));
+        var members = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
+        f.Db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation
+        {
+            FundId = fund.Id,
+            Revision = 2,
+            MembershipId = m.Id,
+            UserId = m.UserId,
+            Seat = m.Seat,
+            RequiredVnd = 100,
+            Deadline = f.Clock.UtcNow.AddHours(24)
+        }));
+        await f.Db.SaveChangesAsync();
+
+        var state = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.All(state.Obligations, o => Assert.Equal(100, o.LockedExcessVnd));
+
+        // Treasury has 400 balance, total locked excess = 200. Spendable balance = 200.
+        var account = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(400, account.Balance);
     }
 
     [Fact]
@@ -609,9 +630,28 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f23", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f23", Pin, config1.Revision), default);
 
+        // Simulate Period 2 carry-over obligations state (Stage 3 lifecycle model)
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        treasury.Revision = 2;
+        treasury.TargetVnd = 200;
+        await f.Db.V1Funds.Where(x => x.Id == fund.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.TargetVnd, 200L));
+        var members = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
+        f.Db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation
+        {
+            FundId = fund.Id,
+            Revision = 2,
+            MembershipId = m.Id,
+            UserId = m.UserId,
+            Seat = m.Seat,
+            RequiredVnd = 100,
+            Deadline = f.Clock.UtcNow.AddHours(24)
+        }));
+        await f.Db.SaveChangesAsync();
+
+        var exp = new V1FundRequestInput("Expense", 220, merchant.Id, "Spend locked excess", "exp-f23", Pin);
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
-        Assert.Equal("obligations_already_confirmed", ex.Code);
+            service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default));
+        Assert.Equal("insufficient_fund_balance", ex.Code);
     }
 
     [Fact]
@@ -634,9 +674,27 @@ public sealed class FixedFundV2BusinessRuleTests
         await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 200, "c-o-f24", Pin, config1.Revision), default);
         await service.ContributeAsync(member.Id, fund.Id, new(mWallet.Id, 200, "c-m-f24", Pin, config1.Revision), default);
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(200, Pin), default));
-        Assert.Equal("obligations_already_confirmed", ex.Code);
+        // Simulate Period 2 carry-over obligations state (Stage 3 lifecycle model)
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        treasury.Revision = 2;
+        treasury.TargetVnd = 200;
+        await f.Db.V1Funds.Where(x => x.Id == fund.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.TargetVnd, 200L));
+        var members = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
+        f.Db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation
+        {
+            FundId = fund.Id,
+            Revision = 2,
+            MembershipId = m.Id,
+            UserId = m.UserId,
+            Seat = m.Seat,
+            RequiredVnd = 100,
+            Deadline = f.Clock.UtcNow.AddHours(24)
+        }));
+        await f.Db.SaveChangesAsync();
+
+        var exp = new V1FundRequestInput("Expense", 200, merchant.Id, "Exact spendable", "exp-f24", Pin);
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+        Assert.Equal("Completed", res.State);
     }
 
     [Fact]
@@ -646,6 +704,7 @@ public sealed class FixedFundV2BusinessRuleTests
         var owner = await f.AddUserAsync("Owner");
         var m1 = await f.AddUserAsync("Member1");
         var m2 = await f.AddUserAsync("Member2");
+        var merchant = await f.AddUserAsync("Merchant");
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m1.Id);
         await V1FundMembershipTests.MakeFriends(f, owner.Id, m2.Id);
         var service = V1ElectionTests.Configured(f);
@@ -659,15 +718,44 @@ public sealed class FixedFundV2BusinessRuleTests
         var wOwner = await f.AddWalletAsync(owner.Id, "WOwner", true, balance: 1000);
         var wM1 = await f.AddWalletAsync(m1.Id, "WM1", true, balance: 1000);
         var wM2 = await f.AddWalletAsync(m2.Id, "WM2", true, balance: 1000);
+        await f.AddWalletAsync(merchant.Id, "MerchWallet", true, balance: 0);
 
         await service.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 200, "c-o-f25", Pin, config1.Revision), default);
         await service.ContributeAsync(m1.Id, fund.Id, new(wM1.Id, 200, "c-m1-f25", Pin, config1.Revision), default);
         await service.ContributeAsync(m2.Id, fund.Id, new(wM2.Id, 200, "c-m2-f25", Pin, config1.Revision), default);
 
-        // Reduce to 300 -> rejected by F2
+        // Simulate Period 2 carry-over obligations state (Stage 3 lifecycle model)
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        treasury.Revision = 2;
+        treasury.TargetVnd = 300;
+        await f.Db.V1Funds.Where(x => x.Id == fund.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.TargetVnd, 300L));
+        var members = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
+        f.Db.V1FundObligations.AddRange(members.Select(m => new V1FundObligation
+        {
+            FundId = fund.Id,
+            Revision = 2,
+            MembershipId = m.Id,
+            UserId = m.UserId,
+            Seat = m.Seat,
+            RequiredVnd = 100,
+            Deadline = f.Clock.UtcNow.AddHours(24)
+        }));
+        await f.Db.SaveChangesAsync();
+
+        var state = await service.FinanceAsync(owner.Id, fund.Id, default);
+        Assert.All(state.Obligations, o => Assert.Equal(100, o.LockedExcessVnd));
+
+        // Total excess = 300, balance = 600, spendable = 300.
+        // Trying to spend 350 -> fails
+        var expOver = new V1FundRequestInput("Expense", 350, merchant.Id, "Exceed cumulative", "exp-f25-over", Pin);
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(300, Pin), default));
-        Assert.Equal("obligations_already_confirmed", ex.Code);
+            service.CreateFundRequestAsync(owner.Id, fund.Id, expOver, default));
+        Assert.Equal("insufficient_fund_balance", ex.Code);
+
+        // Spending 300 -> succeeds
+        var expOk = new V1FundRequestInput("Expense", 300, merchant.Id, "Spend exact spendable", "exp-f25-ok", Pin);
+        var res = await service.CreateFundRequestAsync(owner.Id, fund.Id, expOk, default);
+        Assert.Equal("Completed", res.State);
     }
 
     // =========================================================================

@@ -1,3 +1,4 @@
+using SpendWise.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Features.V1Groups;
@@ -296,5 +297,105 @@ public sealed class FixedFundV2Stage1Tests
         var members = await service.MembersAsync(owner.Id, fund.Id, default);
         var m1 = Assert.Single(members, m => m.UserId == member1.Id);
         Assert.NotNull(m1.ContributionDeadline);
+    }
+
+    private sealed class MutableClock(DateTime utcNow) : IClock
+    {
+        public DateTime UtcNow { get; set; } = utcNow;
+    }
+
+    [Fact]
+    public async Task F6_ConfirmObligations_Idempotency_AndReconfirmationRejection()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerF6");
+        var member = await f.AddUserAsync("MemberF6");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF6", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
+
+        var conf1 = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        Assert.Equal(1, conf1.Revision);
+
+        var initialMembers = await service.MembersAsync(owner.Id, fund.Id, default);
+        var initialDeadlines = initialMembers.ToDictionary(m => m.UserId, m => m.ContributionDeadline);
+
+        // Advance clock by 2 hours
+        clock.UtcNow = clock.UtcNow.AddHours(2);
+
+        // Idempotent re-confirmation: returns current state, revision does NOT increment, deadlines do NOT change
+        var confIdempotent = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        Assert.Equal(1, confIdempotent.Revision);
+
+        var membersAfter = await service.MembersAsync(owner.Id, fund.Id, default);
+        foreach (var m in membersAfter)
+        {
+            Assert.Equal(initialDeadlines[m.UserId], m.ContributionDeadline);
+        }
+
+        // Attempting to change target mid-period -> rejected
+        var exTargetChange = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ConfirmObligationsAsync(owner.Id, fund.Id, new(2_000_000, Pin), default));
+        Assert.Equal("obligations_already_confirmed", exTargetChange.Code);
+    }
+
+    [Fact]
+    public async Task F7_ReplacementSeat_ValidationAndRejection()
+    {
+        await using var f = await TargetedCorrectnessFixture.CreateAsync();
+        var owner = await f.AddUserAsync("OwnerF7");
+        var member = await f.AddUserAsync("MemberF7");
+        var replacementUser = await f.AddUserAsync("ReplacementUserF7");
+        var replacementUser2 = await f.AddUserAsync("ReplacementUser2F7");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, replacementUser.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, replacementUser2.Id);
+
+        var service = V1ElectionTests.Configured(f);
+        var fund = await service.CreateAsync(owner.Id, new("FundF7", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
+        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Member is on seat 2 (occupied). If an invitation points to seat 2, it must be rejected!
+        var memberSeat = (await service.MembersAsync(owner.Id, fund.Id, default)).Single(m => m.UserId == member.Id).Seat;
+        var invOccupied = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = replacementUser.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = memberSeat
+        };
+        f.Db.V1FundInvitations.Add(invOccupied);
+        await f.Db.SaveChangesAsync();
+
+        var exOccupied = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.AcceptAsync(replacementUser.Id, invOccupied.Id, true, "v2.0", default));
+        Assert.Equal("replacement_seat_unavailable", exOccupied.Code);
+
+        // If replacement invitation has null TargetSeat -> rejected
+        var invNullSeat = new V1FundInvitation
+        {
+            FundId = fund.Id,
+            InvitedUserId = replacementUser2.Id,
+            InvitedByUserId = owner.Id,
+            Status = V1InvitationStatus.Pending,
+            ExpiresAt = f.Clock.UtcNow.AddDays(7),
+            IsReplacement = true,
+            TargetSeat = null
+        };
+        f.Db.V1FundInvitations.Add(invNullSeat);
+        await f.Db.SaveChangesAsync();
+
+        var exNullSeat = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.AcceptAsync(replacementUser2.Id, invNullSeat.Id, true, "v2.0", default));
+        Assert.Equal("replacement_seat_unavailable", exNullSeat.Code);
     }
 }

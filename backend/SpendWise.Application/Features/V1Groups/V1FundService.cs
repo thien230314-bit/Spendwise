@@ -301,8 +301,10 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 {
                     var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
                     var activeSeats = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
-                    if (!invite.IsReplacement || activeSeats.Count >= confirmedSeats.Count)
+                    if (!invite.IsReplacement)
                         throw new ConflictException("fund_obligations_locked", "Quỹ cố định đã chốt danh sách và nghĩa vụ kỳ, không thể tham gia thêm thành viên thông thường.");
+                    if (!invite.TargetSeat.HasValue || activeSeats.Contains(invite.TargetSeat.Value) || activeSeats.Count >= confirmedSeats.Count)
+                        throw new ConflictException("replacement_seat_unavailable", "Ghế chỉ định thay thế không còn trống hoặc không hợp lệ.");
                 }
             }
             await RequireNoActiveElectionAsync(fund.Id, token);
@@ -320,8 +322,10 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                 throw new ConflictException("already_member", "User is already a member.");
             var occupied = await db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).Select(m => m.Seat).ToListAsync(token);
             int seat;
-            if (invite.IsReplacement && invite.TargetSeat.HasValue && !occupied.Contains(invite.TargetSeat.Value))
+            if (invite.IsReplacement)
             {
+                if (!invite.TargetSeat.HasValue || occupied.Contains(invite.TargetSeat.Value))
+                    throw new ConflictException("replacement_seat_unavailable", "Ghế chỉ định thay thế không còn trống hoặc không hợp lệ.");
                 seat = invite.TargetSeat.Value;
             }
             else

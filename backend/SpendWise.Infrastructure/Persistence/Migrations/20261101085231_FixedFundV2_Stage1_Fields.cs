@@ -41,19 +41,6 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                 table: "V1FundMemberships",
                 type: "datetime2",
                 nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "IsReplacement",
-                table: "V1FundInvitations",
-                type: "bit",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<int>(
-                name: "TargetSeat",
-                table: "V1FundInvitations",
-                type: "int",
-                nullable: true);
         }
 
         /// <inheritdoc />
@@ -78,14 +65,6 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
             migrationBuilder.DropColumn(
                 name: "TrustCommitmentAcceptedAt",
                 table: "V1FundMemberships");
-
-            migrationBuilder.DropColumn(
-                name: "IsReplacement",
-                table: "V1FundInvitations");
-
-            migrationBuilder.DropColumn(
-                name: "TargetSeat",
-                table: "V1FundInvitations");
         }
     }
 }

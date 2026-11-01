@@ -39,14 +39,28 @@ public sealed partial class V1FundService
             var signature = MembershipSignature(members);
             if (treasury.Revision > 0)
             {
-                if (treasury.TargetVnd != request.TargetVnd)
-                    throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể thay đổi target hoặc sửa nghĩa vụ.");
-                if (treasury.MembershipSignature == signature)
-                    return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
+                if (treasury.TargetVnd == request.TargetVnd)
+                {
+                    var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fundId && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
+                    var activeSeats = members.Select(m => m.Seat).ToList();
+                    if (activeSeats.Count == confirmedSeats.Count && confirmedSeats.All(activeSeats.Contains))
+                    {
+                        treasury.MembershipSignature = signature;
+                        foreach (var m in members)
+                        {
+                            var ob = await db.V1FundObligations.SingleOrDefaultAsync(o => o.FundId == fundId && o.Revision == treasury.Revision && o.Seat == m.Seat, token);
+                            if (ob is not null)
+                            {
+                                ob.MembershipId = m.Id;
+                                ob.UserId = m.UserId;
+                            }
+                        }
+                        await db.SaveChangesAsync(token);
+                        return await FinanceStateAsync(await FundAsync(fundId, token), treasury, token);
+                    }
+                }
 
-                var confirmedSeats = await db.V1FundObligations.Where(o => o.FundId == fundId && o.Revision == treasury.Revision).Select(o => o.Seat).Distinct().ToListAsync(token);
-                if (members.Count != confirmedSeats.Count)
-                    throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể thay đổi số lượng ghế.");
+                throw new ConflictException("obligations_already_confirmed", "Cấu hình nghĩa vụ của kỳ đã được chốt và bị khóa bất biến, không thể xác nhận lại hoặc sửa nghĩa vụ trong kỳ.");
             }
 
             treasury.Revision = checked(treasury.Revision + 1);

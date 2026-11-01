@@ -491,6 +491,9 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // Deterministically wait until Contribute has reached the lock contention point on SQL Server
         await contributeGate.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
+        // Assert Contribute has NOT acquired the lock while Worker holds it
+        Assert.False(contributeGate.LockAcquired.Task.IsCompleted);
+
         // Release the worker to complete its auto-kick transaction and release the lock
         workerGate.Release.TrySetResult();
 
@@ -550,8 +553,10 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // ---------------------------------------------------------------------
         // DETERMINISTIC ORDER 2: Valid On-Time Contribution Acquires Lock First
         // Worker arrives concurrently, waits for contribution to complete, then inspects -> No kick!
+        // Uses dedicated isolated SQL Server database to ensure Fund 2 is the ONLY fund in database.
         // ---------------------------------------------------------------------
         clock.UtcNow = new DateTime(2026, 11, 10, 0, 0, 0, DateTimeKind.Utc);
+        var database2 = await OwnAsync(Stage5SqlDatabase.CreateAsync(clock));
         Guid fund2Id;
         Guid owner2Id;
         Guid memberBId;
@@ -559,7 +564,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         Guid wB2Id;
         long config2Revision;
 
-        await using (var db2Setup = database.Context())
+        await using (var db2Setup = database2.Context())
         {
             var owner2 = await SeedUserAsync(db2Setup, "Owner2 T29", clock.UtcNow);
             var memberB = await SeedUserAsync(db2Setup, "Member B T29", clock.UtcNow);
@@ -600,8 +605,8 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // to execute on SQL Server, proving it has arrived at the lock contention point.
         var workerGate2 = new LockContentionGate(pauseAfterLock: false);
 
-        await using var dbContribute2 = database.Context(contributeCommitGate);
-        await using var dbWorker2 = database.Context(workerGate2);
+        await using var dbContribute2 = database2.Context(contributeCommitGate);
+        await using var dbWorker2 = database2.Context(workerGate2);
 
         var sContribute2 = CreateService(dbContribute2, clock);
         var sWorker2 = CreateService(dbWorker2, clock);
@@ -630,12 +635,12 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // while Contribution is actively holding the fund transaction lock!
         clock.Advance(TimeSpan.FromHours(2));
 
-        // Start Worker concurrently: it will scan funds, enter transaction, and attempt to lock fund2
+        // Start Worker concurrently targeting specifically fund2Id
         var worker2Task = Task.Run(async () =>
         {
             try
             {
-                await sWorker2.ProgressFixedFundDeadlinesAsync(default);
+                await sWorker2.ProcessFixedFundDeadlinesAsync(fund2Id, default);
             }
             catch (Exception ex)
             {
@@ -646,8 +651,14 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         // Deterministically wait until Worker has reached the lock contention point on SQL Server
         await workerGate2.ExecutingReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
+        // Assert Worker is STILL BLOCKED and has NOT acquired the lock while Contribution is holding it
+        Assert.False(workerGate2.LockAcquired.Task.IsCompleted);
+
         // Release Contribution to commit successfully and release the lock to Worker
         contributeCommitGate.Release.TrySetResult();
+
+        // Worker unblocks on SQL Server and acquires the lock
+        await workerGate2.LockAcquired.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
         await Task.WhenAll(contribute2Task, worker2Task);
 
@@ -656,7 +667,7 @@ public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
         Assert.Null(worker2Ex);
 
         // Verify state in independent DbContext
-        await using (var dbWorker2Verify = database.Context())
+        await using (var dbWorker2Verify = database2.Context())
         {
             var sWorker2Verify = CreateService(dbWorker2Verify, clock);
 

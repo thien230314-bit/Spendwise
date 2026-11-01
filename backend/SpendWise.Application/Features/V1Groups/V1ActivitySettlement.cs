@@ -53,13 +53,14 @@ public sealed partial class V1FundService
             if (activeMembers.Count < 2)
                 throw new ConflictException("insufficient_members", "Kỳ mới phải có ít nhất hai người.");
 
-            var finalTarget = request.TargetVnd ?? proposal.TargetVnd;
-            if (finalTarget <= 0 || finalTarget > MaximumVnd)
-                throw new AppException("invalid_amount", "Use positive integer VND.");
+            if (request.TargetVnd.HasValue && request.TargetVnd.Value != proposal.TargetVnd)
+                throw new ConflictException("configuration_changed_requires_consent", "Changing target requires member consent before settlement.");
 
-            var finalDuration = request.ContributionDurationHours ?? (fund.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24);
-            if (finalDuration < 1 || finalDuration > 720)
-                throw new AppException("invalid_duration", "Contribution duration must be between 1 and 720 hours.");
+            if (request.ContributionDurationHours.HasValue && request.ContributionDurationHours.Value != proposal.ContributionDurationHours)
+                throw new ConflictException("configuration_changed_requires_consent", "Changing duration requires member consent before settlement.");
+
+            var finalTarget = proposal.TargetVnd;
+            var finalDuration = proposal.ContributionDurationHours > 0 ? proposal.ContributionDurationHours : 24;
 
             if (finalTarget % activeMembers.Count != 0)
                 throw new ConflictException("target_not_divisible", "Mục tiêu kỳ mới bắt buộc phải chia hết cho số ghế.");
@@ -120,6 +121,7 @@ public sealed partial class V1FundService
             {
                 var trackedMem = await db.V1FundMemberships.SingleAsync(x => x.Id == m.Id, token);
                 trackedMem.ContributionDeadline = deadline;
+                trackedMem.RefundedVnd = 0;
             }
 
             db.V1FundObligations.AddRange(activeMembers.Select(m => new V1FundObligation {
@@ -128,7 +130,7 @@ public sealed partial class V1FundService
                 RequiredVnd = required[m.Seat], Deadline = deadline
             }));
 
-            var newName = !string.IsNullOrWhiteSpace(request.NewName) ? request.NewName.Trim() : fund.Name;
+            var newName = !string.IsNullOrWhiteSpace(request.NewName) ? request.NewName.Trim() : (proposal.NewName ?? fund.Name);
 
             await db.V1Funds.Where(f => f.Id == fund.Id).ExecuteUpdateAsync(s => s
                 .SetProperty(f => f.Name, newName)

@@ -8,6 +8,8 @@ public sealed class V1ActivityProposal : BaseEntity
     public Guid ProposedByUserId { get; set; }
     public long OwnershipRevision { get; set; }
     public long TargetVnd { get; set; }
+    public int ContributionDurationHours { get; set; } = 24;
+    public string? NewName { get; set; }
     public string IdempotencyKey { get; set; } = string.Empty;
     public DateTime OpenedAt { get; set; }
     public DateTime? FinishedAt { get; set; }

@@ -734,7 +734,9 @@ public sealed partial class V1FundService
                 var paid = activityPaid?.GetValueOrDefault(m.Id) ?? contributions.Where(c => c.MembershipId == m.Id).Sum(c => c.AmountVnd);
                 var required = obligations.SingleOrDefault(o => o.MembershipId == m.Id)?.RequiredVnd ?? 0;
                 var lockedExcess = Math.Max(0, paid - required);
-                var priorRef = m.RefundedVnd ?? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount);
+                var priorRef = period is not null
+                    ? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= period.SettledAt).Sum(r => (long)r.Amount)
+                    : (m.RefundedVnd ?? previousRefunds.Where(r => r.OwnerUserId == m.UserId && r.CreatedAt >= m.JoinedAt).Sum(r => (long)r.Amount));
                 var protectedExcess = Math.Max(0, lockedExcess - priorRef);
                 memberStats[m.UserId] = (paid, required, lockedExcess, priorRef, protectedExcess);
                 totalProtectedExcess += protectedExcess;

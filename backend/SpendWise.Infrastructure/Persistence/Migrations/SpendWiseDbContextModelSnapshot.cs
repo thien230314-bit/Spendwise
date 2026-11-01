@@ -869,9 +869,6 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<int?>("RecipientLimit")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ReplacementWindowExpiresAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<long>("Revision")
                         .HasColumnType("bigint");
 
@@ -3254,12 +3251,6 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("InvitedUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsReplacement")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("TargetSeat")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -4783,6 +4774,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("ContributionDurationHours")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -4796,6 +4790,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NewName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime2");
@@ -5260,10 +5257,16 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("InvitedUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsReplacement")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("nvarchar(12)");
+
+                    b.Property<int?>("TargetSeat")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5481,6 +5484,9 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("ReplacementWindowExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<long>("Revision")
                         .HasColumnType("bigint");

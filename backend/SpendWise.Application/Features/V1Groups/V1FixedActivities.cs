@@ -51,13 +51,7 @@ public sealed partial class V1FundService
                 throw new ConflictException("maximum_periods_exceeded", "Fixed Fund chỉ được tối đa 3 kỳ hoạt động. Kỳ hiện tại là kỳ cuối cùng, chỉ được quyết toán và giải tán.");
             }
 
-            var hasActiveProposal = await db.V1ActivityProposals
-                .AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "AwaitingReplacement" || p.State == "ApprovedAwaitingSettlement"), token);
-            if (hasActiveProposal)
-            {
-                throw new ConflictException("active_proposal_exists", "An active activity proposal already exists for this fund.");
-            }
-
+            var duration = request.ContributionDurationHours is >= 1 and <= 720 ? request.ContributionDurationHours.Value : 24;
             if (request.ContributionDurationHours is not null && (request.ContributionDurationHours < 1 || request.ContributionDurationHours > 720))
             {
                 throw new AppException("invalid_duration", "Contribution duration must be between 1 and 720 hours.");
@@ -66,8 +60,16 @@ public sealed partial class V1FundService
             var replay = await db.V1ActivityProposals.AsNoTracking().SingleOrDefaultAsync(p => p.FundId == fundId && p.IdempotencyKey == key, token);
             if (replay is not null)
             {
-                if (replay.ProposedByUserId != actor || replay.TargetVnd != request.TargetVnd) throw new ConflictException("idempotency_conflict", "Activity intent differs.");
+                if (replay.ProposedByUserId != actor || replay.TargetVnd != request.TargetVnd || replay.ContributionDurationHours != duration)
+                    throw new ConflictException("idempotency_conflict", "Activity intent differs.");
                 return await ActivityDtoAsync(replay, actor, token);
+            }
+
+            var hasActiveProposal = await db.V1ActivityProposals
+                .AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "AwaitingReplacement" || p.State == "ApprovedAwaitingSettlement"), token);
+            if (hasActiveProposal)
+            {
+                throw new ConflictException("active_proposal_exists", "An active activity proposal already exists for this fund.");
             }
             await RequireNoActiveElectionAsync(fundId, token);
             var current = await ActiveMembersAsync(fundId, token);
@@ -83,6 +85,8 @@ public sealed partial class V1FundService
                 ProposedByUserId = actor,
                 OwnershipRevision = fund.OwnershipRevision,
                 TargetVnd = request.TargetVnd,
+                ContributionDurationHours = duration,
+                NewName = string.IsNullOrWhiteSpace(request.NewName) ? null : request.NewName.Trim(),
                 IdempotencyKey = key,
                 OpenedAt = clock.UtcNow,
                 State = "Voting"
@@ -245,8 +249,7 @@ public sealed partial class V1FundService
     {
         var voters = await db.V1ActivityVoters.AsNoTracking().Where(v => v.ProposalId == p.Id).ToListAsync(ct);
         var own = voters.SingleOrDefault(v => v.UserId == actor);
-        var fund = await db.V1Funds.AsNoTracking().SingleOrDefaultAsync(f => f.Id == p.FundId, ct);
-        var duration = fund?.ContributionDurationHours > 0 ? fund.ContributionDurationHours : 24;
+        var duration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
         var expectedPerMember = voters.Count > 0 ? p.TargetVnd / voters.Count : p.TargetVnd;
         return new(p.Id, p.FundId, p.TargetVnd, p.State, voters.Count, voters.Count(v => v.Support == true), voters.Count(v => v.Support == false), p.OpenedAt,
             await V1MaintenanceGate.DeadlineAsync(db, p.OpenedAt, TimeSpan.FromHours(24), clock.UtcNow, ct, "Groups"), own?.Support, own?.CarryOverVnd, duration, expectedPerMember);

@@ -466,6 +466,33 @@ public sealed class FixedFundV2Stage1Tests
         Assert.Equal(2, seat2Obligations.Count);
     }
 
+    private sealed class TestInactivity : IV1InactivityEvidence
+    {
+        public Task<V1InactivityProof> GetAsync(Guid userId, CancellationToken ct) => Task.FromResult(new V1InactivityProof(true, true, "Synthetic-proof"));
+    }
+
+    private static V1FundService CreateService(SpendWise.Infrastructure.Persistence.SpendWiseDbContext db, TargetedCorrectnessFixture f) => new(
+        db, f.Clock, f.Security,
+        new SpendWise.Infrastructure.Notifications.NotificationService(db),
+        new SpendWise.Infrastructure.Finance.LedgerService(db, f.Clock),
+        new SpendWise.Application.Features.Banking.ActiveBankGuard(db),
+        Microsoft.Extensions.Options.Options.Create(new V1ElectionPolicy
+        {
+            Version = "SYNTHETIC-TEST-POLICY",
+            RegistrationSeconds = 60,
+            NominationSeconds = 60,
+            RunoffSeconds = 60,
+            ConfirmationSeconds = 60,
+            AcceptanceSeconds = 60,
+            FreezeMembership = true,
+            AllowContributions = false,
+            NoCandidatesOutcome = "Fail",
+            NoVotesOutcome = "Fail",
+            AcceptanceExpiryOutcome = "Fail",
+            EligibilityChangeOutcome = "Fail"
+        }),
+        new TestInactivity());
+
     [Fact]
     public async Task F9_ReplacementMember_FullFlow_Reconfirm_Contribute_CompleteFund_OpenSpending()
     {
@@ -482,6 +509,13 @@ public sealed class FixedFundV2Stage1Tests
         var inv1 = await service.InviteAsync(owner.Id, fund.Id, departedMember.Id, default);
         await service.AcceptAsync(departedMember.Id, inv1.Id, true, "v2.0", default);
         await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+
+        // Record initial signature from DB with fresh context
+        await using (var dbInit = f.CreateNewDbContext())
+        {
+            var initialTreasury = await dbInit.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+            Assert.NotNull(initialTreasury.MembershipSignature);
+        }
 
         // Departed member leaves -> seat 2 becomes vacant
         var departedMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departedMember.Id);
@@ -509,37 +543,50 @@ public sealed class FixedFundV2Stage1Tests
         var reconfirmed = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
         Assert.True(reconfirmed.ConfigurationCurrent);
 
-        // Verify signature is persisted in database and matches SHA256 length
-        var dbTreasury = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
-        Assert.NotNull(dbTreasury.MembershipSignature);
-        Assert.Equal(64, dbTreasury.MembershipSignature.Length);
+        // Verify with FRESH DbContext: signature is persisted in database and matches SHA256 of active members
+        await using (var dbCheck = f.CreateNewDbContext())
+        {
+            var dbTreasury = await dbCheck.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+            Assert.NotNull(dbTreasury.MembershipSignature);
+            Assert.Equal(64, dbTreasury.MembershipSignature.Length);
+
+            var activeMembersDb = await dbCheck.V1FundMemberships.AsNoTracking()
+                .Where(m => m.FundId == fund.Id && m.LeftAt == null)
+                .OrderBy(m => m.Seat)
+                .ToListAsync();
+            var expectedSig = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(string.Join("|", activeMembersDb.Select(m => $"{m.Id:N}:{m.UserId:N}:{m.Seat}")))));
+            Assert.Equal(expectedSig, dbTreasury.MembershipSignature);
+        }
 
         // Setup wallets and fund them
         var oWallet = await f.AddWalletAsync(owner.Id, "OWalletF9", true, balance: 5_000_000);
         var rWallet = await f.AddWalletAsync(replacementUser.Id, "RWalletF9", true, balance: 5_000_000);
         await f.AddWalletAsync(merchant.Id, "MerchWalletF9", true, balance: 0);
 
-        // Owner contributes 2,000,000 VND
-        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "c-owner-f9", Pin, reconfirmed.Revision), default);
+        // MULTI-DBCONTEXT TEST: Perform contributions using a BRAND NEW DbContext
+        await using (var dbContribute = f.CreateNewDbContext())
+        {
+            var serviceContribute = CreateService(dbContribute, f);
+            await serviceContribute.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "c-owner-f9", Pin, reconfirmed.Revision), default);
+            await serviceContribute.ContributeAsync(replacementUser.Id, fund.Id, new(rWallet.Id, 2_000_000, "c-rep-f9", Pin, reconfirmed.Revision), default);
+        }
 
-        // Replacement member contributes 2,000,000 VND
-        await service.ContributeAsync(replacementUser.Id, fund.Id, new(rWallet.Id, 2_000_000, "c-rep-f9", Pin, reconfirmed.Revision), default);
+        // MULTI-DBCONTEXT TEST: Verify finance state and execute expense using another BRAND NEW DbContext
+        await using (var dbSpend = f.CreateNewDbContext())
+        {
+            var serviceSpend = CreateService(dbSpend, f);
+            var finance = await serviceSpend.FinanceAsync(owner.Id, fund.Id, default);
+            Assert.Equal(2, finance.Obligations.Count);
+            Assert.All(finance.Obligations, o => Assert.Equal(0, o.RemainingVnd));
+            Assert.Equal(4_000_000, finance.BalanceVnd);
+            Assert.Equal("OPEN", finance.SpendingState);
 
-        // Verify finance state:
-        // 1. Obligations list contains only the 2 active members (departed member obligation does not pollute list)
-        var finance = await service.FinanceAsync(owner.Id, fund.Id, default);
-        Assert.Equal(2, finance.Obligations.Count);
-        Assert.All(finance.Obligations, o => Assert.Equal(0, o.RemainingVnd));
-        Assert.Equal(4_000_000, finance.BalanceVnd);
-
-        // 2. Spending state is OPEN!
-        Assert.Equal("OPEN", finance.SpendingState);
-
-        // 3. Spending request succeeds without throwing obligations_not_completed!
-        var exp = new V1FundRequestInput("Expense", 1_000_000, merchant.Id, "Team expense after replacement", "exp-f9-01", Pin);
-        var req = await service.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
-        Assert.NotNull(req);
-        Assert.Equal("Executed", req.ExecutionAvailability);
+            var exp = new V1FundRequestInput("Expense", 1_000_000, merchant.Id, "Team expense after replacement", "exp-f9-01", Pin);
+            var req = await serviceSpend.CreateFundRequestAsync(owner.Id, fund.Id, exp, default);
+            Assert.NotNull(req);
+            Assert.Equal("Executed", req.ExecutionAvailability);
+        }
     }
 
     [Fact]
@@ -564,11 +611,21 @@ public sealed class FixedFundV2Stage1Tests
         var d1Wallet = await f.AddWalletAsync(departed1.Id, "D1Wallet", true, balance: 1_000_000);
         await service.ContributeAsync(departed1.Id, fund.Id, new(d1Wallet.Id, 500_000, "c-part-d1", Pin, config.Revision), default);
 
-        // Departed1 leaves (kicked or refunded)
-        var mem1 = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departed1.Id);
-        mem1.LeftAt = f.Clock.UtcNow;
-        mem1.RefundedVnd = 500_000;
-        await f.Db.SaveChangesAsync();
+        // Departed1 leaves with REAL REFUND through LeaveFundAsync
+        var refund1 = await service.LeaveFundAsync(departed1.Id, fund.Id, new(Pin, "leave-d1-f10", d1Wallet.Id), default);
+        Assert.Equal("Completed", refund1.Status);
+        Assert.Equal(500_000, refund1.RefundAmountVnd);
+
+        // Verify ledger balances on fresh DbContext
+        await using (var dbVerifyD1 = f.CreateNewDbContext())
+        {
+            var d1Acc = await dbVerifyD1.LedgerAccounts.AsNoTracking().SingleAsync(a => a.WalletId == d1Wallet.Id);
+            Assert.Equal(1_000_000, d1Acc.Balance); // Full initial wallet balance restored!
+
+            var treasury = await dbVerifyD1.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fund.Id);
+            var treasuryAcc = await dbVerifyD1.LedgerAccounts.AsNoTracking().SingleAsync(a => a.Id == treasury.LedgerAccountId);
+            Assert.Equal(0, treasuryAcc.Balance); // Treasury balance refunded to 0!
+        }
 
         // Departed2 replaces seat 2
         var inv2 = new V1FundInvitation
@@ -585,10 +642,11 @@ public sealed class FixedFundV2Stage1Tests
         await f.Db.SaveChangesAsync();
         await service.AcceptAsync(departed2.Id, inv2.Id, true, "v2.0", default);
 
-        // Departed2 also departs without contributing
-        var mem2 = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == departed2.Id && m.LeftAt == null);
-        mem2.LeftAt = f.Clock.UtcNow;
-        await f.Db.SaveChangesAsync();
+        // Departed2 also leaves without contributing (refund 0)
+        var d2Wallet = await f.AddWalletAsync(departed2.Id, "D2Wallet", true, balance: 100_000);
+        var refund2 = await service.LeaveFundAsync(departed2.Id, fund.Id, new(Pin, "leave-d2-f10", d2Wallet.Id), default);
+        Assert.Equal("Completed", refund2.Status);
+        Assert.Equal(0, refund2.RefundAmountVnd);
 
         // FinalUser replaces seat 2
         var inv3 = new V1FundInvitation
@@ -605,19 +663,25 @@ public sealed class FixedFundV2Stage1Tests
         await f.Db.SaveChangesAsync();
         await service.AcceptAsync(finalUser.Id, inv3.Id, true, "v2.0", default);
 
-        // Verification of database records:
-        // Exactly 3 historical/active obligations for Seat 2: Departed1, Departed2, FinalUser
-        var seat2Obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Seat == 2).ToListAsync();
-        Assert.Equal(3, seat2Obligations.Count);
-        Assert.Contains(seat2Obligations, o => o.UserId == departed1.Id);
-        Assert.Contains(seat2Obligations, o => o.UserId == departed2.Id);
-        Assert.Contains(seat2Obligations, o => o.UserId == finalUser.Id);
+        // Verification of database records on FRESH DbContext:
+        await using (var dbFinal = f.CreateNewDbContext())
+        {
+            // Exactly 3 historical/active obligations for Seat 2: Departed1, Departed2, FinalUser
+            var seat2Obligations = await dbFinal.V1FundObligations.AsNoTracking()
+                .Where(o => o.FundId == fund.Id && o.Seat == 2)
+                .ToListAsync();
+            Assert.Equal(3, seat2Obligations.Count);
+            Assert.Contains(seat2Obligations, o => o.UserId == departed1.Id);
+            Assert.Contains(seat2Obligations, o => o.UserId == departed2.Id);
+            Assert.Contains(seat2Obligations, o => o.UserId == finalUser.Id);
 
-        // Verification of active Finance state:
-        var finance = await service.FinanceAsync(owner.Id, fund.Id, default);
-        Assert.Equal(2, finance.Obligations.Count);
-        var activeSeat2 = finance.Obligations.Single(o => o.Seat == 2);
-        Assert.Equal(finalUser.Id, activeSeat2.UserId);
-        Assert.Equal(2_000_000, activeSeat2.RequiredVnd);
+            // Verification of active Finance state on fresh DbContext:
+            var finalService = CreateService(dbFinal, f);
+            var finance = await finalService.FinanceAsync(owner.Id, fund.Id, default);
+            Assert.Equal(2, finance.Obligations.Count);
+            var activeSeat2 = finance.Obligations.Single(o => o.Seat == 2);
+            Assert.Equal(finalUser.Id, activeSeat2.UserId);
+            Assert.Equal(2_000_000, activeSeat2.RequiredVnd);
+        }
     }
 }

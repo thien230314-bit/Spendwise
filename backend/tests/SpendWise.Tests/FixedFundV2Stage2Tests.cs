@@ -1,4 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SpendWise.Infrastructure.Identity;
+using SpendWise.Infrastructure.Services;
+using SpendWise.Application.Features;
+using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Features.Banking;
+using SpendWise.Application.Finance;
+using SpendWise.Application.Identity;
+using SpendWise.Application.Notifications;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.V1Groups;
@@ -23,7 +33,12 @@ public sealed class FixedFundV2Stage2Tests
             Task.FromResult(new V1InactivityProof(true, true, "Synthetic-proof"));
     }
 
-    private static V1FundService CreateService(SpendWise.Infrastructure.Persistence.SpendWiseDbContext db, IClock clock, TargetedCorrectnessFixture f) => new(
+    private static V1FundService CreateService(
+        SpendWise.Infrastructure.Persistence.SpendWiseDbContext db,
+        IClock clock,
+        TargetedCorrectnessFixture f,
+        IServiceScopeFactory? scopes = null,
+        ILogger<V1FundService>? logger = null) => new(
         db, clock, f.Security,
         new SpendWise.Infrastructure.Notifications.NotificationService(db),
         new SpendWise.Infrastructure.Finance.LedgerService(db, clock),
@@ -43,7 +58,9 @@ public sealed class FixedFundV2Stage2Tests
             AcceptanceExpiryOutcome = "Fail",
             EligibilityChangeOutcome = "Fail"
         }),
-        new TestInactivity());
+        new TestInactivity(),
+        scopes: scopes,
+        logger: logger);
 
     [Fact]
     public async Task T05_MemberWithinDeadline_CannotBeKickedForMissingContribution()
@@ -599,9 +616,47 @@ public sealed class FixedFundV2Stage2Tests
         await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberA.Id);
         await V1FundMembershipTests.MakeFriends(f, ownerB.Id, memberB.Id);
 
-        var service = CreateService(f.Db, clock, f);
+        // Build real IServiceScopeFactory where each scope creates a fresh SpendWiseDbContext attached to the test fixture connection
+        var services = new ServiceCollection();
+        services.AddScoped<ISpendWiseDbContext>(_ => f.CreateNewDbContext());
+        services.AddSingleton<IClock>(clock);
+        services.AddScoped(sp =>
+        {
+            var scopedDb = (SpendWise.Infrastructure.Persistence.SpendWiseDbContext)sp.GetRequiredService<ISpendWiseDbContext>();
+            return new FinancialSecurityGuard(scopedDb, new SecurityPinService(), new AccountCredentialLockout(scopedDb, clock));
+        });
+        services.AddScoped<INotificationService>(sp =>
+            new SpendWise.Infrastructure.Notifications.NotificationService((SpendWise.Infrastructure.Persistence.SpendWiseDbContext)sp.GetRequiredService<ISpendWiseDbContext>()));
+        services.AddScoped<ILedgerService>(sp =>
+            new SpendWise.Infrastructure.Finance.LedgerService((SpendWise.Infrastructure.Persistence.SpendWiseDbContext)sp.GetRequiredService<ISpendWiseDbContext>(), clock));
+        services.AddScoped<IActiveBankGuard>(sp =>
+            new SpendWise.Application.Features.Banking.ActiveBankGuard((SpendWise.Infrastructure.Persistence.SpendWiseDbContext)sp.GetRequiredService<ISpendWiseDbContext>()));
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new V1ElectionPolicy
+        {
+            Version = "SYNTHETIC-TEST-POLICY",
+            RegistrationSeconds = 60,
+            NominationSeconds = 60,
+            RunoffSeconds = 60,
+            ConfirmationSeconds = 60,
+            AcceptanceSeconds = 60,
+            FreezeMembership = true,
+            AllowContributions = false,
+            NoCandidatesOutcome = "Fail",
+            NoVotesOutcome = "Fail",
+            AcceptanceExpiryOutcome = "Fail",
+            EligibilityChangeOutcome = "Fail"
+        }));
+        services.AddSingleton<IV1InactivityEvidence>(new TestInactivity());
+        services.AddLogging();
+        services.AddScoped<V1FundService>();
 
-        // Fund A
+        var provider = services.BuildServiceProvider();
+        var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+        // Root service wired with IServiceScopeFactory so ProgressFixedFundDeadlinesAsync executes using scopes.CreateScope()
+        var service = CreateService(f.Db, clock, f, scopes: scopeFactory);
+
+        // Fund A setup: Target 4,000,000 VND (2,000,000 VND each)
         var fundA = await service.CreateAsync(ownerA.Id, new("FundT16A", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
         var invA = await service.InviteAsync(ownerA.Id, fundA.Id, memberA.Id, default);
         await service.AcceptAsync(memberA.Id, invA.Id, true, "v2.0", default);
@@ -609,7 +664,11 @@ public sealed class FixedFundV2Stage2Tests
         var oWalletA = await f.AddWalletAsync(ownerA.Id, "OWalletT16A", true, balance: 2_000_000);
         await service.ContributeAsync(ownerA.Id, fundA.Id, new(oWalletA.Id, 2_000_000, "o-a-t16", Pin, configA.Revision), default);
 
-        // Fund B
+        // Member A contributes partial (> 0 VND) so refund is attempted during Auto-Kick
+        var aWallet = await f.AddWalletAsync(memberA.Id, "AWalletT16", true, balance: 1_000_000);
+        await service.ContributeAsync(memberA.Id, fundA.Id, new(aWallet.Id, 1_000_000, "a-part-t16", Pin, configA.Revision), default);
+
+        // Fund B setup: Target 4,000,000 VND (2,000,000 VND each)
         var fundB = await service.CreateAsync(ownerB.Id, new("FundT16B", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
         var invB = await service.InviteAsync(ownerB.Id, fundB.Id, memberB.Id, default);
         await service.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
@@ -617,24 +676,41 @@ public sealed class FixedFundV2Stage2Tests
         var oWalletB = await f.AddWalletAsync(ownerB.Id, "OWalletT16B", true, balance: 2_000_000);
         await service.ContributeAsync(ownerB.Id, fundB.Id, new(oWalletB.Id, 2_000_000, "o-b-t16", Pin, configB.Revision), default);
 
+        // Member B contributes partial (> 0 VND) so refund is processed during Auto-Kick
+        var bWallet = await f.AddWalletAsync(memberB.Id, "BWalletT16", true, balance: 500_000);
+        await service.ContributeAsync(memberB.Id, fundB.Id, new(bWallet.Id, 500_000, "b-part-t16", Pin, configB.Revision), default);
+
         // Advance 25h past deadline
         clock.UtcNow = clock.UtcNow.AddHours(25);
 
-        // Delete Member A's wallets so Auto-Kick refund throws an exception during Fund A processing
+        // Corrupt Member A's destination wallet by removing it so Auto-Kick refund throws ConflictException("refund_wallet_unavailable")
         var aWallets = await f.Db.Wallets.Where(w => w.OwnerUserId == memberA.Id).ToListAsync();
-        f.Db.Wallets.RemoveRange(aWallets);
+        foreach (var w in aWallets) { w.Status = WalletStatus.Closed; }
         await f.Db.SaveChangesAsync();
 
         // Worker executes ProgressFixedFundDeadlinesAsync:
-        // Fund A fails and is caught/isolated safely
-        // Fund B MUST succeed completely without being affected by Fund A's failure!
+        // Fund A executes in its own IServiceScope and fresh DbContext, encounters refund error, logs and rolls back transaction.
+        // Fund B executes in its own independent IServiceScope and fresh DbContext, succeeding without corruption!
         var processed = await service.ProgressFixedFundDeadlinesAsync(default);
-        Assert.True(processed >= 1);
+        Assert.Equal(1, processed);
 
-        // Verify Fund B succeeded: Member B was auto-kicked and 72h window opened
-        var treasuryB = await f.Db.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fundB.Id);
+        // Verify isolation and rollback with a brand new DbContext
+        await using var verifyDb = f.CreateNewDbContext();
+
+        // Fund A: Transaction rolled back completely, no partial state
+        var memA = await verifyDb.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fundA.Id && m.UserId == memberA.Id);
+        Assert.Null(memA.LeftAt);
+        Assert.True(memA.RefundedVnd is null or 0);
+        var treasuryA = await verifyDb.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fundA.Id);
+        Assert.Null(treasuryA.ReplacementWindowExpiresAt);
+
+        // Fund B: Processed successfully, Member B auto-kicked, refunded, 72h window opened
+        var memB = await verifyDb.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fundB.Id && m.UserId == memberB.Id);
+        Assert.NotNull(memB.LeftAt);
+        Assert.Equal(500_000, memB.RefundedVnd);
+        var treasuryB = await verifyDb.V1FundTreasuries.AsNoTracking().SingleAsync(t => t.FundId == fundB.Id);
         Assert.NotNull(treasuryB.ReplacementWindowExpiresAt);
-        var membersB = await service.MembersAsync(ownerB.Id, fundB.Id, default);
+        var membersB = await verifyDb.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundB.Id && m.LeftAt == null).ToListAsync();
         Assert.Single(membersB);
     }
 
@@ -643,44 +719,94 @@ public sealed class FixedFundV2Stage2Tests
     {
         var clock = new MutableClock(DateTime.UtcNow);
         await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
-        var owner = await f.AddUserAsync("OwnerT17");
-        var member = await f.AddUserAsync("MemberT17");
-        await V1FundMembershipTests.MakeFriends(f, owner.Id, member.Id);
+
+        // -------------------------------------------------------------
+        // PART 1: Member Auto-Kick System Event
+        // -------------------------------------------------------------
+        var owner1 = await f.AddUserAsync("OwnerT17_1");
+        var member1 = await f.AddUserAsync("MemberT17_1");
+        await V1FundMembershipTests.MakeFriends(f, owner1.Id, member1.Id);
 
         var service = CreateService(f.Db, clock, f);
-        var fund = await service.CreateAsync(owner.Id, new("FundT17", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
-        var inv = await service.InviteAsync(owner.Id, fund.Id, member.Id, default);
-        await service.AcceptAsync(member.Id, inv.Id, true, "v2.0", default);
-        var config = await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
+        var fund1 = await service.CreateAsync(owner1.Id, new("FundT17_1", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv1 = await service.InviteAsync(owner1.Id, fund1.Id, member1.Id, default);
+        await service.AcceptAsync(member1.Id, inv1.Id, true, "v2.0", default);
+        var config1 = await service.ConfirmObligationsAsync(owner1.Id, fund1.Id, new(4_000_000, Pin), default);
 
-        var oWallet = await f.AddWalletAsync(owner.Id, "OWalletT17", true, balance: 2_000_000);
-        await service.ContributeAsync(owner.Id, fund.Id, new(oWallet.Id, 2_000_000, "o-t17", Pin, config.Revision), default);
+        var oWallet1 = await f.AddWalletAsync(owner1.Id, "OWalletT17_1", true, balance: 2_000_000);
+        await service.ContributeAsync(owner1.Id, fund1.Id, new(oWallet1.Id, 2_000_000, "o1-t17", Pin, config1.Revision), default);
 
-        // Record member's baseline LastActionAt
-        var initialAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member.Id);
-        var baselineLastActionAt = initialAction?.LastActionAt;
+        // Record member1's baseline LastActionAt
+        var initialMemberAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member1.Id);
+        var baselineMemberLastActionAt = initialMemberAction?.LastActionAt;
 
         // Advance 25h past deadline
         clock.UtcNow = clock.UtcNow.AddHours(25);
 
         // Auto-Kick triggered by system worker
-        var result = await service.ProcessFixedFundDeadlinesAsync(fund.Id, default);
-        Assert.Equal("MembersAutoKicked", result.Status);
+        var result1 = await service.ProcessFixedFundDeadlinesAsync(fund1.Id, default);
+        Assert.Equal("MembersAutoKicked", result1.Status);
 
-        // 1. Audit Activity recorded with ActorUserId == null (System Event) and SubjectUserId == member.Id
+        // 1. Audit Activity recorded with ActorUserId == null (System Event) and SubjectUserId == member1.Id
         var autoKickActivity = await f.Db.V1FundActivities.AsNoTracking()
-            .SingleAsync(a => a.FundId == fund.Id && a.Event == "MemberAutoKicked");
+            .SingleAsync(a => a.FundId == fund1.Id && a.Event == "MemberAutoKicked");
         Assert.Null(autoKickActivity.ActorUserId);
-        Assert.Equal(member.Id, autoKickActivity.SubjectUserId);
+        Assert.Equal(member1.Id, autoKickActivity.SubjectUserId);
 
-        // 2. Member's LastActionAt in V1UserActivities was NOT updated by Auto-Kick!
-        var afterAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member.Id);
-        Assert.Equal(baselineLastActionAt, afterAction?.LastActionAt);
+        // 2. Member1's LastActionAt in V1UserActivities was NOT updated by Auto-Kick!
+        var afterMemberAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == member1.Id);
+        Assert.Equal(baselineMemberLastActionAt, afterMemberAction?.LastActionAt);
 
-        // 3. Notification was delivered to the auto-kicked member
-        var notifications = await f.Db.Notifications.AsNoTracking()
-            .Where(n => n.UserId == member.Id)
+        // 3. Notification specifically targets auto-kick event payload
+        var autoKickNotif = await f.Db.Notifications.AsNoTracking()
+            .SingleOrDefaultAsync(n => n.UserId == member1.Id && (n.Message == "MemberAutoKicked" || (n.DataJson != null && n.DataJson.Contains("MemberAutoKicked"))));
+        Assert.NotNull(autoKickNotif);
+        Assert.Equal("MemberAutoKicked", autoKickNotif.Message);
+        Assert.Contains("MemberAutoKicked", autoKickNotif.DataJson!);
+        Assert.Contains(member1.Id.ToString(), autoKickNotif.DataJson!);
+
+        // -------------------------------------------------------------
+        // PART 2: Owner Funding Failure System Event
+        // -------------------------------------------------------------
+        var owner2 = await f.AddUserAsync("OwnerT17_2");
+        var member2 = await f.AddUserAsync("MemberT17_2");
+        await V1FundMembershipTests.MakeFriends(f, owner2.Id, member2.Id);
+
+        var fund2 = await service.CreateAsync(owner2.Id, new("FundT17_2", "Fixed", 4_000_000, Pin, 24, true, "v2.0"), default);
+        var inv2 = await service.InviteAsync(owner2.Id, fund2.Id, member2.Id, default);
+        await service.AcceptAsync(member2.Id, inv2.Id, true, "v2.0", default);
+        var config2 = await service.ConfirmObligationsAsync(owner2.Id, fund2.Id, new(4_000_000, Pin), default);
+
+        // Member2 contributes full 2,000,000 VND, Owner2 contributes 0 VND (fails deadline)
+        var mWallet2 = await f.AddWalletAsync(member2.Id, "MWalletT17_2", true, balance: 2_000_000);
+        await service.ContributeAsync(member2.Id, fund2.Id, new(mWallet2.Id, 2_000_000, "m2-t17", Pin, config2.Revision), default);
+
+        // Record owner2's baseline LastActionAt
+        var initialOwnerAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == owner2.Id);
+        var baselineOwnerLastActionAt = initialOwnerAction?.LastActionAt;
+
+        // Advance 25h past deadline
+        clock.UtcNow = clock.UtcNow.AddHours(25);
+
+        // Owner funding failure triggered by system worker
+        var result2 = await service.ProcessFixedFundDeadlinesAsync(fund2.Id, default);
+        Assert.Equal("OwnerFundingFailed", result2.Status);
+        Assert.True(result2.Dissolved);
+
+        // 1. Audit Activity recorded with ActorUserId == null (System Event) and SubjectUserId == owner2.Id
+        var ownerFailedActivity = await f.Db.V1FundActivities.AsNoTracking()
+            .SingleAsync(a => a.FundId == fund2.Id && a.Event == "OwnerFundingFailed");
+        Assert.Null(ownerFailedActivity.ActorUserId);
+        Assert.Equal(owner2.Id, ownerFailedActivity.SubjectUserId);
+
+        // 2. Owner2's LastActionAt in V1UserActivities was NOT updated by OwnerFundingFailed!
+        var afterOwnerAction = await f.Db.V1UserActivities.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == owner2.Id);
+        Assert.Equal(baselineOwnerLastActionAt, afterOwnerAction?.LastActionAt);
+
+        // 3. System event notification delivered for OwnerFundingFailed
+        var ownerFailedNotifs = await f.Db.Notifications.AsNoTracking()
+            .Where(n => (n.UserId == owner2.Id || n.UserId == member2.Id) && (n.Message == "OwnerFundingFailed" || (n.DataJson != null && n.DataJson.Contains("OwnerFundingFailed"))))
             .ToListAsync();
-        Assert.NotEmpty(notifications);
+        Assert.Equal(2, ownerFailedNotifs.Count);
     }
 }

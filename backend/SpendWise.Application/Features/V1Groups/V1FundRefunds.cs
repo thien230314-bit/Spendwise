@@ -79,29 +79,61 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null)
                 throw new ConflictException("fund_already_dissolved", "Fund is already dissolved.");
 
-            // Idempotency check: if replayed with the same key, return previous result
-            var existingTx = await db.LedgerTransactions.AsNoTracking()
-                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId
-                    && t.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{actorUserId:N}", token);
-            if (existingTx is not null)
-            {
-                var ft = await db.FinancialTransactions.AsNoTracking()
-                    .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
-                return new V1RefundResultDto(
-                    fund.Id,
-                    actorUserId,
-                    (long)(ft?.Amount ?? 0),
-                    ft?.WalletId,
-                    existingTx.Id,
-                    "Completed",
-                    "Replayed",
-                    existingTx.CreatedAt);
-            }
-
             var membership = await db.V1FundMemberships.SingleOrDefaultAsync(
                 m => m.FundId == fundId && m.UserId == actorUserId && m.LeftAt == null, token);
-            if (membership is null)
+
+            if (membership is not null)
             {
+                var episodeScope = $"v1-fund-refund:{fundId:N}:{membership.Id:N}";
+                var existingTx = await db.LedgerTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                if (existingTx is not null)
+                {
+                    if (existingTx.IdempotencyScope == episodeScope)
+                    {
+                        var ft = await db.FinancialTransactions.AsNoTracking()
+                            .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                        return new V1RefundResultDto(
+                            fund.Id,
+                            actorUserId,
+                            (long)(ft?.Amount ?? 0),
+                            ft?.WalletId,
+                            existingTx.Id,
+                            "Completed",
+                            "Replayed",
+                            existingTx.CreatedAt);
+                    }
+
+                    throw new ConflictException("idempotency_conflict",
+                        "Idempotency key has already been used for an earlier membership episode or different refund. Please use a unique idempotency key.");
+                }
+            }
+            else
+            {
+                var existingTx = await db.LedgerTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                if (existingTx is not null)
+                {
+                    var userPastMemIds = await db.V1FundMemberships.AsNoTracking()
+                        .Where(m => m.FundId == fundId && m.UserId == actorUserId)
+                        .Select(m => m.Id)
+                        .ToListAsync(token);
+                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}"))
+                    {
+                        var ft = await db.FinancialTransactions.AsNoTracking()
+                            .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                        return new V1RefundResultDto(
+                            fund.Id,
+                            actorUserId,
+                            (long)(ft?.Amount ?? 0),
+                            ft?.WalletId,
+                            existingTx.Id,
+                            "Completed",
+                            "Replayed",
+                            existingTx.CreatedAt);
+                    }
+                }
+
                 var pastLeft = await db.V1FundActivities.AsNoTracking()
                     .AnyAsync(a => a.FundId == fundId && a.SubjectUserId == actorUserId && a.Event == "MemberLeft", token);
                 if (pastLeft)
@@ -214,7 +246,7 @@ public sealed partial class V1FundService
                     "VND",
                     "V1FundRefund",
                     fund.Id,
-                    $"v1-fund-refund:{fund.Id:N}:{actorUserId:N}",
+                    $"v1-fund-refund:{fund.Id:N}:{membership.Id:N}",
                     key,
                     $"Hoàn tiền rời quỹ SpendWise: {fund.Name}",
                     token);
@@ -282,29 +314,61 @@ public sealed partial class V1FundService
             if (targetUserId == actorUserId)
                 throw new AppException("cannot_kick_owner", "Chủ nhóm không thể kick chính mình.");
 
-            // Idempotency check: if replayed with same key, return previous result
-            var existingTx = await db.LedgerTransactions.AsNoTracking()
-                .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId
-                    && t.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{targetUserId:N}", token);
-            if (existingTx is not null)
-            {
-                var ft = await db.FinancialTransactions.AsNoTracking()
-                    .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
-                return new V1RefundResultDto(
-                    fund.Id,
-                    targetUserId,
-                    (long)(ft?.Amount ?? 0),
-                    ft?.WalletId,
-                    existingTx.Id,
-                    "Completed",
-                    "Replayed",
-                    existingTx.CreatedAt);
-            }
-
             var membership = await db.V1FundMemberships.SingleOrDefaultAsync(
                 m => m.FundId == fundId && m.UserId == targetUserId && m.LeftAt == null, token);
-            if (membership is null)
+
+            if (membership is not null)
             {
+                var episodeScope = $"v1-fund-refund:{fundId:N}:{membership.Id:N}";
+                var existingTx = await db.LedgerTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                if (existingTx is not null)
+                {
+                    if (existingTx.IdempotencyScope == episodeScope)
+                    {
+                        var ft = await db.FinancialTransactions.AsNoTracking()
+                            .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                        return new V1RefundResultDto(
+                            fund.Id,
+                            targetUserId,
+                            (long)(ft?.Amount ?? 0),
+                            ft?.WalletId,
+                            existingTx.Id,
+                            "Completed",
+                            "Replayed",
+                            existingTx.CreatedAt);
+                    }
+
+                    throw new ConflictException("idempotency_conflict",
+                        "Idempotency key has already been used for an earlier membership episode or different refund. Please use a unique idempotency key.");
+                }
+            }
+            else
+            {
+                var existingTx = await db.LedgerTransactions.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdempotencyKey == key && t.BusinessType == "V1FundRefund" && t.BusinessId == fundId, token);
+                if (existingTx is not null)
+                {
+                    var userPastMemIds = await db.V1FundMemberships.AsNoTracking()
+                        .Where(m => m.FundId == fundId && m.UserId == targetUserId)
+                        .Select(m => m.Id)
+                        .ToListAsync(token);
+                    if (userPastMemIds.Any(mId => existingTx.IdempotencyScope == $"v1-fund-refund:{fundId:N}:{mId:N}"))
+                    {
+                        var ft = await db.FinancialTransactions.AsNoTracking()
+                            .FirstOrDefaultAsync(f => f.LedgerTransactionId == existingTx.Id, token);
+                        return new V1RefundResultDto(
+                            fund.Id,
+                            targetUserId,
+                            (long)(ft?.Amount ?? 0),
+                            ft?.WalletId,
+                            existingTx.Id,
+                            "Completed",
+                            "Replayed",
+                            existingTx.CreatedAt);
+                    }
+                }
+
                 var pastKicked = await db.V1FundActivities.AsNoTracking()
                     .AnyAsync(a => a.FundId == fundId && a.SubjectUserId == targetUserId && a.Event == "MemberKicked", token);
                 if (pastKicked)
@@ -401,7 +465,7 @@ public sealed partial class V1FundService
                     "VND",
                     "V1FundRefund",
                     fund.Id,
-                    $"v1-fund-refund:{fund.Id:N}:{targetUserId:N}",
+                    $"v1-fund-refund:{fund.Id:N}:{membership.Id:N}",
                     key,
                     $"Hoàn tiền kick khỏi quỹ SpendWise: {fund.Name}",
                     token);
@@ -522,7 +586,7 @@ public sealed partial class V1FundService
                             "VND",
                             "V1FundRefund",
                             fund.Id,
-                            $"v1-fund-refund:{fund.Id:N}:{m.UserId:N}",
+                            $"v1-fund-refund:{fund.Id:N}:{m.Id:N}",
                             $"{key}:{m.UserId:N}",
                             $"Hoàn tiền giải tán quỹ: {fund.Name}",
                             token);

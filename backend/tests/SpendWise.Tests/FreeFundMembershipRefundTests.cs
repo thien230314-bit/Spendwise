@@ -1,3 +1,7 @@
+using SpendWise.Infrastructure.Persistence;
+using SpendWise.Infrastructure.Identity;
+using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Notifications;
 using Microsoft.EntityFrameworkCore;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
@@ -14,6 +18,16 @@ public class FreeFundMembershipRefundTests
     private sealed class MutableClock(DateTime utcNow) : IClock
     {
         public DateTime UtcNow { get; set; } = utcNow;
+    }
+
+    private sealed class ConcurrentMonotonicClock(DateTime baseTime) : IClock
+    {
+        private long _offsetTicks;
+        public DateTime UtcNow
+        {
+            get => baseTime.AddTicks(System.Threading.Interlocked.Add(ref _offsetTicks, TimeSpan.FromSeconds(1).Ticks));
+            set => System.Threading.Interlocked.Exchange(ref _offsetTicks, (value - baseTime).Ticks);
+        }
     }
 
     [Fact]
@@ -445,5 +459,392 @@ public class FreeFundMembershipRefundTests
         // Wallet balance increased by exactly 500,000 VND (not double)
         var walletBAfter = await f.Db.LedgerAccounts.AsNoTracking().FirstAsync(a => a.WalletId == walletB.Id);
         Assert.Equal(500_000 + 500_000, walletBAfter.Balance);
+    }
+
+    private sealed class FaultyNotificationService(INotificationService inner) : INotificationService
+    {
+        public bool FailOnCreateMany { get; set; } = true;
+
+        public Task<NotificationDto> CreateAsync(Guid userId, string type, string title, string message, object? data, CancellationToken cancellationToken) =>
+            inner.CreateAsync(userId, type, title, message, data, cancellationToken);
+
+        public Task<IReadOnlyList<NotificationDto>> CreateManyAsync(
+            IReadOnlyCollection<CreateNotificationRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            if (FailOnCreateMany)
+            {
+                throw new InvalidOperationException("Injected notification failure during refund activity.");
+            }
+            return inner.CreateManyAsync(requests, cancellationToken);
+        }
+    }
+
+    private static V1FundService CreateService(SpendWiseDbContext db, IClock clock, INotificationService? notif = null)
+    {
+        var sec = new FinancialSecurityGuard(db, new SecurityPinService(), new AccountCredentialLockout(db, clock));
+        var n = notif ?? new SpendWise.Infrastructure.Notifications.NotificationService(db);
+        var ledger = new SpendWise.Infrastructure.Finance.LedgerService(db, clock);
+        var bankGuard = new SpendWise.Application.Features.Banking.ActiveBankGuard(db);
+        return new V1FundService(db, clock, sec, n, ledger, bankGuard);
+    }
+
+    [Fact]
+    public async Task FreeFund_Leave_Rejoin_IdempotencyConflict_AndEpisodeIsolation()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("RejoinFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite1 = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invite1.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 500_000, "c-a1", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 500_000, "c-b1", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Episode 1: B leaves with key K1
+        var leave1 = await s.LeaveFundAsync(memberB.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-key-ep1"), default);
+        Assert.Equal(500_000, leave1.RefundAmountVnd);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // B rejoins fund (Episode 2)
+        var invite2 = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invite2.Id, default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // B contributes 200k in Episode 2
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 200_000, "c-b2", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // B attempts to leave Episode 2 using K1 from Episode 1 -> throws idempotency_conflict
+        var exConflict = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "leave-key-ep1"), default));
+        Assert.Equal("idempotency_conflict", exConflict.Code);
+
+        // B leaves Episode 2 using new key K2 -> succeeds with Episode 2 equity (200k)
+        var leave2 = await s.LeaveFundAsync(memberB.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-key-ep2"), default);
+        Assert.Equal(200_000, leave2.RefundAmountVnd);
+        Assert.Equal("Completed", leave2.Status);
+
+        // Replaying K1 now returns past left replay for Episode 1 without conflict or double debit
+        var replay1 = await s.LeaveFundAsync(memberB.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-key-ep1"), default);
+        Assert.Equal(500_000, replay1.RefundAmountVnd);
+        Assert.Equal("Replayed", replay1.CaseType);
+    }
+
+    [Fact]
+    public async Task FreeFund_Leave_MultiRequestHeadroom_CancelsNewestFirst_KeepsOlderRequest()
+    {
+        // User.md row 66:
+        // Fund 800k. B approved 500k (older), C approved 300k (newer).
+        // Member D refund leaves fund at 600k -> Cancels C (300k, newest), keeps B (500k, older, 500k <= 600k).
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        var memberC = await f.AddUserAsync("MemberC");
+        var memberD = await f.AddUserAsync("MemberD");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberC.Id);
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberD.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("MultiHeadroomFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invB = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invB.Id, default);
+        var invC = await s.InviteAsync(ownerA.Id, fund.Id, memberC.Id, default);
+        await s.AcceptAsync(memberC.Id, invC.Id, default);
+        var invD = await s.InviteAsync(ownerA.Id, fund.Id, memberD.Id, default);
+        await s.AcceptAsync(memberD.Id, invD.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+        var walletC = await f.AddWalletAsync(memberC.Id, "WalletC", true, balance: 1_000_000);
+        var walletD = await f.AddWalletAsync(memberD.Id, "WalletD", true, balance: 1_000_000);
+
+        // Total 800k: A=300k, B=200k, C=100k, D=200k
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 300_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 200_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberC.Id, fund.Id, new(walletC.Id, 100_000, "c-c", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberD.Id, fund.Id, new(walletD.Id, 200_000, "c-d", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // B creates 500k request, approved at T1 (older)
+        var reqB = await s.CreateFundRequestAsync(memberB.Id, fund.Id,
+            new("Expense", 500_000, memberB.Id, "Equip B", "exp-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ReviewFundRequestAsync(ownerA.Id, reqB.Id, true, "Approved B", TargetedCorrectnessFixture.SecurityPin, default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // C creates 300k request, approved at T2 (newer)
+        var reqC = await s.CreateFundRequestAsync(memberC.Id, fund.Id,
+            new("Expense", 300_000, memberC.Id, "Equip C", "exp-c", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ReviewFundRequestAsync(ownerA.Id, reqC.Id, true, "Approved C", TargetedCorrectnessFixture.SecurityPin, default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // D leaves fund: D's equity is 200k. Fund balance after refund = 800k - 200k = 600,000 VND.
+        // Total active ApprovedUnused = 500k + 300k = 800k > 600k.
+        // Cancellation loop cancels newest (C, 300k). Remaining = 500k <= 600k.
+        // B (500k) is KEPT!
+        var leaveResult = await s.LeaveFundAsync(memberD.Id, fund.Id,
+            new(TargetedCorrectnessFixture.SecurityPin, "leave-d-headroom"), default);
+        Assert.Equal(200_000, leaveResult.RefundAmountVnd);
+
+        // Verify C is Cancelled
+        var reqCAfter = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == reqC.Id);
+        Assert.Equal("Cancelled", reqCAfter.State);
+        Assert.Contains("không còn đủ số dư dự trù", reqCAfter.ReviewReason);
+
+        // Verify B is STILL ApprovedUnused
+        var reqBAfter = await f.Db.V1FundRequests.AsNoTracking().FirstAsync(r => r.Id == reqB.Id);
+        Assert.Equal("ApprovedUnused", reqBAfter.State);
+        Assert.Null(reqBAfter.CancelledAt);
+
+        // Verify Treasury balance is exactly 600,000 VND
+        var treasury = await f.Db.V1FundTreasuries.AsNoTracking().FirstAsync(t => t.FundId == fund.Id);
+        var treasuryAccount = await f.Db.LedgerAccounts.AsNoTracking().FirstAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(600_000, treasuryAccount.Balance);
+    }
+
+    [Fact]
+    public async Task FreeFund_ConcurrentLeaveAndKick_OnlyOneSucceeds_LedgerConsistent()
+    {
+        var clock = new ConcurrentMonotonicClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("ConcurrentLeaveKickFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invite.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 500_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 500_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        await using var db1 = f.CreateNewDbContext();
+        await using var db2 = f.CreateNewDbContext();
+        var s1 = CreateService(db1, clock);
+        var s2 = CreateService(db2, clock);
+
+        var t1 = Task.Run(async () =>
+        {
+            try
+            {
+                var res = await s1.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "concurrent-leave"), default);
+                return (Success: true, Result: (V1RefundResultDto?)res, Error: (string?)null);
+            }
+            catch (Exception ex)
+            {
+                return (Success: false, Result: (V1RefundResultDto?)null, Error: ex.ToString());
+            }
+        });
+
+        var t2 = Task.Run(async () =>
+        {
+            try
+            {
+                var res = await s2.KickMemberAsync(ownerA.Id, fund.Id, memberB.Id, new(TargetedCorrectnessFixture.SecurityPin, "Rule violation", "concurrent-kick"), default);
+                return (Success: true, Result: (V1RefundResultDto?)res, Error: (string?)null);
+            }
+            catch (Exception ex)
+            {
+                return (Success: false, Result: (V1RefundResultDto?)null, Error: ex.ToString());
+            }
+        });
+
+        var results = await Task.WhenAll(t1, t2);
+        var successes = results.Count(r => r.Success);
+        var failures = results.Count(r => !r.Success);
+
+        Assert.Equal(1, successes);
+        Assert.Equal(1, failures);
+
+        await using var verifyDb = f.CreateNewDbContext();
+        var refundTxs = await verifyDb.LedgerTransactions.AsNoTracking()
+            .Where(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id)
+            .ToListAsync();
+        Assert.Single(refundTxs);
+
+        var refundFts = await verifyDb.FinancialTransactions.AsNoTracking()
+            .Where(f => f.RelatedBusinessId == fund.Id && f.Type == FinancialTransactionType.Refund)
+            .ToListAsync();
+        Assert.Single(refundFts);
+        Assert.Equal(500_000, refundFts[0].Amount);
+
+        var treasury = await verifyDb.V1FundTreasuries.AsNoTracking().FirstAsync(t => t.FundId == fund.Id);
+        var treasuryAccount = await verifyDb.LedgerAccounts.AsNoTracking().FirstAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(500_000, treasuryAccount.Balance);
+
+        var walletBAccount = await verifyDb.LedgerAccounts.AsNoTracking().FirstAsync(a => a.WalletId == walletB.Id);
+        Assert.Equal(1_000_000, walletBAccount.Balance);
+    }
+
+    [Fact]
+    public async Task FreeFund_ConcurrentLeaveAndDissolve_PreservesZeroBalanceInvariant()
+    {
+        var clock = new ConcurrentMonotonicClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("ConcurrentLeaveDissolveFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invite.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 600_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 400_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        await using var db1 = f.CreateNewDbContext();
+        await using var db2 = f.CreateNewDbContext();
+        var s1 = CreateService(db1, clock);
+        var s2 = CreateService(db2, clock);
+
+        var taskLeave = Task.Run(async () =>
+        {
+            try
+            {
+                await s1.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "conc-leave"), default);
+                return (Op: "Leave", Success: true, Error: (string?)null);
+            }
+            catch (Exception ex)
+            {
+                return (Op: "Leave", Success: false, Error: ex.ToString());
+            }
+        });
+
+        var taskDissolve = Task.Run(async () =>
+        {
+            try
+            {
+                await s2.DissolveFundAsync(ownerA.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "conc-dissolve"), default);
+                return (Op: "Dissolve", Success: true, Error: (string?)null);
+            }
+            catch (Exception ex)
+            {
+                return (Op: "Dissolve", Success: false, Error: ex.ToString());
+            }
+        });
+
+        var resLeave = await taskLeave;
+        var resDissolve = await taskDissolve;
+
+        // If dissolve was rejected due to concurrent transaction lock, retry dissolve to complete dissolution
+        if (!resDissolve.Success)
+        {
+            await using var dbRetry = f.CreateNewDbContext();
+            var sRetry = CreateService(dbRetry, clock);
+            await sRetry.DissolveFundAsync(ownerA.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "conc-dissolve-retry"), default);
+        }
+
+        // Verify Invariants on fresh context
+        await using var verifyDb = f.CreateNewDbContext();
+        var fundDb = await verifyDb.V1Funds.AsNoTracking().FirstAsync(u => u.Id == fund.Id);
+        Assert.NotNull(fundDb.DissolvedAt);
+
+        var treasury = await verifyDb.V1FundTreasuries.AsNoTracking().FirstAsync(t => t.FundId == fund.Id);
+        var treasuryAccount = await verifyDb.LedgerAccounts.AsNoTracking().FirstAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(0, treasuryAccount.Balance);
+
+        var totalRefunds = await verifyDb.FinancialTransactions.AsNoTracking()
+            .Where(f => f.RelatedBusinessId == fund.Id && f.Type == FinancialTransactionType.Refund)
+            .SumAsync(f => f.Amount);
+        Assert.Equal(1_000_000, totalRefunds);
+    }
+
+    [Fact]
+    public async Task FreeFund_Leave_RollsBackTransaction_WhenNotificationFails()
+    {
+        var clock = new MutableClock(new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc));
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var ownerA = await f.AddUserAsync("OwnerA");
+        var memberB = await f.AddUserAsync("MemberB");
+        await V1FundMembershipTests.MakeFriends(f, ownerA.Id, memberB.Id);
+
+        var s = V1FundMembershipTests.Service(f);
+        var fund = await s.CreateAsync(ownerA.Id, new("RollbackLeaveFund", "Free", null, TargetedCorrectnessFixture.SecurityPin), default);
+
+        var invite = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invite.Id, default);
+
+        var walletA = await f.AddWalletAsync(ownerA.Id, "WalletA", true, balance: 1_000_000);
+        var walletB = await f.AddWalletAsync(memberB.Id, "WalletB", true, balance: 1_000_000);
+
+        await s.ContributeAsync(ownerA.Id, fund.Id, new(walletA.Id, 500_000, "c-a", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+        await s.ContributeAsync(memberB.Id, fund.Id, new(walletB.Id, 500_000, "c-b", TargetedCorrectnessFixture.SecurityPin), default);
+        clock.UtcNow = clock.UtcNow.AddMinutes(1);
+
+        // Inject faulty notification
+        await using var isolatedDb = f.CreateNewDbContext();
+        var baseNotif = new SpendWise.Infrastructure.Notifications.NotificationService(isolatedDb);
+        var faultyNotif = new FaultyNotificationService(baseNotif) { FailOnCreateMany = true };
+        var faultyService = CreateService(isolatedDb, clock, faultyNotif);
+
+        // Attempt leave: throws during notification inside transaction
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            faultyService.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "leave-fail"), default));
+        Assert.Contains("Injected notification failure", ex.Message);
+
+        // Verify transaction rolled back on fresh context:
+        await using var verifyDb = f.CreateNewDbContext();
+        var memB = await verifyDb.V1FundMemberships.AsNoTracking().FirstAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id);
+        Assert.Null(memB.LeftAt);
+        Assert.Equal(0, memB.RefundedVnd);
+
+        var refundTxs = await verifyDb.LedgerTransactions.AsNoTracking()
+            .Where(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id)
+            .ToListAsync();
+        Assert.Empty(refundTxs);
+
+        var treasury = await verifyDb.V1FundTreasuries.AsNoTracking().FirstAsync(t => t.FundId == fund.Id);
+        var treasuryAccount = await verifyDb.LedgerAccounts.AsNoTracking().FirstAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(1_000_000, treasuryAccount.Balance);
+
+        // Retry on fresh request/service with healthy notification succeeds
+        await using var retryDb = f.CreateNewDbContext();
+        var retryNotif = new SpendWise.Infrastructure.Notifications.NotificationService(retryDb);
+        var retryService = CreateService(retryDb, clock, retryNotif);
+        var retryResult = await retryService.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, "leave-fail"), default);
+        Assert.Equal(500_000, retryResult.RefundAmountVnd);
+        Assert.Equal("Completed", retryResult.Status);
+
+        await using var verifyDb2 = f.CreateNewDbContext();
+        var memBAfter = await verifyDb2.V1FundMemberships.AsNoTracking().FirstAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id);
+        Assert.NotNull(memBAfter.LeftAt);
+        Assert.Equal(500_000, memBAfter.RefundedVnd);
     }
 }

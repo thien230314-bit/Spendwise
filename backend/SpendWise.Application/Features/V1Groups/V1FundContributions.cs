@@ -112,8 +112,9 @@ public sealed partial class V1FundService
             var membership = await db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fundId && m.UserId == userId && m.LeftAt == null, token);
 
             if (fund.Kind == V1FundKind.Fixed)
-
             {
+                if (membership.ContributionDeadline.HasValue && clock.UtcNow >= membership.ContributionDeadline.Value)
+                    throw new ConflictException("contribution_deadline_passed", "Contribution deadline has passed.");
 
                 var members = await ActiveMembersAsync(fundId, token);
 

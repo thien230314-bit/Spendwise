@@ -1,15 +1,33 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.RegularExpressions;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SpendWise.Application.Common.Exceptions;
 using SpendWise.Application.Common.Interfaces;
+using SpendWise.Application.Features;
+using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Features.Banking;
 using SpendWise.Application.Features.V1Groups;
+using SpendWise.Application.Features.Wallets;
+using SpendWise.Domain.Banking;
 using SpendWise.Domain.Finance;
 using SpendWise.Domain.Identity;
+using SpendWise.Domain.Social;
 using SpendWise.Domain.V1Groups;
-using Microsoft.EntityFrameworkCore;
+using SpendWise.Infrastructure.Finance;
+using SpendWise.Infrastructure.Identity;
+using SpendWise.Infrastructure.Notifications;
+using SpendWise.Infrastructure.Persistence;
+using SpendWise.Infrastructure.Services;
 using Xunit;
 
 namespace SpendWise.Tests;
 
-public sealed class FixedFundV2Stage5Tests
+public sealed class FixedFundV2Stage5Tests : SqlTestFixtureScope
 {
     private const string Pin = TargetedCorrectnessFixture.SecurityPin;
 
@@ -23,6 +41,144 @@ public sealed class FixedFundV2Stage5Tests
     {
         public Task<V1InactivityProof> GetAsync(Guid userId, CancellationToken ct) =>
             Task.FromResult(new V1InactivityProof(true, true, "Synthetic-qualified-inactivity-proof"));
+    }
+
+    private sealed class Stage5SqlDatabase : IAsyncDisposable
+    {
+        private readonly string name = "SpendWise_FinancialS05_Test_" + Guid.NewGuid().ToString("N");
+        private readonly string connection;
+        private bool ownsCatalog;
+        public MutableClock Clock { get; }
+
+        public Stage5SqlDatabase(MutableClock clock)
+        {
+            Clock = clock;
+            connection = SqlTestFixtureLifecycle.CreateOwnedConnectionString(name,
+                Environment.GetEnvironmentVariable(SqlTestFixtureLifecycle.InstanceEnvironmentVariable) ?? @"DESKTOP-B5KA3LT\SQLEXPRESS02");
+        }
+
+        public SpendWiseDbContext Context(params IInterceptor[] interceptors) => new(
+            new DbContextOptionsBuilder<SpendWiseDbContext>().UseSqlServer(connection).AddInterceptors(interceptors).Options, Clock);
+
+        public static async Task<Stage5SqlDatabase> CreateAsync(MutableClock clock)
+        {
+            var owned = new Stage5SqlDatabase(clock);
+            SqlTestFixtureLifecycle.ValidateOwnedConnection(owned.connection);
+            await SqlTestFixtureLifecycle.CreateOwnedCatalogAsync(owned.connection);
+            owned.ownsCatalog = true;
+            return await SqlTestFixtureLifecycle.CreateAsync(async () =>
+            {
+                await using var db = owned.Context();
+                await db.Database.EnsureCreatedAsync();
+                await SqlTestFixtureLifecycle.ConfigureOwnedCatalogAsync(owned.connection);
+                return owned;
+            }, owned.DisposeAsync);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (ownsCatalog)
+            {
+                await using var db = Context();
+                await db.Database.EnsureDeletedAsync();
+                ownsCatalog = false;
+            }
+        }
+    }
+
+    private static V1FundService CreateService(SpendWiseDbContext db, IClock clock, IV1InactivityEvidence? evidence = null)
+    {
+        var security = new FinancialSecurityGuard(db, new SecurityPinService(), new AccountCredentialLockout(db, clock));
+        var notifications = new NotificationService(db);
+        var ledger = new LedgerService(db, clock);
+        var activeBank = new ActiveBankGuard(db);
+        var options = Options.Create(new V1ElectionPolicy
+        {
+            Version = "STAGE5-TEST-POLICY",
+            RegistrationSeconds = 60,
+            NominationSeconds = 60,
+            RunoffSeconds = 60,
+            ConfirmationSeconds = 60,
+            AcceptanceSeconds = 60,
+            FreezeMembership = true,
+            AllowContributions = true,
+            NoCandidatesOutcome = "Fail",
+            NoVotesOutcome = "Fail",
+            AcceptanceExpiryOutcome = "Fail",
+            EligibilityChangeOutcome = "Fail"
+        });
+        return new V1FundService(db, clock, security, notifications, ledger, activeBank, options, evidence ?? new QualifiedInactivityEvidence());
+    }
+
+    private static async Task<User> SeedUserAsync(SpendWiseDbContext db, string name, DateTime? emailVerifiedAt = null)
+    {
+        var unique = Guid.NewGuid().ToString("N");
+        var email = $"{unique}@test.local";
+        var user = new User
+        {
+            FullName = name,
+            Email = email,
+            NormalizedEmail = email.ToUpperInvariant(),
+            SpendId = unique,
+            NormalizedSpendId = unique.ToUpperInvariant(),
+            PasswordHash = "test-hash",
+            SecurityPinHash = new SecurityPinService().Hash(Pin),
+            Status = UserStatus.Active,
+            SystemRole = SystemRole.User,
+            EmailVerifiedAt = emailVerifiedAt ?? DateTime.UtcNow
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var bankConnection = new BankConnection
+        {
+            UserId = user.Id,
+            Provider = BankProvider.SePayBankHub,
+            AccountEnvironment = SePayAccountEnvironment.TestMode,
+            ExternalAccountId = $"ACC_{unique}",
+            BankBrandName = "MBBank",
+            AccountHolderName = name,
+            MaskedAccountNumber = "****1234",
+            Status = BankConnectionStatus.Active,
+            LinkedAt = DateTime.UtcNow
+        };
+        db.BankConnections.Add(bankConnection);
+        await db.SaveChangesAsync();
+
+        return user;
+    }
+
+    private static async Task<Wallet> SeedWalletAsync(SpendWiseDbContext db, Guid ownerUserId, string name, decimal balance)
+    {
+        var wallet = WalletFactory.Create(ownerUserId, name, WalletType.Main, true);
+        wallet.Status = WalletStatus.Active;
+        wallet.AvailableBalance = balance;
+        wallet.LedgerAccount.Balance = balance;
+        db.Wallets.Add(wallet);
+        await db.SaveChangesAsync();
+        return wallet;
+    }
+
+    private static async Task MakeFriendsAsync(SpendWiseDbContext db, Guid first, Guid second, DateTime utcNow)
+    {
+        var lower = first.CompareTo(second) < 0 ? first : second;
+        var higher = lower == first ? second : first;
+        var request = new FriendRequest
+        {
+            RequesterUserId = first,
+            AddresseeUserId = second,
+            LowerUserId = lower,
+            HigherUserId = higher,
+            Status = FriendRequestStatus.Accepted
+        };
+        db.Friendships.Add(new Friendship
+        {
+            LowerUserId = lower,
+            HigherUserId = higher,
+            AcceptedRequest = request,
+            AcceptedAt = utcNow
+        });
+        await db.SaveChangesAsync();
     }
 
     private static async Task<(TargetedCorrectnessFixture F, MutableClock Clock, V1FundService Service, V1FundDto Fund, User Owner, User MemberA, User MemberB)>
@@ -67,7 +223,7 @@ public sealed class FixedFundV2Stage5Tests
     // =========================================================================
     // T28: Idempotency & Replay Safety (LeaveFund / Kick / Worker retry)
     // Exactly one ledger debit, duplicate execution returns cached/replayed result
-    // Worker retries produce 0 duplicate transactions
+    // Post-settlement worker retry produces 0 duplicate transactions
     // =========================================================================
     [Fact]
     public async Task T28_Idempotency_DoubleRefund_And_WorkerRetry_ZeroDuplicateLedgerEntries()
@@ -97,72 +253,139 @@ public sealed class FixedFundV2Stage5Tests
         Assert.Equal(refund1.RefundAmountVnd, refund2.RefundAmountVnd);
         Assert.Equal(refund1.LedgerTransactionId, refund2.LedgerTransactionId);
 
-        // 3. Worker retry: Run background deadline worker multiple times
-        var workerRuns1 = await service.ProgressFixedFundDeadlinesAsync(default);
-        var workerRuns2 = await service.ProgressFixedFundDeadlinesAsync(default);
-
-        // Verify in database: exactly 1 LedgerTransaction exists with this idempotency key
+        // Exactly 1 LedgerTransaction exists with this idempotency key
         var ledgerTxCount = await f.Db.LedgerTransactions.CountAsync(t => t.IdempotencyKey == idempotencyKey);
         Assert.Equal(1, ledgerTxCount);
-
-        // Verify total LedgerTransactions of type V1FundRefund for this fund is exactly 1
-        var totalRefundTxs = await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id);
-        Assert.Equal(1, totalRefundTxs);
 
         // Verify Member A's wallet was credited exactly once (+1,000,000 VND)
         var memAWallet = await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Name == "WA5");
         Assert.Equal(10_000_000, memAWallet.AvailableBalance);
+
+        // 3. Post-Settlement Worker Retry Hardening:
+        // Advance clock past the 24-hour failed election opt-out window
+        clock.Advance(TimeSpan.FromHours(25));
+
+        // 4. Worker executes compulsory dissolution and refunds remaining active members (Owner and Member B)
+        var workerRuns1 = await service.ProgressFixedFundDeadlinesAsync(default);
+        Assert.True(workerRuns1 > 0);
+
+        var fundDbAfterDissolve = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
+        Assert.NotNull(fundDbAfterDissolve.DissolvedAt);
+
+        // Treasury ledger account is exactly 0 VND
+        var treasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Code == "V1-FUND:" + fund.Id.ToString("N"));
+        Assert.Equal(0, treasuryAcc.Balance);
+
+        // Record total refund LedgerTransactions and wallet balances after dissolution
+        var totalRefundTxsAfterDissolve = await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id);
+        var ownerWalletBal = (await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Name == "WOwner5")).AvailableBalance;
+        var memBWalletBal = (await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Name == "WB5")).AvailableBalance;
+
+        // 5. Worker retry idempotency: Run worker repeatedly after dissolution
+        var retryRuns1 = await service.ProgressFixedFundDeadlinesAsync(default);
+        var retryRuns2 = await service.ProgressFixedFundDeadlinesAsync(default);
+
+        // Assert zero new refund transactions created on subsequent retries
+        var totalRefundTxsAfterRetries = await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id);
+        Assert.Equal(totalRefundTxsAfterDissolve, totalRefundTxsAfterRetries);
+
+        // Assert wallet balances remain identical (no double crediting)
+        var ownerWalletBalRetry = (await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Name == "WOwner5")).AvailableBalance;
+        var memBWalletBalRetry = (await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Name == "WB5")).AvailableBalance;
+        Assert.Equal(ownerWalletBal, ownerWalletBalRetry);
+        Assert.Equal(memBWalletBal, memBWalletBalRetry);
+
+        // Treasury remains strictly 0 VND
+        var treasuryAccRetry = await f.Db.LedgerAccounts.SingleAsync(a => a.Code == "V1-FUND:" + fund.Id.ToString("N"));
+        Assert.Equal(0, treasuryAccRetry.Balance);
     }
 
     // =========================================================================
-    // T29: Concurrency & State Ordering Safety
-    // Simultaneous worker execution and contribution request:
-    // Atomic state transition: either worker auto-kicks first and rejects contribution,
-    // or contribution succeeds first and worker aborts auto-kick.
-    // Strict assertion on error code; no hybrid state.
+    // T29: Concurrency & State Ordering Safety with Isolated SQL Server Transactions
+    // Independent DbContexts and connections on isolated SQL Server database.
+    // Branch 1: Worker auto-kick vs Concurrent late contribution after deadline.
+    // Branch 2: On-time contribution before deadline vs Worker after deadline.
+    // Strict assertion: Zero hybrid state, deadline bypass strictly prohibited.
     // =========================================================================
     [Fact]
     public async Task T29_ConcurrencyAndOrdering_SimultaneousDeadlineWorkerAndContribution_StrictStateIntegrity()
     {
         var clock = new MutableClock(new DateTime(2026, 11, 2, 0, 0, 0, DateTimeKind.Utc));
-        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var database = await OwnAsync(Stage5SqlDatabase.CreateAsync(clock));
 
-        var owner = await f.AddUserAsync("Owner T29");
-        var memberA = await f.AddUserAsync("Member A T29");
-        await V1FundMembershipTests.MakeFriends(f, owner.Id, memberA.Id);
+        // ---------------------------------------------------------------------
+        // BRANCH 1: Worker Deadline Auto-Kick vs Concurrent Late Contribution
+        // ---------------------------------------------------------------------
+        Guid fundId;
+        Guid ownerId;
+        Guid memberAId;
+        Guid wOwnerId;
+        Guid wAId;
+        long obligationRevision;
 
-        var service1 = V1ElectionTests.Configured(f);
-        var service2 = V1ElectionTests.Configured(f);
+        await using (var dbSetup = database.Context())
+        {
+            var owner = await SeedUserAsync(dbSetup, "Owner T29 SQL", clock.UtcNow);
+            var memberA = await SeedUserAsync(dbSetup, "Member A T29 SQL", clock.UtcNow);
+            await MakeFriendsAsync(dbSetup, owner.Id, memberA.Id, clock.UtcNow);
 
-        var fund = await service1.CreateAsync(owner.Id, new("Fund T29", "Fixed", 2_000_000, Pin, 24, true, "v2.0"), default);
+            var serviceSetup = CreateService(dbSetup, clock);
+            var fund = await serviceSetup.CreateAsync(owner.Id, new("Fund T29 SQL", "Fixed", 2_000_000, Pin, 24, true, "v2.0"), default);
 
-        var invA = await service1.InviteAsync(owner.Id, fund.Id, memberA.Id, default);
-        await service1.AcceptAsync(memberA.Id, invA.Id, true, "v2.0", default);
+            var invA = await serviceSetup.InviteAsync(owner.Id, fund.Id, memberA.Id, default);
+            await serviceSetup.AcceptAsync(memberA.Id, invA.Id, true, "v2.0", default);
 
-        var config = await service1.ConfirmObligationsAsync(owner.Id, fund.Id, new(2_000_000, Pin), default);
+            var config = await serviceSetup.ConfirmObligationsAsync(owner.Id, fund.Id, new(2_000_000, Pin), default);
 
-        var wOwner = await f.AddWalletAsync(owner.Id, "WOwner29", true, balance: 5_000_000);
-        var wA = await f.AddWalletAsync(memberA.Id, "WA29", true, balance: 5_000_000);
+            var wOwner = await SeedWalletAsync(dbSetup, owner.Id, "WOwner29", balance: 5_000_000);
+            var wA = await SeedWalletAsync(dbSetup, memberA.Id, "WA29", balance: 5_000_000);
 
-        // Owner contributes 1,000,000 VND
-        await service1.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 1_000_000, "c-owner-29", Pin, config.Revision), default);
+            // Owner contributes 1,000,000 VND
+            await serviceSetup.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 1_000_000, "c-owner-29-sql", Pin, config.Revision), default);
 
-        // Member A only contributes partial 500,000 VND
-        await service1.ContributeAsync(memberA.Id, fund.Id, new(wA.Id, 500_000, "c-a-partial-29", Pin, config.Revision), default);
+            // Member A contributes partial 500,000 VND on time
+            await serviceSetup.ContributeAsync(memberA.Id, fund.Id, new(wA.Id, 500_000, "c-a-partial-29-sql", Pin, config.Revision), default);
 
-        // Advance clock to exactly at/after deadline
+            fundId = fund.Id;
+            ownerId = owner.Id;
+            memberAId = memberA.Id;
+            wOwnerId = wOwner.Id;
+            wAId = wA.Id;
+            obligationRevision = config.Revision;
+        }
+
+        // Advance clock to 25 hours (1 hour past the 24-hour contribution deadline)
         clock.Advance(TimeSpan.FromHours(25));
 
-        // Simultaneous execution:
-        // Worker task executing deadline processing vs Member A concurrently attempting to contribute remaining 500,000 VND
+        // Create TWO completely independent DbContexts and services on separate SQL Server connections
+        await using var dbWorker = database.Context();
+        await using var dbContribute = database.Context();
+
+        var serviceWorker = CreateService(dbWorker, clock);
+        var serviceContribute = CreateService(dbContribute, clock);
+
         Exception? contributeEx = null;
-        var workerTask = Task.Run(async () => await service1.ProgressFixedFundDeadlinesAsync(default));
+        Exception? workerEx = null;
+        int workerCount = 0;
+
+        var workerTask = Task.Run(async () =>
+        {
+            try
+            {
+                workerCount = await serviceWorker.ProgressFixedFundDeadlinesAsync(default);
+            }
+            catch (Exception ex)
+            {
+                workerEx = ex;
+            }
+        });
+
         var contributeTask = Task.Run(async () =>
         {
             try
             {
-                await service2.ContributeAsync(memberA.Id, fund.Id,
-                    new(wA.Id, 500_000, "c-a-late-concurrent", Pin, config.Revision), default);
+                await serviceContribute.ContributeAsync(memberAId, fundId,
+                    new(wAId, 500_000, "c-a-late-sql-concurrent", Pin, obligationRevision), default);
             }
             catch (Exception ex)
             {
@@ -172,42 +395,90 @@ public sealed class FixedFundV2Stage5Tests
 
         await Task.WhenAll(workerTask, contributeTask);
 
-        // Evaluate the serialized outcome:
-        var memADb = await f.Db.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fund.Id && m.UserId == memberA.Id);
+        // Assert worker execution did not throw an unhandled exception
+        Assert.Null(workerEx);
 
-        if (memADb.LeftAt != null)
+        // Member A's late contribution MUST have failed due to either:
+        // - "contribution_deadline_passed": Contribution deadline passed per server clock
+        // - "fund_not_found" / "forbidden_member_not_active": Member was already kicked by worker
+        Assert.NotNull(contributeEx);
+        var appEx = Assert.IsAssignableFrom<AppException>(contributeEx);
+        Assert.Contains(appEx.Code, new[] { "contribution_deadline_passed", "fund_not_found", "forbidden_member_not_active" });
+
+        // Verify state in independent verification DbContext
+        await using (var dbVerify = database.Context())
         {
-            // Case 1: Worker executed first and Auto-Kicked Member A
-            // Member A must have had their late contribution rejected with specific exception
-            Assert.NotNull(contributeEx);
-            var appEx = Assert.IsAssignableFrom<AppException>(contributeEx);
-            Assert.Contains(appEx.Code, new[] { "fund_not_found", "forbidden_member_not_active", "fund_obligation_not_found", "conflict_member_departed" });
+            var memADb = await dbVerify.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fundId && m.UserId == memberAId);
 
-            // Exactly 500,000 VND was refunded to Member A
-            var memAWallet = await f.Db.Wallets.AsNoTracking().SingleAsync(w => w.Id == wA.Id);
+            // Member A must have been auto-kicked by the deadline worker
+            Assert.NotNull(memADb.LeftAt);
+
+            // Exactly 500,000 VND deposit was refunded to Member A
+            var memAWallet = await dbVerify.Wallets.AsNoTracking().SingleAsync(w => w.Id == wAId);
             Assert.Equal(5_000_000, memAWallet.AvailableBalance);
 
-            // Fund has remaining balance 1,000,000 VND (Owner's share)
-            var fin = await service1.FinanceAsync(owner.Id, fund.Id, default);
-            Assert.Equal(1_000_000, fin.BalanceVnd);
+            // Fund treasury ledger account has exactly 1,000,000 VND (Owner's share)
+            var treasuryAcc = await dbVerify.LedgerAccounts.SingleAsync(a => a.Code == "V1-FUND:" + fundId.ToString("N"));
+            Assert.Equal(1_000_000, treasuryAcc.Balance);
+
+            // STRICT MUTUAL EXCLUSION ASSERTION:
+            // Under no circumstances can Member A be kicked AND have full 1,000,000 VND contributions registered
+            var totalContributionsA = await dbVerify.V1FundContributions.Where(c => c.FundId == fundId && c.UserId == memberAId).SumAsync(c => c.AmountVnd);
+            Assert.Equal(500_000, totalContributionsA);
+            Assert.False(memADb.LeftAt != null && totalContributionsA == 1_000_000,
+                "INVARIANT VIOLATION: Member was kicked yet registered full 1,000,000 VND contribution!");
         }
-        else
+
+        // ---------------------------------------------------------------------
+        // BRANCH 2: On-Time Contribution Before Deadline Is Honored & Not Kicked
+        // ---------------------------------------------------------------------
+        clock.UtcNow = new DateTime(2026, 11, 10, 0, 0, 0, DateTimeKind.Utc);
+        Guid fund2Id;
+        Guid memberBId;
+
+        await using (var db2 = database.Context())
         {
-            // Case 2: Contribution was serialized first and succeeded
-            Assert.Null(contributeEx);
-            Assert.Null(memADb.LeftAt);
-            var members = await service1.MembersAsync(owner.Id, fund.Id, default);
-            var mADto = Assert.Single(members, m => m.UserId == memberA.Id);
-            Assert.True(mADto.IndividualContributionCompleted);
+            var owner2 = await SeedUserAsync(db2, "Owner2 T29", clock.UtcNow);
+            var memberB = await SeedUserAsync(db2, "Member B T29", clock.UtcNow);
+            await MakeFriendsAsync(db2, owner2.Id, memberB.Id, clock.UtcNow);
 
-            // Fund is fully funded at 2,000,000 VND
-            var fin = await service1.FinanceAsync(owner.Id, fund.Id, default);
-            Assert.Equal(2_000_000, fin.BalanceVnd);
+            var s2 = CreateService(db2, clock);
+            var fund2 = await s2.CreateAsync(owner2.Id, new("Fund 2 T29", "Fixed", 2_000_000, Pin, 24, true, "v2.0"), default);
+
+            var invB = await s2.InviteAsync(owner2.Id, fund2.Id, memberB.Id, default);
+            await s2.AcceptAsync(memberB.Id, invB.Id, true, "v2.0", default);
+
+            var config2 = await s2.ConfirmObligationsAsync(owner2.Id, fund2.Id, new(2_000_000, Pin), default);
+
+            var wO2 = await SeedWalletAsync(db2, owner2.Id, "WO2", 5_000_000);
+            var wB2 = await SeedWalletAsync(db2, memberB.Id, "WB2", 5_000_000);
+
+            // Both contribute on time at hour 2 (well within 24h deadline)
+            clock.Advance(TimeSpan.FromHours(2));
+            await s2.ContributeAsync(owner2.Id, fund2.Id, new(wO2.Id, 1_000_000, "c-o2", Pin, config2.Revision), default);
+            await s2.ContributeAsync(memberB.Id, fund2.Id, new(wB2.Id, 1_000_000, "c-b2", Pin, config2.Revision), default);
+
+            fund2Id = fund2.Id;
+            memberBId = memberB.Id;
         }
 
-        // Strict Mutual Exclusion Assertion: NEVER a hybrid state (cannot be both kicked and credited)
-        var totalContributionsA = await f.Db.V1FundContributions.Where(c => c.FundId == fund.Id && c.UserId == memberA.Id).SumAsync(c => c.AmountVnd);
-        Assert.False(memADb.LeftAt != null && totalContributionsA == 1_000_000, "Invariant violation: Member was kicked yet registered full contribution!");
+        // Advance past deadline (to hour 25)
+        clock.Advance(TimeSpan.FromHours(23));
+
+        // Worker runs after deadline
+        await using (var dbWorker2 = database.Context())
+        {
+            var sWorker2 = CreateService(dbWorker2, clock);
+            await sWorker2.ProgressFixedFundDeadlinesAsync(default);
+
+            var memBDb = await dbWorker2.V1FundMemberships.AsNoTracking().SingleAsync(m => m.FundId == fund2Id && m.UserId == memberBId);
+            // Member B was NOT kicked because full obligation was paid on time
+            Assert.Null(memBDb.LeftAt);
+
+            var fin2 = await sWorker2.FinanceAsync(memberBId, fund2Id, default);
+            Assert.Equal(2_000_000, fin2.BalanceVnd);
+            Assert.Equal("OPEN", fin2.SpendingState);
+        }
     }
 
     // =========================================================================
@@ -459,5 +730,54 @@ public sealed class FixedFundV2Stage5Tests
         // Fund is officially closed
         var finalFundDb = await f.Db.V1Funds.AsNoTracking().SingleAsync(x => x.Id == fund.Id);
         Assert.NotNull(finalFundDb.DissolvedAt);
+    }
+}
+
+public sealed partial class CoreAcceptanceHttpTests
+{
+    // =========================================================================
+    // T32: HTTP API Contract Conformance
+    // Validates exact JSON request payloads documented in User.md bind correctly
+    // to V1FundsController without parameter or serialization mismatch.
+    // =========================================================================
+    [Fact]
+    public async Task T32_HttpElection_Contract_RequestPayloadShapeMatchesController()
+    {
+        var clock = new AcceptanceClock();
+        using var factory = new SpendWiseApiFactory(new Dictionary<string, string?>
+        {
+            ["V1:Activity:CoverageVerified"] = "true",
+            ["V1:Activity:CoverageStartsAtUtc"] = clock.UtcNow.AddDays(-1).ToString("O"),
+            ["RateLimiting:FinancialPermitLimit"] = "100"
+        }, clock: clock);
+
+        using var client = factory.CreateHttpsClient();
+        CoreFundSeed seed;
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            seed = await CoreAcceptanceData.SeedAsync(db, true);
+        }
+
+        await ActorAsync(factory, client, seed.Member);
+
+        // Fast-forward 16 days to satisfy inactivity proof
+        clock.UtcNow = clock.UtcNow.AddDays(16);
+
+        // 1. Contract Test: POST /api/v1/funds/{id}/elections with {"expectedOwnershipRevision": 0}
+        using var openResp = await client.PostAsJsonAsync(
+            $"/api/v1/funds/{seed.FundId}/elections",
+            new { expectedOwnershipRevision = 0L });
+        Assert.True(openResp.StatusCode == HttpStatusCode.OK, await openResp.Content.ReadAsStringAsync());
+        var election = (await openResp.Content.ReadFromJsonAsync<V1ElectionDto>())!;
+        Assert.NotNull(election);
+        Assert.Equal("Nomination", election.Phase);
+
+        // 2. Contract Test: POST /api/v1/funds/elections/{id}/ballots with {"round": 1, "candidateUserId": "...", "support": null}
+        using var ballotResp = await client.PostAsJsonAsync(
+            $"/api/v1/funds/elections/{election.Id}/ballots",
+            new { round = 1, candidateUserId = seed.Member.Id, support = (bool?)null });
+        Assert.True(ballotResp.StatusCode == HttpStatusCode.OK, await ballotResp.Content.ReadAsStringAsync());
     }
 }

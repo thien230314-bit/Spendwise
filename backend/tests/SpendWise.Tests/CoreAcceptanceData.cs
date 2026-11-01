@@ -76,7 +76,7 @@ internal static class CoreAcceptanceData
                 await ledger.PostAsync(source.Id, wallet.LedgerAccount.Id, 2_000_000, "VND", "SyntheticOpening", wallet.Id, "synthetic-opening", wallet.Id.ToString("N"), "Synthetic fixture funding", default);
         }
         var funds = Funds(db);
-        var fund = await funds.CreateAsync(owner.Id, new("Synthetic core acceptance", fixedFund ? "Fixed" : "Free", fixedFund ? 1_000_000 : null, Pin), default);
+        var fund = await funds.CreateAsync(owner.Id, new("Synthetic core acceptance", fixedFund ? "Fixed" : "Free", fixedFund ? 1_000_000 : null, Pin, 24, fixedFund ? true : null, fixedFund ? "v2.0" : null), default);
         db.V1FundMemberships.Add(new() { FundId = fund.Id, UserId = member.Id, Seat = 2 }); await db.SaveChangesAsync();
         long? revision = fixedFund ? (await funds.ConfirmObligationsAsync(owner.Id, fund.Id, new(1_000_000, Pin), default)).Revision : null;
         await funds.ContributeAsync(owner.Id, fund.Id, new(ow.Id, 500_000, "synthetic-owner", Pin, revision), default);

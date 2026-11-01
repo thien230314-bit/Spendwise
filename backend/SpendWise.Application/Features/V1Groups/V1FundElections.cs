@@ -37,6 +37,19 @@ public sealed partial class V1FundService
             if (!currentUsers.ToHashSet().SetEquals(admittedUsers)) throw new ConflictException("election_membership_changed", "Membership changed during admission; retry with the current electorate.");
             if (fund.OwnershipRevision != request.ExpectedOwnershipRevision) throw new ConflictException("stale_ownership_epoch", "Ownership changed.");
             if (fund.OwnerUserId == actor) throw new ForbiddenException("incumbent_not_elector", "Incumbent is excluded from replacement electorate.");
+            
+            // Cannot open a new election if fund has a failed election pending compulsory settlement in this epoch
+            if (fund.Kind == V1FundKind.Fixed)
+            {
+                var hasFailedElectionPendingSettlement = await db.V1Elections.AnyAsync(e =>
+                    e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.OwnershipRevision == fund.OwnershipRevision, token);
+                if (hasFailedElectionPendingSettlement)
+                {
+                    throw new ConflictException("election_failed_pending_settlement",
+                        "Quỹ đang trong quá trình bắt buộc quyết toán và giải tán sau bầu cử thất bại; không được mở bầu cử mới.");
+                }
+            }
+
             var existing = await db.V1Elections.AsNoTracking().SingleOrDefaultAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
             if (existing is not null) return ElectionDto(existing);
             var proof = await (inactivityEvidence ?? new IncompleteInactivityEvidence()).GetAsync(fund.OwnerUserId, token);
@@ -54,9 +67,9 @@ public sealed partial class V1FundService
 
                 var ownerLastSeen = lastOwnerActivity ?? fund.CreatedAt;
                 var fifteenDaysAgo = clock.UtcNow.AddDays(-15);
-                var hasActiveSessionRecently = await db.UserSessions.AsNoTracking()
-                    .AnyAsync(s => s.UserId == fund.OwnerUserId && s.RevokedAt == null && (s.LastSeenAt >= fifteenDaysAgo || s.CreatedAt >= fifteenDaysAgo), token);
-                if (ownerLastSeen <= fifteenDaysAgo && !hasActiveSessionRecently)
+                var hasSessionRecently = await db.UserSessions.AsNoTracking()
+                    .AnyAsync(s => s.UserId == fund.OwnerUserId && (s.LastSeenAt >= fifteenDaysAgo || s.CreatedAt >= fifteenDaysAgo), token);
+                if (ownerLastSeen <= fifteenDaysAgo && !hasSessionRecently)
                 {
                     proof = new V1InactivityProof(true, true, $"inactivity:15days:{ownerLastSeen.Ticks}");
                 }

@@ -59,6 +59,33 @@ public sealed partial class V1FundService
             if (fund.DissolvedAt is not null || fund.Kind != V1FundKind.Fixed)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
 
+            // 0. FAILED ELECTION COMPULSORY DISSOLUTION AFTER 24H (Section 8 & P1-1, P1-2)
+            // Checked first regardless of ActivityClosedAt or active proposals; never executes if a new election is active
+            var hasActiveElection = await db.V1Elections.AnyAsync(e => e.FundId == fundId && e.FinishedAt == null, token);
+            if (!hasActiveElection)
+            {
+                var lastFailedElection = await db.V1Elections.AsNoTracking()
+                    .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
+                    .OrderByDescending(e => e.FinishedAt)
+                    .FirstOrDefaultAsync(token);
+
+                if (lastFailedElection != null && lastFailedElection.FinishedAt.HasValue)
+                {
+                    var activeMembersSettlement = await ActiveMembersAsync(fundId, token);
+                    var onlyOwnerRemaining = activeMembersSettlement.Count == 1 && activeMembersSettlement[0].UserId == fund.OwnerUserId;
+                    var isExpired = clock.UtcNow >= lastFailedElection.FinishedAt.Value.AddHours(24);
+
+                    if (isExpired || onlyOwnerRemaining)
+                    {
+                        var treasurySettlement = await TreasuryAsync(fund, token);
+                        var (totalRefunded, refunds) = await AutoDissolveFixedFundAsync(fund, treasurySettlement, activeMembersSettlement, "FailedElectionSettlement", token);
+                        await ActivityAsync(fundId, null, "FailedElectionSettled", token,
+                            detail: $"Quỹ tự động quyết toán và giải tán sau khi bầu cử thất bại (hoàn {totalRefunded:N0} đ cho {refunds.Count} thành viên).");
+                        return new V1DeadlineProcessingResultDto(fundId, "FailedElectionSettled", Array.Empty<Guid>(), true);
+                    }
+                }
+            }
+
             if (fund.ActivityClosedAt is not null)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
 
@@ -66,28 +93,6 @@ public sealed partial class V1FundService
                 .AnyAsync(p => p.FundId == fundId && (p.State == "Voting" || p.State == "AwaitingReplacement" || p.State == "ApprovedAwaitingSettlement"), token);
             if (activeProposal)
                 return new V1DeadlineProcessingResultDto(fundId, "NoAction", Array.Empty<Guid>(), false);
-
-            // 0. FAILED ELECTION COMPULSORY DISSOLUTION AFTER 24H (Section 8 & P1-2)
-            var lastFailedElection = await db.V1Elections.AsNoTracking()
-                .Where(e => e.FundId == fundId && e.Phase == V1ElectionPhase.Failed && e.FinishedAt != null && e.OwnershipRevision == fund.OwnershipRevision)
-                .OrderByDescending(e => e.FinishedAt)
-                .FirstOrDefaultAsync(token);
-
-            if (lastFailedElection != null && lastFailedElection.FinishedAt.HasValue)
-            {
-                var activeMembersSettlement = await ActiveMembersAsync(fundId, token);
-                var onlyOwnerRemaining = activeMembersSettlement.Count == 1 && activeMembersSettlement[0].UserId == fund.OwnerUserId;
-                var isExpired = clock.UtcNow >= lastFailedElection.FinishedAt.Value.AddHours(24);
-
-                if (isExpired || onlyOwnerRemaining)
-                {
-                    var treasurySettlement = await TreasuryAsync(fund, token);
-                    var (totalRefunded, refunds) = await AutoDissolveFixedFundAsync(fund, treasurySettlement, activeMembersSettlement, "FailedElectionSettlement", token);
-                    await ActivityAsync(fundId, null, "FailedElectionSettled", token,
-                        detail: $"Quỹ tự động quyết toán và giải tán sau khi bầu cử thất bại (hoàn {totalRefunded:N0} đ cho {refunds.Count} thành viên).");
-                    return new V1DeadlineProcessingResultDto(fundId, "FailedElectionSettled", Array.Empty<Guid>(), true);
-                }
-            }
 
             var treasury = await TreasuryAsync(fund, token);
             if (treasury.Revision == 0)

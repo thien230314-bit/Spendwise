@@ -70,18 +70,7 @@ public sealed partial class V1FundService
             if (e.InactivityEvidenceId == "owner-response:" + fund.ActivityClosedAt?.Ticks && await OwnerResponseOverdueAsync(fund, token))
                 proof = new(true, true, e.InactivityEvidenceId);
             if (fund.Kind == V1FundKind.Fixed && e.InactivityEvidenceId.StartsWith("inactivity:15days:"))
-            {
-                var incumbentActiveInFund = await db.V1FundActivities.AsNoTracking()
-                    .AnyAsync(a => a.FundId == fund.Id && a.ActorUserId == e.IncumbentUserId && a.CreatedAt >= e.PhaseStartedAt, token);
-                var incumbentActiveSession = await db.UserSessions.AsNoTracking()
-                    .AnyAsync(s => s.UserId == e.IncumbentUserId && s.RevokedAt == null && (s.LastSeenAt >= e.PhaseStartedAt || s.CreatedAt >= e.PhaseStartedAt), token);
-                if (incumbentActiveInFund || incumbentActiveSession)
-                {
-                    FailElection(e, "IncumbentReactivated");
-                    throw new ConflictException("incumbent_reactivated", "Incumbent owner became active during the election; election terminated.");
-                }
                 proof = new(true, true, e.InactivityEvidenceId);
-            }
             if (!proof.CoverageComplete || !proof.Eligible || string.IsNullOrWhiteSpace(proof.EvidenceId))
                 throw new ConflictException("ACTIVITY_EVIDENCE_BLOCKED", "Complete authoritative inactivity evidence is required.");
             var changed = await db.V1Funds.Where(f => f.Id == fund.Id && f.OwnerUserId == e.IncumbentUserId && f.OwnershipRevision == e.OwnershipRevision)

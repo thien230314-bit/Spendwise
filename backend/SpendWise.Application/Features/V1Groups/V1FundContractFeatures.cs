@@ -210,8 +210,10 @@ public sealed partial class V1FundService
             from user in uGroup.DefaultIfEmpty()
             where (ft.RelatedBusinessId == fundId || (ft.RelatedBusinessId.HasValue && requestIds.Contains(ft.RelatedBusinessId.Value)))
                   && ft.Status == FinancialTransactionStatus.Completed
-                  && (isOwner || db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == actor
-                      && m.JoinedAt <= ft.OccurredAt && (m.LeftAt == null || ft.OccurredAt <= m.LeftAt)))
+                  && ((isOwner && !becameOwnerAt.HasValue)
+                      || (becameOwnerAt.HasValue && ft.OccurredAt >= becameOwnerAt.Value)
+                      || db.V1FundMemberships.Any(m => m.FundId == fundId && m.UserId == actor
+                          && m.JoinedAt <= ft.OccurredAt && (m.LeftAt == null || ft.OccurredAt <= m.LeftAt)))
             orderby ft.OccurredAt descending, ft.Id descending
             select new
             {

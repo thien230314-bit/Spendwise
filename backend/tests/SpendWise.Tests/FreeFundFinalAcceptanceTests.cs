@@ -413,7 +413,33 @@ public class FreeFundFinalAcceptanceTests
         var refundTxCount = await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id);
         Assert.Equal(1, refundTxCount);
 
-        // 5. Subsequent calculation compatibility:
+        // 5. Cross-Episode Idempotency Isolation Verification:
+        // Member B rejoins the fund (creating a NEW membership episode).
+        var invB2 = await s.InviteAsync(ownerA.Id, fund.Id, memberB.Id, default);
+        await s.AcceptAsync(memberB.Id, invB2.Id, default);
+        var activeMemB = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id && m.LeftAt == null);
+        Assert.NotEqual(membershipB.Id, activeMemB.Id);
+
+        var config2 = await s.ConfirmObligationsAsync(ownerA.Id, fund.Id, new(200_000, TargetedCorrectnessFixture.SecurityPin), default);
+
+        // B contributes fresh 100k in this new episode:
+        await s.ContributeAsync(memberB.Id, fund.Id,
+            new(walletB.Id, 100_000, "contrib-compat-b-ep2", TargetedCorrectnessFixture.SecurityPin, config2.Revision), default);
+
+        // Reusing the legacy idempotency key from Episode 1 MUST be strictly rejected with idempotency_conflict:
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            s.LeaveFundAsync(memberB.Id, fund.Id, new(TargetedCorrectnessFixture.SecurityPin, leaveKey), default));
+        Assert.Equal("idempotency_conflict", ex.Code);
+
+        // Active membership in Episode 2 is completely protected and still active:
+        var memStillActive = await f.Db.V1FundMemberships.SingleOrDefaultAsync(m => m.FundId == fund.Id && m.UserId == memberB.Id && m.LeftAt == null);
+        Assert.NotNull(memStillActive);
+        Assert.Null(memStillActive.LeftAt);
+
+        // Zero additional refund transaction created (still exactly 1 from episode 1):
+        Assert.Equal(1, await f.Db.LedgerTransactions.CountAsync(t => t.BusinessType == "V1FundRefund" && t.BusinessId == fund.Id));
+
+        // 6. Subsequent calculation compatibility:
         // When owner previews remaining refund, verify treasury accounting is strictly reconciled:
         var previewOwner = await s.PreviewRefundAsync(ownerA.Id, fund.Id, null, default);
         Assert.Equal(0, previewOwner.EligibleRefundAmountVnd);

@@ -57,10 +57,11 @@ public sealed partial class V1FundService
                 throw new AppException("invalid_duration", "Contribution duration must be between 1 and 720 hours.");
             }
 
+            var reqName = string.IsNullOrWhiteSpace(request.NewName) ? null : request.NewName.Trim();
             var replay = await db.V1ActivityProposals.AsNoTracking().SingleOrDefaultAsync(p => p.FundId == fundId && p.IdempotencyKey == key, token);
             if (replay is not null)
             {
-                if (replay.ProposedByUserId != actor || replay.TargetVnd != request.TargetVnd || replay.ContributionDurationHours != duration)
+                if (replay.ProposedByUserId != actor || replay.TargetVnd != request.TargetVnd || replay.ContributionDurationHours != duration || replay.NewName != reqName)
                     throw new ConflictException("idempotency_conflict", "Activity intent differs.");
                 return await ActivityDtoAsync(replay, actor, token);
             }

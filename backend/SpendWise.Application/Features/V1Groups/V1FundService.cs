@@ -236,7 +236,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             await LockUsersAsync([ownerId, targetId], token);
             var fund = await LockFundAsync(fundId, token);
             await RequireMemberAsync(ownerId, fundId, token);
-            await RequireNoActiveElectionAsync(fundId, token);
+
             int? replacementSeat = null;
             if (fund.Kind == V1FundKind.Fixed)
             {
@@ -251,6 +251,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                     replacementSeat = vacantSeats.First();
                 }
             }
+            await RequireNoActiveElectionAsync(fundId, token, allowReplacement: replacementSeat.HasValue);
             var proposed = fund.Kind == V1FundKind.Fixed && fund.OwnerUserId != ownerId;
             await RequireCapacityAsync(targetId, token);
             await RequireRoomAsync(fund, token);
@@ -309,7 +310,8 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                         throw new ConflictException("replacement_seat_unavailable", "Ghế chỉ định thay thế không còn trống hoặc không hợp lệ.");
                 }
             }
-            await RequireNoActiveElectionAsync(fund.Id, token);
+            var isReplacement = fund.Kind == V1FundKind.Fixed && invite.IsReplacement;
+            await RequireNoActiveElectionAsync(fund.Id, token, allowReplacement: isReplacement);
             invite = await db.V1FundInvitations.AsNoTracking().SingleAsync(i => i.Id == inviteId, token);
             if (invite.Status == V1InvitationStatus.Accepted)
             {
@@ -339,7 +341,7 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
             {
                 seat = Enumerable.Range(1, fund.Kind == V1FundKind.Fixed ? 30 : 6).First(n => !occupied.Contains(n));
             }
-            await RequireNoActiveElectionAsync(fund.Id, token);
+            await RequireNoActiveElectionAsync(fund.Id, token, allowReplacement: isReplacement);
             var newMembership = new V1FundMembership
             {
                 FundId = fund.Id,

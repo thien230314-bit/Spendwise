@@ -399,8 +399,9 @@ public sealed class FixedFundV2Stage3Tests
         var pUpdated = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
         Assert.Equal("ApprovedAwaitingSettlement", pUpdated.State);
 
-        // Settle Period 2
-        await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        // Settle Period 2 without replacement: blocked because remaining members' obligation would increase without consent
+        var exConsent = await Assert.ThrowsAsync<ConflictException>(() => service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default));
+        Assert.Equal("obligation_changed_requires_consent", exConsent.Code);
 
         // Active members in Period 2 are Owner and A only
         var activeMembers = await service.MembersAsync(owner.Id, fund.Id, default);
@@ -556,31 +557,9 @@ public sealed class FixedFundV2Stage3Tests
         var wB = await f.AddWalletAsync(memB.Id, "WB", true, balance: 10_000_000);
         await f.AddWalletAsync(merchant.Id, "WMerchant", true, balance: 0);
 
-        // Period 1: Both contribute 3,000,000 VND
+        // Period 1: Owner contributes 3,000,000 VND, Member B contributes 1,000,000 VND via application logic
         await service.ContributeAsync(owner.Id, fund.Id, new(wOwner.Id, 3_000_000, "c-o-19", Pin, config.Revision), default);
-        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 3_000_000, "c-b-19", Pin, config.Revision), default);
-
-        // Member B receives a legitimate 2,000,000 VND partial refund
-        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
-        var memBMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memB.Id);
-        var accB = await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wB.Id);
-        var ledger = new SpendWise.Infrastructure.Finance.LedgerService(f.Db, clock);
-        var post = await ledger.PostAsync(treasury.LedgerAccountId, accB.Id, 2_000_000, "VND", "V1FundRefund", fund.Id, "ref-b-19", "ref-b-19", "Partial Refund", default);
-        memBMembership.RefundedVnd = 2_000_000;
-        f.Db.FinancialTransactions.Add(new FinancialTransaction
-        {
-            OwnerUserId = memB.Id,
-            WalletId = wB.Id,
-            LedgerTransactionId = post.LedgerTransactionId,
-            RelatedBusinessId = fund.Id,
-            Type = FinancialTransactionType.Refund,
-            Status = FinancialTransactionStatus.Completed,
-            Amount = 2_000_000,
-            Currency = "VND",
-            Description = "Partial refund",
-            OccurredAt = clock.UtcNow
-        });
-        await f.Db.SaveChangesAsync();
+        await service.ContributeAsync(memB.Id, fund.Id, new(wB.Id, 1_000_000, "c-b-19", Pin, config.Revision), default);
 
         // Close Period 1. Balance is now 4M (3M for A, 1M for B).
         clock.Advance(TimeSpan.FromHours(1));
@@ -879,6 +858,11 @@ public sealed class FixedFundV2Stage3Tests
         var replay = await service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p1-t24", Pin), default);
         Assert.Equal(p1.Id, replay.Id);
 
+        // 1b. Replay with SAME key but different NewName throws idempotency_conflict (P2)
+        var exConflict = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p1-t24", Pin, NewName: "DifferentName"), default));
+        Assert.Equal("idempotency_conflict", exConflict.Code);
+
         // 2. Attempt second proposal with DIFFERENT key while p1 is Voting: throws active_proposal_exists
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.ProposeActivityAsync(owner.Id, fund.Id, new(4_000_000, "p2-t24", Pin), default));
@@ -912,7 +896,7 @@ public sealed class FixedFundV2Stage3Tests
         await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(4_000_000, Pin), default);
         await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
 
-        // Propose with 48 hours duration and 6,000,000 VND target
+        // Propose with 48 hours duration, 6,000,000 VND target, and proposed name "RenamedT25"
         var p = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t25", Pin, 48, "RenamedT25"), default);
         Assert.Equal(48, p.ContributionDurationHours); // Accurately returns proposed 48h!
         Assert.Equal(3_000_000, p.ExpectedPerMemberVnd); // 6M / 2 = 3M expected per member!
@@ -930,7 +914,12 @@ public sealed class FixedFundV2Stage3Tests
             service.SettleActivityAsync(owner.Id, p.Id, new V1SettleActivityRequest(Pin, ContributionDurationHours: 72), default));
         Assert.Equal("configuration_changed_requires_consent", exDuration.Code);
 
-        // 3. Settle with consented configuration succeeds cleanly!
+        // 3. Owner attempts to alter name from "RenamedT25" to "UnconsentedName" without member consent: BLOCKED!
+        var exName = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SettleActivityAsync(owner.Id, p.Id, new V1SettleActivityRequest(Pin, NewName: "UnconsentedName"), default));
+        Assert.Equal("configuration_changed_requires_consent", exName.Code);
+
+        // 4. Settle with consented configuration succeeds cleanly!
         var settle = await service.SettleActivityAsync(owner.Id, p.Id, new V1SettleActivityRequest(Pin), default);
         Assert.Equal("Settled", settle.State);
 
@@ -944,5 +933,102 @@ public sealed class FixedFundV2Stage3Tests
         Assert.Equal(2, obligations.Count);
         Assert.All(obligations, o => Assert.Equal(3_000_000, o.RequiredVnd));
         Assert.All(obligations, o => Assert.Equal(clock.UtcNow.AddHours(48), o.Deadline));
+    }
+
+    // =========================================================================
+    // T26: Blocker 2 — Member departure increases obligation from 2M to 3M -> BLOCKED without consent
+    // =========================================================================
+    [Fact]
+    public async Task T26_MemberDeparture_IncreasesObligation_BlockedWithoutConsent()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT26");
+        var memB = await f.AddUserAsync("MemBT26");
+        var memC = await f.AddUserAsync("MemCT26");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT26", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+        var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
+
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        // Open proposal with 3 members: Target = 6M -> Expected per member is 2,000,000 VND
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t26", Pin), default);
+        Assert.Equal(2_000_000, proposal.ExpectedPerMemberVnd);
+
+        // Owner votes true (consented to 2M), Member B votes true (consented to 2M)
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
+
+        // Member C rejects and leaves (Support = false)
+        await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
+
+        // Active members is now 2 (Owner and Member B).
+        // If Owner attempts to settle 6M with 2 members, Member B's obligation would become 3M instead of 2M!
+        // System MUST block this unilateral increase with obligation_changed_requires_consent!
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default));
+        Assert.Equal("obligation_changed_requires_consent", ex.Code);
+    }
+
+    // =========================================================================
+    // T27: Blocker 2 — Replacement member in 72h window restores expected obligation -> Settlement SUCCEEDS
+    // =========================================================================
+    [Fact]
+    public async Task T27_ReplacementMemberIn72hWindow_RestoresObligation_SettlementSucceeds()
+    {
+        var clock = new MutableClock(DateTime.UtcNow);
+        await using var f = await TargetedCorrectnessFixture.CreateAsync(clock);
+        var owner = await f.AddUserAsync("OwnerT27");
+        var memB = await f.AddUserAsync("MemBT27");
+        var memC = await f.AddUserAsync("MemCT27");
+        var memD = await f.AddUserAsync("MemDT27");
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memB.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memC.Id);
+        await V1FundMembershipTests.MakeFriends(f, owner.Id, memD.Id);
+
+        var service = CreateService(f.Db, clock, f);
+        var fund = await service.CreateAsync(owner.Id, new("FundT27", "Fixed", 6_000_000, Pin, 24, true, "v2.0"), default);
+
+        var invB = await service.InviteAsync(owner.Id, fund.Id, memB.Id, default);
+        await service.AcceptAsync(memB.Id, invB.Id, true, "v2.0", default);
+        var invC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
+        await service.AcceptAsync(memC.Id, invC.Id, true, "v2.0", default);
+
+        await service.ConfirmObligationsAsync(owner.Id, fund.Id, new(6_000_000, Pin), default);
+        await service.CloseActivityAsync(owner.Id, fund.Id, Pin, default);
+
+        // Target 6M, 3 members -> Expected per member = 2,000,000 VND
+        var proposal = await service.ProposeActivityAsync(owner.Id, fund.Id, new(6_000_000, "p2-t27", Pin), default);
+        await service.VoteActivityAsync(owner.Id, proposal.Id, true, default);
+        await service.VoteActivityAsync(memB.Id, proposal.Id, true, default);
+
+        // Member C rejects and leaves
+        var memCMembership = await f.Db.V1FundMemberships.SingleAsync(m => m.FundId == fund.Id && m.UserId == memC.Id);
+        var seatC = memCMembership.Seat;
+        await service.VoteActivityAsync(memC.Id, proposal.Id, false, default);
+
+        // Owner invites Member D as replacement within 72h window
+        var invD = await service.InviteAsync(owner.Id, fund.Id, memD.Id, default);
+        await service.AcceptAsync(memD.Id, invD.Id, true, "v2.0", default);
+
+        // Active members is back to 3: Owner, Member B, Member D.
+        // Each member's final obligation is 6M / 3 = 2,000,000 VND!
+        // Member B's consented obligation (2M) matches final obligation (2M)!
+        var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
+        Assert.Equal("Settled", settle.State);
+
+        var treasury = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        var obligations = await f.Db.V1FundObligations.Where(o => o.FundId == fund.Id && o.Revision == treasury.Revision).ToListAsync();
+        Assert.Equal(3, obligations.Count);
+        Assert.All(obligations, o => Assert.Equal(2_000_000, o.RequiredVnd));
     }
 }

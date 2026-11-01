@@ -4880,7 +4880,7 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("ProposalId", "UserId")
+                    b.HasIndex("ProposalId", "MembershipId")
                         .IsUnique();
 
                     b.ToTable("V1ActivityVoters");

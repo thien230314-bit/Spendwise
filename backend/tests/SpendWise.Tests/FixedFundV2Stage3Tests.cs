@@ -1436,6 +1436,9 @@ public sealed class FixedFundV2Stage3Tests
         var propDb = await f.Db.V1ActivityProposals.SingleAsync(p => p.Id == proposal.Id);
         Assert.Equal("ApprovedAwaitingSettlement", propDb.State);
 
+        // Advance clock by 1 hour into replacement window so new episode joined time > proposal opened time
+        clock.Advance(TimeSpan.FromHours(1));
+
         // Owner invites C back to fill the empty seat!
         var reinviteC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
         await service.AcceptAsync(memC.Id, reinviteC.Id, true, "v2.0", default);
@@ -1485,16 +1488,54 @@ public sealed class FixedFundV2Stage3Tests
         var finalTreasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
         Assert.Equal(6_000_000, finalTreasuryAcc.Balance);
 
-        // Fund dissolution audit: verify all final refunds match active entitlements and treasury reaches exactly 0
-        var activeMembersFinal = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
-        Assert.Equal(3, activeMembersFinal.Count);
+        // DTO electorate statistics audit: verify electorate size and Yes/No votes are cleanly separated from replacement episode
+        var proposalDtoCheck = await service.ActivityProposalAsync(owner.Id, proposal.Id, default);
+        Assert.Equal(3, proposalDtoCheck.ElectorateSize); // Frozen electorate of 3 (Owner, B, C-episode1)
+        Assert.Equal(2, proposalDtoCheck.Yes); // Owner + B voted Yes
+        Assert.Equal(1, proposalDtoCheck.No); // C-episode1 voted No
 
-        var fundToDissolve = await f.Db.V1Funds.SingleAsync(f => f.Id == fund.Id);
-        var treasuryToDissolve = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
-        await service.AutoDissolveFixedFundAsync(fundToDissolve, treasuryToDissolve, activeMembersFinal, "NormalClosure", default);
+        // Fund dissolution audit: run official Owner dissolution flow (DissolveFundAsync)
+        var wOwnerBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wOwner.Id)).Balance;
+        var wBBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wB.Id)).Balance;
+        var wCBefore = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wC.Id)).Balance;
 
+        var dissolveResult = await service.DissolveFundAsync(owner.Id, fund.Id, new V1DissolveFundRequest(Pin, "dissolve-t32-key"), default);
+        Assert.Equal(6_000_000, dissolveResult.TotalRefundedVnd);
+        Assert.Equal(3, dissolveResult.Refunds.Count);
+
+        // Assert exact wallet refund amounts:
+        var wOwnerAfter = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wOwner.Id)).Balance;
+        var wBAfter = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wB.Id)).Balance;
+        var wCAfter = (await f.Db.LedgerAccounts.SingleAsync(a => a.WalletId == wC.Id)).Balance;
+        Assert.Equal(wOwnerBefore + 2_000_000, wOwnerAfter); // A receives exactly 2,000,000 VND
+        Assert.Equal(wBBefore + 2_000_000, wBAfter); // B receives exactly 2,000,000 VND
+        Assert.Equal(wCBefore + 2_000_000, wCAfter); // C receives exactly 2,000,000 VND from dissolution (in addition to 2M opt-out)
+
+        // Assert FinancialTransactions match Ledger postings:
+        var refundTxs = await f.Db.FinancialTransactions
+            .Where(t => t.RelatedBusinessId == fund.Id && t.Type == FinancialTransactionType.Refund)
+            .ToListAsync();
+        Assert.Equal(4, refundTxs.Count); // 1 opt-out refund + 3 dissolution refunds
+        Assert.All(refundTxs, tx => Assert.True(tx.LedgerTransactionId != Guid.Empty));
+        var ledgerTxIds = (await f.Db.LedgerTransactions.Select(l => l.Id).ToListAsync()).ToHashSet();
+        Assert.All(refundTxs, tx => Assert.Contains(tx.LedgerTransactionId, ledgerTxIds));
+
+        // Assert Treasury account is completely drained to 0 VND:
         var dissolvedTreasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
-        Assert.Equal(0L, dissolvedTreasuryAcc.Balance); // Treasury completely drained to 0 VND!
+        Assert.Equal(0L, dissolvedTreasuryAcc.Balance);
+
+        // Assert Fund state is Dissolved:
+        var dissolvedFund = await f.Db.V1Funds.AsNoTracking().SingleAsync(f => f.Id == fund.Id);
+        Assert.NotNull(dissolvedFund.DissolvedAt);
+
+        // Assert Idempotency: second dissolution call is rejected and creates no duplicate refunds
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DissolveFundAsync(owner.Id, fund.Id, new V1DissolveFundRequest(Pin, "dissolve-t32-retry"), default));
+
+        // Final assertion: Episode 1 voter record remains 100% immutable in DB:
+        var voterCOriginalFinalCheck = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.MembershipId == memCOriginal.Id);
+        Assert.Equal(2_000_000, voterCOriginalFinalCheck.CarryOverVnd);
+        Assert.False(voterCOriginalFinalCheck.Support);
+        Assert.Equal(memCOriginal.Id, voterCOriginalFinalCheck.MembershipId);
         // Financial integrity: zero phantom balance, perfect reconciliation!
     }
 }

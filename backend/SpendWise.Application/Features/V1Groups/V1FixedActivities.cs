@@ -346,7 +346,20 @@ public sealed partial class V1FundService
         var duration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
         var activeCount = await db.V1FundMemberships.CountAsync(m => m.FundId == p.FundId && m.LeftAt == null, ct);
         var expectedPerMember = activeCount > 0 ? p.TargetVnd / activeCount : p.TargetVnd;
-        return new(p.Id, p.FundId, p.TargetVnd, p.State, voters.Count, voters.Count(v => v.Support == true), voters.Count(v => v.Support == false), p.OpenedAt,
+
+        // Electorate statistics: The voting electorate is the frozen membership at proposal opening.
+        // Replacement members who joined after proposal opening are recorded for obligation confirmation,
+        // but initial voting statistics reflect the electorate snapshot.
+        var initialElectorateMemberships = (await db.V1FundMemberships.AsNoTracking()
+            .Where(m => m.FundId == p.FundId && m.JoinedAt <= p.OpenedAt)
+            .Select(m => m.Id)
+            .ToListAsync(ct)).ToHashSet();
+        var electorateVoters = voters.Where(v => initialElectorateMemberships.Contains(v.MembershipId)).ToList();
+        var electorateCount = electorateVoters.Count > 0 ? electorateVoters.Count : voters.Select(v => v.UserId).Distinct().Count();
+        var yesCount = electorateVoters.Count(v => v.Support == true);
+        var noCount = electorateVoters.Count(v => v.Support == false);
+
+        return new(p.Id, p.FundId, p.TargetVnd, p.State, electorateCount, yesCount, noCount, p.OpenedAt,
             await V1MaintenanceGate.DeadlineAsync(db, p.OpenedAt, TimeSpan.FromHours(24), clock.UtcNow, ct, "Groups"), own?.Support, own?.CarryOverVnd, duration, expectedPerMember);
     }
 }

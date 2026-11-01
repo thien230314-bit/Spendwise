@@ -235,7 +235,7 @@ public sealed partial class V1FundService
             return new V1DissolveResultDto(fundId, totalRefunded, 0, refunds, clock.UtcNow);
         }, ct);
 
-    internal async Task<(long TotalRefunded, List<V1RefundResultDto> Refunds)> AutoDissolveFixedFundAsync(
+    private async Task<(long TotalRefunded, List<V1RefundResultDto> Refunds)> AutoDissolveFixedFundAsync(
         V1Fund fund,
         V1FundTreasury treasury,
         List<V1FundMembership> activeMembers,

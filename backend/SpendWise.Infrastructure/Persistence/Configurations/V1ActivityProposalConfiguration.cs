@@ -21,7 +21,8 @@ public sealed class V1ActivityVoterConfiguration : IEntityTypeConfiguration<V1Ac
 {
     public void Configure(EntityTypeBuilder<V1ActivityVoter> b)
     {
-        b.HasIndex(v => new { v.ProposalId, v.UserId }).IsUnique();
+        b.HasIndex(v => new { v.ProposalId, v.MembershipId }).IsUnique();
+        b.HasIndex(v => v.UserId);
         b.HasOne<V1ActivityProposal>().WithMany().HasForeignKey(v => v.ProposalId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey(v => v.UserId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<V1FundMembership>().WithMany().HasForeignKey(v => v.MembershipId).OnDelete(DeleteBehavior.Restrict);

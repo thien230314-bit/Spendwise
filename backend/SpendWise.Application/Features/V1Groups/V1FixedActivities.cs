@@ -118,8 +118,11 @@ public sealed partial class V1FundService
     {
         await LockUsersAsync([actor], token);
         var p = await db.V1ActivityProposals.SingleOrDefaultAsync(p => p.Id == id, token) ?? throw new NotFoundException("activity_proposal_not_found", "Proposal not found.");
-        var fund = await LockFundAsync(p.FundId, token); await RequireMemberAsync(actor, fund.Id, token);
-        var vote = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.UserId == actor, token) ?? throw new ForbiddenException("not_elector", "Frozen electorate required.");
+        var fund = await LockFundAsync(p.FundId, token);
+        var membership = await db.V1FundMemberships.SingleOrDefaultAsync(m => m.FundId == fund.Id && m.UserId == actor && m.LeftAt == null, token)
+            ?? throw new ForbiddenException("not_member", "Active member required.");
+        var vote = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.MembershipId == membership.Id, token)
+            ?? throw new ForbiddenException("not_elector", "Frozen electorate required.");
         if (vote.Support is { } previous)
         {
             if (previous != support) throw new ConflictException("vote_already_cast", "Vote cannot change.");
@@ -290,7 +293,7 @@ public sealed partial class V1FundService
                 throw new ConflictException("duration_outdated", "Thời lượng đóng góp đã thay đổi. Vui lòng tải lại và xác nhận lại.");
             }
 
-            var voter = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.UserId == actor, token);
+            var voter = await db.V1ActivityVoters.SingleOrDefaultAsync(v => v.ProposalId == id && v.MembershipId == membership.Id, token);
             if (voter is null)
             {
                 voter = new V1ActivityVoter
@@ -301,14 +304,6 @@ public sealed partial class V1FundService
                     CarryOverVnd = 0L
                 };
                 db.V1ActivityVoters.Add(voter);
-            }
-            else
-            {
-                voter.MembershipId = membership.Id;
-                if (membership.JoinedAt >= p.OpenedAt)
-                {
-                    voter.CarryOverVnd = 0L;
-                }
             }
 
             voter.Support = true;
@@ -323,7 +318,7 @@ public sealed partial class V1FundService
             if (p.State == "AwaitingReplacement" && activeMembers.Count >= 2)
             {
                 var allVoters = await db.V1ActivityVoters.Where(v => v.ProposalId == id).ToListAsync(token);
-                var activeSupporters = activeMembers.Where(m => allVoters.Any(v => v.UserId == m.UserId && v.Support == true)).ToList();
+                var activeSupporters = activeMembers.Where(m => allVoters.Any(v => v.MembershipId == m.Id && v.Support == true)).ToList();
                 if (activeSupporters.Count >= 2)
                 {
                     p.State = "ApprovedAwaitingSettlement";
@@ -345,7 +340,9 @@ public sealed partial class V1FundService
     private async Task<V1ActivityProposalDto> ActivityDtoAsync(V1ActivityProposal p, Guid actor, CancellationToken ct)
     {
         var voters = await db.V1ActivityVoters.AsNoTracking().Where(v => v.ProposalId == p.Id).ToListAsync(ct);
-        var own = voters.SingleOrDefault(v => v.UserId == actor);
+        var activeMembership = await db.V1FundMemberships.AsNoTracking().FirstOrDefaultAsync(m => m.FundId == p.FundId && m.UserId == actor && m.LeftAt == null, ct);
+        var own = (activeMembership != null ? voters.FirstOrDefault(v => v.MembershipId == activeMembership.Id) : null)
+            ?? voters.LastOrDefault(v => v.UserId == actor);
         var duration = p.ContributionDurationHours > 0 ? p.ContributionDurationHours : 24;
         var activeCount = await db.V1FundMemberships.CountAsync(m => m.FundId == p.FundId && m.LeftAt == null, ct);
         var expectedPerMember = activeCount > 0 ? p.TargetVnd / activeCount : p.TargetVnd;

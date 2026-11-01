@@ -1440,9 +1440,19 @@ public sealed class FixedFundV2Stage3Tests
         var reinviteC = await service.InviteAsync(owner.Id, fund.Id, memC.Id, default);
         await service.AcceptAsync(memC.Id, reinviteC.Id, true, "v2.0", default);
 
-        // Verify C's voter record is reset for the new episode:
-        var voterCAfterRejoin = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memC.Id);
-        Assert.NotEqual(memCOriginal.Id, voterCAfterRejoin.MembershipId);
+        var newMemC = await f.Db.V1FundMemberships.SingleAsync(m => m.UserId == memC.Id && m.FundId == fund.Id && m.LeftAt == null);
+        Assert.NotEqual(memCOriginal.Id, newMemC.Id);
+
+        // Blocker P1 Audit: Both membership episodes exist with independent, immutable records!
+        // 1. Episode 1 voter record (Refunded):
+        var voterCOriginalAfterRejoin = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.MembershipId == memCOriginal.Id);
+        Assert.Equal(2_000_000, voterCOriginalAfterRejoin.CarryOverVnd); // Historical 2M entitlement preserved!
+        Assert.False(voterCOriginalAfterRejoin.Support); // Voted NO preserved!
+        Assert.Equal(memCOriginal.Id, voterCOriginalAfterRejoin.MembershipId);
+
+        // 2. Episode 2 voter record (Rejoined):
+        var voterCAfterRejoin = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.MembershipId == newMemC.Id);
+        Assert.Equal(newMemC.Id, voterCAfterRejoin.MembershipId);
         Assert.Equal(0L, voterCAfterRejoin.CarryOverVnd); // MUST BE 0!
         Assert.Null(voterCAfterRejoin.Support); // Must confirm obligation anew!
 
@@ -1456,9 +1466,16 @@ public sealed class FixedFundV2Stage3Tests
         var settle = await service.SettleActivityAsync(owner.Id, proposal.Id, Pin, default);
         Assert.Equal("Settled", settle.State);
 
-        // CRITICAL LEDGER AUDIT: Verify C's carry-over in Period 2 is exactly 0!
-        var voterCFinal = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.UserId == memC.Id);
-        Assert.Equal(0L, voterCFinal.CarryOverVnd);
+        // CRITICAL LEDGER AUDIT: Verify Episode 2 carry-over in Period 2 is exactly 0!
+        var voterCFinalEpisode2 = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.MembershipId == newMemC.Id);
+        Assert.Equal(0L, voterCFinalEpisode2.CarryOverVnd);
+        Assert.True(voterCFinalEpisode2.Support);
+        Assert.Equal(2_000_000, voterCFinalEpisode2.ConfirmedObligationVnd);
+
+        // And Episode 1 voter record remains completely unchanged:
+        var voterCOriginalFinal = await f.Db.V1ActivityVoters.SingleAsync(v => v.ProposalId == proposal.Id && v.MembershipId == memCOriginal.Id);
+        Assert.Equal(2_000_000, voterCOriginalFinal.CarryOverVnd);
+        Assert.False(voterCOriginalFinal.Support);
 
         // C contributes 2M fresh to fulfill Period 2 obligation:
         var treasuryPeriod2 = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
@@ -1468,6 +1485,16 @@ public sealed class FixedFundV2Stage3Tests
         var finalTreasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
         Assert.Equal(6_000_000, finalTreasuryAcc.Balance);
 
+        // Fund dissolution audit: verify all final refunds match active entitlements and treasury reaches exactly 0
+        var activeMembersFinal = await f.Db.V1FundMemberships.Where(m => m.FundId == fund.Id && m.LeftAt == null).ToListAsync();
+        Assert.Equal(3, activeMembersFinal.Count);
+
+        var fundToDissolve = await f.Db.V1Funds.SingleAsync(f => f.Id == fund.Id);
+        var treasuryToDissolve = await f.Db.V1FundTreasuries.SingleAsync(t => t.FundId == fund.Id);
+        await service.AutoDissolveFixedFundAsync(fundToDissolve, treasuryToDissolve, activeMembersFinal, "NormalClosure", default);
+
+        var dissolvedTreasuryAcc = await f.Db.LedgerAccounts.SingleAsync(a => a.Id == treasury.LedgerAccountId);
+        Assert.Equal(0L, dissolvedTreasuryAcc.Balance); // Treasury completely drained to 0 VND!
         // Financial integrity: zero phantom balance, perfect reconciliation!
     }
 }

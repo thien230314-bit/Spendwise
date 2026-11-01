@@ -53,11 +53,31 @@ namespace SpendWise.Infrastructure.Persistence.Migrations
                 column: "FundId",
                 unique: true,
                 filter: "[State] IN ('Voting', 'ApprovedAwaitingSettlement', 'AwaitingReplacement')");
+
+            migrationBuilder.DropIndex(
+                name: "IX_V1ActivityVoters_ProposalId_UserId",
+                table: "V1ActivityVoters");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_V1ActivityVoters_ProposalId_MembershipId",
+                table: "V1ActivityVoters",
+                columns: new[] { "ProposalId", "MembershipId" },
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_V1ActivityVoters_ProposalId_MembershipId",
+                table: "V1ActivityVoters");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_V1ActivityVoters_ProposalId_UserId",
+                table: "V1ActivityVoters",
+                columns: new[] { "ProposalId", "UserId" },
+                unique: true);
+
             migrationBuilder.DropColumn(
                 name: "ConfirmedAt",
                 table: "V1ActivityVoters");

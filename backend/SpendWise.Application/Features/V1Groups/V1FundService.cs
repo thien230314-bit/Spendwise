@@ -390,9 +390,13 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                         .SingleOrDefaultAsync(p => p.FundId == fund.Id && (p.State == "ApprovedAwaitingSettlement" || p.State == "AwaitingReplacement"), token);
                     if (activeProposal is not null)
                     {
-                        var existingVoter = await db.V1ActivityVoters
-                            .SingleOrDefaultAsync(v => v.ProposalId == activeProposal.Id && v.UserId == userId, token);
-                        if (existingVoter is null)
+                        // Blocker P1: Voter participation and entitlement snapshot are immutable per membership episode.
+                        // If this user was previously a member who opted out/refunded, their historical V1ActivityVoter
+                        // record under their prior MembershipId remains permanently intact for financial audit.
+                        // We create a fresh V1ActivityVoter for this new membership episode:
+                        var voterForNewEpisode = await db.V1ActivityVoters
+                            .SingleOrDefaultAsync(v => v.ProposalId == activeProposal.Id && v.MembershipId == newMembership.Id, token);
+                        if (voterForNewEpisode is null)
                         {
                             db.V1ActivityVoters.Add(new V1ActivityVoter
                             {
@@ -406,18 +410,6 @@ public sealed partial class V1FundService(ISpendWiseDbContext db, IClock clock, 
                                 ConfirmedAt = null
                             });
                         }
-                        else
-                        {
-                            // P1-2: Rejoining member who already had a voter record in this active proposal (e.g. opted out and was refunded).
-                            // Their prior membership episode has ended and historical entitlement was already refunded.
-                            // Reset their voter record for the new membership episode:
-                            existingVoter.MembershipId = newMembership.Id;
-                            existingVoter.CarryOverVnd = 0L;
-                            existingVoter.Support = null;
-                            existingVoter.ConfirmedObligationVnd = null;
-                            existingVoter.ConfirmedDurationHours = null;
-                            existingVoter.ConfirmedAt = null;
-                                                    }
                     }
                 }
             }

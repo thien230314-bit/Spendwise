@@ -23,8 +23,16 @@ public sealed partial class V1FundService
         var paid = (await db.V1FundContributions.AsNoTracking().Where(c => c.FundId == fundId && (period == null || c.ObligationRevision >= period.StartedRevision)).ToListAsync(ct))
             .GroupBy(c => c.MembershipId).ToDictionary(g => g.Key, g => g.Sum(c => c.AmountVnd));
         if (period is not null)
+        {
+            var activeMembershipIds = (await db.V1FundMemberships.AsNoTracking().Where(m => m.FundId == fundId && m.LeftAt == null).Select(m => m.Id).ToListAsync(ct)).ToHashSet();
             foreach (var voter in await db.V1ActivityVoters.AsNoTracking().Where(v => v.ProposalId == period.Id && v.Support == true).ToListAsync(ct))
-                paid[voter.MembershipId] = checked(paid.GetValueOrDefault(voter.MembershipId) + (voter.CarryOverVnd ?? 0L));
+            {
+                if (activeMembershipIds.Contains(voter.MembershipId))
+                {
+                    paid[voter.MembershipId] = checked(paid.GetValueOrDefault(voter.MembershipId) + (voter.CarryOverVnd ?? 0L));
+                }
+            }
+        }
         return paid;
     }
 
@@ -111,7 +119,7 @@ public sealed partial class V1FundService
 
             foreach (var m in activeMembers)
             {
-                var voter = allVoters.SingleOrDefault(v => v.UserId == m.UserId);
+                var voter = allVoters.SingleOrDefault(v => v.MembershipId == m.Id);
                 if (voter is null || voter.Support != true || voter.ConfirmedObligationVnd == null)
                 {
                     throw new ConflictException("obligation_changed_requires_consent",

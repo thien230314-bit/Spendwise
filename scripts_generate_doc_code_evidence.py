@@ -535,10 +535,10 @@ for a_id, verb, route, search_code, dto, a_test in controller_endpoints:
 # 6. ERROR CODES & HTTP STATUS CODES (Lines 755 - 774 in HUONG-DAN)
 # =========================================================================
 error_codes_list = [
-    ('ERR-001', 'trust_commitment_required', 400, 'Chưa xác nhận cam kết tin tưởng v2.0 khi tạo Fixed', 'backend/SpendWise.Application/Features/V1Groups/V1FundService.cs', 'F1_TrustCommitment_ExplicitConfirmationRequired_RejectsMissingOrFalseOrWrongVersion'),
+    ('ERR-001', 'trust_commitment_required', 409, 'Chưa xác nhận cam kết tin tưởng v2.0 khi tạo Fixed', 'backend/SpendWise.Application/Features/V1Groups/V1FundService.cs', 'F1_TrustCommitment_ExplicitConfirmationRequired_RejectsMissingOrFalseOrWrongVersion'),
     ('ERR-002', 'invalid_contribution_duration', 400, 'Thời lượng góp ngoài 1–720h khi tạo Fixed', 'backend/SpendWise.Application/Features/V1Groups/V1FundService.cs', 'T01_OwnerCreatesFixedFund_ExplicitCommitmentRequired_ShowsZeroOfTarget_NoClockRunning'),
-    ('ERR-003', 'target_not_divisible_by_seats', 400, 'Mục tiêu không chia hết cho số ghế', 'backend/SpendWise.Application/Features/V1Groups/V1FundAllocation.cs', 'T03_IndivisibleTarget_RefusesObligationConfirmationAndPreview'),
-    ('ERR-004', 'insufficient_members', 400, 'Chốt nghĩa vụ khi nhóm < 2 người', 'backend/SpendWise.Application/Features/V1Groups/V1FundFinance.cs', 'T02_ConfirmObligations_WithOnlyOwner_ThrowsInsufficientMembers'),
+    ('ERR-003', 'target_not_divisible_by_seats', 409, 'Mục tiêu không chia hết cho số ghế', 'backend/SpendWise.Application/Features/V1Groups/V1FundAllocation.cs', 'T03_IndivisibleTarget_RefusesObligationConfirmationAndPreview'),
+    ('ERR-004', 'insufficient_members', 409, 'Chốt nghĩa vụ khi nhóm < 2 người', 'backend/SpendWise.Application/Features/V1Groups/V1FundFinance.cs', 'T02_ConfirmObligations_WithOnlyOwner_ThrowsInsufficientMembers'),
     ('ERR-005', 'obligations_already_confirmed', 409, 'Chốt lại nghĩa vụ trong cùng kỳ', 'backend/SpendWise.Application/Features/V1Groups/V1FundFinance.cs', 'F2_ObligationSnapshot_IsImmutable_CannotChangeTargetOrResetDeadline'),
     ('ERR-006', 'fund_obligations_locked', 409, 'Mời hoặc nhận lời mời sau khi chốt nghĩa vụ kỳ', 'backend/SpendWise.Application/Features/V1Groups/V1FundService.cs', 'F5_MembershipLock_AfterObligationsConfirmed_RejectsNewInviteAndPreExistingAcceptance'),
     ('ERR-007', 'contribution_exceeds_obligation', 409, 'Góp vượt nghĩa vụ còn thiếu', 'backend/SpendWise.Application/Features/V1Groups/V1FundContributions.cs', 'Direct_Code_Evidence (V1FundContributions.cs#L133: AmountVnd > required - paid throws contribution_exceeds_obligation)'),

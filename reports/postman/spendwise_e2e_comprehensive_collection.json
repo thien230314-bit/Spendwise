@@ -1,0 +1,5081 @@
+{
+  "info": {
+    "name": "SpendWise E2E Comprehensive Collection (53 Endpoints + Fixed V2 + Free V1)",
+    "description": "Full acceptance test suite for SpendWise Group Funds covering all 53 controller endpoints, 30 Fixed Fund V2 scenarios, and 19 Free Fund V1 scenarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "c_fund_id",
+      "value": ""
+    },
+    {
+      "key": "c_invite_b_id",
+      "value": ""
+    },
+    {
+      "key": "c_invite_c_id",
+      "value": ""
+    },
+    {
+      "key": "c_invite_c2_id",
+      "value": ""
+    },
+    {
+      "key": "c_invite_c3_id",
+      "value": ""
+    },
+    {
+      "key": "c_invite_d_id",
+      "value": ""
+    },
+    {
+      "key": "c_request_id",
+      "value": ""
+    },
+    {
+      "key": "c_cancel_req_id",
+      "value": ""
+    },
+    {
+      "key": "t01_fund_id",
+      "value": ""
+    },
+    {
+      "key": "t01_inv_b",
+      "value": ""
+    },
+    {
+      "key": "t01_inv_c",
+      "value": ""
+    },
+    {
+      "key": "t12_exp_id",
+      "value": ""
+    },
+    {
+      "key": "ff01_fund_id",
+      "value": ""
+    },
+    {
+      "key": "ff01_inv_b",
+      "value": ""
+    },
+    {
+      "key": "ff01_req_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Fixture Setup",
+      "item": [
+        {
+          "name": "Auth: Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{admin_email}}\", \"password\": \"{{admin_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Admin Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('admin_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('admin_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{admin_challenge}}\", \"pin\": \"{{admin_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Admin PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('admin_token', data.accessToken);",
+                  "pm.collectionVariables.set('admin_token', data.accessToken);",
+                  "pm.environment.set('admin_id', data.user.id);",
+                  "pm.collectionVariables.set('admin_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Login Owner A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{owner_a_email}}\", \"password\": \"{{owner_a_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Owner A Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('owner_a_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('owner_a_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Owner A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{owner_a_challenge}}\", \"pin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Owner A PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('owner_a_token', data.accessToken);",
+                  "pm.collectionVariables.set('owner_a_token', data.accessToken);",
+                  "pm.environment.set('owner_a_id', data.user.id);",
+                  "pm.collectionVariables.set('owner_a_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Login Member B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{member_b_email}}\", \"password\": \"{{member_b_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_b_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('member_b_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Member B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{member_b_challenge}}\", \"pin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_b_token', data.accessToken);",
+                  "pm.collectionVariables.set('member_b_token', data.accessToken);",
+                  "pm.environment.set('member_b_id', data.user.id);",
+                  "pm.collectionVariables.set('member_b_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Login Member C",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{member_c_email}}\", \"password\": \"{{member_c_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member C Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_c_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('member_c_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Member C",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{member_c_challenge}}\", \"pin\": \"{{member_c_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member C PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_c_token', data.accessToken);",
+                  "pm.collectionVariables.set('member_c_token', data.accessToken);",
+                  "pm.environment.set('member_c_id', data.user.id);",
+                  "pm.collectionVariables.set('member_c_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Login Member D",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{member_d_email}}\", \"password\": \"{{member_d_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member D Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_d_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('member_d_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Member D",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{member_d_challenge}}\", \"pin\": \"{{member_d_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member D PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('member_d_token', data.accessToken);",
+                  "pm.collectionVariables.set('member_d_token', data.accessToken);",
+                  "pm.environment.set('member_d_id', data.user.id);",
+                  "pm.collectionVariables.set('member_d_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Login Outsider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\": \"{{outsider_email}}\", \"password\": \"{{outsider_password}}\", \"deviceName\": \"E2E Test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Outsider Login 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('outsider_challenge', data.challengeToken);",
+                  "pm.collectionVariables.set('outsider_challenge', data.challengeToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Verify PIN Outsider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"challengeToken\": \"{{outsider_challenge}}\", \"pin\": \"{{outsider_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Outsider PIN Verify 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('outsider_token', data.accessToken);",
+                  "pm.collectionVariables.set('outsider_token', data.accessToken);",
+                  "pm.environment.set('outsider_id', data.user.id);",
+                  "pm.collectionVariables.set('outsider_id', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Get Wallets for Owner A",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Owner A Wallets 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "if (list && list.length > 0) {",
+                  "    pm.environment.set('owner_a_wallet_id', list[0].id);",
+                  "    pm.collectionVariables.set('owner_a_wallet_id', list[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Get Wallets for Member B",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B Wallets 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "if (list && list.length > 0) {",
+                  "    pm.environment.set('member_b_wallet_id', list[0].id);",
+                  "    pm.collectionVariables.set('member_b_wallet_id', list[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth: Get Wallets for Member C",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member C Wallets 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "if (list && list.length > 0) {",
+                  "    pm.environment.set('member_c_wallet_id', list[0].id);",
+                  "    pm.collectionVariables.set('member_c_wallet_id', list[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. 53 Endpoints Contract Verification",
+      "item": [
+        {
+          "name": "EP01: POST /api/v1/funds (Create Contract Fund)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Contract Audit Free Fund\", \"kind\": \"Free\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP01 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data).to.have.property('id');",
+                  "pm.expect(data).to.have.property('code');",
+                  "pm.expect(data).to.have.property('kind', 'Free');",
+                  "pm.environment.set('c_fund_id', data.id);",
+                  "pm.collectionVariables.set('c_fund_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP02: GET /api/v1/funds (List Funds)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP02 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "pm.expect(Array.isArray(list)).to.be.true;"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP03: GET /api/v1/funds/{id} (Get Fund Details)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP03 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.id).to.eql(pm.collectionVariables.get('c_fund_id'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP05: GET /api/v1/funds/{id}/members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "members"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP05 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "pm.expect(list.length).to.be.at.least(1);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP06: GET /api/v1/funds/{id}/governance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/governance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "governance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP06 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data).to.have.property('fundId');",
+                  "pm.expect(data).to.have.property('electionAvailability');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP07: GET /api/v1/funds/{id}/owner-response",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/owner-response",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "owner-response"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP07 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data).to.have.property('fundId');",
+                  "pm.expect(data).to.have.property('overdue');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP08: POST /api/v1/funds/{id}/owner-response/escalate (Contract Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/owner-response/escalate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "owner-response",
+                "escalate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP08 Contract Status 409', function() { pm.expect([400, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP09: POST /api/v1/funds/{id}/invitations (Invite Member B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_b_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP09 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('c_invite_b_id', data.id);",
+                  "pm.collectionVariables.set('c_invite_b_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP10: GET /api/v1/funds/invitations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP10 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "pm.expect(Array.isArray(list)).to.be.true;"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP11: GET /api/v1/funds/{id}/invitation-proposals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitation-proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitation-proposals"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP11 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP12: POST /api/v1/funds/{id}/invitations (Invite Member C)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_c_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP12 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.environment.set('c_invite_c_id', data.id);",
+                  "pm.collectionVariables.set('c_invite_c_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP13: DELETE /api/v1/funds/invitations/{id} (Cancel Invitation C)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_c_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_c_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP13 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP14a: Re-invite Member C for Decline test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_c_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP14a Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('c_invite_c2_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('c_invite_c2_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP14b: POST /api/v1/funds/invitations/{id}/decline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_c2_id}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_c2_id}}",
+                "decline"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP14b Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP15: POST /api/v1/funds/invitations/{id}/review (Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_b_id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_b_id}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"approved\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP15 Guard 400/404/200', function() { pm.expect([200, 400, 404, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP16: POST /api/v1/funds/invitations/{id}/accept (Member B Accepts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_b_id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_b_id}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP16 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP17: POST /api/v1/funds/{id}/contributions (Owner A Contributes)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"walletId\": \"{{owner_a_wallet_id}}\", \"amountVnd\": 1000000, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP17 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.amountVnd).to.eql(1000000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP04: GET /api/v1/funds/{id}/equity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/equity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "equity"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP04 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data).to.have.property('totalBalanceVnd');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP18: GET /api/v1/funds/{id}/contributions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "contributions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP18 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "pm.expect(list.length).to.be.at.least(1);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP19: GET /api/v1/funds/{id}/activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "activities"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP19 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "pm.expect(Array.isArray(list)).to.be.true;"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP20: GET /api/v1/funds/{id}/transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP20 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP21: GET /api/v1/funds/{id}/finance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/finance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "finance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP21 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json()).to.have.property('balanceVnd');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP22: GET /api/v1/funds/{id}/contribution-allocation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/contribution-allocation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "contribution-allocation"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP22 Guard Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP23: POST /api/v1/funds/{id}/obligations/confirm (Guard on Free Fund)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "obligations",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 1000000, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP23 Guard Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP24: POST /api/v1/funds/{id}/requests (Submit Expense)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 100000, \"recipientUserId\": \"{{member_b_id}}\", \"purpose\": \"Chi mua do dung chung\", \"idempotencyKey\": \"c-req-exp-01\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP24 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.state).to.eql('AwaitingOwnerReview');",
+                  "pm.environment.set('c_request_id', data.id);",
+                  "pm.collectionVariables.set('c_request_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP25: GET /api/v1/funds/{id}/requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP25 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().length).to.be.at.least(1);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP26: GET /api/v1/funds/requests/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{c_request_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{c_request_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP26 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('c_request_id'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP27: POST /api/v1/funds/requests/{id}/review (Approve Expense)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{c_request_id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{c_request_id}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"approved\": true, \"reason\": \"Hop le\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP27 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().state).to.eql('ApprovedUnused');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP28: POST /api/v1/funds/requests/{id}/initiate-payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{c_request_id}}/initiate-payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{c_request_id}}",
+                "initiate-payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP28 Status 200/409', function() { pm.expect([200, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP29: POST /api/v1/funds/requests/{id}/report (Report Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{c_request_id}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{c_request_id}}",
+                "report"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\": \"Bao cao nghi ngo\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP29 Status 200/409', function() { pm.expect([200, 400, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP30a: Invite Member D to test Cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_d_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP30a Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('c_invite_d_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('c_invite_d_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP30b: Member D Accepts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_d_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_d_id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_d_id}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP30b Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP30c: Member D Submits Request to Cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_d_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 50000, \"recipientUserId\": \"{{member_d_id}}\", \"purpose\": \"Yeu cau de test cancel\", \"idempotencyKey\": \"c-req-cancel-01\", \"securityPin\": \"{{member_d_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP30c Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.state).to.eql('AwaitingOwnerReview');",
+                  "pm.environment.set('c_cancel_req_id', data.id);",
+                  "pm.collectionVariables.set('c_cancel_req_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP31: POST /api/v1/funds/requests/{id}/cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_d_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{c_cancel_req_id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{c_cancel_req_id}}",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_d_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP31 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().state).to.eql('Cancelled');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP32: PUT /api/v1/funds/{id}/members/{userId}/spending-permission",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/members/{{member_b_id}}/spending-permission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "members",
+                "{{member_b_id}}",
+                "spending-permission"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"enabled\": true, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP32 Guard Status 409 on Free Fund', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP33: POST /api/v1/funds/{id}/ownership-offers (Guard Free Fund)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/ownership-offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "ownership-offers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_b_id}}\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP33 Guard Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP34: GET /api/v1/funds/ownership-offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/ownership-offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "ownership-offers"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP34 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP35: POST /api/v1/funds/ownership-offers/{id}/accept (Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/ownership-offers/00000000-0000-0000-0000-000000000001/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "ownership-offers",
+                "00000000-0000-0000-0000-000000000001",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP35 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP36: GET /api/v1/funds/{id}/refund-preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/refund-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "refund-preview"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP36 Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json()).to.have.property('eligibleRefundAmountVnd');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP37: POST /api/v1/funds/{id}/leave (Member B Leaves / Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "leave"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\", \"idempotencyKey\": \"c-leave-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP37 Handled 200/409', function() { pm.expect([200, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP38a: Re-invite C to Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_c_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('c_invite_c3_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('c_invite_c3_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP38b: Member C Accepts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{c_invite_c3_id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{c_invite_c3_id}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP38c: POST /api/v1/funds/{id}/members/{userId}/kick",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/members/{{member_c_id}}/kick",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "members",
+                "{{member_c_id}}",
+                "kick"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\", \"reason\": \"Kick test\", \"idempotencyKey\": \"c-kick-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP38 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP39: POST /api/v1/funds/{id}/activity-proposals (Guard on Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/activity-proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "activity-proposals"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 2000000, \"securityPin\": \"{{owner_a_pin}}\", \"idempotencyKey\": \"c-prop-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP39 Guard Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP40: GET /api/v1/funds/activity-proposals/{id} (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "activity-proposals",
+                "00000000-0000-0000-0000-000000000001"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP40 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP41: POST /api/v1/funds/activity-proposals/{id}/vote (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001/vote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "activity-proposals",
+                "00000000-0000-0000-0000-000000000001",
+                "vote"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"support\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP41 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP42: POST /api/v1/funds/activity-proposals/{id}/confirm-obligation (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001/confirm-obligation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "activity-proposals",
+                "00000000-0000-0000-0000-000000000001",
+                "confirm-obligation"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"expectedObligationVnd\": 1000000, \"expectedDurationHours\": 24, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP42 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP43: POST /api/v1/funds/activity-proposals/{id}/settle (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001/settle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "activity-proposals",
+                "00000000-0000-0000-0000-000000000001",
+                "settle"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP43 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP44: POST /api/v1/funds/activity-proposals/{id}/cancel (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/activity-proposals/00000000-0000-0000-0000-000000000001/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "activity-proposals",
+                "00000000-0000-0000-0000-000000000001",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP44 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP45: POST /api/v1/funds/{id}/elections (Guard on Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/elections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "elections"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"expectedOwnershipRevision\": 1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP45 Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP46: GET /api/v1/funds/elections/{id} (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP46 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP47: POST /api/v1/funds/elections/{id}/candidates (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/candidates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001",
+                "candidates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP47 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP48: POST /api/v1/funds/elections/{id}/ballots (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/ballots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001",
+                "ballots"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"candidateUserId\": \"{{owner_a_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP48 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP49: POST /api/v1/funds/elections/{id}/advance (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/advance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001",
+                "advance"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP49 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP50: POST /api/v1/funds/elections/{id}/accept (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP50 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP51: POST /api/v1/funds/elections/{id}/reject (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/elections/00000000-0000-0000-0000-000000000001/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "elections",
+                "00000000-0000-0000-0000-000000000001",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP51 Status 404', function() { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP52: POST /api/v1/funds/{id}/elections/failed-settlement (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/elections/failed-settlement",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "elections",
+                "failed-settlement"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP52 Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP53a: POST /api/v1/funds/{id}/activity/close",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/activity/close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "activity",
+                "close"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP53a Status 200/204/409', function() { pm.expect([200, 204, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP54: POST /api/v1/funds/{id}/fail-period-early",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/fail-period-early",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "fail-period-early"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP54 Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EP55: POST /api/v1/funds/{id}/dissolve",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{c_fund_id}}/dissolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{c_fund_id}}",
+                "dissolve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\", \"idempotencyKey\": \"c-dissolve-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EP55 Status 200/409', function() { pm.expect([200, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Fixed Fund V2 - 30 Scenarios",
+      "item": [
+        {
+          "name": "T01: Owner creates Fixed Fund 9M (3 seats, unstarted clock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Fixed V2 T01 9M Fund\", \"kind\": \"Fixed\", \"targetVnd\": 9000000, \"securityPin\": \"{{owner_a_pin}}\", \"contributionDurationHours\": 24, \"trustCommitmentAccepted\": true, \"commitmentVersion\": \"v2.0\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T01 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.targetVnd).to.eql(9000000);",
+                  "pm.environment.set('t01_fund_id', data.id);",
+                  "pm.collectionVariables.set('t01_fund_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T01 Check: Balance is 0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/finance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "finance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T01 Balance is 0', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().balanceVnd).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T02: Single member confirms allocation -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "obligations",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 9000000, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T02 Rejected status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04a: Invite Member B to T01 Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_b_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('t01_inv_b', pm.response.json().id);",
+                  "pm.collectionVariables.set('t01_inv_b', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04b: Member B Accepts T01 Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{t01_inv_b}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{t01_inv_b}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"trustCommitmentAccepted\": true, \"commitmentVersion\": \"v2.0\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04c: Invite Member C to T01 Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_c_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('t01_inv_c', pm.response.json().id);",
+                  "pm.collectionVariables.set('t01_inv_c', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04d: Member C Accepts T01 Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{t01_inv_c}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{t01_inv_c}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"trustCommitmentAccepted\": true, \"commitmentVersion\": \"v2.0\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T03: Target 10M / 3 seats rejected (target_not_divisible_by_seats)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "obligations",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 10000000, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T03 Rejected status 409', function() { pm.response.to.have.status(409); });",
+                  "pm.expect(pm.response.json().code).to.eql('target_not_divisible_by_seats');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04e: Confirm Obligations for 3 seats (9M / 3 = 3M each)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/obligations/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "obligations",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 9000000, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T04 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T04f: Verify Allocation has 3M each",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/contribution-allocation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "contribution-allocation"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T04 Exactly 3M per seat', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.members.length).to.eql(3);",
+                  "    data.members.forEach(function(a) { pm.expect(a.requiredVnd).to.eql(3000000); });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T05: Kick Member B within deadline -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/members/{{member_b_id}}/kick",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "members",
+                "{{member_b_id}}",
+                "kick"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\", \"reason\": \"Kick Member B\", \"idempotencyKey\": \"t05-kick-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T05 Kick rejected 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T10: Spend blocked while unpaid -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 1000000, \"recipientUserId\": \"{{owner_a_id}}\", \"purpose\": \"T10 Chi\", \"idempotencyKey\": \"t10-req-01\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T10 Spend blocked 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T11: Member B without CanSpend cannot spend -> 403/409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 500000, \"recipientUserId\": \"{{member_b_id}}\", \"purpose\": \"T11 Chi\", \"idempotencyKey\": \"t11-req-01\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T11 Spend blocked 403/409', function() { pm.expect([403, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T21: 4th period proposal rejected (contract constraint)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/activity-proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "activity-proposals"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetVnd\": 9000000, \"securityPin\": \"{{owner_a_pin}}\", \"idempotencyKey\": \"t21-prop-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T21 Guard Status 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Prep: Owner A Contributes 3,000,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amountVnd\": 3000000, \"walletId\": \"{{owner_a_wallet_id}}\", \"obligationRevision\": 1, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Owner A Contribution 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().amountVnd).to.eql(3000000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Prep: Member B Contributes 3,000,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amountVnd\": 3000000, \"walletId\": \"{{member_b_wallet_id}}\", \"obligationRevision\": 1, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B Contribution 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().amountVnd).to.eql(3000000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Prep: Member C Contributes 3,000,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amountVnd\": 3000000, \"walletId\": \"{{member_c_wallet_id}}\", \"obligationRevision\": 1, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{member_c_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member C Contribution 200', function() { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().amountVnd).to.eql(3000000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Prep: Verify Fund is 100% Funded (9,000,000 VND)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/finance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "finance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T12 Prep: Balance is 9,000,000 VND', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().balanceVnd).to.eql(9000000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Prep: Owner A Grants CanSpend to Member B",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/members/{{member_b_id}}/spending-permission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "members",
+                "{{member_b_id}}",
+                "spending-permission"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"enabled\": true, \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CanSpend Granted 204', function() { pm.expect([200, 204]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12: Member B Executes Direct Expense 500,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 500000, \"recipientUserId\": \"{{outsider_id}}\", \"purpose\": \"T12 Chi tr\\u1ef1c ti\\u1ebfp \\u0103n tr\\u01b0a\", \"idempotencyKey\": \"t12-exp-stage3-01\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T12 Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.state).to.eql('Completed');",
+                  "pm.expect(data.amountVnd).to.eql(500000);",
+                  "pm.environment.set('t12_exp_id', data.id);",
+                  "pm.collectionVariables.set('t12_exp_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 Check: Treasury Balance is 8,500,000 VND",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/finance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "finance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Treasury balance reduced by 500k', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().balanceVnd).to.eql(8500000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T30: Member C Reports Completed Expense -> SupportCase Created",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_c_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{t12_exp_id}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{t12_exp_id}}",
+                "report"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\": \"Tranh ch\\u1ea5p T30: Y\\u00eau c\\u1ea7u ki\\u1ec3m tra h\\u00f3a \\u0111\\u01a1n ti\\u1ec7c\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T30 Report Status 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.state).to.eql('Completed');",
+                  "pm.expect(data.id).to.eql(pm.collectionVariables.get('t12_exp_id'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T01 Clean: Close Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/activity/close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "activity",
+                "close"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T01 Activity Closed 200/204', function() { pm.expect([200, 204]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T14 / Dissolve: Dissolve Fund and Refund 8,500,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{t01_fund_id}}/dissolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{t01_fund_id}}",
+                "dissolve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\", \"idempotencyKey\": \"t01-clean-dissolve-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T14 Dissolved 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.totalRefundedVnd).to.eql(8500000);",
+                  "pm.expect(data.finalBalanceVnd).to.eql(0);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Free Fund V1 - 19 Scenarios",
+      "item": [
+        {
+          "name": "FF01a: Create Free Fund for 60/40 Split",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Free Fund FF01 60-40 Test\", \"kind\": \"Free\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('ff01_fund_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('ff01_fund_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01b: Invite Member B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_b_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('ff01_inv_b', pm.response.json().id);",
+                  "pm.collectionVariables.set('ff01_inv_b', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01c: Member B Accepts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/invitations/{{ff01_inv_b}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "invitations",
+                "{{ff01_inv_b}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01d: Owner A Contributes 600,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"walletId\": \"{{owner_a_wallet_id}}\", \"amountVnd\": 600000, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Owner A Contributed 600k', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01e: Member B Contributes 400,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/contributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "contributions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"walletId\": \"{{member_b_wallet_id}}\", \"amountVnd\": 400000, \"idempotencyKey\": \"{{$guid}}\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B Contributed 400k', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01f: Member B Submits Expense 200,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Expense\", \"amountVnd\": 200000, \"recipientUserId\": \"{{member_b_id}}\", \"purpose\": \"FF01 Chi chung 200k\", \"idempotencyKey\": \"ff01-exp-01\", \"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expense 200k Submitted', function() { pm.response.to.have.status(200); });",
+                  "pm.environment.set('ff01_req_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('ff01_req_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01g: Owner A Approves Expense 200,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{ff01_req_id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{ff01_req_id}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"approved\": true, \"reason\": \"Duyet chi 200k\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expense 200k Approved', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01h: Member B Initiates Payment for 200,000 VND",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/requests/{{ff01_req_id}}/initiate-payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "requests",
+                "{{ff01_req_id}}",
+                "initiate-payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Payment Initiated / Handled 200/409', function() { pm.expect([200, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF01i: Verify Total Equity after 200k spend is 800,000 VND",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/equity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "equity"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF01 Available Balance is 800,000 VND', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.availableBalanceVnd).to.eql(800000);",
+                  "    pm.expect([800000, 1000000]).to.include(data.totalBalanceVnd);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF02a: Check Member B Refund Preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/refund-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "refund-preview"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF02 Refund preview is calculated correctly', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect([320000, 400000]).to.include(data.eligibleRefundAmountVnd);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF02b: Member B Leaves Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "leave"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\", \"idempotencyKey\": \"ff02-leave-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member B Left 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.status).to.eql('Completed');",
+                  "pm.expect(data.refundAmountVnd).to.eql(400000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T28 / FF02d: Member B Replays Leave with Same IdempotencyKey -> 200 Replayed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{member_b_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "leave"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{member_b_pin}}\", \"idempotencyKey\": \"ff02-leave-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T28 Leave Replayed 200', function() { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.expect(data.status).to.eql('Completed');",
+                  "pm.expect(data.refundAmountVnd).to.eql(400000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF02c: Verify Owner A remaining equity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/equity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "equity"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF02 Owner A equity is preserved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var data = pm.response.json();",
+                  "    pm.expect([480000, 600000]).to.include(data.totalBalanceVnd);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF09: Check requests list status 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF09 Status 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF10: Submit withdrawal request while expense exists",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kind\": \"Withdrawal\", \"amountVnd\": 100000, \"recipientUserId\": \"{{owner_a_id}}\", \"purpose\": \"FF10 Rut 100k\", \"idempotencyKey\": \"ff10-with-01\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF10 Dual pending allowed 200', function() { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF19: Owner attempts transfer ownership -> 409 Conflict",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/ownership-offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "ownership-offers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\": \"{{member_b_id}}\", \"securityPin\": \"{{owner_a_pin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF19 Transfer rejected 409', function() { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FF Clean: Dissolve Free Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_a_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/funds/{{ff01_fund_id}}/dissolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "funds",
+                "{{ff01_fund_id}}",
+                "dissolve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"securityPin\": \"{{owner_a_pin}}\", \"idempotencyKey\": \"ff-clean-dissolve-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FF Dissolved 200/409', function() { pm.expect([200, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

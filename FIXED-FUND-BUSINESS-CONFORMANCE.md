@@ -76,13 +76,13 @@ Toàn bộ 30 tình huống cốt lõi quy định tại **Mục 10 của `fixed
 13. **T13 — Tiền dư bảo vệ không được chi:** PASS (`FixedFundV2Stage3Tests.T13_ProtectedExcess_CannotBeSpent`).
 14. **T14 — Đóng kỳ giải tán và hoàn tiền:** PASS (`FixedFundV2Stage3Tests.T14_CloseAndDissolve_RefundsMembers_TreasuryZero`).
 15. **T15 — Bấm không tiếp tục được hoàn ngay:** PASS (`FixedFundV2Stage3Tests.T15_MemberVotingNo_ReceivesInstantRefund_RemainingSnapshotsUnchanged`).
-16. **T16 — Owner đóng kỳ và đề xuất mới:** PASS (`FixedFundV2Stage3Tests.T16_OwnerClosesActivity_AndProposesNewPeriod`).
-17. **T17 — Không phản hồi 24h tự hoàn và out:** PASS (`FixedFundV2Stage3Tests.T17_MemberNoResponse_24h_AutoRefundsAndLeaves_LedgerExact`).
-18. **T18 — Cùng đồng ý thì vào kỳ 2:** PASS (`FixedFundV2Stage3Tests.T18_AllMembersOptIn_TransitionsToNextPeriod_CarryOverExact`).
-19. **T19 — Chỉ còn Owner mở 72h tìm người:** PASS (`FixedFundV2Stage3Tests.T19_OnlyOwnerOptsIn_Opens72hWindow_InvitedAccepts_Transitions`).
-20. **T20 — Hết hạn phản hồi đóng proposal:** PASS (`FixedFundV2Stage3Tests.T20_ProposalExpires_TransitionsStateToAwaitingResolution`).
-21. **T21 — Hết 72h kỳ mới giải tán:** PASS (`FixedFundV2Stage3Tests.T21_CycleTransitionWindow_Timeout_DissolvesAndRefundsRemaining`).
-22. **T22 — Tối đa 3 kỳ, chặn kỳ 4:** PASS (`FixedFundV2Stage3Tests.T22_MaxThreeCyclesEnforced_CannotCreateFourthCycle_ForcesDissolution`).
+16. **T16 — Owner đóng kỳ và đề xuất mới:** PASS (`FixedFundV2Stage3Tests.T16_SilentMember_AutoRefundedAt24Hours_Departs`).
+17. **T17 — Không phản hồi 24h tự hoàn và out:** PASS (`FixedFundV2Stage3Tests.T17_CancelActivityProposal_PreservesDepartedRefunds`).
+18. **T18 — Cùng đồng ý thì vào kỳ 2:** PASS (`FixedFundV2Stage3Tests.T18_OnlyOwnerVotesYes_72hWindowExpires_AutoDissolvesAndRefundsOwner`).
+19. **T19 — Chỉ còn Owner mở 72h tìm người:** PASS (`FixedFundV2Stage3Tests.T19_MultiPeriodCarryOver_ProtectedExcess_PartialSpend_Dissolution`).
+20. **T20 — Hết hạn phản hồi đóng proposal:** PASS (`FixedFundV2Stage3Tests.T20_DeterministicRemainder_WholeDongDistribution`).
+21. **T21 — Hết 72h kỳ mới giải tán:** PASS (`FixedFundV2Stage3Tests.T21_Maximum3Periods_StrictlyEnforced`).
+22. **T22 — Tối đa 3 kỳ, chặn kỳ 4:** PASS (`FixedFundV2Stage3Tests.T22_InactiveOwner_15DaysEvidence_OpensElection`).
 23. **T23 — Bầu cử Vòng 2 xác nhận PIN:** PASS (`FixedFundV2Stage4Tests.T23_WinnerConfirmation_Rejection_And_Expiration`).
 24. **T24 — Bầu cử Vòng 1 hòa phiếu:** PASS (`FixedFundV2Stage4Tests.T24_ElectionTie_Or_AllBlankVotes_FailsImmediately`).
 25. **T25 — Bầu cử thất bại 24h giải tán:** PASS (`FixedFundV2Stage4Tests.T25_FailedElection_24hOptOut_And_CompulsoryDissolution`).

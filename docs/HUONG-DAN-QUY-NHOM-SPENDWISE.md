@@ -361,10 +361,10 @@ Xét tình huống: Bạn đang có 500.000đ vốn. Bạn gửi yêu cầu xin 
 > 4. **Tạo yêu cầu chi chung:** Chi đi ăn cùng nhóm và đứng ra tạo yêu cầu chi chung 200.000đ tiền cơm trưa. Dù Chi đang có vốn 0đ, hệ thống vẫn cho phép Chi tạo yêu cầu gửi An duyệt.
 > 5. **Duyệt giữ chỗ 7 ngày:** An duyệt yêu cầu của Chi. Yêu cầu chuyển sang trạng thái `ApprovedUnused` giữ chỗ 200.000đ trong 7 ngày. Tiền vẫn nằm trong quỹ (1.000.000đ), nhưng hạn mức khả dụng của quỹ giảm xuống còn 800.000đ.
 > 6. **Cổng an toàn khóa rút tiền:** Bình muốn rút 100.000đ về ví cá nhân nên gửi yêu cầu Withdrawal. Khi An vào duyệt cho Bình, hệ thống **từ chối duyệt** và báo lỗi `fund_withdrawal_blocked_by_active_expense` vì quỹ đang có khoản chi 200k giữ chỗ của Chi chưa xử lý xong. Yêu cầu rút của Bình tiếp tục nằm chờ an toàn.
-> 7. **Chủ quỹ chi trực tiếp:** Vì cổng thanh toán ngoài đang bảo trì, An quyết định dùng quyền Chủ quỹ thực hiện khoản chi trực tiếp 200.000đ thanh toán hóa đơn cơm trưa cho chủ quán. Giao dịch thành công ngay lập tức!
+> 7. **Chủ quỹ chi trực tiếp:** Để không giữ chỗ hai lần cho cùng một hóa đơn, An **hủy quyền chi `ApprovedUnused` 200.000đ của Chi trước**, giải phóng số dư khả dụng. Sau đó An dùng quyền Chủ quỹ thực hiện khoản chi trực tiếp 200.000đ thanh toán hóa đơn cơm trưa cho người nhận hợp lệ. Giao dịch thành công ngay lập tức!
 >    - Quỹ bị trừ 200.000đ (còn 800.000đ).
 >    - Chi phí 200.000đ phân bổ theo tỷ lệ vốn: An chịu 120.000đ (vốn còn 480.000đ), Bình chịu 80.000đ (vốn còn 320.000đ), Chi chịu 0đ.
->    - Khoản `ApprovedUnused` 200k của Chi được An hủy hoặc hoàn tất, giải phóng hạn mức.
+>    - Khoản `ApprovedUnused` 200k của Chi **đã được hủy trước lệnh chi trực tiếp**; không đánh dấu quyền chi đó là `Completed` vì chưa có thanh toán qua provider.
 > 8. **Mở khóa duyệt rút tiền:** Sau khi không còn khoản chi giữ chỗ nào, An duyệt thành công yêu cầu rút 100.000đ cho Bình. Bình nhận 100.000đ về ví cá nhân. Vốn của Bình còn lại 220.000đ. Quỹ còn 700.000đ.
 > 9. **Rời nhóm hợp lệ:** Bình muốn rời nhóm. Bình kiểm tra không còn yêu cầu nào đang chờ duyệt, bấm nút [Rời nhóm] -> Hệ thống hoàn trả ngay **220.000đ** về ví cá nhân của Bình. Bình rời nhóm thành công. Quỹ còn 480.000đ (toàn bộ thuộc sở hữu của An).
 > 10. **Giải tán quỹ:** An bấm [Giải tán quỹ]. An nhận lại toàn bộ **480.000đ** về ví của mình. Số dư quỹ về đúng 0đ. Quỹ giải tán hoàn tất!
@@ -707,6 +707,12 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
   - API: `POST /api/v1/funds/activity-proposals/{proposalId}/vote`
   - Chọn Tiếp tục: Body `{"support": true}`
   - Chọn Không tiếp tục (Nhận hoàn tiền ngay): Body `{"support": false}`
+- **Xác nhận nghĩa vụ kỳ mới (bắt buộc trước quyết toán):**
+  - API: `POST /api/v1/funds/activity-proposals/{proposalId}/confirm-obligation`
+  - Body: `{"expectedObligationVnd": 3000000, "expectedDurationHours": 24, "securityPin": "<PIN>"}`. Lấy nghĩa vụ và thời lượng dự kiến mới nhất từ đề xuất; nếu thay đổi do thành viên biến động, cần xác nhận lại.
+- **Chủ quỹ quyết toán đề xuất để mở kỳ mới:**
+  - API: `POST /api/v1/funds/activity-proposals/{proposalId}/settle`
+  - Body: `{"securityPin": "<PIN>"}`. Chỉ thực hiện khi đã xác định đủ người tiếp tục và mọi nghĩa vụ cần thiết được xác nhận.
 - **Chủ quỹ kết thúc sớm khi có ghế trống:**
   - API: `POST /api/v1/funds/{id}/fail-period-early`
   - Body: `{"securityPin": "123456"}`
@@ -756,9 +762,9 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
 
 | Mã lỗi (`AppException.Code`) | HTTP Status | Giải thích kỹ thuật | Thông điệp hiển thị trên UI cho người dùng |
 |:---|:---:|:---|:---|
-| `target_not_divisible_by_seats` | 400 / 409 | Mục tiêu không chia hết cho số ghế xác nhận đến từng 1 VND. | "Mục tiêu không thể chia đều chính xác cho số thành viên. Vui lòng điều chỉnh lại số tiền mục tiêu." |
+| `target_not_divisible_by_seats` | 409 | Mục tiêu không chia hết cho số ghế xác nhận đến từng 1 VND. | "Mục tiêu không thể chia đều chính xác cho số thành viên. Vui lòng điều chỉnh lại số tiền mục tiêu." |
 | `invalid_contribution_duration` | 400 | Thời lượng nộp tiền ngoài khoảng 1–720 giờ. | "Thời lượng nộp tiền cá nhân phải nằm trong khoảng từ 1 đến 720 giờ (tối đa 30 ngày)." |
-| `trust_commitment_required` | 400 | Chưa tích cam kết tin tưởng v2.0 cho Fixed Fund. | "Bạn bắt buộc phải xác nhận cam kết tin tưởng để tham gia Quỹ Cố định." |
+| `trust_commitment_required` | 409 | Chưa tích cam kết tin tưởng v2.0 cho Fixed Fund. | "Bạn bắt buộc phải xác nhận cam kết tin tưởng để tham gia Quỹ Cố định." |
 | `pin_verification_failed` | 401 | Nhập sai mã PIN bảo mật 6 số hoặc tài khoản bị tạm khóa do nhập sai nhiều lần. | "Mã PIN bảo mật không chính xác. Vui lòng kiểm tra lại." |
 | `fixed_fund_voluntary_leave_disallowed` | 409 | Thành viên tự bấm Leave khi kỳ đang hoạt động. | "Trong kỳ đang hoạt động, thành viên không được tự ý rời nhóm. Vui lòng đợi đến khi kết thúc kỳ." |
 | `member_pending_requests` | 409 | Thành viên bấm Leave/Kick khi còn yêu cầu AwaitingOwnerReview. | "Bạn phải tự hủy hoặc chờ giải quyết các yêu cầu đang chờ duyệt trước khi rời quỹ." |

@@ -361,10 +361,10 @@ Xét tình huống: Bạn đang có 500.000đ vốn. Bạn gửi yêu cầu xin 
 > 4. **Tạo yêu cầu chi chung:** Chi đi ăn cùng nhóm và đứng ra tạo yêu cầu chi chung 200.000đ tiền cơm trưa. Dù Chi đang có vốn 0đ, hệ thống vẫn cho phép Chi tạo yêu cầu gửi An duyệt.
 > 5. **Duyệt giữ chỗ 7 ngày:** An duyệt yêu cầu của Chi. Yêu cầu chuyển sang trạng thái `ApprovedUnused` giữ chỗ 200.000đ trong 7 ngày. Tiền vẫn nằm trong quỹ (1.000.000đ), nhưng hạn mức khả dụng của quỹ giảm xuống còn 800.000đ.
 > 6. **Cổng an toàn khóa rút tiền:** Bình muốn rút 100.000đ về ví cá nhân nên gửi yêu cầu Withdrawal. Khi An vào duyệt cho Bình, hệ thống **từ chối duyệt** và báo lỗi `fund_withdrawal_blocked_by_active_expense` vì quỹ đang có khoản chi 200k giữ chỗ của Chi chưa xử lý xong. Yêu cầu rút của Bình tiếp tục nằm chờ an toàn.
-> 7. **Chủ quỹ chi trực tiếp:** Vì cổng thanh toán ngoài đang bảo trì, An quyết định dùng quyền Chủ quỹ thực hiện khoản chi trực tiếp 200.000đ thanh toán hóa đơn cơm trưa cho chủ quán. Giao dịch thành công ngay lập tức!
+> 7. **Chủ quỹ chi trực tiếp:** Để không giữ chỗ hai lần cho cùng một hóa đơn, An **hủy quyền chi `ApprovedUnused` 200.000đ của Chi trước**, giải phóng số dư khả dụng. Sau đó An dùng quyền Chủ quỹ thực hiện khoản chi trực tiếp 200.000đ thanh toán hóa đơn cơm trưa cho người nhận hợp lệ. Giao dịch thành công ngay lập tức!
 >    - Quỹ bị trừ 200.000đ (còn 800.000đ).
 >    - Chi phí 200.000đ phân bổ theo tỷ lệ vốn: An chịu 120.000đ (vốn còn 480.000đ), Bình chịu 80.000đ (vốn còn 320.000đ), Chi chịu 0đ.
->    - Khoản `ApprovedUnused` 200k của Chi được An hủy hoặc hoàn tất, giải phóng hạn mức.
+>    - Khoản `ApprovedUnused` 200k của Chi **đã được hủy trước lệnh chi trực tiếp**; không đánh dấu quyền chi đó là `Completed` vì chưa có thanh toán qua provider.
 > 8. **Mở khóa duyệt rút tiền:** Sau khi không còn khoản chi giữ chỗ nào, An duyệt thành công yêu cầu rút 100.000đ cho Bình. Bình nhận 100.000đ về ví cá nhân. Vốn của Bình còn lại 220.000đ. Quỹ còn 700.000đ.
 > 9. **Rời nhóm hợp lệ:** Bình muốn rời nhóm. Bình kiểm tra không còn yêu cầu nào đang chờ duyệt, bấm nút [Rời nhóm] -> Hệ thống hoàn trả ngay **220.000đ** về ví cá nhân của Bình. Bình rời nhóm thành công. Quỹ còn 480.000đ (toàn bộ thuộc sở hữu của An).
 > 10. **Giải tán quỹ:** An bấm [Giải tán quỹ]. An nhận lại toàn bộ **480.000đ** về ví của mình. Số dư quỹ về đúng 0đ. Quỹ giải tán hoàn tất!

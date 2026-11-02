@@ -47,11 +47,24 @@ dotnet test backend/tests/SpendWise.Tests/SpendWise.Tests.csproj --filter "Fully
 
 **Bằng chứng đầu ra (Log trích xuất):**
 ```text
-Passed!  - Failed:     0, Passed:   174, Skipped:     0, Total:   174, Duration: 1 m 58 s
-- FixedFundV2 (106 tests): 106 Passed
-- FreeFund (74 tests): 74 Passed
+Passed!  - Failed:     0, Passed:   174, Skipped:     0, Total:   174, Duration: 1 m 41 s
 - Kết quả: 100% All Green
 ```
+
+### 1.4. Đối soát số lượng test và giải thích phép trừ phần giao (Overlap Reconciliation)
+
+- **Số test khớp bộ lọc `FixedFundV2`:** **106** bài test.
+- **Số test khớp bộ lọc `FreeFund`:** **74** bài test.
+- **Số test giao nhau (chứa cả hai từ khóa để kiểm thử hồi quy chéo / cross-compatibility):** **6** bài test:
+  1. `SpendWise.Tests.FixedFundV2BusinessRuleTests.F26_FreeFund_WithdrawalAndOwnerReview_Remains100PercentIntact`
+  2. `SpendWise.Tests.FixedFundV2BusinessRuleTests.F27_FreeFund_DoesNotEnforceObligationOrIndividualContributionGate`
+  3. `SpendWise.Tests.FixedFundV2HttpTests.Http_AcceptInvitation_EnforcesFixedTrust_AndPreservesFreeFundCompatibility`
+  4. `SpendWise.Tests.FixedFundV2Stage1Tests.F4_FreeFund_PreservesZeroContamination_NoTrustFieldsOrDuration`
+  5. `SpendWise.Tests.FreeFundFinalAcceptanceTests.FixedFundV2_BackwardCompatibility_WithLegacyRefundScope_PreservedAndUnmodified`
+  6. `SpendWise.Tests.FreeFundRequestWorkflowTests.FixedFundV2_RegressionCheck_ExpenseWorkflow_Unchanged`
+- **Công thức tính số test duy nhất:**  
+  $$\text{Total Unique Tests} = 106 + 74 - 6 = \mathbf{174}\text{ tests}$$
+- Toàn bộ 174 bài test duy nhất đều chạy thực tế và đạt kết quả **100% PASS (0 FAILED, 0 SKIPPED)**.
 
 ---
 

@@ -36,7 +36,7 @@
    - **Tranh chấp & lịch sử:** Cam kết tin tưởng **không thay thế** quyền gửi khiếu nại lên Admin; can thiệp cần bằng chứng, phân quyền và audit, không hứa tự động thu hồi tiền đã chi. Lịch sử các kỳ cũ bất biến, người mới không xem nội dung riêng kỳ cũ; người rời còn chứng từ của mình; dữ liệu giải tán lưu cho quản trị.
    - **Trạng thái bằng chứng:** toàn bộ mô tả trên là **ĐÃ TRIỂN KHAI & KIỂM THỬ ĐẦY ĐỦ** qua bộ kiểm thử tự động toàn diện (Fixed Fund V2 Stage 1–5 đã chính thức nghiệm thu — PASS APPROVED bởi ChatGPT Reviewer tại commit 7667bb9, 74 tests Free Fund V1 PASS không hồi quy).
 
-2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ MỚI CHỐT 01/11/2026, CHỜ TRIỂN KHAI:**
+2. **Quỹ nhóm Tự do (Free Fund V1) — ĐẶC TẢ NGHIỆP VỤ & TRIỂN KHAI V1.0 (ĐÃ HOÀN TẤT & ĐƯỢC CHẤP THUẬN):**
    - **Phạm vi:** Quỹ chung góp tự nguyện, không có nghĩa vụ đóng `T/n`; tối đa **6 người** gồm Owner và Member. Mỗi User tối đa 10 nhóm/quỹ đang hoạt động theo giới hạn chung hiện có. Chủ quỹ và thành viên đều được góp thêm tiền. Mời bạn bè: Owner hoặc Member có thể mời người đã kết bạn; người nhận phải tự chấp nhận, **không cần Owner duyệt lời mời do Member gửi**.
    - **Không có** bầu cử khi Owner vắng mặt 15 ngày, chuyển quyền Owner, Activity Proposal của Fixed, `Pending24h`, `Suspended` nội bộ hoặc phán xử tranh chấp quỹ riêng. Khiếu nại giao dịch sử dụng chức năng hỗ trợ chung SpendWise. **Owner muốn rời thì phải giải tán quỹ**; không được chuyển chủ.
    - **Hai nút Member:** `Yêu cầu chi chung` (`Expense`) và `Yêu cầu rút vốn cá nhân` (`Withdrawal`). Mỗi người, trong mỗi quỹ, chỉ được có **1 yêu cầu đang hoạt động cho mỗi loại** (tối đa 2 loại khác nhau). Nút đã gửi bị khóa; phía server phải từ chối tạo trùng. Member xem yêu cầu bản thân; Owner xem và duyệt/từ chối yêu cầu của toàn nhóm. Lịch sử bao gồm đã duyệt, hoàn tất, đang chờ, từ chối, hủy và lý do; tất cả thành viên thấy lịch sử giao dịch tài chính chung theo phạm vi tham gia.
@@ -352,7 +352,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 | API | DTO/body và điều kiện |
 |---|---|
-| `POST /api/v1/funds` | Tạo Fixed: `{"name":"Quỹ định kỳ","kind":"Fixed","targetVnd":600000,"securityPin":"<PIN>"}` → `V1FundDto`. |
+| `POST /api/v1/funds` | Tạo Fixed V2: `{"name":"Quỹ định kỳ","kind":"Fixed","targetVnd":600000,"contributionDurationHours":24,"trustCommitmentAccepted":true,"commitmentVersion":"v2.0","securityPin":"<PIN>"}` → `V1FundDto`. Tạo Free V1: `{"name":"Quỹ sinh hoạt","kind":"Free","targetVnd":null,"securityPin":"<PIN>"}` → `V1FundDto`. |
 | `POST /api/v1/funds/{id}/obligations/confirm` | Chỉ **chủ quỹ**, `{"targetVnd":600000,"securityPin":"<PIN>"}` → `V1FinanceDto`; xác nhận revision nghĩa vụ cho tập thành viên và target hiện hành. |
 | `GET /api/v1/funds/{id}/contribution-allocation` | **Xem trước, không ghi sổ:** `V1ContributionAllocationDto {fundId,targetVnd,basis:"CurrentMembershipPreview",postingEnabled:false,members:[{userId,seat,requiredVnd}]}`. Không có `canSpend` hoặc số tiền đã góp trong response này. |
 | `GET /api/v1/funds/{id}/finance` | `V1FinanceDto {fundId,revision,targetVnd?,balanceVnd,configurationCurrent,contributionsEnabled,spendingState,obligations:[{userId,seat,requiredVnd,paidVnd,remainingVnd,lockedExcessVnd}]}`. |
@@ -401,6 +401,8 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `POST /api/v1/funds/{id}/leave` | `{"securityPin":"<PIN>","idempotencyKey":"<unique-key>","destinationWalletId":null}`; chủ quỹ phải chuyển quyền trước khi rời nhóm nhiều thành viên. |
 | `POST /api/v1/funds/{id}/members/{userId}/kick` | Chủ quỹ, `{"securityPin":"<PIN>","reason":"Lý do","idempotencyKey":"<unique-key>","destinationWalletId":null}`. |
 | `POST /api/v1/funds/{id}/dissolve` | Chủ quỹ, `{"securityPin":"<PIN>","idempotencyKey":"<unique-key>"}`; giải tán chỉ khi ledger sau hoàn tiền về **0 VND**. |
+| `POST /api/v1/funds/{id}/fail-period-early` | Chủ quỹ, `{"securityPin":"<PIN>"}`; kết thúc thất bại kỳ sớm khi còn ghế trống sau Auto-Kick mà không cần đợi hết 72 giờ, hoàn tiền cho các thành viên hợp lệ và giải tán quỹ. |
+| `POST /api/v1/funds/{id}/fail-period-early` | Chủ quỹ, `{"securityPin":"<PIN>"}`; kết thúc thất bại kỳ sớm khi còn ghế trống sau Auto-Kick mà không cần đợi hết 72 giờ, hoàn tiền cho các thành viên hợp lệ và giải tán quỹ. |
 | `GET /api/v1/funds/{id}/activities` | Lịch sử hoạt động theo `page,pageSize`, `V1ActivityDto` có `event,actorUserId?,subjectUserId?,detail?,createdAt,referenceId?`. |
 | `GET /api/v1/funds/{id}/owner-response` | `V1OwnerResponseDto {fundId,requiredSince?,deadline?,overdue,respondedAt?,caseId?}`. |
 | `POST /api/v1/funds/{id}/owner-response/escalate` | Thành viên góp tiền được mở case hỗ trợ khi chủ quỹ không phản hồi sau **7 ngày hoạt động** kể từ lúc đóng kỳ; không tự sửa ledger hay đổi chủ. |
@@ -422,11 +424,11 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | Mời, chấp nhận/từ chối | `POST /api/v1/funds/{id}/invitations`; `GET /api/v1/funds/invitations`; `POST /api/v1/funds/invitations/{id}/accept` / `decline` | Owner hoặc Member mời bạn bè; người được mời tự chấp nhận; không yêu cầu Owner xét lại lời mời Free. |
 | Góp tiền, lịch sử góp | `POST /api/v1/funds/{id}/contributions`; `GET /api/v1/funds/{id}/contributions` | `walletId, amountVnd, idempotencyKey, securityPin`; ghi vào **vốn lượt tham gia hiện hành** ở thời điểm góp. |
 | Tạo Expense/Withdrawal | `POST /api/v1/funds/{id}/requests` | Body có `kind`, `amountVnd`, `recipientUserId`, `purpose`, `idempotencyKey`, `securityPin`. Mỗi Member chỉ 1 request hiệu lực/mỗi kind; nút thứ hai cùng loại khóa và server trả xung đột. |
-| Danh sách/lịch sử request | `GET /api/v1/funds/{id}/requests` | Hiện API chung chưa phân luồng Member/Owner; **cần bổ sung bộ lọc trạng thái/chủ thể và DTO** (lý do, thời điểm tạo/duyệt/chi, người duyệt). |
-| Owner duyệt/từ chối | `POST /api/v1/funds/requests/{id}/review` | Với Expense: duyệt **không ghi payout**, tạo quyền `ApprovedUnused` trong 7 ngày. Với Withdrawal: chỉ chuyển vào ví Member nếu không có quyền chi chưa dùng ở quỹ và vốn Member còn đủ. Backend hiện tại **chưa đúng** quy tắc Expense mới. |
-| Hủy request/quyền | `POST /api/v1/funds/requests/{id}/cancel` | Cần hỗ trợ hủy `ApprovedUnused`, hết hạn 7 ngày, tự hủy do số dư thay đổi và hủy khi rời/kick/giải tán; không hủy giao dịch đã chuyển qua provider mà chưa xác minh. |
+| Danh sách/lịch sử request | `GET /api/v1/funds/{id}/requests` | Phân quyền nghiêm ngặt: Thành viên chỉ thấy request do chính mình tạo; Owner thấy toàn bộ request của nhóm. DTO đầy đủ lý do, thời điểm, trạng thái (`AwaitingOwnerReview`, `ApprovedUnused`, `Completed`, `Rejected`, `Cancelled`, `Expired`). |
+| Owner duyệt/từ chối | `POST /api/v1/funds/requests/{id}/review` | Với Expense: duyệt **không ghi payout**, chuyển trạng thái `ApprovedUnused` giữ chỗ trong 7 ngày. Với Withdrawal: chuyển ngay vào ví Member nếu vốn còn đủ và quỹ **không có bất kỳ Expense nào đang ở trạng thái ApprovedUnused** (chặn duyệt nếu còn khoản giữ chỗ). |
+| Hủy request/quyền | `POST /api/v1/funds/requests/{id}/cancel` | Hỗ trợ hủy `ApprovedUnused` (thu hồi hạn mức khả chi cho quỹ), tự động hết hạn sau 7 ngày qua worker sweep, tự động hủy pending withdrawal khi vốn bị sụt giảm do chi chung, và tự động hủy quyền chi mới nhất trước khi rời/kick thiếu thanh khoản. |
 | Thanh toán bên ngoài bằng quyền chi | **Chưa có API provider thanh toán hóa đơn thực tế** | Hạng mục mở rộng: xác thực quyền chi, đúng số tiền, một lần, kết quả provider và đối soát; **không tạo giao dịch thành công giả** và không bắt buộc demo thanh toán thật. SePay giữ nguyên. |
-| Vốn / hoàn tiền | `GET /api/v1/funds/{id}/refund-preview`; `POST /api/v1/funds/{id}/leave`; `POST /api/v1/funds/{id}/members/{userId}/kick`; `POST /api/v1/funds/{id}/dissolve` | Phải thay bộ tính Free hiện hành bằng vốn theo thời điểm và lượt thành viên; giữ đúng tất cả ví dụ ở 1.3.1; hủy request/quyền hợp lệ trước refund. |
+| Vốn / hoàn tiền | `GET /api/v1/funds/{id}/refund-preview`; `POST /api/v1/funds/{id}/leave`; `POST /api/v1/funds/{id}/members/{userId}/kick`; `POST /api/v1/funds/{id}/dissolve` | Tính vốn động theo thời gian ($E_i = C_i - S_i - W_i$) qua `V1FreeFundEquityCalculator`. Người vào sau không gánh chi cũ. Làm tròn số lẻ Largest-Remainder khớp đúng 100% số dư sổ cái. Hủy request/quyền chi hợp lệ trước khi hoàn tiền. |
 | Lịch sử tài chính | `GET /api/v1/funds/{id}/contributions`; `GET /api/v1/funds/{id}/activities`; `GET /api/v1/funds/{id}/requests` | Hiện có nguồn dữ liệu lịch sử; cần hiển thị riêng yêu cầu đang chờ và giao dịch đã chi/rút thực sự. Thành viên xem tài chính chung, lịch sử request cá nhân. |
 | Quản trị/bầu cử/chuyển chủ | Một số route `/elections`, `/ownership-offers` và `/governance` vẫn tồn tại trong code dùng chung | **Free Fund không được sử dụng các hành động bầu cử hoặc chuyển Owner**; chỉ Fixed được sử dụng theo chính sách Fixed. Không dùng mốc vắng mặt 15 ngày cho Free. |
 
@@ -434,7 +436,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 **Không dùng cho Free:** `ownership-offers`, `elections`, `Pending24h`, `Suspended` và mô tả chuyển tiền Expense về ví ngay sau khi Owner duyệt. Những mục này còn được đề cập ở tài liệu/code cũ, không phải yêu cầu nghiệp vụ Free đã khóa.
 
-**Tiêu chí triển khai/kiểm thử tương lai:** số dư quỹ = tổng vốn người tham gia; request không trùng; tổng quyền chi không vượt quỹ; chi/hoàn/rút không double-post; tự hết hạn quyền 7 ngày; bảo vệ thanh toán đang xử lý; refund-preview khớp thực nhận; Free không đổi hành vi Fixed, SePay và `/api/groups`. Chưa có kết quả kiểm thử cho đặc tả mới.
+**Trạng thái nghiệm thu thực tế:** Đã triển khai hoàn tất và vượt qua 74/74 unit/integration test trong `backend/tests/SpendWise.Tests/`: số dư quỹ luôn bằng tổng vốn thành viên; không double-post; tự động hết hạn quyền chi sau 7 ngày; khóa duyệt rút tiền khi có giữ chỗ; hủy tự động khi sụt giảm vốn; bảo toàn 18 ví dụ số học chuẩn xác 100%.
 
 ### 3.7. Kế hoạch tài chính: Ngân sách, mục tiêu, giao dịch định kỳ, quy tắc
 

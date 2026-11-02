@@ -1,7 +1,7 @@
 # BÁO CÁO KẾT QUẢ KIỂM THỬ THỰC TẾ QUỸ NHÓM (FIXED FUND V2 & FREE FUND V1)
 
 > **Ngày thực thi:** 02/11/2026  
-> **Lệnh kiểm thử:** `dotnet test backend/tests/SpendWise.Tests/SpendWise.Tests.csproj --filter "FullyQualifiedName~FixedFundV2|FullyQualifiedName~FreeFund" --no-build -c Debug --logger "trx;LogFileName=GROUP-FUNDS-TEST-RESULTS.trx"`  
+> **Lệnh kiểm thử:** `dotnet test backend/tests/SpendWise.Tests/SpendWise.Tests.csproj --filter "FullyQualifiedName~FixedFundV2|FullyQualifiedName~FreeFund|FullyQualifiedName~BankLinkingAndWalletGuardTests|FullyQualifiedName~FinancialIntegrityPhaseTests" --no-build -c Debug --logger "trx;LogFileName=GROUP-FUNDS-TEST-RESULTS.trx"`  
 > **File TRX gốc:** `backend/tests/SpendWise.Tests/TestResults/GROUP-FUNDS-TEST-RESULTS.trx` (và bản sao `reports/GROUP-FUNDS-TEST-RESULTS.trx`)  
 > **File Log chi tiết:** `reports/GROUP-FUNDS-TEST-RESULTS.log`  
 
@@ -14,18 +14,18 @@ Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\
 A total of 1 test files matched the specified pattern.
 Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\GROUP-FUNDS-TEST-RESULTS.trx
 
-Passed!  - Failed: 0, Passed: 174, Skipped: 0, Total: 174, Duration: 1 m 47 s - SpendWise.Tests.dll (net10.0)
+Passed!  - Failed: 0, Passed: 204, Skipped: 0, Total: 204, Duration: 1 m 53 s - SpendWise.Tests.dll (net10.0)
 ```
 
-- **Tổng số tests thi hành:** 174
-- **Passed:** 174 (100%)
+- **Tổng số tests thi hành:** 204
+- **Passed:** 204 (100%)
 - **Failed:** 0
 - **Skipped:** 0
-- **Thời lượng chạy:** 1 phút 47 giây
+- **Thời lượng chạy:** 1 phút 53 giây
 
 ---
 
-## 2. PHÂN BỔ CÁC SUITE KIỂM THỬ ĐÃ THỰC THI (174 TESTS)
+## 2. PHÂN BỔ CÁC SUITE KIỂM THỬ ĐÃ THỰC THI (204 TESTS)
 
 ### A. FixedFundV2BusinessRuleTests (30 tests) — 100% Passed
 1. `F01_CannotSetCanSpend_BeforeObligationsConfirmed`
@@ -221,3 +221,37 @@ Passed!  - Failed: 0, Passed: 174, Skipped: 0, Total: 174, Duration: 1 m 47 s - 
 2. `FreeFund_StressAndConcurrency_ParallelIdempotentOperations_OnSqlServer_WithIndependentConnections`
 3. `FixedFundV2_BackwardCompatibility_WithLegacyRefundScope_PreservedAndUnmodified`
 4. `FreeFund_HttpApi_OpenApiContract_RealServerSmokeTest`
+
+### N. BankLinkingAndWalletGuardTests (16 tests) — 100% Passed
+1. `ActiveBankGuard_ThrowsWhenUserHasNoActiveBank`
+2. `ActiveBankGuard_PassesWhenUserHasActiveBank`
+3. `CreateWallet_ThrowsWhenNoActiveBank`
+4. `BankUnlinkSafety_BlocksUnlinkWhenWalletBalanceGreaterThanZero`
+5. `BankUnlinkSafety_AllowsUnlinkWhenAllWalletsZero`
+6. `BankLinking_UserCanOnlyLinkOneActiveBankAccount`
+7. `BankReactivate_AllowsReactivationOfDeactivatedAccount`
+8. `BankStatusTransitions_Active_Inactive_Suspended`
+9. `BankDirectPayment_EnforcesActiveBankGuard`
+10. `BankSecurity_PreventsDuplicateExternalAccountId`
+11. `WalletOperations_RejectTransactionsWhenBankSuspended`
+12. `BankDisputeReconciliation_PreservesIntegrity`
+13. `ActiveBank_RequiredForIncomePosting`
+14. `ActiveBank_RequiredForExpensePosting`
+15. `ActiveBank_RequiredForP2PTransfer`
+16. `ActiveBank_RequiredForInternalTransfer`
+
+### O. FinancialIntegrityPhaseTests (14 tests) — 100% Passed
+1. `Manual_transaction_requires_current_pin_and_evidence_without_side_effects`
+2. `Manual_transaction_wrong_pin_rejects_without_side_effects`
+3. `Correction_requires_pin_and_preserves_audit_trail`
+4. `Recurring_transaction_schedule_execution_accuracy`
+5. `Goal_movements_verify_pin_before_contribute_or_withdraw`
+6. `Goal_movement_rejects_insufficient_wallet_balance`
+7. `Pin_verification_fails_when_locked`
+8. `Evidence_attachment_validates_ownership`
+9. `Evidence_cannot_be_shared_across_distinct_users`
+10. `Ledger_transaction_immutable_after_posting`
+11. `Financial_transaction_correlates_to_ledger_record`
+12. `Double_spending_prevention_on_concurrent_requests`
+13. `Strict_transaction_isolation_between_accounts`
+14. `Rollback_on_unhandled_exception_leaves_zero_orphans`

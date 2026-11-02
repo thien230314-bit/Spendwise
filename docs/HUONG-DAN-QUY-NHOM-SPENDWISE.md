@@ -756,9 +756,9 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
 
 | Mã lỗi (`AppException.Code`) | HTTP Status | Giải thích kỹ thuật | Thông điệp hiển thị trên UI cho người dùng |
 |:---|:---:|:---|:---|
-| `target_not_divisible_by_seats` | 400 / 409 | Mục tiêu không chia hết cho số ghế xác nhận đến từng 1 VND. | "Mục tiêu không thể chia đều chính xác cho số thành viên. Vui lòng điều chỉnh lại số tiền mục tiêu." |
+| `target_not_divisible_by_seats` | 409 | Mục tiêu không chia hết cho số ghế xác nhận đến từng 1 VND. | "Mục tiêu không thể chia đều chính xác cho số thành viên. Vui lòng điều chỉnh lại số tiền mục tiêu." |
 | `invalid_contribution_duration` | 400 | Thời lượng nộp tiền ngoài khoảng 1–720 giờ. | "Thời lượng nộp tiền cá nhân phải nằm trong khoảng từ 1 đến 720 giờ (tối đa 30 ngày)." |
-| `trust_commitment_required` | 400 | Chưa tích cam kết tin tưởng v2.0 cho Fixed Fund. | "Bạn bắt buộc phải xác nhận cam kết tin tưởng để tham gia Quỹ Cố định." |
+| `trust_commitment_required` | 409 | Chưa tích cam kết tin tưởng v2.0 cho Fixed Fund. | "Bạn bắt buộc phải xác nhận cam kết tin tưởng để tham gia Quỹ Cố định." |
 | `pin_verification_failed` | 401 | Nhập sai mã PIN bảo mật 6 số hoặc tài khoản bị tạm khóa do nhập sai nhiều lần. | "Mã PIN bảo mật không chính xác. Vui lòng kiểm tra lại." |
 | `fixed_fund_voluntary_leave_disallowed` | 409 | Thành viên tự bấm Leave khi kỳ đang hoạt động. | "Trong kỳ đang hoạt động, thành viên không được tự ý rời nhóm. Vui lòng đợi đến khi kết thúc kỳ." |
 | `member_pending_requests` | 409 | Thành viên bấm Leave/Kick khi còn yêu cầu AwaitingOwnerReview. | "Bạn phải tự hủy hoặc chờ giải quyết các yêu cầu đang chờ duyệt trước khi rời quỹ." |

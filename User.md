@@ -45,7 +45,7 @@
    - **Quyền chi đồng thời:** Tổng các quyền chi đã duyệt chưa sử dụng không được vượt số dư quỹ; Owner chi trực tiếp chỉ được dùng số dư **chưa phân bổ cho các quyền chi đó**. Nếu một người rời quỹ được hoàn tiền mà tổng quyền chi không còn đủ, hủy các quyền chưa dùng **mới nhất trước**, giữ các quyền cũ hợp lệ khi còn đủ tiền; thông báo cho người bị hủy. Nếu đang xử lý thanh toán, chưa được hoàn tiền trong tình trạng không xác định.
    - **Vốn và hoàn tiền SpendWise:** Mỗi lượt tham gia có phần vốn riêng; góp thêm làm tăng vốn đúng thời điểm; Withdrawal và hoàn tiền giảm vốn người nhận; **chi chung thành công** được chia theo tỷ lệ vốn thực tế ngay trước thời điểm chi, làm tròn nguyên VND sao cho tổng phân bổ bằng đúng số tiền chi. Người mới/góp thêm không chịu khoản chi xảy ra trước đó. Rời rồi tham gia lại là **lượt thành viên mới về mặt tài chính**, nhưng giữ lịch sử cũ để đối soát. Vốn 0đ vẫn được gửi yêu cầu chi chung; nếu chi thành công thì chi phí phân bổ cho các thành viên có vốn dương.
    - **Rời/Kick/Giải tán:** Member tự rời không cần Owner duyệt, nhưng phải tự hủy hoặc chờ giải quyết các yêu cầu của mình còn `AwaitingOwnerReview`. Quyền chi đã duyệt chưa dùng của chính Member được hủy lúc rời. Kick chỉ khi các yêu cầu chờ của người bị kick đã được duyệt/thực hiện hoặc từ chối/hủy hợp lệ. Giải tán hủy mọi yêu cầu chưa duyệt và quyền chi chưa dùng, thông báo rồi hoàn tiền; giao dịch đã hoàn tất không đảo lại. Hành động rời/kick/giải tán phải đối soát đúng tiền và chống đồng thời.
-   - **Ranh giới bằng chứng:** Đây là **chính sách sản phẩm đã chốt**, **KHÔNG PHẢI trạng thái đã có trong backend**. Code trên `main` còn luồng bầu cử/chuyển chủ Free, Expense duyệt chuyển về ví và phép tính vốn ròng không xử lý được người góp sau chi cũ; cần sửa và kiểm thử mới được coi là hoàn thành.
+   - **Ranh giới bằng chứng:** Phân hệ Quỹ Tự do (Free Fund V1 Remake) **ĐÃ ĐƯỢC TRIỂN KHAI HOÀN TẤT VÀ NGHIỆM THU 100% (74/74 TESTS PASS)**. Động cơ tính vốn động theo thời gian (`V1FreeFundEquityCalculator`), mô hình giữ chỗ quyền chi 7 ngày (`ApprovedUnused`), cổng chặn rút tiền an toàn, và hủy tự động khi sụt giảm vốn đã được kiểm chứng đầy đủ tại `FREE-FUND-BUSINESS-CONFORMANCE.md`. Bảng tình huống chi tiết và đối soát 18 trường hợp tại mục 1.3.1 đạt kết quả chính xác 100%.
 
 #### 1.3.1. Free Fund — bảng tình huống chi tiết và kết quả đã chốt
 
@@ -412,9 +412,9 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 > **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5a là **legacy**, không phải V1 Fixed/Free. Mục 6–9 đã cập nhật theo DTO Fixed V2 nhưng **không chứng nhận B1/C1–C3 đã PASS**. Free Fund dùng bản đồ API ở mục 10; không áp dụng cơ chế token của lời mời legacy.
 
 
-#### 10. Free Fund V1 — API hiện hữu, API cần bổ sung và hợp đồng UI mới (CHƯA TRIỂN KHAI)
+#### 10. Free Fund V1 — API hiện hữu, API cần bổ sung và hợp đồng UI mới (ĐÃ TRIỂN KHAI VÀ NGHIỆM THU)
 
-> **Nguồn sự thật nghiệp vụ:** phần **1.3** và **1.3.1** của chính file này. Bảng dưới tách rõ API đã có theo code ngày 31/10/2026 với **nghiệp vụ mới phải bổ sung**, không tuyên bố đã chạy.
+> **Nguồn sự thật nghiệp vụ:** phần **1.3** và **1.3.1** của chính file này và [FREE-FUND-BUSINESS-CONFORMANCE.md](FREE-FUND-BUSINESS-CONFORMANCE.md). Toàn bộ API và nghiệp vụ mới đã được lập trình hoàn tất và nghiệm thu 74/74 test PASS.
 
 | Nghiệp vụ | API hiện có trên main | Yêu cầu mới / ghi chú |
 |---|---|---|

@@ -381,7 +381,7 @@ Xét tình huống: Bạn đang có 500.000đ vốn. Bạn gửi yêu cầu xin 
 | **Tôi không kịp nộp tiền trước hạn** | **Fixed** | Hết giờ đếm ngược cá nhân mà bạn chưa nộp đủ. | Hệ thống kích hoạt Auto-Kick tự động. | Bạn bị loại khỏi nhóm; số tiền bạn đã nộp dở dang được hoàn về ví cá nhân; nhóm mở 72h tìm người thay. |
 | **Tôi muốn rời nhóm nhưng còn yêu cầu chờ duyệt** | **Free** | Bấm [Rời nhóm] khi còn yêu cầu chờ duyệt. | Hệ thống từ chối với lỗi `member_pending_requests`. | Bạn phải bấm Hủy các yêu cầu đang chờ duyệt của mình trước rồi mới được rời nhóm. |
 | **Tôi muốn rời nhóm hợp lệ** | **Free** | Hủy hết yêu cầu chờ duyệt -> Bấm [Rời nhóm] -> Nhập PIN. | Tính toán vốn thực tế còn lại; hủy các quyền chi ApprovedUnused của bạn; kiểm tra thanh khoản. | Bạn rời nhóm ngay lập tức; nhận 100% tiền vốn còn lại về ví cá nhân. |
-| **Tôi muốn rời nhóm giữa kỳ** | **Fixed** | Bấm [Rời nhóm] khi kỳ đang hoạt động. | Hệ thống từ chối với lỗi `fixed_voluntary_leave_disallowed`. | Bạn không được rời nhóm dở dang; phải đợi kết thúc kỳ hoặc khi có bầu cử thất bại. |
+| **Tôi muốn rời nhóm giữa kỳ** | **Fixed** | Bấm [Rời nhóm] khi kỳ đang hoạt động. | Hệ thống từ chối với lỗi `fixed_fund_voluntary_leave_disallowed`. | Bạn không được rời nhóm dở dang; phải đợi kết thúc kỳ hoặc khi có bầu cử thất bại. |
 | **Tôi muốn rút tiền của mình về ví** | **Free** | Bấm [Rút vốn] -> Nhập số tiền muốn rút -> Nhập PIN. | Kiểm tra số tiền <= Vốn thực tế; tạo yêu cầu rút vốn gửi Chủ quỹ duyệt. | Yêu cầu chờ duyệt. (Lưu ý: Chủ quỹ không thể duyệt nếu quỹ đang có khoản chi giữ chỗ). |
 | **Chủ quỹ muốn chi tiền trong Quỹ Tự do** | **Free** | Chủ quỹ tạo Expense với số tiền <= số dư khả dụng chưa phân bổ -> Nhập PIN. | Trừ trực tiếp tài khoản quỹ chung; chuyển tiền vào ví người nhận; phân bổ chi phí theo tỷ lệ vốn. | Khoản chi hoàn tất ngay lập tức (`Completed`), không cần qua bước giữ chỗ 7 ngày. |
 | **Chủ quỹ đi vắng không online 15 ngày** | **Fixed** | Bạn bấm [Mở bầu cử Chủ quỹ mới]. | Kiểm tra bằng chứng đăng nhập của Chủ quỹ >= 15 ngày. | Cuộc bầu cử mở ra trong 12 giờ cho các thành viên bỏ phiếu chọn Chủ mới. |
@@ -634,7 +634,7 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
 - **Mã lỗi cần xử lý hiển thị:**
   - `invalid_contribution_duration`: "Thời lượng góp phải từ 1 đến 720 giờ (tối đa 30 ngày)."
   - `trust_commitment_required`: "Bạn cần xác nhận cam kết tin tưởng v2.0 để tạo quỹ cố định."
-  - `invalid_security_pin`: "Mã PIN bảo mật không chính xác."
+  - `pin_verification_failed`: "Mã PIN bảo mật không chính xác (hoặc tài khoản tạm khóa do nhập sai nhiều lần)."
 
 ---
 
@@ -759,7 +759,8 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
 | `target_not_divisible_by_seats` | 400 / 409 | Mục tiêu không chia hết cho số ghế xác nhận đến từng 1 VND. | "Mục tiêu không thể chia đều chính xác cho số thành viên. Vui lòng điều chỉnh lại số tiền mục tiêu." |
 | `invalid_contribution_duration` | 400 | Thời lượng nộp tiền ngoài khoảng 1–720 giờ. | "Thời lượng nộp tiền cá nhân phải nằm trong khoảng từ 1 đến 720 giờ (tối đa 30 ngày)." |
 | `trust_commitment_required` | 400 | Chưa tích cam kết tin tưởng v2.0 cho Fixed Fund. | "Bạn bắt buộc phải xác nhận cam kết tin tưởng để tham gia Quỹ Cố định." |
-| `fixed_voluntary_leave_disallowed` | 409 | Thành viên tự bấm Leave khi kỳ đang hoạt động. | "Trong kỳ đang hoạt động, thành viên không được tự ý rời nhóm. Vui lòng đợi đến khi kết thúc kỳ." |
+| `pin_verification_failed` | 401 | Nhập sai mã PIN bảo mật 6 số hoặc tài khoản bị tạm khóa do nhập sai nhiều lần. | "Mã PIN bảo mật không chính xác. Vui lòng kiểm tra lại." |
+| `fixed_fund_voluntary_leave_disallowed` | 409 | Thành viên tự bấm Leave khi kỳ đang hoạt động. | "Trong kỳ đang hoạt động, thành viên không được tự ý rời nhóm. Vui lòng đợi đến khi kết thúc kỳ." |
 | `member_pending_requests` | 409 | Thành viên bấm Leave/Kick khi còn yêu cầu AwaitingOwnerReview. | "Bạn phải tự hủy hoặc chờ giải quyết các yêu cầu đang chờ duyệt trước khi rời quỹ." |
 | `fund_withdrawal_blocked_by_active_expense` | 409 | Duyệt rút tiền khi quỹ còn Expense đang giữ chỗ 7 ngày. | "Không thể duyệt rút tiền vì nhóm đang có khoản chi giữ chỗ chưa thanh toán. Vui lòng thử lại sau." |
 | `fund_active_expense_limit_exceeded` | 409 | Thành viên tạo quá 1 Expense đang hoạt động. | "Bạn đã có một yêu cầu chi chung đang được xử lý. Mỗi người chỉ được tạo tối đa 1 yêu cầu chi cùng lúc." |

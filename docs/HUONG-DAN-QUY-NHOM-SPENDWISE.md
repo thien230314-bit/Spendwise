@@ -707,6 +707,12 @@ Phần này đặc biệt dành cho các kỹ sư lập trình Frontend (React /
   - API: `POST /api/v1/funds/activity-proposals/{proposalId}/vote`
   - Chọn Tiếp tục: Body `{"support": true}`
   - Chọn Không tiếp tục (Nhận hoàn tiền ngay): Body `{"support": false}`
+- **Xác nhận nghĩa vụ kỳ mới (bắt buộc trước quyết toán):**
+  - API: `POST /api/v1/funds/activity-proposals/{proposalId}/confirm-obligation`
+  - Body: `{"expectedObligationVnd": 3000000, "expectedDurationHours": 24, "securityPin": "<PIN>"}`. Lấy nghĩa vụ và thời lượng dự kiến mới nhất từ đề xuất; nếu thay đổi do thành viên biến động, cần xác nhận lại.
+- **Chủ quỹ quyết toán đề xuất để mở kỳ mới:**
+  - API: `POST /api/v1/funds/activity-proposals/{proposalId}/settle`
+  - Body: `{"securityPin": "<PIN>"}`. Chỉ thực hiện khi đã xác định đủ người tiếp tục và mọi nghĩa vụ cần thiết được xác nhận.
 - **Chủ quỹ kết thúc sớm khi có ghế trống:**
   - API: `POST /api/v1/funds/{id}/fail-period-early`
   - Body: `{"securityPin": "123456"}`

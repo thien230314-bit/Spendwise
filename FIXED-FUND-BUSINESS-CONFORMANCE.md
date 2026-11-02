@@ -76,13 +76,13 @@ Toàn bộ 30 tình huống cốt lõi quy định tại **Mục 10 của `fixed
 13. **T13 — Tiền dư bảo vệ không được chi:** PASS (`FixedFundV2Stage3Tests.T13_ProtectedExcess_CannotBeSpent`).
 14. **T14 — Đóng kỳ giải tán và hoàn tiền:** PASS (`FixedFundV2Stage3Tests.T14_CloseAndDissolve_RefundsMembers_TreasuryZero`).
 15. **T15 — Bấm không tiếp tục được hoàn ngay:** PASS (`FixedFundV2Stage3Tests.T15_MemberVotingNo_ReceivesInstantRefund_RemainingSnapshotsUnchanged`).
-16. **T16 — Owner đóng kỳ và đề xuất mới:** PASS (`FixedFundV2Stage3Tests.T16_SilentMember_AutoRefundedAt24Hours_Departs`).
-17. **T17 — Không phản hồi 24h tự hoàn và out:** PASS (`FixedFundV2Stage3Tests.T17_CancelActivityProposal_PreservesDepartedRefunds`).
-18. **T18 — Cùng đồng ý thì vào kỳ 2:** PASS (`FixedFundV2Stage3Tests.T18_OnlyOwnerVotesYes_72hWindowExpires_AutoDissolvesAndRefundsOwner`).
-19. **T19 — Chỉ còn Owner mở 72h tìm người:** PASS (`FixedFundV2Stage3Tests.T19_MultiPeriodCarryOver_ProtectedExcess_PartialSpend_Dissolution`).
-20. **T20 — Hết hạn phản hồi đóng proposal:** PASS (`FixedFundV2Stage3Tests.T20_DeterministicRemainder_WholeDongDistribution`).
-21. **T21 — Hết 72h kỳ mới giải tán:** PASS (`FixedFundV2Stage3Tests.T21_Maximum3Periods_StrictlyEnforced`).
-22. **T22 — Tối đa 3 kỳ, chặn kỳ 4:** PASS (`FixedFundV2Stage3Tests.T22_InactiveOwner_15DaysEvidence_OpensElection`).
+16. **T16 — C không phản hồi kỳ mới trong 24 giờ:** PASS (`FixedFundV2Stage3Tests.T16_SilentMember_AutoRefundedAt24Hours_Departs` - C được hoàn, không nhận nghĩa vụ mới).
+17. **T17 — Owner hủy đề xuất sau khi C nhận hoàn:** PASS (`FixedFundV2Stage3Tests.T17_CancelActivityProposal_PreservesDepartedRefunds` - Không đảo khoản hoàn C, phiếu đề xuất cũ mất hiệu lực).
+18. **T18 — Chỉ còn Owner muốn kỳ 2:** PASS (`FixedFundV2Stage3Tests.T18_OnlyOwnerVotesYes_72hWindowExpires_AutoDissolvesAndRefundsOwner` - Có 72 giờ tìm thêm người; không đủ thì tự động giải tán).
+19. **T19 — A carry 3 triệu, B carry 1 triệu, target 4 triệu:** PASS (`FixedFundV2Stage3Tests.T19_MultiPeriodCarryOver_ProtectedExcess_PartialSpend_Dissolution` - A có 1 triệu bảo vệ, B góp thêm 1 triệu).
+20. **T20 — Quỹ 900đ, chi 1đ:** PASS (`FixedFundV2Stage3Tests.T20_DeterministicRemainder_WholeDongDistribution` - Hoàn tổng 899đ deterministic largest-remainder, không thiếu/thừa 1 đồng).
+21. **T21 — Sau 3 kỳ Owner muốn kỳ 4:** PASS (`FixedFundV2Stage3Tests.T21_Maximum3Periods_StrictlyEnforced` - Giới hạn tối đa 3 kỳ, từ chối đề xuất kỳ 4).
+22. **T22 — Owner vắng 15 ngày, đủ bằng chứng:** PASS (`FixedFundV2Stage4Tests.T22_InactiveOwner_15DaysEvidence_OpensElection` - Member mở bầu cử thay Owner khi có bằng chứng phiên không hoạt động 15 ngày).
 23. **T23 — Bầu cử Vòng 2 xác nhận PIN:** PASS (`FixedFundV2Stage4Tests.T23_WinnerConfirmation_Rejection_And_Expiration`).
 24. **T24 — Bầu cử Vòng 1 hòa phiếu:** PASS (`FixedFundV2Stage4Tests.T24_ElectionTie_Or_AllBlankVotes_FailsImmediately`).
 25. **T25 — Bầu cử thất bại 24h giải tán:** PASS (`FixedFundV2Stage4Tests.T25_FailedElection_24hOptOut_And_CompulsoryDissolution`).

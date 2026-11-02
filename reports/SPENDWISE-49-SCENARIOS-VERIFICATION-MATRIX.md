@@ -6,7 +6,7 @@
 > - **Backend API:** `https://localhost:7256` / `http://localhost:5159`
 > - **Commit Baseline:** `efe9ed16427a2101d9e1e1f2c5bbd2b31ec10454` trên branch `feature/fixed-fund-v2-remake`
 > - **Kết quả Newman:** **116/116 requests executed, 116/116 assertions PASSED (0 failures, 0 skipped)**
-> - **Kết quả xUnit Acceptance:** **158/158 tests PASSED (0 failures, 0 skipped)**
+> - **Kết quả xUnit Acceptance:** **174/174 tests PASSED (0 failures, 0 skipped)**
 > - **Bằng chứng T28 & T30:** Xác minh giao dịch thật + đối soát Sổ cái kép SQL Server
 
 ---
@@ -20,7 +20,7 @@
 | **Free Fund V1 Scenarios (FF01 – FF19)** | Newman (Folder 4) & xUnit FreeFund | 19 | 19 | 0 | **100% GREEN** |
 | **Idempotency Hoàn tiền (T28)** | Newman (`FF02d`) + SQL Server Ledger | 1 | 1 | 0 | **100% VERIFIED** |
 | **Báo cáo Khiếu nại không đảo Ledger (T30)** | Newman (`T30`) + SQL Server SupportCase | 1 | 1 | 0 | **100% VERIFIED** |
-| **Bộ kiểm thử tự động xUnit Isolated** | xUnit runner (`final_isolated_acceptance.trx`) | 158 | 158 | 0 | **100% GREEN** |
+| **Bộ kiểm thử tự động xUnit Isolated** | xUnit runner (`final_isolated_acceptance.trx`) | 174 | 174 | 0 | **100% GREEN** |
 | **Đối soát Sổ cái Kép (Dual-Entry)** | SQL Server `SpendWiseDb_E2E_Postman` | Toàn bộ | Khớp 100% | 0 | **RECONCILED** |
 | **Bảo vệ Cơ sở dữ liệu gốc** | SQL Server `SpendWiseDb` | Toàn bộ | Nguyên vẹn | 0 | **UNTOUCHED** |
 
@@ -192,7 +192,7 @@ Theo chuẩn Mục 1.3.1 tài liệu [`User.md`](file:///e:/source/SpendWise-fin
 
 1. **Postman Collection E2E:** [`postman/spendwise_e2e_comprehensive_collection.json`](file:///e:/source/SpendWise-final-merged/postman/spendwise_e2e_comprehensive_collection.json)
 2. **Newman JSON Report (116/116 PASS):** [`reports/newman/spendwise_e2e_comprehensive_report.json`](file:///e:/source/SpendWise-final-merged/reports/newman/spendwise_e2e_comprehensive_report.json)
-3. **xUnit TRX Report (158/158 PASS):** [`backend/tests/SpendWise.Tests/TestResults/final_isolated_acceptance.trx`](file:///e:/source/SpendWise-final-merged/backend/tests/SpendWise.Tests/TestResults/final_isolated_acceptance.trx)
+3. **xUnit TRX Report (174/174 PASS):** [`backend/tests/SpendWise.Tests/TestResults/final_isolated_acceptance.trx`](file:///e:/source/SpendWise-final-merged/backend/tests/SpendWise.Tests/TestResults/final_isolated_acceptance.trx)
 4. **Generator script chuẩn hóa:** [`scripts/generate_comprehensive_postman.py`](file:///e:/source/SpendWise-final-merged/scripts/generate_comprehensive_postman.py)
 
 ---

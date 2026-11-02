@@ -1,7 +1,7 @@
 # BÁO CÁO KẾT QUẢ KIỂM THỬ THỰC TẾ QUỸ NHÓM (FIXED FUND V2 & FREE FUND V1)
 
 > **Ngày thực thi:** 02/11/2026  
-> **Lệnh kiểm thử:** `dotnet test backend/tests/SpendWise.Tests/SpendWise.Tests.csproj --filter "FullyQualifiedName~FixedFundV2|FullyQualifiedName~FreeFund|FullyQualifiedName~BankLinkingAndWalletGuardTests|FullyQualifiedName~FinancialIntegrityPhaseTests" --no-build -c Debug --logger "trx;LogFileName=GROUP-FUNDS-TEST-RESULTS.trx"`  
+> **Lệnh kiểm thử:** `dotnet test backend/tests/SpendWise.Tests/SpendWise.Tests.csproj --filter "FullyQualifiedName~FixedFundV2|FullyQualifiedName~FreeFund|FullyQualifiedName~BankLinkingAndWalletGuardTests|FullyQualifiedName~FinancialIntegrityPhaseTests" -c Debug --logger "trx;LogFileName=GROUP-FUNDS-TEST-RESULTS.trx"`  
 > **File TRX gốc:** `backend/tests/SpendWise.Tests/TestResults/GROUP-FUNDS-TEST-RESULTS.trx` (và bản sao `reports/GROUP-FUNDS-TEST-RESULTS.trx`)  
 > **File Log chi tiết:** `reports/GROUP-FUNDS-TEST-RESULTS.log`  
 
@@ -14,14 +14,14 @@ Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\
 A total of 1 test files matched the specified pattern.
 Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\GROUP-FUNDS-TEST-RESULTS.trx
 
-Passed!  - Failed: 0, Passed: 204, Skipped: 0, Total: 204, Duration: 1 m 48 s - SpendWise.Tests.dll (net10.0)
+Passed!  - Failed: 0, Passed: 204, Skipped: 0, Total: 204, Duration: 2 m 3 s - SpendWise.Tests.dll (net10.0)
 ```
 
 - **Tổng số tests thi hành:** 204
 - **Passed:** 204 (100%)
 - **Failed:** 0
 - **Skipped:** 0
-- **Thời lượng chạy:** 1 phút 48 giây
+- **Thời lượng chạy:** 2 phút 3 giây
 
 ---
 

@@ -521,6 +521,18 @@ controller_endpoints = [
     ('API-039', 'POST', '/api/v1/funds/elections/{id}/reject', 'RejectElection(Guid id', 'V1ElectionDto', 'T23_WinnerConfirmation_Rejection_And_Expiration'),
     ('API-040', 'GET', '/api/v1/funds/{id}/equity', 'Equity(Guid id', 'V1FreeFundEquitySummaryDto', 'FreeFund_EquityEndpoint_ReturnsBreakdown_ActiveReservations_AndMemberEquities'),
     ('API-041', 'GET', '/api/v1/funds/{id}/transactions', 'Transactions(Guid id', 'V1FundTransactionDto[]', 'FreeFund_TransactionsEndpoint_ReturnsPublicFundHistory_HidesPrivateWallets'),
+    ('API-042', 'GET', '/api/v1/funds/{id}/governance', 'Governance(Guid id', 'V1GovernanceDto', 'FreeFund_Governance_ElectionsAndOwnershipTransfers_AreDisallowed'),
+    ('API-043', 'GET', '/api/v1/funds/{id}/owner-response', 'OwnerResponse(Guid id', 'V1OwnerResponseDto', 'T22_InactiveOwner_15DaysEvidence_OpensElection'),
+    ('API-044', 'POST', '/api/v1/funds/{id}/owner-response/escalate', 'EscalateOwnerResponse(Guid id', 'V1OwnerResponseDto', 'T22_InactiveOwner_15DaysEvidence_OpensElection'),
+    ('API-045', 'POST', '/api/v1/funds/elections/{id}/candidates', 'Candidate(Guid id', 'V1ElectionDto', 'T22_InactiveOwner_15DaysEvidence_OpensElection'),
+    ('API-046', 'GET', '/api/v1/funds/{id}/activities', 'Activities(Guid id', 'V1ActivityDto[]', 'FreeFund_TransactionsEndpoint_ReturnsAllFourTypes_WithCorrectCorrelationAndPaging'),
+    ('API-047', 'GET', '/api/v1/funds/{id}/invitation-proposals', 'Proposals(Guid id', 'V1InvitationProposalDto[]', 'Http_AcceptInvitation_EnforcesFixedTrust_AndPreservesFreeFundCompatibility'),
+    ('API-048', 'POST', '/api/v1/funds/invitations/{id}/review', 'Review(Guid id', 'V1InvitationProposalDto', 'Http_AcceptInvitation_EnforcesFixedTrust_AndPreservesFreeFundCompatibility'),
+    ('API-049', 'DELETE', '/api/v1/funds/invitations/{id}', 'Cancel(Guid id', 'V1InvitationDto', 'Http_AcceptInvitation_EnforcesFixedTrust_AndPreservesFreeFundCompatibility'),
+    ('API-050', 'POST', '/api/v1/funds/{id}/ownership-offers', 'Offer(Guid id', 'V1OwnershipOfferDto', 'T37_P1_2_VoluntaryOwnershipTransfer_EstablishesTenureAndHidesPastPrivateRecords'),
+    ('API-051', 'POST', '/api/v1/funds/ownership-offers/{id}/accept', 'AcceptOffer(Guid id', 'V1OwnershipOfferDto', 'T37_P1_2_VoluntaryOwnershipTransfer_EstablishesTenureAndHidesPastPrivateRecords'),
+    ('API-052', 'GET', '/api/v1/funds/ownership-offers', 'OwnershipOffers(CancellationToken ct', 'V1OwnershipOfferDto[]', 'T37_P1_2_VoluntaryOwnershipTransfer_EstablishesTenureAndHidesPastPrivateRecords'),
+    ('API-053', 'POST', '/api/v1/funds/{id}/elections/failed-settlement', 'ResolveFailedElectionSettlement(Guid id', 'V1DissolveResultDto', 'T25_FailedElection_24hOptOut_And_CompulsoryDissolution'),
 ]
 
 for a_id, verb, route, search_code, dto, a_test in controller_endpoints:

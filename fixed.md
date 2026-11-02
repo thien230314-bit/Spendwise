@@ -30,7 +30,7 @@ Khi người dùng chuẩn bị chấp nhận lời mời/tham gia Fixed Fund, h
 
 ## 3. Tạo nhóm và chốt phân bổ (kỳ 1)
 
-1. A tạo nhóm, đặt tên, **mục tiêu góp chung** (ví dụ 9.000.000đ), chọn **thời lượng góp cá nhân** (ví dụ 24 giờ hoặc 3 ngày). Sau tạo, hiển thị **0đ/9.000.000đ**.
+1. A tạo nhóm, đặt tên, **mục tiêu góp chung** (ví dụ 9.000.000đ), chọn **thời lượng góp cá nhân** (backend hiện cho phép **1–720 giờ**, mặc định **24 giờ**; ví dụ 24 giờ hoặc 3 ngày). Sau tạo, hiển thị **0đ/9.000.000đ**.
 2. A mời B, C. Lúc này **chưa tính giờ góp**, vì Owner chưa xác nhận danh sách và phân bổ.
 3. Có **ít nhất 2 người tính cả Owner** mới được chốt phân bổ. Trước khi chốt, hệ thống xem trước số tiền của từng người.
 4. **Mục tiêu bắt buộc chia hết chính xác cho số ghế đã chốt, đến từng VND**. Ví dụ 9.000.000đ/3 = 3.000.000đ/người: hợp lệ. 10.000.000đ/3: từ chối chốt, yêu cầu điều chỉnh mục tiêu hoặc danh sách.
@@ -141,4 +141,4 @@ Lời mời: Owner được mời trực tiếp người đã kết bạn; Membe
 - Tài liệu này là **chính sách nghiệp vụ Fixed Fund V2 đã thống nhất** ngày 01/11/2026, phục vụ giảng viên, UI/UX, Backend và QA.
 - Không được coi 30 ca trên là test đã PASS; phải có bài kiểm thử thực tế, chứng cứ ledger/SQL/API và kiểm thử đồng thời.
 - Không áp dụng các quy tắc Fixed (nghĩa vụ, Auto-Kick, bầu Owner, tối đa 3 kỳ) cho Free Fund V1.
-- Bảng API hiện hữu và những chỗ cần thay đổi để đạt đặc tả mới được phân biệt trong User.md; không được suy luận rằng API hiện tại đã hỗ trợ deadline hay Auto-Kick.
+- API Fixed Fund V2 đã triển khai luồng chốt nghĩa vụ, deadline và Auto-Kick. Hợp đồng API/DTO thực tế nằm trong [`User.md`](User.md), mục 3.6; hướng dẫn người dùng nằm trong [`docs/HUONG-DAN-QUY-NHOM-SPENDWISE.md`](docs/HUONG-DAN-QUY-NHOM-SPENDWISE.md). Tài liệu đặc tả không tự thay thế bằng chứng kiểm thử thực tế.

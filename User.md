@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)  
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).  
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC CHATGPT REVIEWER PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED, Commit 7667bb9).**  
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC CHATGPT REVIEWER PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED, Commit 7667bb9).**  
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -348,7 +348,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 
 #### 6. Quỹ cố định V2 — Hợp đồng API ĐÃ TRIỂN KHAI & NGHIỆM THU: xác nhận và đóng góp
 
-> **Đặc tả nghiệp vụ chuẩn theo [`fixed.md`](fixed.md):** Tạo Fixed bắt buộc cam kết tin tưởng ("Bạn có tin tưởng nhóm này không?"), thời hạn góp cá nhân (24–72h), chốt danh sách >=2 thành viên, chia hết tuyệt đối không dư đồng lẻ, khóa nghĩa vụ/ghế; sau hạn có Auto-Kick, 72 giờ tìm người thay, tự động giải tán khi thất bại. Đã triển khai và kiểm thử hoàn tất.
+> **Đặc tả nghiệp vụ chuẩn theo [`fixed.md`](fixed.md):** Tạo Fixed bắt buộc cam kết tin tưởng ("Bạn có tin tưởng nhóm này không?"), thời lượng góp cá nhân (1–720 giờ, mặc định 24 giờ), chốt danh sách >=2 thành viên, chia hết tuyệt đối không dư đồng lẻ, khóa nghĩa vụ/ghế; sau hạn có Auto-Kick, 72 giờ tìm người thay, tự động giải tán khi thất bại. Đã triển khai và kiểm thử hoàn tất.
 
 | API | DTO/body và điều kiện |
 |---|---|
@@ -359,7 +359,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `POST /api/v1/funds/{id}/contributions` | Thành viên đóng bằng `{"walletId":"<wallet-guid>","amountVnd":200000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>","obligationRevision":1,"purpose":"Đóng chu kỳ"}`. **Lấy revision từ finance thực tế, không hardcode 1.** |
 | `GET /api/v1/funds/{id}/contributions?page=1&pageSize=20` | `V1ContributionDto[]` có `id,fundId,userId,walletId,amountVnd,obligationRevision,ledgerTransactionId,createdAt,replayed`. |
 
-**Kiểm tra Fixed:** không đóng vượt `requiredVnd-paidVnd`; `obligationRevision` hiện hành; ví `Active` thuộc chính thành viên và VND, PIN hợp lệ, intent idempotent. Đổi danh sách thành viên hoặc target có thể khiến revision/bảng nghĩa vụ cần xác nhận lại và làm sai lệch `configurationCurrent`.
+**Kiểm tra Fixed:** không đóng vượt `requiredVnd-paidVnd`; `obligationRevision` hiện hành; ví `Active` thuộc chính thành viên và VND, PIN hợp lệ, intent idempotent. Trước khi chốt, Owner có thể điều chỉnh danh sách và target trong giới hạn cho phép. Sau khi chốt nghĩa vụ, target, ghế và deadline của kỳ hiện tại bị khóa; không được thay đổi target hoặc xác nhận lại nghĩa vụ để đặt lại hạn góp. Kỳ mới phải thực hiện luồng xác nhận nghĩa vụ riêng theo quy trình chuyển kỳ.
 
 #### 7. Quỹ cố định V2 — Quyền và chi tiêu
 
@@ -402,7 +402,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `POST /api/v1/funds/{id}/members/{userId}/kick` | Chủ quỹ, `{"securityPin":"<PIN>","reason":"Lý do","idempotencyKey":"<unique-key>","destinationWalletId":null}`. |
 | `POST /api/v1/funds/{id}/dissolve` | Chủ quỹ, `{"securityPin":"<PIN>","idempotencyKey":"<unique-key>"}`; giải tán chỉ khi ledger sau hoàn tiền về **0 VND**. |
 | `POST /api/v1/funds/{id}/fail-period-early` | Chủ quỹ, `{"securityPin":"<PIN>"}`; kết thúc thất bại kỳ sớm khi còn ghế trống sau Auto-Kick mà không cần đợi hết 72 giờ, hoàn tiền cho các thành viên hợp lệ và giải tán quỹ. |
-| `POST /api/v1/funds/{id}/fail-period-early` | Chủ quỹ, `{"securityPin":"<PIN>"}`; kết thúc thất bại kỳ sớm khi còn ghế trống sau Auto-Kick mà không cần đợi hết 72 giờ, hoàn tiền cho các thành viên hợp lệ và giải tán quỹ. |
+
 | `GET /api/v1/funds/{id}/activities` | Lịch sử hoạt động theo `page,pageSize`, `V1ActivityDto` có `event,actorUserId?,subjectUserId?,detail?,createdAt,referenceId?`. |
 | `GET /api/v1/funds/{id}/owner-response` | `V1OwnerResponseDto {fundId,requiredSince?,deadline?,overdue,respondedAt?,caseId?}`. |
 | `POST /api/v1/funds/{id}/owner-response/escalate` | Thành viên góp tiền được mở case hỗ trợ khi chủ quỹ không phản hồi sau **7 ngày hoạt động** kể từ lúc đóng kỳ; không tự sửa ledger hay đổi chủ. |
@@ -414,7 +414,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 > **Quan trọng cho frontend V1:** Các route `/api/groups` ở mục 1–5a là **legacy**, không phải V1 Fixed/Free. Mục 6–9 đã cập nhật theo DTO Fixed V2 nhưng **không chứng nhận B1/C1–C3 đã PASS**. Free Fund dùng bản đồ API ở mục 10; không áp dụng cơ chế token của lời mời legacy.
 
 
-#### 10. Free Fund V1 — API hiện hữu, API cần bổ sung và hợp đồng UI mới (ĐÃ TRIỂN KHAI VÀ NGHIỆM THU)
+#### 10. Free Fund V1 — Hợp đồng API và luồng giao diện đã triển khai
 
 > **Nguồn sự thật nghiệp vụ:** phần **1.3** và **1.3.1** của chính file này và [FREE-FUND-BUSINESS-CONFORMANCE.md](FREE-FUND-BUSINESS-CONFORMANCE.md). Toàn bộ API và nghiệp vụ mới đã được lập trình hoàn tất và nghiệm thu 74/74 test PASS.
 
@@ -427,7 +427,7 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | Danh sách/lịch sử request | `GET /api/v1/funds/{id}/requests` | Phân quyền nghiêm ngặt: Thành viên chỉ thấy request do chính mình tạo; Owner thấy toàn bộ request của nhóm. DTO đầy đủ lý do, thời điểm, trạng thái (`AwaitingOwnerReview`, `ApprovedUnused`, `Completed`, `Rejected`, `Cancelled`, `Expired`). |
 | Owner duyệt/từ chối | `POST /api/v1/funds/requests/{id}/review` | Với Expense: duyệt **không ghi payout**, chuyển trạng thái `ApprovedUnused` giữ chỗ trong 7 ngày. Với Withdrawal: chuyển ngay vào ví Member nếu vốn còn đủ và quỹ **không có bất kỳ Expense nào đang ở trạng thái ApprovedUnused** (chặn duyệt nếu còn khoản giữ chỗ). |
 | Hủy request/quyền | `POST /api/v1/funds/requests/{id}/cancel` | Hỗ trợ hủy `ApprovedUnused` (thu hồi hạn mức khả chi cho quỹ), tự động hết hạn sau 7 ngày qua worker sweep, tự động hủy pending withdrawal khi vốn bị sụt giảm do chi chung, và tự động hủy quyền chi mới nhất trước khi rời/kick thiếu thanh khoản. |
-| Thanh toán bên ngoài bằng quyền chi | **Chưa có API provider thanh toán hóa đơn thực tế** | Hạng mục mở rộng: xác thực quyền chi, đúng số tiền, một lần, kết quả provider và đối soát; **không tạo giao dịch thành công giả** và không bắt buộc demo thanh toán thật. SePay giữ nguyên. |
+| Thanh toán bên ngoài bằng quyền chi | `POST /api/v1/funds/requests/{id}/initiate-payment` (đã có route nhưng chưa kết nối provider) | Hiện API kiểm tra quyền chi rồi trả `fund_payment_provider_unavailable`; quyền `ApprovedUnused` không bị trừ tiền. Thanh toán thật qua provider và đối soát là hạng mục mở rộng, **không được giả lập thành công**. SePay giữ nguyên. |
 | Vốn / hoàn tiền | `GET /api/v1/funds/{id}/refund-preview`; `POST /api/v1/funds/{id}/leave`; `POST /api/v1/funds/{id}/members/{userId}/kick`; `POST /api/v1/funds/{id}/dissolve` | Tính vốn động theo thời gian ($E_i = C_i - S_i - W_i$) qua `V1FreeFundEquityCalculator`. Người vào sau không gánh chi cũ. Làm tròn số lẻ Largest-Remainder khớp đúng 100% số dư sổ cái. Hủy request/quyền chi hợp lệ trước khi hoàn tiền. |
 | Lịch sử tài chính | `GET /api/v1/funds/{id}/contributions`; `GET /api/v1/funds/{id}/activities`; `GET /api/v1/funds/{id}/requests` | Hiện có nguồn dữ liệu lịch sử; cần hiển thị riêng yêu cầu đang chờ và giao dịch đã chi/rút thực sự. Thành viên xem tài chính chung, lịch sử request cá nhân. |
 | Quản trị/bầu cử/chuyển chủ | Một số route `/elections`, `/ownership-offers` và `/governance` vẫn tồn tại trong code dùng chung | **Free Fund không được sử dụng các hành động bầu cử hoặc chuyển Owner**; chỉ Fixed được sử dụng theo chính sách Fixed. Không dùng mốc vắng mặt 15 ngày cho Free. |

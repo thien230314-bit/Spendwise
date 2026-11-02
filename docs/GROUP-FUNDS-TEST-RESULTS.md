@@ -14,14 +14,14 @@ Test run for E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\bin\
 A total of 1 test files matched the specified pattern.
 Results File: E:\source\SpendWise-final-merged\backend\tests\SpendWise.Tests\TestResults\GROUP-FUNDS-TEST-RESULTS.trx
 
-Passed!  - Failed: 0, Passed: 204, Skipped: 0, Total: 204, Duration: 1 m 53 s - SpendWise.Tests.dll (net10.0)
+Passed!  - Failed: 0, Passed: 204, Skipped: 0, Total: 204, Duration: 1 m 48 s - SpendWise.Tests.dll (net10.0)
 ```
 
 - **Tổng số tests thi hành:** 204
 - **Passed:** 204 (100%)
 - **Failed:** 0
 - **Skipped:** 0
-- **Thời lượng chạy:** 1 phút 53 giây
+- **Thời lượng chạy:** 1 phút 48 giây
 
 ---
 

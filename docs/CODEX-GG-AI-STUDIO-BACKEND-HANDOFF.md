@@ -2,7 +2,6 @@
 > **Dành riêng cho:** Codex & Kỹ sư tích hợp Frontend (Google AI Studio Prototype $\rightarrow$ Client Web/Mobile)
 > **Phiên bản Backend:** SpendWise V1.0 (Production Candidate)
 > **Commit Baseline:** `663099328d7ffc5a497ffe3659e5ed4e6df52522` (Backend Locked)
-> **Commit Handoff HEAD:** `0d0fa29a24142cc4f1063d7e5c453967e24897e9` (`main` & `feature/fixed-fund-v2-remake`)
 > **Thời điểm bàn giao:** 23:00 Ngày 03/11/2026
 
 ---
@@ -40,7 +39,7 @@
   - `GET https://localhost:7256/health/live` (Tiến trình đang sống)
 - **Môi trường:** `ASPNETCORE_ENVIRONMENT = Development`
 - **Database chính:** Microsoft SQL Server `DESKTOP-B5KA3LT\SQLEXPRESS01` — Database `SpendWiseDb`.
-- **Email trong Development:** Sử dụng chế độ **Local Pickup** (`EmailDeliveryMode.Pickup`). Khi đăng ký hoặc quên mật khẩu, email OTP 8 số sẽ được ghi thành file `.eml` cục bộ tại thư mục tạm thời của hệ điều hành, không gửi email ra ngoài Internet.
+- **Email trong Development:** Sử dụng chế độ **Local Pickup** (`EmailDeliveryMode.Pickup`). Khi đăng ký hoặc quên mật khẩu, email OTP 8 số sẽ được ghi thành file `email-*.txt` cục bộ (mặc định tại `AppContext.BaseDirectory/password-reset-pickup`, hoặc ghi đè qua cấu hình `PasswordReset:PickupDirectory`), không gửi email ra ngoài Internet và không lưu file `.eml`.
 
 ---
 
@@ -92,9 +91,9 @@ sequenceDiagram
     Note over Client, DB: Giai đoạn 1: Đăng ký & Kích hoạt Email
     Client->>Auth: POST /api/auth/register {fullName, email, phone, password, confirmPassword}
     Auth-->>Client: 200 OK EmailVerificationPendingResponse {expiresAt, resendAfterSeconds}
-    Note right of Auth: Lấy OTP 8 số từ file Pickup cục bộ
+    Note right of Auth: Lấy OTP 8 số từ file email-*.txt cục bộ
     Client->>Auth: POST /api/auth/email-verification/verify {email, otp}
-    Auth-->>Client: 200 OK {challengeToken, status: "PinSetupRequired", expiresAt}
+    Auth-->>Client: 200 OK {challengeToken, status: "PIN_SETUP_REQUIRED", expiresAt}
 
     Note over Client, DB: Giai đoạn 2: Thiết lập PIN lần đầu & Cấp Token
     Client->>Auth: POST /api/auth/pin/setup {challengeToken, pin, confirmPin}
@@ -103,7 +102,7 @@ sequenceDiagram
 
     Note over Client, DB: Giai đoạn 3: Đăng nhập hàng ngày (2 bước)
     Client->>Auth: POST /api/auth/login {identifier, password}
-    Auth-->>Client: 200 OK LoginChallengeResponse {challengeToken, expiresAt}
+    Auth-->>Client: 200 OK LoginChallengeResponse {challengeToken, status: "PIN_REQUIRED", expiresAt}
     Client->>Auth: POST /api/auth/pin/verify {challengeToken, pin}
     Auth-->>Client: 200 OK AuthResponse {accessToken, refreshToken, user}
 
@@ -114,9 +113,14 @@ sequenceDiagram
     Auth-->>Client: 204 NoContent (Hủy phiên)
 ```
 
-### 4.3. Phân biệt hai loại kiểm tra mã PIN
-1. `POST /api/auth/pin/verify`: **Bước 2 của Đăng nhập**. Nhận `challengeToken` + `pin` $\rightarrow$ Trả về `AuthResponse` (Access token mới).
-2. `POST /api/security-pin/verify`: **Xác thực trước khi giao dịch tài chính**. Nhận `pin` $\rightarrow$ Trả về `204 NoContent`. Không cấp token mới.
+### 4.3. Giá trị chuẩn của LoginChallengeResponse.Status & Phân biệt kiểm tra mã PIN
+- **Mã trạng thái chuẩn của Challenge (`status`):**
+  - `"PIN_SETUP_REQUIRED"`: Tài khoản vừa kích hoạt email, chưa có PIN; client chuyển hướng sang màn hình thiết lập PIN lần đầu (`POST /api/auth/pin/setup`).
+  - `"PIN_REQUIRED"`: Tài khoản đã có PIN; client yêu cầu nhập PIN 6 số để hoàn tất đăng nhập (`POST /api/auth/pin/verify`).
+  - *(Lưu ý: Backend đối chiếu trực tiếp `LoginChallengeSupport.cs`, không bao giờ trả về camelCase như `PinSetupRequired`).*
+- **Phân biệt hai endpoint kiểm tra mã PIN:**
+  1. `POST /api/auth/pin/verify`: **Bước 2 của Đăng nhập**. Nhận `challengeToken` + `pin` $\rightarrow$ Trả về `AuthResponse` (Access token mới).
+  2. `POST /api/security-pin/verify`: **Xác thực trước khi giao dịch tài chính**. Nhận `pin` $\rightarrow$ Trả về `204 NoContent`. Không cấp token mới.
 
 ---
 
@@ -185,7 +189,7 @@ Content-Type: application/json
 | `GET` | `/api/v1/funds/{id}/requests` | Query: `page=1&pageSize=20` | Xem danh sách request (Member chỉ thấy của mình; Owner thấy toàn nhóm). |
 | `POST` | `/api/v1/funds/requests/{id}/review` | `{"approved":true,"reason":"Đồng ý duyệt chi","securityPin":"123456"}` | Owner duyệt: Nếu Expense $\rightarrow$ chuyển `ApprovedUnused` (giữ chỗ 7 ngày). Nếu Withdrawal $\rightarrow$ chuyển tiền về ví ngay. |
 | `POST` | `/api/v1/funds/requests/{id}/cancel` | `{"securityPin":"123456"}` | Hủy yêu cầu đang chờ hoặc thu hồi quyền chi `ApprovedUnused` để giải phóng hạn mức. |
-| `POST` | `/api/v1/funds/requests/{id}/initiate-payment` | `{"securityPin":"123456"}` | Thanh toán hóa đơn ngoài. Backend an toàn trả `fund_payment_provider_unavailable`, giữ nguyên `ApprovedUnused`. |
+| `POST` | `/api/v1/funds/requests/{id}/initiate-payment` | `{"securityPin":"123456"}` | Thanh toán hóa đơn ngoài. Backend an toàn ném `ConflictException("fund_payment_provider_unavailable")` trả mã HTTP `409 Conflict` (không phải 503); quyền chi giữ nguyên vẹn `ApprovedUnused`. |
 | `POST` | `/api/v1/funds/{id}/leave` | `{"securityPin":"123456","idempotencyKey":"key"}` | Rời nhóm: Nhận lại đủ 100% số dư vốn thực tế sau khi đã đối soát chi phí chung. |
 | `POST` | `/api/v1/funds/{id}/dissolve` | `{"securityPin":"123456","idempotencyKey":"key"}` | Giải tán quỹ: Hoàn tiền toàn bộ thành viên theo tỷ lệ vốn thực tế, số dư quỹ sau giải tán = **0đ**. |
 
@@ -254,9 +258,9 @@ Content-Type: application/json
 1. **Backend là nguồn sự thật duy nhất về số dư:** Frontend tuyệt đối không tự tính nhẩm, cộng trừ số dư trên giao diện rồi hiển thị cho người dùng. Mọi số dư phải đọc từ trường `availableBalance` của API.
 2. **Không tự suy diễn thành công từ yêu cầu chờ:** Các giao dịch ở trạng thái `Pending`, `WaitingForUser`, hoặc lệnh chuyển khoản Bank-direct vừa tạo chỉ là hướng dẫn, **KHÔNG PHẢI** đã hoàn tất giao dịch.
 3. **Tính ổn định của Idempotency Key:** Khi người dùng bấm nút gửi tiền hoặc tạo giao dịch lặp lại do mạng chậm (retry), frontend phải **tái sử dụng nguyên vẹn `idempotencyKey` cũ**, tuyệt đối không tự sinh key mới cho cùng một thao tác bấm nút.
-4. **Quyền chi Quỹ Tự do (`ApprovedUnused`):** Đây là quyền giữ chỗ hạn mức trong 7 ngày, **CHƯA ĐƯỢC COI LÀ ĐÃ CHI**. Tiền chưa bị trừ khỏi tài khoản quỹ.
+4. **Quy tắc giữ chỗ 7 ngày (`ApprovedUnused`) CHỈ THUỘC Quỹ Tự do (Free Fund V1):** Quyền chi sau khi Owner duyệt ở trạng thái `ApprovedUnused` có hiệu lực giữ chỗ hạn mức trong 7 ngày, **CHƯA ĐƯỢC COI LÀ ĐÃ CHI** và tiền chưa bị trừ khỏi tài khoản quỹ. Quy tắc này **KHÔNG ÁP DỤNG cho Quỹ Cố định V2** (Fixed Fund V2 không có trạng thái `ApprovedUnused`; yêu cầu chi hợp lệ được quyết toán trực tiếp `Completed`).
 5. **Rút vốn Quỹ Tự do:** Owner không thể duyệt yêu cầu rút vốn nếu trong quỹ đang có bất kỳ quyền chi `ApprovedUnused` nào chưa giải phóng.
-6. **Không giả lập cổng thanh toán ngoài:** Endpoint `initiate-payment` trả về lỗi an toàn `fund_payment_provider_unavailable`. Frontend phải thông báo rõ ràng cho người dùng rằng cổng thanh toán hóa đơn đang kết nối đối tác, không được tự động chuyển sang màn hình thành công giả mạo.
+6. **Không giả lập cổng thanh toán ngoài (HTTP 409 Conflict):** Endpoint `initiate-payment` ném `ConflictException("fund_payment_provider_unavailable")` trả về mã an toàn HTTP `409 Conflict` (không phải 503). Quyền chi tiêu giữ nguyên vẹn trạng thái `ApprovedUnused`. Frontend phải hiển thị thông báo lỗi thân thiện rằng cổng thanh toán hóa đơn đối ngoại chưa sẵn sàng, tuyệt đối không tự động chuyển sang màn hình thành công giả mạo.
 
 ---
 

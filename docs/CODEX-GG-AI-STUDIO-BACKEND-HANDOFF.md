@@ -122,6 +122,56 @@ sequenceDiagram
   1. `POST /api/auth/pin/verify`: **Bước 2 của Đăng nhập**. Nhận `challengeToken` + `pin` $\rightarrow$ Trả về `AuthResponse` (Access token mới).
   2. `POST /api/security-pin/verify`: **Xác thực trước khi giao dịch tài chính**. Nhận `pin` $\rightarrow$ Trả về `204 NoContent`. Không cấp token mới.
 
+### 4.4. Quy trình Đổi Email Bảo mật 3 Giai đoạn (Airtight 3-Stage Email Change Flow)
+
+Nhằm ngăn chặn triệt để lỗ hổng chiếm đoạt tài khoản (Account Takeover), backend áp dụng quy trình xác minh 3 giai đoạn độc lập:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Người dùng
+    participant App as Frontend (Codex)
+    participant API as UsersController & EmailVerification
+    participant Mail as Email Outbox & Pickup
+
+    Note over User, Mail: Giai đoạn A: Xác thực quyền sở hữu Email hiện tại
+    User->>App: Bấm "Đổi Email" trong Cài đặt
+    App->>API: POST /api/users/me/email/current/request (Bearer Token)
+    API->>Mail: Gửi OTP 8 số về email hiện tại
+    API-->>App: 200 OK EmailVerificationPendingResponse
+    User->>App: Nhập OTP từ email hiện tại
+    App->>API: POST /api/users/me/email/current/verify {"otp":"12345678"}
+    API-->>App: 200 OK {"ticket":"<cryptographic_ticket>","expiresAt":"..."}
+    Note right of API: Ticket có hiệu lực 15 phút, gắn chặt với UserId & SessionId
+
+    Note over User, Mail: Giai đoạn B: Xác thực địa chỉ Email mới
+    User->>App: Nhập địa chỉ email mới muốn đổi
+    App->>API: POST /api/users/me/email/new/request {"ticket":"...","newEmail":"new@spendwise.local"}
+    API->>API: Kiểm tra ticket hợp lệ, email không trùng, cập nhật user.PendingNewEmail
+    API->>Mail: Gửi OTP 8 số độc lập về email mới
+    API-->>App: 200 OK EmailVerificationPendingResponse
+
+    Note over User, Mail: Giai đoạn C: Cam kết Đổi Email & Thu hồi phiên cũ
+    User->>App: Nhập OTP nhận từ email mới
+    App->>API: POST /api/users/me/email/new/confirm {"ticket":"...","otp":"87654321"}
+    API->>API: Cập nhật Email, xóa PendingNewEmail, thu hồi toàn bộ session khác (UserSessionId != sessionId)
+    API->>Mail: Gửi thông báo an ninh về email cũ
+    API-->>App: 200 OK UserProfile (Email mới đã kích hoạt)
+
+    Note over User, Mail: Hủy quy trình (Cancel) & Chống Bypass
+    Note over App, API: Hủy giữa chừng: POST /api/users/me/email/cancel {"ticket":"..."} -> 204 NoContent
+    Note over App, API: Endpoint cũ /email/request và /confirm bị chặn: 400 Bad Request ("legacy_email_change_deprecated")
+```
+
+| Giai đoạn | Phương thức | Endpoint | Request Body | Phản hồi & Ý nghĩa bảo mật |
+|---|---|---|---|---|
+| **A1** | `POST` | `/api/users/me/email/current/request` | Không body | `200 OK` $\rightarrow$ `EmailVerificationPendingResponse`. Gửi OTP 8 số về email hiện tại. |
+| **A2** | `POST` | `/api/users/me/email/current/verify` | `{"otp":"12345678"}` | `200 OK` $\rightarrow$ `{"ticket":"...","expiresAt":"..."}`. Cấp ticket 15 phút gắn chặt với phiên và tài khoản. |
+| **B** | `POST` | `/api/users/me/email/new/request` | `{"ticket":"...","newEmail":"new@email.com"}` | `200 OK` $\rightarrow$ `EmailVerificationPendingResponse`. Gửi OTP 8 số về email mới; ghi nhận `PendingNewEmail`. |
+| **C** | `POST` | `/api/users/me/email/new/confirm` | `{"ticket":"...","otp":"87654321"}` | `200 OK` $\rightarrow$ `UserProfile`. Commit đổi email, thu hồi toàn bộ session khác, gửi cảnh báo về email cũ. |
+| **Hủy** | `POST` | `/api/users/me/email/cancel` | `{"ticket":"..."}` (tùy chọn) | `204 NoContent`. Hủy token dở dang và xóa sạch `PendingNewEmail`. |
+| **Chặn** | `POST` | `/api/users/me/email/request` & `/confirm` | Bất kỳ | `400 Bad Request` (`code: "legacy_email_change_deprecated"`). Chặn hoàn toàn bypass quy trình cũ. |
+
 ---
 
 ## 5. BẢN ĐỒ API PHÂN HỆ USER CHO CODEX (CORE USER APIS)

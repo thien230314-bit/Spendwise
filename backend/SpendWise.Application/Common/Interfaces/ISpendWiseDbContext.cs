@@ -132,4 +132,6 @@ public interface ISpendWiseDbContext
     Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken cancellationToken = default);
+
+    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
 }

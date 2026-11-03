@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Authentication;
+using SpendWise.Application.Features.Users.Commands.ChangeEmail;
 using SpendWise.Application.Features.Users.Commands.ConfirmChangeEmail;
 using SpendWise.Application.Features.Users.Commands.RequestChangeEmail;
 using SpendWise.Application.Identity;
@@ -431,31 +432,52 @@ public sealed class RealEmailLifecycleE2ETests
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        // 1. Gửi yêu cầu đổi sang email mới
-        var changeReq = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
-        Assert.Equal(HttpStatusCode.OK, changeReq.StatusCode);
+        // 1. Giai đoạn A: Gửi yêu cầu OTP đến email hiện tại (oldEmail)
+        var reqCurr = await client.PostAsync("/api/users/me/email/current/request", null);
+        Assert.Equal(HttpStatusCode.OK, reqCurr.StatusCode);
 
-        // 2. Trích xuất Dynamic OTP từ email gửi tới ĐỊA CHỈ MỚI
+        string ticket;
+        // 2. Trích xuất Dynamic OTP từ email gửi tới ĐỊA CHỈ CŨ và xác thực để lấy ticket
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
             var protector = scope.ServiceProvider.GetRequiredService<IEmailContentProtector>();
 
-            var emailToNew = await db.EmailOutboxMessages.SingleAsync(m => m.RecipientEmail == newEmail);
+            var emailToOld = await db.EmailOutboxMessages.SingleAsync(m => m.RecipientEmail == oldEmail && m.Subject.Contains("Xác nhận email hiện tại"));
+            var currentOtp = ExtractOtpFromEmailText(protector.Unprotect(emailToOld.TextBody));
+
+            var verifyResp = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest(currentOtp));
+            Assert.Equal(HttpStatusCode.OK, verifyResp.StatusCode);
+            var verifyData = await verifyResp.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>();
+            Assert.NotNull(verifyData?.Ticket);
+            ticket = verifyData.Ticket;
+        }
+
+        // 3. Giai đoạn B: Gửi yêu cầu OTP đến email mới kèm ticket
+        var reqNew = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, newEmail));
+        Assert.Equal(HttpStatusCode.OK, reqNew.StatusCode);
+
+        // 4. Trích xuất Dynamic OTP từ email gửi tới ĐỊA CHỈ MỚI và confirm
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
+            var protector = scope.ServiceProvider.GetRequiredService<IEmailContentProtector>();
+
+            var emailToNew = await db.EmailOutboxMessages.SingleAsync(m => m.RecipientEmail == newEmail && m.Subject.Contains("địa chỉ email mới"));
             var changeOtp = ExtractOtpFromEmailText(protector.Unprotect(emailToNew.TextBody));
 
-            // 3. Xác nhận đổi email bằng OTP
-            var confirmResp = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest(changeOtp));
+            // 5. Xác nhận đổi email bằng ticket và OTP mới
+            var confirmResp = await client.PostAsJsonAsync("/api/users/me/email/new/confirm", new ConfirmNewEmailOtpRequest(ticket, changeOtp));
             Assert.Equal(HttpStatusCode.OK, confirmResp.StatusCode);
 
-            // 4. Kiểm tra User trong DB: Email chính thức đổi sang newEmail
+            // 6. Kiểm tra User trong DB: Email chính thức đổi sang newEmail
             var updatedUser = await db.Users.FindAsync(userId);
             Assert.NotNull(updatedUser);
             Assert.Equal(newEmail, updatedUser.Email);
             Assert.Null(updatedUser.PendingNewEmail);
 
-            // 5. Kiểm tra cảnh báo bảo mật đã được gửi về ĐỊA CHỈ CŨ
-            var noticeToOld = await db.EmailOutboxMessages.SingleOrDefaultAsync(m => m.RecipientEmail == oldEmail && m.Subject.Contains("thay đổi"));
+            // 7. Kiểm tra cảnh báo bảo mật đã được gửi về ĐỊA CHỈ CŨ
+            var noticeToOld = await db.EmailOutboxMessages.SingleOrDefaultAsync(m => m.RecipientEmail == oldEmail && m.Subject.Contains("Cảnh báo bảo mật"));
             Assert.NotNull(noticeToOld);
         }
     }

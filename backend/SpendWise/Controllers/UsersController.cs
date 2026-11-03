@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Users;
+using SpendWise.Application.Features.Users.Commands.ChangeEmail;
 using SpendWise.Application.Features.Users.Commands.ConfirmChangeEmail;
 using SpendWise.Application.Features.Users.Commands.RequestChangeEmail;
 using SpendWise.Application.Features.Users.Commands.RevokeSessions;
@@ -63,24 +64,74 @@ public sealed class UsersController(
         return Ok(result);
     }
 
-    [HttpPost("email/request")]
+    [HttpPost("email/current/request")]
     [EnableRateLimiting("emailVerification")]
-    public async Task<ActionResult<EmailVerificationPendingResponse>> RequestEmailChange(
-        [FromBody] RequestChangeEmailRequest request,
+    public async Task<ActionResult<EmailVerificationPendingResponse>> RequestCurrentEmailChangeOtp(
         CancellationToken ct)
     {
-        var result = await mediator.Send(new RequestChangeEmailCommand(UserId(), request, Ip()), ct);
+        var result = await mediator.Send(new RequestCurrentEmailChangeOtpCommand(UserId(), Ip()), ct);
         return Ok(result);
+    }
+
+    [HttpPost("email/current/verify")]
+    [EnableRateLimiting("emailVerification")]
+    public async Task<ActionResult<VerifyCurrentEmailOtpResponse>> VerifyCurrentEmailOtp(
+        [FromBody] VerifyCurrentEmailOtpRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new VerifyCurrentEmailOtpCommand(UserId(), SessionId(), request, Ip()), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("email/new/request")]
+    [EnableRateLimiting("emailVerification")]
+    public async Task<ActionResult<EmailVerificationPendingResponse>> RequestNewEmailOtp(
+        [FromBody] RequestNewEmailOtpRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new RequestNewEmailOtpCommand(UserId(), SessionId(), request, Ip()), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("email/new/confirm")]
+    [EnableRateLimiting("emailVerification")]
+    public async Task<ActionResult<UserProfile>> ConfirmNewEmailOtp(
+        [FromBody] ConfirmNewEmailOtpRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new ConfirmNewEmailOtpCommand(UserId(), SessionId(), request, Ip()), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("email/cancel")]
+    public async Task<IActionResult> CancelEmailChange(
+        [FromBody] CancelEmailChangeRequest? request,
+        CancellationToken ct)
+    {
+        await mediator.Send(new CancelEmailChangeCommand(UserId(), SessionId(), request?.Ticket, Ip()), ct);
+        return NoContent();
+    }
+
+    [HttpPost("email/request")]
+    [EnableRateLimiting("emailVerification")]
+    public IActionResult LegacyRequestEmailChange()
+    {
+        return BadRequest(new
+        {
+            code = "legacy_email_change_deprecated",
+            message = "Email change requires 3-stage verification. Please use POST /api/users/me/email/current/request."
+        });
     }
 
     [HttpPost("email/confirm")]
     [EnableRateLimiting("emailVerification")]
-    public async Task<ActionResult<UserProfile>> ConfirmEmailChange(
-        [FromBody] ConfirmChangeEmailRequest request,
-        CancellationToken ct)
+    public IActionResult LegacyConfirmEmailChange()
     {
-        var result = await mediator.Send(new ConfirmChangeEmailCommand(UserId(), request, Ip()), ct);
-        return Ok(result);
+        return BadRequest(new
+        {
+            code = "legacy_email_change_deprecated",
+            message = "Email change requires 3-stage verification. Please use POST /api/users/me/email/new/confirm with ticket."
+        });
     }
 
     [HttpPut("preferences")]
@@ -110,6 +161,11 @@ public sealed class UsersController(
     {
         // Lấy định danh từ phiên đã xác thực, không tin UserId do client gửi.
         return currentUser.UserId ?? throw new UnauthorizedAccessException();
+    }
+
+    private Guid? SessionId()
+    {
+        return Guid.TryParse(currentUser.SessionId, out var sid) ? sid : null;
     }
 
     private string? Ip()

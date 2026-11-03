@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SpendWise.Application.Admin;
 using SpendWise.Application.Common.Interfaces;
 using SpendWise.Application.Features.Admin.Users.Queries.SearchAdminUsers;
+using SpendWise.Application.Features.Users.Commands.ChangeEmail;
 using SpendWise.Application.Features.Users.Commands.ConfirmChangeEmail;
 using SpendWise.Application.Features.Users.Commands.RequestChangeEmail;
 using SpendWise.Application.Features.Wallets;
@@ -231,11 +232,18 @@ public sealed class RealSql02AvatarAndEmailE2ETests
         Assert.NotNull(userAuth.AccessToken);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userAuth.AccessToken);
 
-        // 2. Request change email to new email
+        // 2. 3-Stage email change: Request current OTP & verify to get ticket
+        var reqCurr = await client.PostAsync("/api/users/me/email/current/request", null);
+        Assert.Equal(HttpStatusCode.OK, reqCurr.StatusCode);
+
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, verifyCurr.StatusCode);
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
         var newEmail = $"sql02_verified_{Guid.NewGuid():N}@spendwise.test";
         var requestResponse = await client.PostAsJsonAsync(
-            "/api/users/me/email/request",
-            new RequestChangeEmailRequest(newEmail));
+            "/api/users/me/email/new/request",
+            new RequestNewEmailOtpRequest(ticket, newEmail));
         Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
 
         // 3. Query SQL02 directly: PendingNewEmail is set, official Email is UNCHANGED
@@ -253,8 +261,8 @@ public sealed class RealSql02AvatarAndEmailE2ETests
 
         // 4. Confirm with WRONG OTP -> rejected
         var wrongOtpResponse = await client.PostAsJsonAsync(
-            "/api/users/me/email/confirm",
-            new ConfirmChangeEmailRequest("99999999"));
+            "/api/users/me/email/new/confirm",
+            new ConfirmNewEmailOtpRequest(ticket, "99999999"));
         Assert.Equal(HttpStatusCode.BadRequest, wrongOtpResponse.StatusCode);
 
         // Recheck DB: still initial email
@@ -272,8 +280,8 @@ public sealed class RealSql02AvatarAndEmailE2ETests
 
         // 5. Confirm with CORRECT OTP ("12345678" in test environment)
         var confirmResponse = await client.PostAsJsonAsync(
-            "/api/users/me/email/confirm",
-            new ConfirmChangeEmailRequest("12345678"));
+            "/api/users/me/email/new/confirm",
+            new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
 
         var updatedProfile = await confirmResponse.Content.ReadFromJsonAsync<UserProfile>();
@@ -392,9 +400,17 @@ public sealed class RealSql02AvatarAndEmailE2ETests
         var auth = await IdentityTestData.LoginAndVerifyPinAsync(client, initialEmail, password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
-        // 1. Request change to Email A
+        // 1. Request current OTP & verify to get ticket
+        var reqCurr = await client.PostAsync("/api/users/me/email/current/request", null);
+        Assert.Equal(HttpStatusCode.OK, reqCurr.StatusCode);
+
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, verifyCurr.StatusCode);
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
+        // 1b. Request change to Email A
         var emailA = $"email_a_{Guid.NewGuid():N}@spendwise.test";
-        var resA = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(emailA));
+        var resA = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, emailA));
         Assert.Equal(HttpStatusCode.OK, resA.StatusCode);
 
         // Verify SQL02: PendingNewEmail is emailA
@@ -410,7 +426,7 @@ public sealed class RealSql02AvatarAndEmailE2ETests
 
         // 2. Immediately request change to Email B (within cooldown)
         var emailB = $"email_b_{Guid.NewGuid():N}@spendwise.test";
-        var resB = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(emailB));
+        var resB = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, emailB));
         Assert.Equal(HttpStatusCode.TooManyRequests, resB.StatusCode); // Blocked by cooldown!
 
         // 3. Verify SQL02 directly: PendingNewEmail remains emailA, NOT emailB!
@@ -427,8 +443,8 @@ public sealed class RealSql02AvatarAndEmailE2ETests
 
         // 4. Confirm with OTP A -> Updates to Email A, NEVER to Email B!
         var confirmRes = await client.PostAsJsonAsync(
-            "/api/users/me/email/confirm",
-            new ConfirmChangeEmailRequest("12345678"));
+            "/api/users/me/email/new/confirm",
+            new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.OK, confirmRes.StatusCode);
 
         var profile = await confirmRes.Content.ReadFromJsonAsync<UserProfile>();
@@ -493,9 +509,16 @@ public sealed class RealSql02AvatarAndEmailE2ETests
         var auth = await IdentityTestData.LoginAndVerifyPinAsync(client, initialEmail, password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
-        // 1. Request change email
+        // 1. Request current OTP & verify to get ticket
+        var reqCurr = await client.PostAsync("/api/users/me/email/current/request", null);
+        Assert.Equal(HttpStatusCode.OK, reqCurr.StatusCode);
+
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, verifyCurr.StatusCode);
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
         var newEmail = $"fa_target_{Guid.NewGuid():N}@spendwise.test";
-        var reqRes = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        var reqRes = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, newEmail));
         Assert.Equal(HttpStatusCode.OK, reqRes.StatusCode);
 
         // 2. Perform 5 consecutive WRONG OTP attempts ("00000000")
@@ -503,14 +526,14 @@ public sealed class RealSql02AvatarAndEmailE2ETests
         for (var attempt = 1; attempt <= 5; attempt++)
         {
             var wrongOtpRes = await client.PostAsJsonAsync(
-                "/api/users/me/email/confirm",
-                new ConfirmChangeEmailRequest("00000000"));
+                "/api/users/me/email/new/confirm",
+                new ConfirmNewEmailOtpRequest(ticket, "00000000"));
             Assert.Equal(HttpStatusCode.BadRequest, wrongOtpRes.StatusCode);
 
             await using var connection = new SqlConnection(Sql02Connection);
             await connection.OpenAsync();
             await using var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT TOP 1 FailedAttempts, RevokedAt FROM EmailVerificationTokens WHERE UserId = @UserId AND Purpose = 'ChangeEmail' ORDER BY CreatedAt DESC";
+            cmd.CommandText = "SELECT TOP 1 FailedAttempts, RevokedAt FROM EmailVerificationTokens WHERE UserId = @UserId AND Purpose = 'ChangeEmailNew' ORDER BY CreatedAt DESC";
             cmd.Parameters.AddWithValue("@UserId", userId);
             await using var reader = await cmd.ExecuteReaderAsync();
             Assert.True(await reader.ReadAsync());
@@ -526,8 +549,8 @@ public sealed class RealSql02AvatarAndEmailE2ETests
 
         // 3. Attempt with CORRECT OTP ("12345678") after lockout -> MUST BE REJECTED!
         var correctOtpAfterLockout = await client.PostAsJsonAsync(
-            "/api/users/me/email/confirm",
-            new ConfirmChangeEmailRequest("12345678"));
+            "/api/users/me/email/new/confirm",
+            new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.BadRequest, correctOtpAfterLockout.StatusCode);
 
         // 4. Verify SQL02: Email was NOT changed, still initialEmail

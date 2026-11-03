@@ -153,8 +153,12 @@
 | `GET /api/users/me` | Trả **`UserProfile`** với `preferredTheme,preferredLanguage,defaultCurrency,engagementEmailOptIn,avatarUrl`, không có `preferences` object lồng và `mainWalletBalance`. Số dư lấy từ Wallet/Dashboard. |
 | `PUT /api/users/me/preferences` | Body `{preferredLanguage:"vi-VN",preferredTheme:"system",defaultCurrency:"VND",engagementEmailOptIn:false}` → **`UserProfile`**. Cờ biometric/notification hardware không phải thuộc tính DTO này. |
 | `POST /api/users/me/avatar` | Multipart key **`file`**, JPG/PNG/WebP, tối đa 5 MB; trả `UserProfile` mới. |
-| `POST /api/users/me/email/request` | Body `{newEmail}` → `EmailVerificationPendingResponse`. |
-| `POST /api/users/me/email/confirm` | Body `{newEmail,otp}` → `UserProfile`. |
+| `POST /api/users/me/email/current/request` | Không body → `EmailVerificationPendingResponse`. Gửi OTP 8 số về email hiện tại. |
+| `POST /api/users/me/email/current/verify` | Body `{otp}` → `{ticket, expiresAt}`. Xác thực email hiện tại, cấp ticket 15 phút gắn chặt `UserId` và `SessionId`. |
+| `POST /api/users/me/email/new/request` | Body `{ticket, newEmail}` → `EmailVerificationPendingResponse`. Kiểm tra ticket, định dạng, trùng lặp; gửi OTP 8 số độc lập về email mới. |
+| `POST /api/users/me/email/new/confirm` | Body `{ticket, otp}` → `UserProfile`. Cam kết đổi email, gửi cảnh báo bảo mật về email cũ, tự động thu hồi toàn bộ phiên khác (`UserSessionId != sessionId`). |
+| `POST /api/users/me/email/cancel` | Không body → `204 NoContent`. Hủy bỏ phiên đổi email đang dở dang, xóa sạch `PendingNewEmail`. |
+| `POST /api/users/me/email/request` & `confirm` | **Deprecated & Chặn bypass**: Trả về `400 Bad Request` kèm mã `legacy_email_change_deprecated`. |
 | `DELETE /api/users/me/sessions` | Thu hồi các phiên khác, `204`. |
 
 **Bạn bè (`FriendsController`; tối đa 100 bạn bè):** Người dùng phải kết bạn thành công trước khi mời vào quỹ V1. Không lộ email/số điện thoại người lạ tùy tiện.

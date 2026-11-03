@@ -181,6 +181,10 @@ public sealed class EmailFoundationTests
         {
             ["Token"] = "PIN-DEMO-TOKEN", ["ExpiresAt"] = "2026-09-29T12:10:00Z"
         }, "PIN-DEMO-TOKEN");
+        yield return ("email-change-current-verification", new()
+        {
+            ["Email"] = "current@example.test", ["Otp"] = "71549203", ["Minutes"] = "10"
+        }, "71549203");
         yield return ("email-change-verification", new()
         {
             ["Email"] = "new@example.test", ["Otp"] = "71549203", ["Minutes"] = "10"

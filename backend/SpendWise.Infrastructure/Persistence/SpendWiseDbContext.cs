@@ -272,6 +272,12 @@ public sealed class SpendWiseDbContext(DbContextOptions<SpendWiseDbContext> opti
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.Status, u => u.Status), cancellationToken) == 1;
     }
 
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (Database.CurrentTransaction is not null)
+            await Database.CurrentTransaction.CommitAsync(cancellationToken);
+    }
+
     public async Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default)
     {
         if (!Database.IsRelational() || Database.CurrentTransaction is not null)
@@ -279,7 +285,8 @@ public sealed class SpendWiseDbContext(DbContextOptions<SpendWiseDbContext> opti
 
         await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
         var result = await operation(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        if (Database.CurrentTransaction is not null)
+            await transaction.CommitAsync(cancellationToken);
         return result;
     }
 }

@@ -10,7 +10,7 @@ public enum SystemRole { SystemAdmin = 0, User = 1, Admin = 2, SuperAdmin = 3 }
 public enum UserStatus { Active, Restricted, Locked, Suspended }
 public enum LoginChallengePurpose { PinSetup, PinVerification }
 public enum SecurityPinResetPurpose { SelfService, AdminEnrollment }
-public enum EmailVerificationPurpose { Registration, ResetPassword, ChangeEmail }
+public enum EmailVerificationPurpose { Registration, ResetPassword, ChangeEmail, ChangeEmailCurrent, ChangeEmailTicket, ChangeEmailNew }
 
 public sealed class User : BaseEntity
 {

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SpendWise.Application.Features.Users.Commands.ChangeEmail;
 using SpendWise.Application.Features.Users.Commands.ConfirmChangeEmail;
 using SpendWise.Application.Features.Users.Commands.RequestChangeEmail;
 using SpendWise.Application.Identity;
@@ -138,11 +139,19 @@ public sealed class UserAvatarAndEmailChangeTests
 
         var newEmail = $"newemail_{Guid.NewGuid():N}@spendwise.local";
 
-        // Step 1: Request email change
-        var requestResponse = await client.PostAsJsonAsync(
-            "/api/users/me/email/request",
-            new RequestChangeEmailRequest(newEmail));
-        Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
+        // Step 1: Request OTP for current email
+        var reqCurr = await client.PostAsync("/api/users/me/email/current/request", null);
+        Assert.Equal(HttpStatusCode.OK, reqCurr.StatusCode);
+
+        // Step 2: Verify OTP for current email -> get ticket
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        Assert.Equal(HttpStatusCode.OK, verifyCurr.StatusCode);
+        var ticketData = await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>();
+        Assert.NotNull(ticketData?.Ticket);
+
+        // Step 3: Request OTP for new email with ticket
+        var reqNew = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticketData.Ticket, newEmail));
+        Assert.Equal(HttpStatusCode.OK, reqNew.StatusCode);
 
         // Verify PendingNewEmail in DB and token generated
         using (var scope = factory.Services.CreateScope())
@@ -154,15 +163,15 @@ public sealed class UserAvatarAndEmailChangeTests
             Assert.Equal(initialEmail, user.Email); // Not changed yet!
 
             var tokens = await db.EmailVerificationTokens
-                .Where(t => t.UserId == userId && t.Purpose == EmailVerificationPurpose.ChangeEmail)
+                .Where(t => t.UserId == userId && t.Purpose == EmailVerificationPurpose.ChangeEmailNew)
                 .ToListAsync();
             Assert.NotEmpty(tokens);
         }
 
-        // In test mode, static OTP is configured as "12345678" or let's use StaticOtp
+        // Step 4: Confirm new email with ticket and OTP
         var confirmResponse = await client.PostAsJsonAsync(
-            "/api/users/me/email/confirm",
-            new ConfirmChangeEmailRequest("12345678"));
+            "/api/users/me/email/new/confirm",
+            new ConfirmNewEmailOtpRequest(ticketData.Ticket, "12345678"));
         Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
 
         var updatedProfile = await confirmResponse.Content.ReadFromJsonAsync<UserProfile>();
@@ -221,9 +230,13 @@ public sealed class UserAvatarAndEmailChangeTests
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateAccessToken(currentUser, session.Id).Token);
         }
 
+        await client.PostAsync("/api/users/me/email/current/request", null);
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
         var response = await client.PostAsJsonAsync(
-            "/api/users/me/email/request",
-            new RequestChangeEmailRequest(existingOtherUserEmail));
+            "/api/users/me/email/new/request",
+            new RequestNewEmailOtpRequest(ticket, existingOtherUserEmail));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -258,7 +271,11 @@ public sealed class UserAvatarAndEmailChangeTests
         }
 
         var newEmail = $"expired_test_{Guid.NewGuid():N}@spendwise.local";
-        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        await client.PostAsync("/api/users/me/email/current/request", null);
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
+        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, newEmail));
         Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
 
         // Expire the token in DB
@@ -266,7 +283,7 @@ public sealed class UserAvatarAndEmailChangeTests
         {
             var db = scope.ServiceProvider.GetRequiredService<SpendWiseDbContext>();
             var token = await db.EmailVerificationTokens
-                .Where(t => t.UserId == userId && t.Purpose == EmailVerificationPurpose.ChangeEmail)
+                .Where(t => t.UserId == userId && t.Purpose == EmailVerificationPurpose.ChangeEmailNew)
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstAsync();
             token.ExpiresAt = DateTime.UtcNow.AddMinutes(-5);
@@ -274,7 +291,7 @@ public sealed class UserAvatarAndEmailChangeTests
         }
 
         // Try confirm with expired OTP
-        var confirmResponse = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        var confirmResponse = await client.PostAsJsonAsync("/api/users/me/email/new/confirm", new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.BadRequest, confirmResponse.StatusCode);
     }
 
@@ -308,15 +325,19 @@ public sealed class UserAvatarAndEmailChangeTests
         }
 
         var newEmail = $"reused_test_{Guid.NewGuid():N}@spendwise.local";
-        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/request", new RequestChangeEmailRequest(newEmail));
+        await client.PostAsync("/api/users/me/email/current/request", null);
+        var verifyCurr = await client.PostAsJsonAsync("/api/users/me/email/current/verify", new VerifyCurrentEmailOtpRequest("12345678"));
+        var ticket = (await verifyCurr.Content.ReadFromJsonAsync<VerifyCurrentEmailOtpResponse>())!.Ticket;
+
+        var requestResponse = await client.PostAsJsonAsync("/api/users/me/email/new/request", new RequestNewEmailOtpRequest(ticket, newEmail));
         Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
 
         // Confirm 1st time: SUCCESS
-        var confirm1 = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        var confirm1 = await client.PostAsJsonAsync("/api/users/me/email/new/confirm", new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.OK, confirm1.StatusCode);
 
-        // Confirm 2nd time with reused OTP: FAILS
-        var confirm2 = await client.PostAsJsonAsync("/api/users/me/email/confirm", new ConfirmChangeEmailRequest("12345678"));
+        // Confirm 2nd time with reused ticket: FAILS
+        var confirm2 = await client.PostAsJsonAsync("/api/users/me/email/new/confirm", new ConfirmNewEmailOtpRequest(ticket, "12345678"));
         Assert.Equal(HttpStatusCode.BadRequest, confirm2.StatusCode);
     }
 

@@ -35,12 +35,40 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             return NewDeviceLogin(values);
         if (string.Equals(templateName, "security-pin-reset", StringComparison.Ordinal))
             return SecurityPinReset(values);
+        if (string.Equals(templateName, "email-change-current-verification", StringComparison.Ordinal))
+            return EmailChangeCurrentVerification(values);
         if (string.Equals(templateName, "email-change-verification", StringComparison.Ordinal))
             return EmailChangeVerification(values);
         if (string.Equals(templateName, "email-change-notice", StringComparison.Ordinal))
             return EmailChangeNotice(values);
 
         return Generic(values);
+    }
+
+    private static RenderedEmail EmailChangeCurrentVerification(IReadOnlyDictionary<string, string?> values)
+    {
+        var email = Value(values, "Email", string.Empty);
+        var otp = Value(values, "Otp", string.Empty);
+        var minutes = Value(values, "Minutes", "10");
+        var content = Intro("Bạn vừa yêu cầu thay đổi địa chỉ email cho tài khoản SpendWise của mình. Để bảo mật, vui lòng nhập mã OTP bên dưới để xác nhận quyền kiểm soát email hiện tại trước khi nhập email mới.") +
+                      OtpCard("Mã xác thực email hiện tại", otp) +
+                      DetailCard(
+                          DetailRow("Email hiện tại", email) +
+                          DetailRow("Thời hạn", $"{minutes} phút")) +
+                      SecurityNote(
+                          "Không chia sẻ mã này với bất kỳ ai. Nếu bạn không yêu cầu thay đổi email, tài khoản của bạn có thể đang bị đe dọa; vui lòng đổi mật khẩu ngay lập tức.") +
+                      MutedNote("Mã OTP này chỉ có hiệu lực một lần.");
+        var text = $"[SpendWise] Xác nhận quyền sở hữu email hiện tại\n\n" +
+                   $"Email hiện tại: {email}\nMã xác thực: {otp}\nMã có hiệu lực trong {minutes} phút.\n\n" +
+                   "Không chia sẻ mã này với bất kỳ ai.\nNếu bạn không yêu cầu đổi email, hãy đổi mật khẩu ngay.\n\n" + AutomatedFooter;
+        return new RenderedEmail(
+            Layout(
+                "SpendWise — Xác nhận email hiện tại",
+                "Mã xác thực xác minh quyền sở hữu email",
+                "BẢO MẬT TÀI KHOẢN",
+                "Xác minh email hiện tại",
+                content),
+            text);
     }
 
     private static RenderedEmail EmailChangeVerification(IReadOnlyDictionary<string, string?> values)

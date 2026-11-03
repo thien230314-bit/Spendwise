@@ -9,7 +9,7 @@
 ## 1. TỔNG QUAN & RANH GIỚI BÀN GIAO
 
 1. **Trạng thái Backend:**
-   - Mã nguồn Backend SpendWise V1.0 đã **KHÓA CHẶT (LOCKED 100%)**.
+   - Nguồn Backend khóa tại `53b6d6e`; trạng thái khóa source không đồng nghĩa với xác minh 100% hợp đồng API.
    - Toàn bộ các bộ kiểm thử cốt lõi đã đạt kết quả tuyệt đối:
      - **User API Suite:** 306 requests / 343 assertions PASS (`reports/newman/SpendWise-User-API-REPORT-LIVE.json`).
      - **Admin API Suite:** 80 requests / 138 assertions PASS (`reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`).
@@ -212,7 +212,7 @@ Content-Type: application/json
   $\rightarrow$ `200 OK` trả về hướng dẫn thanh toán. **KHÔNG tự động trừ ví SpendWise** khi chưa có settlement.
 
 ### 5.4. Quỹ nhóm Cố định V2 (Fixed Fund V2 — theo fixed.md)
-> Đặc tả chuẩn: Đã hoàn tất và nghiệm thu 100%. Áp dụng cam kết tin tưởng, thời lượng góp 1–720h, chốt chia hết tuyệt đối 1 VND, Auto-Kick khi trễ hạn, thay ghế 72h, đóng kỳ/chuyển kỳ không đa số (chọn Không hoàn tiền ngay, 24h tự hoàn), tối đa 3 kỳ, Bầu cử Owner 2 vòng (12h+12h) khi vắng mặt 15 ngày.
+> Đặc tả Fixed V2: xem fixed.md và phạm vi bằng chứng trong ma trận nghiệm thu. Áp dụng cam kết tin tưởng, thời lượng góp 1–720h, chốt chia hết tuyệt đối 1 VND, Auto-Kick khi trễ hạn, thay ghế 72h, đóng kỳ/chuyển kỳ không đa số (chọn Không hoàn tiền ngay, 24h tự hoàn), tối đa 3 kỳ, Bầu cử Owner 2 vòng (12h+12h) khi vắng mặt 15 ngày.
 
 | Phương thức | Đường dẫn API | Request Body tóm tắt | Ý nghĩa nghiệp vụ |
 |---|---|---|---|
@@ -229,6 +229,8 @@ Content-Type: application/json
 
 ### 5.5. Quỹ nhóm Tự do V1 (Free Fund V1 — theo đặc tả 01/11/2026)
 > Đặc tả chuẩn: Tối đa 6 người, không nghĩa vụ T/n, không chuyển chủ (muốn rời phải giải tán), Member có 2 nút độc lập (`Expense` và `Withdrawal`), chống trùng lặp yêu cầu; duyệt Expense cấp quyền chi 7 ngày (`ApprovedUnused`) chưa trừ quỹ; duyệt Withdrawal chuyển ví ngay (chặn duyệt nếu còn quyền chi chưa dùng); động cơ tính vốn động $E_i = C_i - S_i - W_i$.
+
+**Free V1 — rời quỹ:** Nếu thành viên còn yêu cầu `AwaitingOwnerReview`, `POST /api/v1/funds/{id}/leave` trả `409 member_pending_requests`. Hủy yêu cầu hoặc chờ xử lý rồi thử lại; không hiển thị hoàn tiền thành công khi bị từ chối.
 
 | Phương thức | Đường dẫn API | Request Body tóm tắt | Ý nghĩa nghiệp vụ |
 |---|---|---|---|

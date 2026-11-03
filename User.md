@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake` (chuẩn bị hợp nhất fast-forward về `main`). **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10 (đã triển khai và nghiệm thu 74/74 unit tests). Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED).**
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main` và `feature/fixed-fund-v2-remake` (đã đồng bộ hoàn tất tại cùng commit HEAD). **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10 (đã triển khai và nghiệm thu 74/74 unit tests). Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED).**
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---

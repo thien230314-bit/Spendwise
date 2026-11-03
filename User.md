@@ -398,8 +398,8 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | API | Body, ý nghĩa |
 |---|---|
 | `POST /api/v1/funds/{id}/activity/close` | **Chủ quỹ**, `{"securityPin":"<PIN>"}` → `204`, đóng chu kỳ hiện tại trước khi tạo đề xuất mới. |
-| `POST /api/v1/funds/{id}/activity-proposals` | **Chủ quỹ**, `{"targetVnd":900000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>"}` → `V1ActivityProposalDto`; mục tiêu **chu kỳ mới**, không phải khoản chi phát sinh. |
-| `GET /api/v1/funds/activity-proposals/{id}` | `{id,fundId,targetVnd,state,electorateSize,yes,no,openedAt,deadline,ownVote?}`. |
+| `POST /api/v1/funds/{id}/activity-proposals` | **Chủ quỹ**, `{"targetVnd":900000,"idempotencyKey":"<unique-key>","securityPin":"<PIN>","contributionDurationHours":48,"newName":"Quỹ kỳ 2"}` → `V1ActivityProposalDto`. Hai trường `contributionDurationHours?` (1–720 giờ; bỏ qua mặc định 24) và `newName?` là tùy chọn của **kỳ mới**. Phải đóng kỳ hiện tại trước; đây không phải khoản chi. |
+| `GET /api/v1/funds/activity-proposals/{id}` | `V1ActivityProposalDto {id,fundId,targetVnd,state,electorateSize,yes,no,openedAt,deadline,ownVote?,ownCarryOverVnd?,contributionDurationHours?,expectedPerMemberVnd?}`. Các trường hậu tố `?` có thể null; frontend dùng deadline và trạng thái từ server. |
 | `POST /api/v1/funds/activity-proposals/{id}/vote` | Cử tri cố định, `{"support":true}` hoặc `{"support":false}`. Một phiếu không đổi sau khi bỏ. |
 | `POST /api/v1/funds/activity-proposals/{id}/confirm-obligation` | Thành viên xác nhận nghĩa vụ kỳ mới: `{"expectedObligationVnd":1000000,"expectedDurationHours":24,"securityPin":"<PIN>"}` → `V1ActivityProposalDto`. |
 | `POST /api/v1/funds/activity-proposals/{id}/settle` | **Chủ quỹ**, body **chỉ** `{"securityPin":"<PIN>"}`, xử lý đề xuất đã xác nhận xong danh sách thành viên tiếp tục. |
@@ -511,12 +511,12 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 | `GET /api/cases/support` / `GET /api/cases/support/{id}` | Danh sách `SupportCaseDetailDto[]`, chi tiết gồm `ticketNumber,subject,description,category,priority,status,linkedTransactionId?,assignedAdminId?,correctionGranted,history[]`. |
 | `POST /api/cases/support/{id}/messages` | `{message,attachments?}`; đính kèm JSON nếu backend chấp nhận DTO `CaseAttachmentUpload`. |
 | `POST /api/cases/support/{id}/messages/multipart` | Upload tin nhắn + đính kèm qua form-data; kiểm tra kích thước/loại file theo handler. |
-| `POST /api/cases/disputes` | `{linkedTransactionId,reason,description?}`; chỉ gắn giao dịch thuộc user, tạo `CaseDto`. |
+| `POST /api/cases/disputes` | **Legacy, không tạo tranh chấp mới:** route tồn tại nhưng `CreateDisputeCommandHandler` trả `400 dispute_workflow_deprecated`. Giao diện tạo khiếu nại phải dùng `POST /api/cases/support` với `category:"complaint_transaction"` (hoặc phân loại `complaint_*` phù hợp). Các API đọc tranh chấp cũ vẫn tách riêng. |
 | `GET /api/cases/disputes` / `GET /api/cases/disputes/{id}` | Danh sách và chi tiết `DisputeDetailDto`: `linkedTransactionId,reference,title,amount,counterparty?,reason,description,status,resolution?,history`. |
 | `POST /api/cases/disputes/{id}/messages` và `.../messages/multipart` | User phản hồi/đính kèm minh chứng trong tranh chấp của mình. |
 | `GET /api/cases/attachments/{id}` | Tải đính kèm sau kiểm tra quyền. |
 
-**Trạng thái/luồng:** Người dùng tạo hồ sơ → backend ghi lịch sử và xếp thông báo/email → Admin xem/trao đổi/đổi trạng thái → user xem kết quả. **Không khẳng định hỗ trợ `Resolved` tự động hoàn tiền**; tài chính được sửa qua nghiệp vụ ledger/correction tương ứng. `transaction_edit` chỉ áp dụng cho giao dịch thủ công đủ điều kiện để xin quyền correction.
+**Trạng thái/luồng:** Người dùng tạo **SupportCase** → backend ghi lịch sử và xếp thông báo/email → Admin xem/trao đổi/đổi trạng thái → user xem kết quả. Không hiển thị thao tác tạo Dispute legacy như một luồng tạo mới hoạt động. **Không khẳng định hỗ trợ `Resolved` tự động hoàn tiền**; tài chính được sửa qua nghiệp vụ ledger/correction tương ứng. `transaction_edit` chỉ áp dụng cho giao dịch thủ công đủ điều kiện để xin quyền correction.
 
 ### 3.9. AI Assistant: Gemini, hội thoại, file và xác nhận hành động
 

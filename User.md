@@ -122,7 +122,7 @@
 | `POST /api/auth/register` | `{fullName,email,phone,password,confirmPassword}` → `EmailVerificationPendingResponse {status,expiresAt,resendAfterSeconds}` | Email OTP 8 số, không cấp phiên trước khi xác minh. |
 | `POST /api/auth/email-verification/verify` | `{email,otp,deviceName?}` → `{challengeToken,status,expiresAt}` | `status` chỉ bước PIN cần làm, không tự suy đoán từ ID. |
 | `POST /api/auth/email-verification/resend` | `{email}` → trạng thái chờ và thời gian gửi lại | Chống spam/cooldown. |
-| `POST /api/auth/login` | `{identifier,password,deviceName?}` → `LoginChallengeResponse` | `identifier` có thể là email hoặc SpendId; chưa phải access token. |
+| `POST /api/auth/login` | `{identifier,password,deviceName?}` → `LoginChallengeResponse` | `identifier` có thể là email, SpendId hoặc số điện thoại; chưa phải access token. |
 | `POST /api/auth/pin/setup` | `{challengeToken,pin,confirmPin}` → `AuthResponse` | Thiết lập PIN lần đầu. |
 | `POST /api/auth/pin/verify` | `{challengeToken,pin,deviceTrustToken?}` → `AuthResponse` | Đây là **bước hoàn tất đăng nhập**, khác `/api/security-pin/verify`. |
 | `POST /api/auth/refresh` | `{refreshToken,deviceName?}` → `AuthResponse` | Xoay refresh token, thay cặp token sau mỗi lần refresh hợp lệ. |

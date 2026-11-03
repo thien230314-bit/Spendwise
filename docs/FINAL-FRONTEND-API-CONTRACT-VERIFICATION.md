@@ -274,7 +274,7 @@ Contract sửa theo source: Admin tickets dùng A2Page; request-info trả Waiti
 | GET | `/api/admin/users` | — | — | — | — | — | AdminController.cs:45 | BLOCKED: chưa hoàn tất đối chiếu |
 | POST | `/api/v1/admin/users/search` | — | — | — | — | — | AdminA2Controller.cs:14 | BLOCKED: chưa hoàn tất đối chiếu |
 | POST | `/api/admin/users/{id}/revoke-sessions` | — | — | — | — | — | AdminController.cs:132 | BLOCKED: chưa hoàn tất đối chiếu |
-| POST | `/api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions` | — | — | — | — | — | AdminA2Controller.cs:28 | BLOCKED: chưa hoàn tất đối chiếu |
+| POST | `/api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions` | OperationsRead; case-scoped; PIN | A2RevokeRequest {reason,securityPin,sessionId?} | Không body | 204; 404 session_not_found | Thu hồi phiên chọn hoặc tất cả | AdminA2Controller.cs:30–33; AdminA2Service.cs:116–134 | CORRECTED |
 | PUT | `/api/admin/users/{id}/status` | — | — | — | — | — | AdminController.cs:55 | BLOCKED: chưa hoàn tất đối chiếu |
 | PUT | `/api/v1/admin/support/{caseId}/users/{userId}/status` | OperationsRead; case-scoped | `A2StatusRequest` | `Không body` | 204 | Đổi trạng thái qua ChangeStatusAsync | AdminA2Controller.cs:33 | CORRECTED |
 | POST | `/api/admin/users/{id}/reset-password` | — | — | — | — | — | AdminController.cs:71 | BLOCKED: chưa hoàn tất đối chiếu |
@@ -316,3 +316,46 @@ Contract sửa theo source: Admin tickets dùng A2Page; request-info trả Waiti
 
 - Inventory gốc: 6/220 đã đối chiếu (5 VERIFIED, 1 CORRECTED); 214 dòng gốc còn lại. Thêm legacy confirm bị chặn vốn ghi tắt trong User.md: đã đối chiếu riêng, không tính vào mẫu số 220.
 - Tests tham chiếu: `EmailChangeSecurityTests.cs` (bao gồm hủy bằng ticket ở dòng 432–433), `UserAvatarAndEmailChangeTests.cs`. Chỉ đọc source; không chạy lại.
+
+## Kiểm tra bổ sung sau mốc 721f66b
+
+- ADM-08: tách contract thu hồi phiên case-scoped khỏi legacy; tham chiếu AdminA2Service.cs:116–134. ADM-09: sửa tên ChangeUserStatusRequest ở bảng tổng hợp (AdminController.cs:58–60; AdminContracts.cs:11).
+- Handoff: phân biệt securityPin với adminPin, sửa checklist Broadcast và mô tả reset credentials; phạm vi hủy OTP theo EmailVerificationSupport.cs:775–794.
+- OpenAPI runtime tại SHA khóa chưa được lấy; Program.cs có đường khởi động DevelopmentSeeder. Chỉ dùng OpenAPI lịch sử và kiểm tra tĩnh. Chưa khóa các dòng chưa đối chiếu DTO, policy và tác động.
+
+## Đối chiếu cuối bằng OpenAPI và endpoint metadata
+
+Backend `53b6d6e24bf0612647fd8a61409623eb05187136`: TestServer Testing trả 200 tại `/openapi/v1.json`, 365 operations (339 baseline + 26). Toàn bộ method/route đầy đủ khớp: User 221/221, Admin 47/47. Không chạy lại E2E.
+
+Ba sai lệch đã sửa: Login chấp nhận email, SpendId và số điện thoại (LoginCommandHandler.cs:32–36); Ledger và Transaction search nhận `SensitiveAccessRequest {reason}` (AdminContracts.cs:16, AdminController.cs:163–186), trả 200 với mảng tương ứng. Freeze riêng trả 204 (AdminController.cs:149–159).
+
+`EndpointDataSource` của TestServer: ghép 221 User (203 có Authorize, 18 AllowAnonymous) và 47 Admin (47 có Authorize, 0 AllowAnonymous). Ledger/Transaction search mang policy `SystemAdmin`; Broadcast publish mang `V1.ManageMaintenance`. Đây là tên policy trong metadata, không phải tên role được phép tự suy diễn. Điều kiện PIN, case scope, quyền đối tượng và custom policy handler chưa được xác minh toàn diện bằng HTTP. OpenAPI không chứa security tường minh; không dùng sự vắng mặt này để suy ra quyền truy cập.
+
+Status: dùng `NoContent()` cho email cancel (UsersController.cs:112), freeze (AdminController.cs:159), Broadcast publish/cancel (V1BroadcastController.cs:15–17); OpenAPI mặc định 200 cho các action này. Chưa xác minh mọi nhánh lỗi và exception mapping.
+
+### Phân loại 18 cảnh báo payload lịch sử
+
+Nguồn: comparison.json của TestServer; đối chiếu item và assertion trong ba collection tương ứng. HISTORICAL_TEST chỉ nói về trường không còn trong schema hiện tại, không suy ra request cũ nhất định thất bại. Required trong OpenAPI có thể gồm trường nullable; chỉ thiếu trường chưa đủ kết luận lỗi validation.
+
+| Collection | Operation | Phân loại | Bằng chứng |
+|---|---|---|---|
+| User | PATCH friends/{id}/preference | HISTORICAL_TEST | Item 14 kỳ vọng 200 nhưng gửi alias; contract dùng nickname. |
+| User | PATCH transactions/{id} | INCONCLUSIVE | Item 15/F03d kỳ vọng 200, thiếu categoryId; cần phân biệt nullable và validation. |
+| User | POST bank-connections/link | HISTORICAL_TEST | B5-01 gửi redirectUrl; assertion chấp nhận fallback 503, không xác minh trường redirect. |
+| User | POST bank-connections/{id}/reactivate | NEGATIVE_TEST | B5-04 chủ đích kiểm tra active connection trả 409, không xác minh payload happy path. |
+| User | POST bank-connections/{id}/unlink | HISTORICAL_TEST | B5-03 kỳ vọng 200 với redirectUrl ngoài schema. |
+| User | POST categories | HISTORICAL_TEST | B2-01 gửi type ngoài schema hiện tại. |
+| User | POST goals | HISTORICAL_TEST | Item tạo goal gửi deadline ngoài schema hiện tại. |
+| User | POST groups | INCONCLUSIVE | B7-02 thiếu description; assertion 200/201 không chứng minh required hiện tại. |
+| User | POST groups/{id}/expenses | INCONCLUSIVE | B7-22 thiếu categoryId/description/paidByUserId; chưa xác minh binding/default. |
+| User | POST integrations/sepay/bankhub/ipn | NEGATIVE_TEST | B2-06 kiểm tra secret và kỳ vọng 401; không phải mẫu IPN hợp lệ. |
+| User | POST v1/funds/elections/{id}/ballots | INCONCLUSIVE | B6-13 kỳ vọng 200 nhưng thiếu support; cần kiểm tra quy tắc ballot. |
+| User | PUT groups/{id} | HISTORICAL_TEST | B7-04 gửi currency ngoài schema và thiếu membersCanCreateExpenses. |
+| User | PUT mobile/push/installations/{id} | INCONCLUSIVE | B1-05 thiếu deviceName; assertion 200/204, không chứng minh trường bắt buộc. |
+| User | PUT v1/funds/{id}/members/{userId}/spending-permission | NEGATIVE_TEST | Item 08 kỳ vọng 403 do leo quyền cross-user; không dùng canSpend làm mẫu contract. |
+| Comprehensive | POST v1/funds | INCONCLUSIVE | EP01/FF01a kỳ vọng 200 nhưng thiếu targetVnd; không dùng kết quả cũ suy ra quy tắc Fixed/Free hiện tại. |
+| Comprehensive | POST v1/funds/elections/{id}/ballots | NEGATIVE_TEST | EP48 kỳ vọng 404 với ID không tồn tại, thiếu round/support. |
+| Admin | POST admin/ai/chat | INCONCLUSIVE | ADM-05.2a kỳ vọng 200, thiếu conversationId; không chứng minh binding hoặc Gemini live. |
+| Admin | POST cases/disputes | NEGATIVE_TEST | DEP-01 chủ đích kiểm tra legacy create bị chặn 400. |
+
+Tổng: 5 NEGATIVE_TEST, 6 HISTORICAL_TEST, 0 DOC_MISMATCH phát sinh từ nhóm cảnh báo, 7 INCONCLUSIVE. Không sửa collection. Tài liệu có thể dùng để tích hợp theo các contract đã xác nhận; chưa tuyên bố khóa 100% schema/quyền/status.

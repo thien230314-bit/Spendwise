@@ -169,7 +169,7 @@ sequenceDiagram
 | **A2** | `POST` | `/api/users/me/email/current/verify` | `{"otp":"12345678"}` | `200 OK` $\rightarrow$ `{"ticket":"...","expiresAt":"..."}`. Cấp ticket 15 phút gắn chặt với phiên và tài khoản. |
 | **B** | `POST` | `/api/users/me/email/new/request` | `{"ticket":"...","newEmail":"new@email.com"}` | `200 OK` $\rightarrow$ `EmailVerificationPendingResponse`. Gửi OTP 8 số về email mới; ghi nhận `PendingNewEmail`. |
 | **C** | `POST` | `/api/users/me/email/new/confirm` | `{"ticket":"...","otp":"87654321"}` | `200 OK` $\rightarrow$ `UserProfile`. Commit đổi email, thu hồi toàn bộ session khác, gửi cảnh báo về email cũ. |
-| **Hủy** | `POST` | `/api/users/me/email/cancel` | `{"ticket":"..."}` (tùy chọn) | `204 NoContent`. Hủy token dở dang và xóa sạch `PendingNewEmail`. |
+| **Hủy** | `POST` | `/api/users/me/email/cancel` | `{"ticket":"..."}` (tùy chọn) | `204 NoContent`. Thu hồi mọi token đổi email chưa dùng của tài khoản và xóa `PendingNewEmail`; ticket không thu hẹp phạm vi. |
 | **Chặn** | `POST` | `/api/users/me/email/request` & `/confirm` | Bất kỳ | `400 Bad Request` (`code: "legacy_email_change_deprecated"`). Chặn hoàn toàn bypass quy trình cũ. |
 
 ---
@@ -255,7 +255,7 @@ Content-Type: application/json
 
 ## 6. BẢN ĐỒ API PHÂN HỆ ADMIN CHO CODEX (21 CHỨC NĂNG ADM-01 ĐẾN ADM-21)
 
-> Quản trị viên sử dụng duy nhất tài khoản `<email Admin được cấu hình>` với token mang `SystemRole = 2`. Mọi thao tác nhạy cảm yêu cầu `adminPin`.
+> Quản trị viên sử dụng duy nhất tài khoản `<email Admin được cấu hình>` với token mang `SystemRole = 2`. Dùng đúng trường PIN của từng DTO: legacy có thể dùng `adminPin`, trong khi case-scoped A2 và Broadcast dùng `securityPin`.
 
 ### Bảng tóm tắt 21 Chức năng Quản trị:
 ```text
@@ -271,7 +271,7 @@ Content-Type: application/json
   ADM-07: POST /api/v1/admin/support/{caseId}/users/{userId}/sessions (Xem phiên đăng nhập trong scope vụ việc)
   ADM-08: POST /api/admin/users/{id}/revoke-sessions (Thu hồi tức thì toàn bộ refresh token và phiên)
   ADM-09: PUT /api/admin/users/{id}/status (Đổi trạng thái Active / Restricted / Locked với adminPin)
-  ADM-10: POST /api/admin/users/{id}/reset-password & /reset-pin (Kích hoạt email đặt lại mật khẩu/PIN với adminPin)
+  ADM-10: POST /api/admin/users/{id}/reset-password & /reset-pin (Đặt lại credentials bằng adminPin; reset-password trả mật khẩu tạm, reset-pin trả trạng thái resetRequired)
 
 [Nhóm 3: Giám sát Sổ cái & Giao dịch]
   ADM-11: POST /api/admin/ledger/search & PUT /api/admin/wallets/{id}/freeze (Đối soát cân bằng Nợ/Có & Đóng băng ví)
@@ -328,7 +328,7 @@ Codex cần kiểm tra lần lượt từng mục sau khi dựng giao diện m�
 - [ ] **8. Quỹ Tự do V1:** Thành viên gửi yêu cầu chi (`Expense`) $\rightarrow$ Chủ duyệt $\rightarrow$ Trạng thái chuyển `ApprovedUnused` (tiền chưa giảm).
 - [ ] **9. Chặn rút vốn an toàn:** Khi có quyền chi `ApprovedUnused`, kiểm tra nút duyệt rút vốn (`Withdrawal`) của chủ quỹ bị vô hiệu hóa chính xác.
 - [ ] **10. Luồng Hỗ trợ Khách hàng:** User tạo Ticket khiếu nại $\rightarrow$ Đăng nhập tài khoản Admin `<email Admin được cấu hình>` xem ticket $\rightarrow$ Phân công $\rightarrow$ Gửi phản hồi $\rightarrow$ User xem được phản hồi.
-- [ ] **11. Thông báo Toàn hệ thống (Broadcast):** Admin soạn bản thảo $\rightarrow$ Bấm Publish với `adminPin` $\rightarrow$ Đăng nhập tài khoản User kiểm tra thông báo xuất hiện trong In-App Inbox.
+- [ ] **11. Thông báo Toàn hệ thống (Broadcast):** Admin soạn bản thảo $\rightarrow$ Bấm Publish với `securityPin` và `expectedRevision` $\rightarrow$ Đăng nhập tài khoản User kiểm tra thông báo xuất hiện trong In-App Inbox.
 - [ ] **12. Xử lý Lỗi chuẩn hóa:** Các mã lỗi nghiệp vụ 400 (`insufficient_wallet_balance`, `admin_pin_invalid`, `active_group_limit`) được hiển thị thông báo toast thân thiện, không làm trắng màn hình.
 
 ---

@@ -126,13 +126,13 @@
 | `POST /api/auth/pin/setup` | `{challengeToken,pin,confirmPin}` → `AuthResponse` | Thiết lập PIN lần đầu. |
 | `POST /api/auth/pin/verify` | `{challengeToken,pin,deviceTrustToken?}` → `AuthResponse` | Đây là **bước hoàn tất đăng nhập**, khác `/api/security-pin/verify`. |
 | `POST /api/auth/refresh` | `{refreshToken,deviceName?}` → `AuthResponse` | Xoay refresh token, thay cặp token sau mỗi lần refresh hợp lệ. |
-| `POST /api/auth/logout` | Thu hồi refresh/session của phiên theo request controller | Xóa credentials lưu trên thiết bị khi đăng xuất. |
+| `POST /api/auth/logout` | Bearer; body tùy chọn `RefreshRequest {refreshToken,deviceName?}`; action chỉ dùng `refreshToken` nếu gửi. Trả `204`, thu hồi phiên đang đăng nhập | Xóa credentials lưu trên thiết bị khi đăng xuất. |
 | `GET /api/auth/sessions` | `SessionDto[]` | Danh sách thiết bị/phiên của chính user. |
 | `DELETE /api/auth/sessions/{sessionId}` | `204` | Thu hồi đúng phiên được chọn. |
 | `POST /api/auth/change-password` | `{currentPassword,newPassword}` → `204` | Không có `confirmPassword` trong DTO backend của endpoint này. |
 | `POST /api/auth/forgot-password` | `{identifier}` → `202` | Phản hồi trung tính, không dò tài khoản. |
 | `POST /api/auth/reset-password` | `{identifier,otp,newPassword}` → `204` | OTP dùng một lần; reset thành công thu hồi mọi phiên của tài khoản theo `ResetPasswordCommandHandler`. Chưa chạy lại luồng reset hoàn chỉnh trên SQL02 trong đợt nghiệm thu tài liệu. |
-| `POST /api/auth/pin/forgot` | `{identifier}` | Gửi luồng khôi phục PIN an toàn qua email. |
+| `POST /api/auth/pin/forgot` | Anonymous, `ForgotSecurityPinRequest {identifier}` → `202 {message}` | Yêu cầu khôi phục PIN; phản hồi không xác nhận tài khoản hay email đã được gửi. |
 | `POST /api/auth/pin/reset/validate` | `{token}` → `{valid,expiresAt}` | Kiểm tra token khôi phục, không nhầm OTP đăng ký. |
 | `POST /api/auth/pin/reset` | `{token,newPin,confirmPin}` → `204` | Token reset PIN chỉ dùng một lần. |
 | `GET /api/security-pin/status` | `{isSet}` | Kiểm tra trạng thái PIN từ phiên đã đăng nhập. |

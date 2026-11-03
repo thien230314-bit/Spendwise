@@ -429,3 +429,5 @@ Hai biến thể đổi email chạy trên hai catalog SQL02 riêng, dùng OTP s
 - Không chạy lại các ca đã PASS. 7/7 cảnh báo payload đã đóng, nhưng chưa nghiệm thu hết recovery và Banking Sandbox, cũng chưa chốt các claim UNVERIFIED của toàn bộ User/Admin. Không stage, commit hoặc push.
 
 Đồng bộ cuối: User/Admin và handoff phân biệt khóa source, bằng chứng lịch sử và kiểm chứng hiện tại. Sửa ranh giới PIN theo DTO, legacy 401/403, và tác động thu hồi phiên của reset password (ResetPasswordCommandHandler.cs:125). Không chạy thêm test; không nâng các dòng UNVERIFIED.
+
+Đối chiếu source bổ sung: AuthController.cs:120–133,203–216 xác nhận logout 204 và PIN forgot 202. AdminController.cs:207–258 và AdminContracts.cs:24–26 xác nhận ADM-13 có response riêng cho audit, configuration và flags. Không chạy thêm test và không nâng trạng thái nghiệm thu toàn tài liệu.

@@ -57,9 +57,9 @@
 | **ADM-12** | Nhóm 3: Sổ cái & GD<br>12. Tra cứu Giao dịch Toàn hệ thống | Tra cứu toàn bộ biến động tài chính, đối soát giao dịch sao kê ngân hàng và liên kết đối tượng nghiệp vụ. | `AdminController.cs`<br>`POST /api/admin/transactions/search`<br>`GET /api/admin/bank-transactions` | Request: `SearchAdminTransactionsRequest` (`reason`)<br>Response: `PagedResult<AdminTransactionDto>` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.2 PASS) | **LOCKED & VERIFIED** |
 | **ADM-13** | Nhóm 3: Sổ cái & GD<br>13. Nhật ký Kiểm toán & Cấu hình | Xem nhật ký kiểm toán bất biến `AdminAuditLogs` (không thể sửa/xóa) và quản lý cờ tính năng hệ thống (`Feature Flags`). | `AdminController.cs`<br>`GET /api/admin/audit-logs`<br>`GET /api/admin/configuration`<br>`GET /api/admin/feature-flags` | `AuditLogDto[]`, `AdminConfigurationDto`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.3 PASS, HIS-01 PASS) | **LOCKED & VERIFIED** |
 | **ADM-14** | Nhóm 4: Hỗ trợ<br>14. Tiếp nhận & Tra cứu Hồ sơ | Danh sách hồ sơ khiếu nại/hỗ trợ của người dùng, lọc theo trạng thái (`Pending`, `InReview`, `Resolved`, `Rejected`) và danh mục. | `AdminController.cs`<br>`GET /api/admin/cases/support`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/tickets/search` | `SupportCaseDetailDto[]`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
-| **ADM-15** | Nhóm 4: Hỗ trợ<br>15. Phân công & Xem Chi tiết Hồ sơ | Tiếp nhận phân công hồ sơ cho Admin thụ lý và xem toàn diện nội dung khiếu nại, giao dịch liên quan, lịch sử trao đổi. | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/assign`<br>`AdminController.cs`<br>`GET /api/admin/cases/support/{id}` | Request: `AssignCaseRequest`<br>Response: `SupportCaseDetailDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
-| **ADM-16** | Nhóm 4: Hỗ trợ<br>16. Phản hồi Khách hàng & Mẫu trả lời | Gửi phản hồi chính thức từ Admin tới khách hàng hoặc áp dụng mẫu trả lời chuẩn hóa (`templateCode`) trong luồng hỗ trợ. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/messages`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/reply-template` | Request: `CaseMessageRequest` (`message`), `ApplyTemplateRequest` (`templateCode`)<br>Response: `SupportCaseDetailDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
-| **ADM-17** | Nhóm 4: Hỗ trợ<br>17. Yêu cầu Thông tin & Hồ sơ Quỹ | Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ (`need_more_info`), hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan (`dossier`). | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/request-info`<br>`POST /api/v1/admin/support/{caseId}/dossier` | Request: `RequestInfoRequest` (`message`)<br>Response: `SupportCaseDetailDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 04: ADM-04.4 PASS) | **LOCKED & VERIFIED** |
+| **ADM-15** | Nhóm 4: Hỗ trợ<br>15. Phân công & Xem Chi tiết Hồ sơ | Tiếp nhận phân công hồ sơ cho Admin thụ lý và xem toàn diện nội dung khiếu nại, giao dịch liên quan, lịch sử trao đổi. | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/assign`<br>`AdminController.cs`<br>`GET /api/admin/cases/support/{id}` | Assign: `A5AssignTicketRequest` (`reason, operatorId`) $\rightarrow$ `{success, caseId}`<br>Detail: `SupportCaseDetailDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
+| **ADM-16** | Nhóm 4: Hỗ trợ<br>16. Phản hồi Khách hàng & Mẫu trả lời | Gửi phản hồi chính thức từ Admin tới khách hàng hoặc áp dụng mẫu trả lời chuẩn hóa (`templateKey`) trong luồng hỗ trợ. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/messages`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/reply-template` | Message: `CaseMessageRequest` (`message`) $\rightarrow$ `SupportCaseDetailDto`<br>Template: `A5ApplyTemplateRequest` (`reason, templateKey, parameters`) $\rightarrow$ `A5AppliedTemplateResult` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
+| **ADM-17** | Nhóm 4: Hỗ trợ<br>17. Yêu cầu Thông tin & Hồ sơ Quỹ | Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ (`need_more_info`), hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan (`dossier`). | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/request-info`<br>`POST /api/v1/admin/support/{caseId}/dossier` | Request-Info: `A5RequestInfoRequest` (`reason, message`) $\rightarrow$ `{success, caseId, status}`<br>Dossier: `OperatorDirectoryRequest` (`reason`) $\rightarrow$ `A5FundDossierResult` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 04: ADM-04.4 PASS) | **LOCKED & VERIFIED** |
 | **ADM-18** | Nhóm 4: Hỗ trợ<br>18. Phê duyệt Hoàn tiền / Đóng hồ sơ | Cập nhật kết quả giải quyết (`Resolved` hoặc `Rejected`). Nếu chấp thuận sai lệch giao dịch, cấp lệnh hoàn tiền qua `correction-grant` kèm `adminPin`. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/status`<br>`POST /api/admin/cases/support/{id}/correction-grant` | Request: `UpdateCaseStatusRequest`, `GrantCorrectionRequest` (`amount, reason, adminPin`)<br>Response: `SupportCaseDetailDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
 | **ADM-19** | Nhóm 5: Ngoại vi<br>19. Phát hành Thông báo Broadcast | Vòng đời thông báo broadcast: Soạn thảo Draft $\rightarrow$ Phát hành Publish với `adminPin` $\rightarrow$ Outbox Worker phân phối đến User In-App $\rightarrow$ User đọc $\rightarrow$ Kiểm tra trạng thái Status. | `V1BroadcastController.cs`, `OperationsController.cs`<br>`POST /api/v1/system/broadcasts`<br>`POST /api/v1/system/broadcasts/{id}/publish`<br>`POST /api/v1/system/broadcasts/{id}/status` | Request: `CreateBroadcastDraftRequest`, `PublishBroadcastRequest` (`reason, adminPin`)<br>Response: `BroadcastDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.4 PASS, chuỗi 5 bước khép kín) | **LOCKED & VERIFIED** |
 | **ADM-20** | Nhóm 5: Ngoại vi<br>20. Giám sát Vận hành Gemini AI | Giám sát đo lường telemetry Trợ lý Gemini AI theo Phương án B: Request rate, Latency, Fallback Policy `SpendWisePolicy`, cảnh báo hạn ngạch. | `AdminController.cs`<br>`GET /api/admin/health`<br>`AdminAiController.cs`<br>`POST /api/admin/ai/chat` | `AdminHealthDto` (AiProvider, Database, Outbox)<br>`AdminAiChatRequest`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.2 PASS) | **LOCKED & VERIFIED (Plan B)**<br>*(Live enterprise quota là cấu hình Google Cloud đối tác)* |
@@ -259,24 +259,73 @@ Authorization: Bearer <admin_access_token>
 
 #### ADM-15: Phân công & Xem Chi tiết Hồ sơ
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/assign` & `GET /api/admin/cases/support/{id}`
-- **Mô tả:** Tiếp nhận phân công hồ sơ và xem chi tiết nội dung khiếu nại, giao dịch liên quan.
-- **Response `200 OK`:** Chi tiết hồ sơ kèm lịch sử tin nhắn.
+- **Mô tả:** Tiếp nhận phân công hồ sơ cho Quản trị viên (`A5.2`) và xem chi tiết nội dung khiếu nại, giao dịch liên quan.
+- **Request Body (`POST .../assign` - `A5AssignTicketRequest`):**
+```json
+{
+  "reason": "Tiếp nhận thụ lý điều tra khiếu nại giao dịch",
+  "operatorId": "a6d30123-ae6e-43b1-a3d3-0185ff8a46ec"
+}
+```
+- **Response `200 OK` (`POST .../assign`):**
+```json
+{
+  "success": true,
+  "caseId": "c43a8401-2742-4260-bf0c-16652e944e9a"
+}
+```
+- **Response `200 OK` (`GET .../cases/support/{id}`):** `SupportCaseDetailDto` (chi tiết hồ sơ kèm lịch sử tin nhắn).
 
 #### ADM-16: Phản hồi Khách hàng & Áp dụng Mẫu trả lời
 - **Endpoint:** `POST /api/admin/cases/support/{id}/messages` & `POST /api/v1/admin/support/{caseId}/reply-template`
-- **Mô tả:** Gửi phản hồi chính thức từ Quản trị viên tới khách hàng hoặc áp dụng mẫu trả lời chuẩn hóa.
-- **Request Body (`messages`):**
+- **Mô tả:** Gửi phản hồi tin nhắn trực tiếp hoặc áp dụng mẫu trả lời chuẩn hóa (`A5.7`) với `templateKey`.
+- **Request Body (`POST .../reply-template` - `A5ApplyTemplateRequest`):**
+```json
+{
+  "reason": "Áp dụng mẫu hướng dẫn cung cấp bằng chứng chuyển khoản",
+  "templateKey": "NEED_MORE_INFO_BANK_RECEIPT",
+  "parameters": {
+    "CustomerName": "Nguyen Van A",
+    "TransactionReference": "FT26102099"
+  },
+  "transitionToWaitingForUser": true
+}
+```
+- **Response `200 OK` (`POST .../reply-template`):** `A5AppliedTemplateResult` (`caseId, templateKey, renderedSubject, renderedTextBody, sentAsNotification, updatedCaseStatus`).
+- **Request Body (`POST .../messages` - `CaseMessageRequest`):**
 ```json
 {
   "message": "Bộ phận kỹ thuật đã đối soát dữ liệu và tiến hành xử lý hoàn tiền."
 }
 ```
-- **Response `200 OK`:** `SupportCaseDetailDto` đã cập nhật.
+- **Response `200 OK` (`POST .../messages`):** `SupportCaseDetailDto` đã cập nhật tin nhắn.
 
 #### ADM-17: Yêu cầu Bổ sung Thông tin & Hồ sơ Quỹ
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/request-info` & `POST /api/v1/admin/support/{caseId}/dossier`
-- **Mô tả:** Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ, hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan.
-- **Response `200 OK`:** Kết quả chuyển trạng thái thành công.
+- **Mô tả:** Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ (`A5.3`), hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan (`A5.4`).
+- **Request Body (`POST .../request-info` - `A5RequestInfoRequest`):**
+```json
+{
+  "reason": "Cần thêm ảnh chụp sao kê ngân hàng có dấu mộc",
+  "message": "Quý khách vui lòng đính kèm sao kê giao dịch ngày 20/10 để đối soát.",
+  "attachments": []
+}
+```
+- **Response `200 OK` (`POST .../request-info`):**
+```json
+{
+  "success": true,
+  "caseId": "c43a8401-2742-4260-bf0c-16652e944e9a",
+  "status": "WaitingForUser"
+}
+```
+- **Request Body (`POST .../dossier` - `OperatorDirectoryRequest`):**
+```json
+{
+  "reason": "Trích xuất hồ sơ tài chính quỹ nhóm phục vụ phán xử khiếu nại"
+}
+```
+- **Response `200 OK` (`POST .../dossier`):** `A5FundDossierResult` (`caseId, ticketNumber, linkedUserId, userFullName, userEmail, caseStatus, category, priority, linkedFund, linkedDisputes, timeline, attachments, financialAuditNotice`).
 
 #### ADM-18: Phê duyệt Hoàn tiền / Đóng Hồ sơ Hỗ trợ
 - **Endpoint:** `POST /api/admin/cases/support/{id}/status` & `POST /api/admin/cases/support/{id}/correction-grant`

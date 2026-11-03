@@ -2,7 +2,7 @@
 
 > **Phiên bản:** V1.0 (Production Candidate)
 > **Đối tượng sử dụng:** Frontend Web & Mobile Client Developers (Codex / Engineering Team).
-> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `main`. **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10. Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC CHATGPT REVIEWER PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED, Commit 7667bb9).**
+> **Trạng thái đối chiếu:** Tài liệu đồng bộ API User theo code controller/DTO trên nhánh `feature/fixed-fund-v2-remake` (chuẩn bị hợp nhất fast-forward về `main`). **Free Fund V1: đặc tả nghiệp vụ chốt 01/11/2026 ở mục 1.3, 1.3.1 và 3.6 mục 10 (đã triển khai và nghiệm thu 74/74 unit tests). Fixed Fund V2: đặc tả nghiệp vụ theo [`fixed.md`](fixed.md) (01/11/2026) ĐÃ TRIỂN KHAI HOÀN TẤT VÀ ĐƯỢC PHÊ DUYỆT TOÀN DIỆN (Stage 1–5 ĐÃ CHÍNH THỨC NGHIỆM THU — PASS APPROVED).**
 > **Ranh giới tài liệu:** Thuần tài liệu kỹ thuật, API contract, ràng buộc dữ liệu và mã lỗi. Không chứa lý thuyết kiến trúc chung, tiếp thị hay hướng dẫn framework UI.
 
 ---
@@ -561,7 +561,7 @@ Các route tạo/sửa/hủy bảo trì thuộc Admin, **không cấp quyền th
 
 ### 3.11. Bảng đối chiếu nghiệp vụ User ↔ Backend Controller, DTO, Test và Trạng thái Nghiệm thu
 
-> Bảng đối chiếu chi tiết theo chuẩn hợp đồng: `REQUIREMENT → CONTROLLER / DTO / HANDLER → E2E / UNIT TEST EVIDENCE → IMPLEMENTATION & VERIFICATION STATUS`.
+> Bảng đối chiếu chi tiết theo chuẩn hợp đồng: `REQUIREMENT → CONTROLLER / DTO / HANDLER → E2E / UNIT TEST EVIDENCE → IMPLEMENTATION & VERIFICATION STATUS`. Báo cáo đúng phạm vi kiểm thử thực tế (306 requests User API PASS, 116 requests Fixed/Free PASS, 174 xUnit PASS); không tự quy kết mọi endpoint đều đã E2E PASS trên tiền thật hoặc provider đối tác.
 > Phân biệt rõ: **Tiền đã quyết toán (Settled Ledger)** với **Yêu cầu đang chờ (Pending Request)**, **Môi trường Sandbox/Test Mode** với **Tích hợp Ngân hàng thật**, và **Thông báo In-App đã lưu** với **Push Server / SMTP giao thư thực tế**.
 
 | Phân hệ nghiệp vụ | Nghiệp vụ chi tiết & Ràng buộc cốt lõi | Controller & Endpoint API | DTO Request / Response & Handlers | Bằng chứng kiểm thử (E2E / Unit Test) | Trạng thái triển khai & Nghiệm thu |

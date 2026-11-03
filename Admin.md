@@ -67,10 +67,10 @@
 
 ## 3. CHI TIẾT API CONTRACT 21 CHỨC NĂNG QUẢN TRỊ ADMIN
 
-Header bắt buộc cho mọi Admin API:
+Header xác thực cho Admin API; `Content-Type: application/json` chỉ cần khi request gửi JSON body (không bắt buộc với GET không body):
 ```http
-Content-Type: application/json
 Authorization: Bearer <admin_access_token>
+Content-Type: application/json
 ```
 
 ### 3.1. Nhóm 1: Tổng quan & Vận hành Hệ thống (ADM-01 $\rightarrow$ ADM-04)
@@ -79,7 +79,7 @@ Authorization: Bearer <admin_access_token>
 - **Endpoint:** `GET /api/admin/dashboard` và `GET /api/v1/admin/overview`
 - **Mô tả:** Trả về số liệu tổng quan về tài khoản, số vụ hỗ trợ đang chờ, tỷ lệ lỗi và trạng thái hệ thống.
 - **Response `200 OK`:** `/api/admin/dashboard` trả `AdminDashboardDto` (query `from`, `to`); `/api/v1/admin/overview` trả `A1Summary` (query `date`). Không dùng cùng một schema cho hai route.
-- Các feed `A1Page<T>` dùng `observedAtUtc, page, pageSize, total, items`. Controller cho dashboard/reports/overview là `AdminA1Controller`.
+- Các feed `A1Page<T>` dùng `observedAtUtc, page, pageSize, total, items`. `A1Summary.sources[]` cung cấp `code,source,timestampField,aggregation,fromUtc,toUtc,endpoint,detailScope` để mở chứng cứ nguồn số liệu; `GET /api/v1/admin/overview/sources/{metric}?date=YYYY-MM-DD&page=1&pageSize=20` trả `A1Page<A1FeedItem>` **trong phạm vi hồ sơ được cấp quyền**, không cho đọc dữ liệu cá nhân toàn hệ thống chỉ từ tổng số. Controller là `AdminA1Controller`.
 
 #### ADM-02: Tổng hợp Báo cáo & Hoạt động
 - **Endpoint:** `GET /api/admin/reports` và `GET /api/v1/admin/overview/activity`
@@ -110,13 +110,20 @@ Authorization: Bearer <admin_access_token>
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "email": "user@example.com",
     "fullName": "Nguyen Van A",
-    "phone": "0912345678",
     "spendId": "SPEND_123456",
     "status": "Active",
-    "createdAt": "2026-10-20T08:00:00Z"
+    "systemRole": "User",
+    "mustChangePassword": false,
+    "hasSecurityPin": true,
+    "createdAt": "2026-10-20T08:00:00Z",
+    "lastLoginAt": null,
+    "avatarUrl": null,
+    "emailVerified": true
   }
 ]
 ```
+
+> Ví dụ trên là `AdminUserDto` của **GET legacy**, không chứa số điện thoại. `POST /api/v1/admin/users/search` dùng `A2Page<A2User>` với phân trang, không dùng mảng `AdminUserDto[]` này.
 
 #### ADM-06: Xem Hồ sơ Người dùng (Case-Scoped Access - A2Profile)
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/users/{userId}/profile`
@@ -245,6 +252,7 @@ Các action dưới đây kế thừa policy `SystemAdmin` từ `AdminController
 | `GET /api/admin/configuration` | Không body | 200, mảng `ConfigurationDto {key,value,valueType,description}` | Đọc cấu hình. |
 | `PUT /api/admin/configuration/{key}` | `UpdateConfigurationRequest {value,reason}` | 200, `ConfigurationDto` | Cập nhật cấu hình theo key; không phải thao tác đổi feature flag. |
 | `GET /api/admin/feature-flags` | Không body | 200, mảng `FeatureFlagDto {name,isEnabled,description}` | Đọc cờ tính năng. |
+| `PUT /api/admin/feature-flags/{name}` | `UpdateFeatureFlagRequest {isEnabled,reason}` | 200, `FeatureFlagDto {name,isEnabled,description}` | Cập nhật một cờ tính năng theo tên; không phải `PUT /api/admin/configuration/{key}`. |
 
 ---
 

@@ -11,7 +11,7 @@
 
 ### 1.1. Chính sách Quản trị viên Duy nhất (Single Admin Policy)
 1. **Duy nhất một tài khoản Quản trị viên hệ thống:**
-   - **Tài khoản định danh:** `lethien241205@gmail.com`
+   - **Tài khoản định danh:** `<email Admin được cấu hình>`
    - **Vai trò bắt buộc:** `SystemRole.Admin = 2`
    - Khóa chặt ở cấp độ logic và dữ liệu: Tuyệt đối cấm tạo tài khoản Admin thứ hai (`403 Forbidden` - `operator_management_disabled`).
 2. **Loại bỏ triệt để các vai trò kế thừa (Legacy Roles Elimination):**
@@ -43,27 +43,27 @@
 
 | Mã CN | Nhóm & Tên Chức Năng | Yêu Cầu Nghiệp Vụ Cốt Lõi | Controller & Route API | DTO Request / Response & Policy | Bằng Chứng Kiểm Thử (Newman / xUnit) | Trạng Thái Nghiệm Thu |
 |---|---|---|---|---|---|:---:|
-| **ADM-01** | Nhóm 1: Tổng quan<br>1. Dashboard Vận hành | Thống kê số lượng User theo trạng thái (Active, Restricted, Locked), số vụ hỗ trợ chờ xử lý, tổng số dư hệ thống và sức khỏe vận hành. | `AdminA1Controller.cs`<br>`GET /api/admin/dashboard`<br>`V1AdministrationController.cs`<br>`GET /api/v1/admin/overview` | `DashboardSummaryDto`<br>`AdminOverviewDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.1 & ADM-01.2 PASS) | **LOCKED & VERIFIED** |
-| **ADM-02** | Nhóm 1: Tổng quan<br>2. Tổng hợp Báo cáo & Hoạt động | Thống kê tổng lượng giao dịch, biến động tiền tệ và nhật ký hoạt động người dùng trong kỳ quan sát. | `AdminController.cs`<br>`GET /api/admin/reports`<br>`V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/activity` | `AdminReportDto`<br>`AdminActivityLogDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-02 PASS) | **LOCKED & VERIFIED** |
-| **ADM-03** | Nhóm 1: Tổng quan<br>3. Quản lý Tác vụ Vận hành | Theo dõi trạng thái hàng đợi nền, Outbox Worker và các tiến trình đồng bộ tự động (`Running, Queued, Completed, Failed`). | `V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/tasks` | `AdminTaskDto[]`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.3 PASS) | **LOCKED & VERIFIED** |
-| **ADM-04** | Nhóm 1: Tổng quan<br>4. Cảnh báo Hệ thống Vận hành | Luồng sự kiện cảnh báo an ninh vận hành (đăng nhập thất bại hàng loạt, lỗi webhook IPN, cảnh báo quota AI) kèm mức độ nghiêm trọng. | `V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/alerts` | `AdminAlertDto[]`<br>(observedAtUtc, severity)<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.4 PASS) | **LOCKED & VERIFIED** |
-| **ADM-05** | Nhóm 2: Người dùng<br>5. Tra cứu & Phân trang Người dùng | Tìm kiếm và phân trang người dùng theo Email, SĐT, Tên, SpendId; trả về trạng thái tài khoản và ngày tham gia. | `AdminController.cs`<br>`GET /api/admin/users?search=...`<br>`AdminA2Controller.cs`<br>`POST /api/v1/admin/users/search` | `AdminUserDto[]`<br>`PagedResult<AdminUserDto>`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.1 PASS) | **LOCKED & VERIFIED** |
+| **ADM-01** | Nhóm 1: Tổng quan<br>1. Dashboard Vận hành | Thống kê số lượng User theo trạng thái (Active, Restricted, Locked), số vụ hỗ trợ chờ xử lý, tổng số dư hệ thống và sức khỏe vận hành. | `AdminA1Controller.cs`<br>`GET /api/admin/dashboard`<br>`V1AdministrationController.cs`<br>`GET /api/v1/admin/overview` | `AdminDashboardDto`<br>`A1Summary`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.1 & ADM-01.2 PASS) | **LOCKED & VERIFIED** |
+| **ADM-02** | Nhóm 1: Tổng quan<br>2. Tổng hợp Báo cáo & Hoạt động | Thống kê tổng lượng giao dịch, biến động tiền tệ và nhật ký hoạt động người dùng trong kỳ quan sát. | `AdminController.cs`<br>`GET /api/admin/reports`<br>`V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/activity` | `AdminDashboardDto`<br>`A1Page<A1FeedItem>`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-02 PASS) | **LOCKED & VERIFIED** |
+| **ADM-03** | Nhóm 1: Tổng quan<br>3. Quản lý Tác vụ Vận hành | Theo dõi trạng thái hàng đợi nền, Outbox Worker và các tiến trình đồng bộ tự động (`Running, Queued, Completed, Failed`). | `V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/tasks` | `A1Page<A1Task>`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.3 PASS) | **LOCKED & VERIFIED** |
+| **ADM-04** | Nhóm 1: Tổng quan<br>4. Cảnh báo Hệ thống Vận hành | Luồng sự kiện cảnh báo an ninh vận hành (đăng nhập thất bại hàng loạt, lỗi webhook IPN, cảnh báo quota AI) kèm mức độ nghiêm trọng. | `V1AdministrationController.cs`<br>`GET /api/v1/admin/overview/alerts` | `A1Page<A1FeedItem>`<br>(observedAtUtc, severity)<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 01: ADM-01.4 PASS) | **LOCKED & VERIFIED** |
+| **ADM-05** | Nhóm 2: Người dùng<br>5. Tra cứu & Phân trang Người dùng | Tìm kiếm và phân trang người dùng theo Email, SĐT, Tên, SpendId; trả về trạng thái tài khoản và ngày tham gia. | `AdminController.cs`<br>`GET /api/admin/users?search=...`<br>`AdminA2Controller.cs`<br>`POST /api/v1/admin/users/search` | `AdminUserDto[]`<br>`A2Page<A2User>`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.1 PASS) | **LOCKED & VERIFIED** |
 | **ADM-06** | Nhóm 2: Người dùng<br>6. Xem Hồ sơ (Case-Scoped) | Xem chi tiết thông tin và tài sản ví người dùng gắn liền với vụ việc hỗ trợ đang thụ lý (`caseId`); che email (masked) và ghi audit log. | `AdminA2Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/users/{userId}/profile` | Request: `A2ReasonRequest`<br>Response: `A2Profile` (user, caseId, wallets)<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.2 PASS) | **LOCKED & VERIFIED** |
-| **ADM-07** | Nhóm 2: Người dùng<br>7. Xem Phiên & Quan hệ (Case-Scoped) | Xem các phiên thiết bị đang đăng nhập, IP, User-Agent của người dùng trong phạm vi vụ việc hỗ trợ đang điều tra. | `AdminA2Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/users/{userId}/sessions` | Request: `A2ReasonRequest`<br>Response: `A2SessionDto[]`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.3 PASS) | **LOCKED & VERIFIED** |
+| **ADM-07** | Nhóm 2: Người dùng<br>7. Xem Phiên & Quan hệ (Case-Scoped) | Xem các phiên thiết bị đang đăng nhập, IP, User-Agent của người dùng trong phạm vi vụ việc hỗ trợ đang điều tra. | `AdminA2Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/users/{userId}/sessions` | Request: `A2Query`<br>Response: `A2Page<A2Session>`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.3 PASS) | **LOCKED & VERIFIED** |
 | **ADM-08** | Nhóm 2: Người dùng<br>8. Cưỡng chế Thu hồi Phiên | Đăng xuất tức thì tất cả thiết bị của người dùng khi có dấu hiệu rủi ro an ninh; thu hồi toàn bộ refresh token (`RevokedAt = UtcNow`). | `AdminController.cs`<br>`POST /api/admin/users/{id}/revoke-sessions`<br>`AdminA2Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/users/{userId}/revoke-sessions` | Request: `RevokeSessionsRequest` (`reason`)<br>Response: `204 NoContent`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.3b PASS, SEC-19 & SEC-20 PASS) | **LOCKED & VERIFIED** |
 | **ADM-09** | Nhóm 2: Người dùng<br>9. Điều chỉnh Trạng thái Người dùng | Chuyển đổi trạng thái tài khoản: `Active`, `Restricted` (chặn ghi nợ tiền ra, cho phép đọc/nhận), `Locked` (chặn đăng nhập/phiên hoàn toàn). Bắt buộc `adminPin`. | `AdminController.cs`<br>`PUT /api/admin/users/{id}/status`<br>`AdminA2Controller.cs`<br>`PUT /api/v1/admin/support/{caseId}/users/{userId}/status` | Request: `UpdateUserStatusRequest` (`status, reason, adminPin`)<br>Response: `AdminUserDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.4 PASS, SEC-08, SEC-12, SEC-13 PASS) | **LOCKED & VERIFIED** |
-| **ADM-10** | Nhóm 2: Người dùng<br>10. Đặt lại Mật khẩu / PIN An toàn | Kích hoạt gửi hướng dẫn khôi phục mật khẩu hoặc reset PIN bảo mật an toàn tới email chính chủ của người dùng. Bắt buộc `adminPin`. | `AdminController.cs`<br>`POST /api/admin/users/{id}/reset-password`<br>`POST /api/admin/users/{id}/reset-pin` | Request: `AdminResetCredentialRequest` (`reason, adminPin`)<br>Response: `200 OK` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.5 PASS) | **LOCKED & VERIFIED** |
-| **ADM-11** | Nhóm 3: Sổ cái & GD<br>11. Giám sát Bảng cân đối Sổ cái | Kiểm tra tính bất biến $\sum \text{Debit} = \sum \text{Credit}$ của Sổ cái kép; đóng băng / mở băng ví tạm thời theo lệnh điều tra tài chính với `adminPin`. | `AdminController.cs`<br>`POST /api/admin/ledger/search`<br>`PUT /api/admin/wallets/{id}/freeze` | Request: `SearchAdminLedgerRequest`, `FreezeWalletRequest` (`isFrozen, reason, adminPin`)<br>Response: `204 NoContent` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.1 PASS) | **LOCKED & VERIFIED** |
-| **ADM-12** | Nhóm 3: Sổ cái & GD<br>12. Tra cứu Giao dịch Toàn hệ thống | Tra cứu toàn bộ biến động tài chính, đối soát giao dịch sao kê ngân hàng và liên kết đối tượng nghiệp vụ. | `AdminController.cs`<br>`POST /api/admin/transactions/search`<br>`GET /api/admin/bank-transactions` | Request: `SearchAdminTransactionsRequest` (`reason`)<br>Response: `PagedResult<AdminTransactionDto>` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.2 PASS) | **LOCKED & VERIFIED** |
+| **ADM-10** | Nhóm 2: Người dùng<br>10. Đặt lại Mật khẩu / PIN An toàn | Đặt lại mật khẩu tạm hoặc khởi tạo quy trình đặt lại PIN; bắt buộc `adminPin`. | `AdminController.cs`<br>`POST /api/admin/users/{id}/reset-password`<br>`POST /api/admin/users/{id}/reset-pin` | Request: `AdminCredentialResetRequest` (`reason, adminPin`)<br>Response: `200 OK` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 02: ADM-02.5 PASS) | **LOCKED & VERIFIED** |
+| **ADM-11** | Nhóm 3: Sổ cái & GD<br>11. Giám sát Bảng cân đối Sổ cái | Kiểm tra tính bất biến $\sum \text{Debit} = \sum \text{Credit}$ của Sổ cái kép; đóng băng / mở băng ví theo lệnh điều tra tài chính. | `AdminController.cs`<br>`POST /api/admin/ledger/search`<br>`PUT /api/admin/wallets/{id}/freeze` | Request: `SearchAdminLedgerRequest`, `FreezeWalletRequest` (`frozen, reason`)<br>Response: `204 NoContent` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.1 PASS) | **LOCKED & VERIFIED** |
+| **ADM-12** | Nhóm 3: Sổ cái & GD<br>12. Tra cứu Giao dịch Toàn hệ thống | Tra cứu toàn bộ biến động tài chính, đối soát giao dịch sao kê ngân hàng và liên kết đối tượng nghiệp vụ. | `AdminController.cs`<br>`POST /api/admin/transactions/search`<br>`GET /api/admin/bank-transactions` | Request: `SearchAdminTransactionsRequest` (`reason`)<br>Response: `IReadOnlyList<AdminTransactionDto>` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.2 PASS) | **LOCKED & VERIFIED** |
 | **ADM-13** | Nhóm 3: Sổ cái & GD<br>13. Nhật ký Kiểm toán & Cấu hình | Xem nhật ký kiểm toán bất biến `AdminAuditLogs` (không thể sửa/xóa) và quản lý cờ tính năng hệ thống (`Feature Flags`). | `AdminController.cs`<br>`GET /api/admin/audit-logs`<br>`GET /api/admin/configuration`<br>`GET /api/admin/feature-flags` | `AuditLogDto[]`, `AdminConfigurationDto`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 03: ADM-03.3 PASS, HIS-01 PASS) | **LOCKED & VERIFIED** |
-| **ADM-14** | Nhóm 4: Hỗ trợ<br>14. Tiếp nhận & Tra cứu Hồ sơ | Danh sách hồ sơ khiếu nại/hỗ trợ của người dùng, lọc theo trạng thái (`Pending`, `InReview`, `Resolved`, `Rejected`) và danh mục. | `AdminController.cs`<br>`GET /api/admin/cases/support`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/tickets/search` | `SupportCaseDetailDto[]`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
+| **ADM-14** | Nhóm 4: Hỗ trợ<br>14. Tiếp nhận & Tra cứu Hồ sơ | Danh sách hồ sơ khiếu nại/hỗ trợ của người dùng, lọc theo trạng thái (`Pending`, `InReview`, `Resolved`, `Rejected`) và danh mục. | `AdminController.cs`<br>`GET /api/admin/cases/support`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/tickets/search` | Legacy: danh sách hồ sơ; V1: `A2Page<A5TicketListItem>`<br>Policy V1: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
 | **ADM-15** | Nhóm 4: Hỗ trợ<br>15. Phân công & Xem Chi tiết Hồ sơ | Tiếp nhận phân công hồ sơ cho Admin thụ lý và xem toàn diện nội dung khiếu nại, giao dịch liên quan, lịch sử trao đổi. | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/assign`<br>`AdminController.cs`<br>`GET /api/admin/cases/support/{id}` | Assign: `A5AssignTicketRequest` (`reason, operatorId`) $\rightarrow$ `{success, caseId}`<br>Detail: `SupportCaseDetailDto`<br>Policy: `OperationsRead` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
 | **ADM-16** | Nhóm 4: Hỗ trợ<br>16. Phản hồi Khách hàng & Mẫu trả lời | Gửi phản hồi chính thức từ Admin tới khách hàng hoặc áp dụng mẫu trả lời chuẩn hóa (`templateKey`) trong luồng hỗ trợ. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/messages`<br>`AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/reply-template` | Message: `CaseMessageRequest` (`message`) $\rightarrow$ `SupportCaseDetailDto`<br>Template: `A5ApplyTemplateRequest` (`reason, templateKey, parameters`) $\rightarrow$ `A5AppliedTemplateResult` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
-| **ADM-17** | Nhóm 4: Hỗ trợ<br>17. Yêu cầu Thông tin & Hồ sơ Quỹ | Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ (`need_more_info`), hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan (`dossier`). | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/request-info`<br>`POST /api/v1/admin/support/{caseId}/dossier` | Request-Info: `A5RequestInfoRequest` (`reason, message`) $\rightarrow$ `{success, caseId, status}`<br>Dossier: `OperatorDirectoryRequest` (`reason`) $\rightarrow$ `A5FundDossierResult` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 04: ADM-04.4 PASS) | **LOCKED & VERIFIED** |
-| **ADM-18** | Nhóm 4: Hỗ trợ<br>18. Phê duyệt Hoàn tiền / Đóng hồ sơ | Cập nhật kết quả giải quyết (`Resolved` hoặc `Rejected`). Nếu chấp thuận sai lệch giao dịch, cấp lệnh hoàn tiền qua `correction-grant` kèm `adminPin`. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/status`<br>`POST /api/admin/cases/support/{id}/correction-grant` | Request: `UpdateCaseStatusRequest`, `GrantCorrectionRequest` (`amount, reason, adminPin`)<br>Response: `SupportCaseDetailDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>`reports/newman/support_complaint_e2e_regression_report.json` | **LOCKED & VERIFIED** |
-| **ADM-19** | Nhóm 5: Ngoại vi<br>19. Phát hành Thông báo Broadcast | Vòng đời thông báo broadcast: Soạn thảo Draft $\rightarrow$ Phát hành Publish với `adminPin` $\rightarrow$ Outbox Worker phân phối đến User In-App $\rightarrow$ User đọc $\rightarrow$ Kiểm tra trạng thái Status. | `V1BroadcastController.cs`, `OperationsController.cs`<br>`POST /api/v1/system/broadcasts`<br>`POST /api/v1/system/broadcasts/{id}/publish`<br>`POST /api/v1/system/broadcasts/{id}/status` | Request: `CreateBroadcastDraftRequest`, `PublishBroadcastRequest` (`reason, adminPin`)<br>Response: `BroadcastDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.4 PASS, chuỗi 5 bước khép kín) | **LOCKED & VERIFIED** |
-| **ADM-20** | Nhóm 5: Ngoại vi<br>20. Giám sát Vận hành Gemini AI | Giám sát đo lường telemetry Trợ lý Gemini AI theo Phương án B: Request rate, Latency, Fallback Policy `SpendWisePolicy`, cảnh báo hạn ngạch. | `AdminController.cs`<br>`GET /api/admin/health`<br>`AdminAiController.cs`<br>`POST /api/admin/ai/chat` | `AdminHealthDto` (AiProvider, Database, Outbox)<br>`AdminAiChatRequest`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.2 PASS) | **LOCKED & VERIFIED (Plan B)**<br>*(Live enterprise quota là cấu hình Google Cloud đối tác)* |
-| **ADM-21** | Nhóm 5: Ngoại vi<br>21. Giám sát Ngân hàng SePay | Giám sát trạng thái kết nối Webhook IPN và kết quả đối soát nạp tiền Sandbox SePay BankHub. | `AdminBankIntegrationController.cs`<br>`GET /api/admin/integrations/sepay/status`<br>`GET /api/admin/bank-integration/reconciliation` | `SepayStatusDto` (`configured, ipnConfigured, mode: Sandbox`)<br>`BankReconciliationDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.3 PASS) | **LOCKED & VERIFIED (Sandbox)**<br>*(Không thực hiện chuyển tiền thật trên tài khoản sản xuất)* |
+| **ADM-17** | Nhóm 4: Hỗ trợ<br>17. Yêu cầu Thông tin & Hồ sơ Quỹ | Chuyển trạng thái hồ sơ sang chờ khách hàng bổ sung chứng từ (`WaitingForUser`), hoặc trích xuất hồ sơ tài chính quỹ nhóm liên quan (`dossier`). | `AdminA5Controller.cs`<br>`POST /api/v1/admin/support/{caseId}/request-info`<br>`POST /api/v1/admin/support/{caseId}/dossier` | Request-Info: `A5RequestInfoRequest` (`reason, message`) $\rightarrow$ `{success, caseId, status}`<br>Dossier: `OperatorDirectoryRequest` (`reason`) $\rightarrow$ `A5FundDossierResult` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 04: ADM-04.4 PASS) | **LOCKED & VERIFIED** |
+| **ADM-18** | Hỗ trợ: đổi trạng thái / cấp quyền sửa giao dịch | Hai action độc lập. Correction grant tăng `CorrectionAllowance` thêm 1; không hoàn tiền hoặc ghi ledger. | `AdminController.cs`<br>`POST /api/admin/cases/support/{id}/status`<br>`POST /api/admin/cases/support/{id}/correction-grant` | `CaseStatusRequest` hoặc `CorrectionGrantRequest` → HTTP 200, `SupportCaseDetailDto` | `AdminController.cs:380–382`; `CaseWorkflowFeature.cs:174` | **Đã đối chiếu source** |
+| **ADM-19** | Nhóm 5: Ngoại vi<br>19. Phát hành Thông báo Broadcast | Vòng đời thông báo broadcast: Soạn thảo Draft $\rightarrow$ Phát hành Publish với `securityPin` $\rightarrow$ Outbox Worker phân phối đến User In-App $\rightarrow$ User đọc $\rightarrow$ Kiểm tra trạng thái Status. | `V1BroadcastController.cs`, `OperationsController.cs`<br>`POST /api/v1/system/broadcasts`<br>`POST /api/v1/system/broadcasts/{id}/publish`<br>`POST /api/v1/system/broadcasts/{id}/status` | Request: `BroadcastDraftRequest` → `V1BroadcastDto`; `BroadcastPublishRequest` → 204; `BroadcastStatusRequest` → `V1BroadcastStatus` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.4 PASS, chuỗi 5 bước khép kín) | **LOCKED & VERIFIED** |
+| **ADM-20** | Nhóm 5: Ngoại vi<br>20. Giám sát Vận hành Gemini AI | Giám sát đo lường telemetry Trợ lý Gemini AI theo Phương án B: Request rate, Latency, Fallback Policy `SpendWisePolicy`, cảnh báo hạn ngạch. | `AdminController.cs`<br>`GET /api/admin/health`<br>`AdminAiController.cs`<br>`POST /api/admin/ai/chat` | JSON object (xem ADM-20)<br>`AdminAiChatRequest`<br>Auth: JWT Admin Role 2 | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.2 PASS) | **LOCKED & VERIFIED (Plan B)**<br>*(Live enterprise quota là cấu hình Google Cloud đối tác)* |
+| **ADM-21** | Nhóm 5: Ngoại vi<br>21. Giám sát Ngân hàng SePay | Giám sát trạng thái kết nối Webhook IPN và kết quả đối soát nạp tiền Sandbox SePay BankHub. | `AdminBankIntegrationController.cs`<br>`GET /api/admin/integrations/sepay/status`<br>`GET /api/admin/bank-integration/reconciliation` | `SePayBankHubStatusDto` (`configured, ipnConfigured, environment`)<br>`BankReconciliationDto` | `reports/newman/ADMIN-V1-FINAL-NEWMAN-REPORT-LIVE.json`<br>(Folder 05: ADM-05.3 PASS) | **LOCKED & VERIFIED (Sandbox)**<br>*(Không thực hiện chuyển tiền thật trên tài khoản sản xuất)* |
 
 ## 3. CHI TIẾT API CONTRACT 21 CHỨC NĂNG QUẢN TRỊ ADMIN
 
@@ -78,33 +78,23 @@ Authorization: Bearer <admin_access_token>
 #### ADM-01: Thống kê Dashboard Vận hành
 - **Endpoint:** `GET /api/admin/dashboard` và `GET /api/v1/admin/overview`
 - **Mô tả:** Trả về số liệu tổng quan về tài khoản, số vụ hỗ trợ đang chờ, tỷ lệ lỗi và trạng thái hệ thống.
-- **Response `200 OK`:**
-```json
-{
-  "totalUsers": 1250,
-  "activeUsers": 1210,
-  "restrictedUsers": 25,
-  "lockedUsers": 15,
-  "pendingSupportCases": 8,
-  "systemHealthStatus": "Healthy",
-  "lastUpdated": "2026-10-29T14:45:00Z"
-}
-```
+- **Response `200 OK`:** `/api/admin/dashboard` trả `AdminDashboardDto` (query `from`, `to`); `/api/v1/admin/overview` trả `A1Summary` (query `date`). Không dùng cùng một schema cho hai route.
+- Các feed `A1Page<T>` dùng `observedAtUtc, page, pageSize, total, items`. Controller cho dashboard/reports/overview là `AdminA1Controller`.
 
 #### ADM-02: Tổng hợp Báo cáo & Hoạt động
 - **Endpoint:** `GET /api/admin/reports` và `GET /api/v1/admin/overview/activity`
 - **Mô tả:** Báo cáo tổng lượng giao dịch, biến động tiền tệ và hoạt động người dùng trong kỳ.
-- **Response `200 OK`:** Mảng danh sách các bản ghi hoạt động phân trang.
+- **Response `200 OK`:** `/reports` trả `AdminDashboardDto`; `/overview/activity` trả `A1Page<A1FeedItem>`.
 
 #### ADM-03: Quản lý Tác vụ Vận hành
 - **Endpoint:** `GET /api/v1/admin/overview/tasks`
 - **Mô tả:** Theo dõi trạng thái hàng đợi nền, Outbox Worker và các tiến trình đồng bộ tự động.
-- **Response `200 OK`:** Danh sách tác vụ kèm trạng thái (`Running`, `Queued`, `Completed`, `Failed`).
+- **Response `200 OK`:** `A1Page<A1Task>`, với danh sách trong `items`.
 
 #### ADM-04: Cảnh báo Hệ thống Vận hành
 - **Endpoint:** `GET /api/v1/admin/overview/alerts`
 - **Mô tả:** Danh sách các cảnh báo an ninh vận hành (đăng nhập thất bại hàng loạt, lỗi webhook IPN, cảnh báo giới hạn hạn ngạch AI).
-- **Response `200 OK`:** Mảng các bản ghi cảnh báo kèm mức độ nghiêm trọng (`Info`, `Warning`, `Critical`).
+- **Response `200 OK`:** `A1Page<A1FeedItem>`, với danh sách trong `items`.
 
 ---
 
@@ -175,7 +165,7 @@ Authorization: Bearer <admin_access_token>
 #### ADM-07: Xem Danh sách Phiên & Quan hệ (Case-Scoped Access)
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/users/{userId}/sessions`
 - **Mô tả:** Xem các phiên thiết bị đang đăng nhập của người dùng trong phạm vi vụ việc.
-- **Response `200 OK`:** Danh sách phiên thiết bị, IP, thời điểm hoạt động cuối cùng.
+- **Response `200 OK`:** `A2Page<A2Session>` (danh sách trong `items`); body `A2Query`.
 
 #### ADM-08: Cưỡng chế Thu hồi Toàn bộ Phiên (Revoke Sessions)
 - **Endpoint:** `POST /api/admin/users/{id}/revoke-sessions`
@@ -201,11 +191,12 @@ Authorization: Bearer <admin_access_token>
   "adminPin": "123456"
 }
 ```
-- **Response `200 OK`:** `AdminUserDto` với trạng thái mới.
+- **Legacy:** HTTP 200, `AdminUserDto`.
+- **Case-scoped:** `PUT /api/v1/admin/support/{caseId}/users/{userId}/status`, body `A2StatusRequest` với `status, reason, securityPin`; HTTP 204, không body.
 
 #### ADM-10: Đặt lại Mật khẩu / PIN An toàn
 - **Endpoint:** `POST /api/admin/users/{id}/reset-password` hoặc `POST /api/admin/users/{id}/reset-pin`
-- **Mô tả:** Kích hoạt gửi email khôi phục mật khẩu hoặc reset PIN bảo mật an toàn tới người dùng.
+- **Mô tả:** Hai action xác minh PIN Admin; không dùng chung contract email recovery.
 - **Request Body:**
 ```json
 {
@@ -213,7 +204,7 @@ Authorization: Bearer <admin_access_token>
   "adminPin": "123456"
 }
 ```
-- **Response `200 OK`:** Thông báo kích hoạt gửi hướng dẫn qua email thành công.
+- **Response `200 OK`:** `reset-password`: `AdminTemporaryPasswordResponse {userId,temporaryPassword,mustChangePassword}`. `reset-pin`: `AdminSecurityPinResetResponse {userId,resetRequired}`. Không ghi mật khẩu tạm vào log.
 
 ---
 
@@ -225,9 +216,8 @@ Authorization: Bearer <admin_access_token>
 - **Freeze Wallet Request Body:**
 ```json
 {
-  "isFrozen": true,
-  "reason": "Đóng băng tài sản theo lệnh điều tra",
-  "adminPin": "123456"
+  "frozen": true,
+  "reason": "Đóng băng tài sản theo lệnh điều tra"
 }
 ```
 - **Response:** `204 NoContent`.
@@ -241,7 +231,7 @@ Authorization: Bearer <admin_access_token>
   "reason": "Đối soát giao dịch chuyển tiền khiếu nại"
 }
 ```
-- **Response `200 OK`:** Danh sách giao dịch có phân trang.
+- **Response `200 OK`:** `transactions/search` trả mảng `IReadOnlyList<AdminTransactionDto>`.
 
 #### ADM-13: Nhật ký Kiểm toán & Cấu hình Hệ thống
 - **Endpoint:** `GET /api/admin/audit-logs`, `GET /api/admin/configuration`, `PUT /api/admin/configuration/{key}`
@@ -255,7 +245,7 @@ Authorization: Bearer <admin_access_token>
 #### ADM-14: Tiếp nhận & Tra cứu Hồ sơ Hỗ trợ
 - **Endpoint:** `GET /api/admin/cases/support` hoặc `POST /api/v1/admin/support/tickets/search`
 - **Mô tả:** Danh sách các yêu cầu khiếu nại/hỗ trợ của người dùng, lọc theo trạng thái (`Pending`, `InReview`, `Resolved`, `Rejected`).
-- **Response `200 OK`:** Mảng `SupportCaseDetailDto`.
+- **Response `200 OK`:** Legacy GET trả danh sách hồ sơ. V1 POST nhận `A5TicketQuery` và trả `A2Page<A5TicketListItem>`; đọc danh sách từ `items`.
 
 #### ADM-15: Phân công & Xem Chi tiết Hồ sơ
 - **Endpoint:** `POST /api/v1/admin/support/{caseId}/assign` & `GET /api/admin/cases/support/{id}`
@@ -264,7 +254,7 @@ Authorization: Bearer <admin_access_token>
 ```json
 {
   "reason": "Tiếp nhận thụ lý điều tra khiếu nại giao dịch",
-  "operatorId": "a6d30123-ae6e-43b1-a3d3-0185ff8a46ec"
+  "operatorId": "11111111-1111-4111-8111-111111111111"
 }
 ```
 - **Response `200 OK` (`POST .../assign`):**
@@ -327,18 +317,11 @@ Authorization: Bearer <admin_access_token>
 ```
 - **Response `200 OK` (`POST .../dossier`):** `A5FundDossierResult` (`caseId, ticketNumber, linkedUserId, userFullName, userEmail, caseStatus, category, priority, linkedFund, linkedDisputes, timeline, attachments, financialAuditNotice`).
 
-#### ADM-18: Phê duyệt Hoàn tiền / Đóng Hồ sơ Hỗ trợ
-- **Endpoint:** `POST /api/admin/cases/support/{id}/status` & `POST /api/admin/cases/support/{id}/correction-grant`
-- **Mô tả:** Cập nhật kết quả giải quyết (`Resolved` hoặc `Rejected`). Nếu chấp thuận, cấp lệnh hoàn tiền tự động (`correction-grant`) vào ví người dùng.
-- **Request Body (`correction-grant`):**
-```json
-{
-  "amount": 250000.00,
-  "reason": "Hoàn tiền giao dịch bị trừ đúp do timeout",
-  "adminPin": "123456"
-}
-```
-- **Response `200 OK`:** `SupportCaseDetailDto` với trạng thái `Resolved`.
+#### ADM-18: Đổi trạng thái hồ sơ / Cấp quyền sửa giao dịch
+- `POST /api/admin/cases/support/{id}/status`: `CaseStatusRequest(string Status, string Message, IReadOnlyList<CaseAttachmentUpload>? Attachments = null)`. JSON: `status`, `message`, `attachments` (tùy chọn). Trả HTTP 200 với `SupportCaseDetailDto`.
+- `POST /api/admin/cases/support/{id}/correction-grant`: `CorrectionGrantRequest(string AdminPin, string Reason)`. JSON: `adminPin`, `reason`. Trả HTTP 200 với `SupportCaseDetailDto`.
+- Backend xác minh PIN Admin. Chỉ hồ sơ `transaction_edit` có giao dịch thu/chi thủ công hợp lệ của người dùng liên kết mới được cấp quyền. Giao dịch nhận thêm một lượt sửa (`CorrectionAllowance += 1`); Backend ghi audit và gửi thông báo nội bộ. Action này không tự đóng hồ sơ, sửa giao dịch, hoàn tiền hay ghi ledger.
+- Hồ sơ không tồn tại: 404 `support_not_found`. Không đủ điều kiện hoặc đã cấp quyền: 409 `correction_grant_ineligible` hoặc `correction_already_granted`.
 
 ---
 
@@ -350,45 +333,23 @@ Authorization: Bearer <admin_access_token>
   - `POST /api/v1/system/broadcasts/{id}/publish` (Phát hành - `Publish`)
   - `POST /api/v1/system/broadcasts/{id}/status` (Kiểm tra trạng thái phát tán)
   - `POST /api/v1/system/broadcasts/{id}/cancel` (Hủy phát hành)
-- **Vòng đời chuẩn:**
-  1. Admin tạo `Draft` $\rightarrow$ bấm `Publish`.
-  2. Outbox Worker nhận diện và phân phối tới từng hộp thư In-App của người dùng `Active`.
-  3. Trạng thái chuyển thành `Delivered/Completed`. Tuyệt đối không coi trạng thái `Scheduled` hoặc `persisted = 0` là đã gửi thành công.
-- **Publish Request Body:**
-```json
-{
-  "reason": "Phát hành thông báo bảo trì định kỳ lúc 01:00",
-  "adminPin": "123456"
-}
-```
-- **Response:** `204 NoContent`.
+- Policy: `ManageMaintenance`. Tạo bản thảo nhận `BroadcastDraftRequest {type,targetRole,title,message,idempotencyKey,securityPin,reason}`, trả `200 V1BroadcastDto`, gồm `state` và `revision`.
+- Publish nhận `BroadcastPublishRequest {scheduledFor?,expectedRevision,securityPin,reason}`, trả `204`. Bỏ lịch để gửi ngay; nếu đặt lịch dùng UTC tương lai. Dùng revision từ server. `204` xác nhận lệnh publish, không chứng minh đã đọc hoặc nhận push.
+- Status nhận `BroadcastStatusRequest {reason}`, trả `200 V1BroadcastStatus {id,state,persisted,read,pushSubmitted,pushCompleted,pushFailed,readUnknown}`. Không suy diễn push đã đến thiết bị.
+- Cancel nhận `MaintenanceActionRequest`, trả `204`; chỉ áp dụng khi còn Draft/Scheduled và không gắn maintenance plan, nếu không trả `409 broadcast_immutable`.
 
 #### ADM-20: Giám sát Vận hành Trợ lý Gemini AI
 - **Endpoint:** `GET /api/admin/health` & `POST /api/admin/ai/chat`
 - **Mô tả:** Giám sát đo lường telemetry Trợ lý Gemini AI theo **Phương án B**.
-- **Chỉ số đo lường:**
-  - Tổng số request, tỷ lệ thành công (`SuccessRate`), thời gian phản hồi trung bình (`AverageLatencyMs`).
-  - Số lần chuyển mạch an toàn sang quy tắc nội bộ (`FallbackCount` - `SpendWisePolicy`).
-  - Cảnh báo giới hạn hạn ngạch (`QuotaExceededAlert`).
-- **Response `200 OK` (`GET /api/admin/health`):** Trả về telemetry của AI Provider, Database, và Outbox Worker.
+- **Response `200 OK` (health):** JSON object. `aiProvider` phân biệt `providerType`, `totalResponses`, `policyFallbacks`, `liveGeminiResponses`, `lastProviderUsed`, `lastLatencyMs` và `liveVerificationStatus`. Không bind UI vào các trường `SuccessRate`, `AverageLatencyMs` hoặc `QuotaExceededAlert` không có trong handler.
+- `SpendWisePolicy` là fallback. Trạng thái cấu hình/telemetry không phải bằng chứng inference trực tiếp trong lượt đối soát tài liệu này.
 
 #### ADM-21: Giám sát Cổng Ngân hàng SePay BankHub
 - **Endpoint:** `GET /api/admin/integrations/sepay/status` & `GET /api/admin/bank-integration/reconciliation`
 - **Mô tả:** Giám sát trạng thái kết nối Webhook IPN và kết quả đối soát nạp tiền Sandbox.
-- **Chính sách an toàn:** Báo trạng thái `Listening / Sandbox`. Không tạo giao dịch tiền thật trên tài khoản sản xuất.
-- **Response `200 OK` (`integrations/sepay/status`):**
-```json
-{
-  "configured": true,
-  "enabled": true,
-  "ipnConfigured": true,
-  "webhookEndpoint": "/api/banking/sepay/webhook",
-  "mode": "Sandbox",
-  "lastIpnReceivedAt": "2026-10-29T14:35:10Z"
-}
-```
-
----
+- `200 SePayBankHubStatusDto`: `enabled, environment, configured, companyConfigured, lifecycleWebhookConfigured, ipnConfigured, lastSuccessfulProviderCallAt, lastWebhookReceivedAt`. Hai timestamp có thể null; không có `mode` hay `webhookEndpoint` trong DTO.
+- `200 BankReconciliationDto`: `activeConnections, inactiveConnections, unlinkedConnections, processedEvents, duplicateDeliveries, unmatchedEvents, failedEvents, importedTransactions`.
+- Hai endpoint đọc trạng thái/đối soát. Sandbox không chứng minh chuyển tiền thật.
 
 ## 4. RANH GIỚI VẬN HÀNH & HỆ THỐNG NGOẠI VI (EXTERNAL BOUNDARIES)
 
@@ -400,5 +361,5 @@ Authorization: Bearer <admin_access_token>
    - Hoạt động kiểm thử và nghiệm thu V1.0 chạy hoàn toàn trên môi trường Sandbox thông qua xác thực chữ ký Webhook IPN.
    - Tuyệt đối không thực hiện giao dịch rút/chuyển tiền thật khi chưa có phê duyệt hạ tầng ngân hàng sống.
 3. **Trách nhiệm Frontend Admin Web:**
-   - Giao diện Admin quản trị được bảo vệ bởi phiên làm việc duy nhất của `lethien241205@gmail.com`.
+   - Giao diện Admin quản trị được bảo vệ bởi phiên làm việc duy nhất của `<email Admin được cấu hình>`.
    - Tự động hiển thị hộp thoại xác thực `AdminPin` cho mọi thao tác nhạy cảm trước khi gửi request tới Backend.

@@ -142,6 +142,8 @@
 
 **Định dạng token:** `AuthResponse` gồm `accessToken, refreshToken, accessTokenExpiresAt, user, deviceTrustToken?`. `UserProfile` gồm `id,fullName,email,spendId,phone,systemRole,status,mustChangePassword,preferredLanguage,preferredTheme,defaultCurrency,createdAt,lastLoginAt,engagementEmailOptIn,avatarUrl`. Không hiển thị `expiresIn` hoặc `mainWalletBalance` như trường của chính các DTO này. PIN/mật khẩu/OTP không log ra console/analytics.
 
+**Thời hạn token:** Access JWT mặc định 15 phút (`Jwt:AccessTokenMinutes`); refresh token có thời hạn 30 ngày mỗi lần cấp hoặc rotation. Access JWT hết hạn có thể refresh nếu phiên và refresh token vẫn hợp lệ. Phiên bị thu hồi không thể refresh; yêu cầu đăng nhập lại.
+
 **Passkey (WebAuthn):** `POST /api/auth/passkeys/register/options`, `POST /api/auth/passkeys/register/verify` (cần đăng nhập); `POST /api/auth/passkeys/login/options`, `POST /api/auth/passkeys/login/verify` (anonymous); `GET /api/auth/passkeys`, `DELETE /api/auth/passkeys/{id}`. Client lấy challenge/options từ server và hoàn tất bằng browser/native authenticator; không được giả lập xác thực sinh trắc học. Đăng nhập passkey trả `AuthResponse`.
 
 ### 3.2. Hồ sơ, bạn bè, thiết bị và thông tin người dùng
@@ -157,8 +159,8 @@
 | `POST /api/users/me/email/current/verify` | Body `{otp}` → `{ticket, expiresAt}`. Xác thực email hiện tại, cấp ticket 15 phút gắn chặt `UserId` và `SessionId`. |
 | `POST /api/users/me/email/new/request` | Body `{ticket, newEmail}` → `EmailVerificationPendingResponse`. Kiểm tra ticket, định dạng, trùng lặp; gửi OTP 8 số độc lập về email mới. |
 | `POST /api/users/me/email/new/confirm` | Body `{ticket, otp}` → `UserProfile`. Cam kết đổi email, gửi cảnh báo bảo mật về email cũ, tự động thu hồi toàn bộ phiên khác (`UserSessionId != sessionId`). |
-| `POST /api/users/me/email/cancel` | Không body → `204 NoContent`. Hủy bỏ phiên đổi email đang dở dang, xóa sạch `PendingNewEmail`. |
-| `POST /api/users/me/email/request` & `confirm` | **Deprecated & Chặn bypass**: Trả về `400 Bad Request` kèm mã `legacy_email_change_deprecated`. |
+| `POST /api/users/me/email/cancel` | Body tùy chọn `{ticket}` → `204 NoContent`. Handler không dùng ticket để thu hẹp phạm vi: thu hồi mọi token đổi email chưa dùng của tài khoản đang đăng nhập và xóa `PendingNewEmail`. |
+| `POST /api/users/me/email/request` và `POST /api/users/me/email/confirm` | **Deprecated & Chặn bypass**: Trả về `400 Bad Request` kèm mã `legacy_email_change_deprecated`. |
 | `DELETE /api/users/me/sessions` | Thu hồi các phiên khác, `204`. |
 
 **Bạn bè (`FriendsController`; tối đa 100 bạn bè):** Người dùng phải kết bạn thành công trước khi mời vào quỹ V1. Không lộ email/số điện thoại người lạ tùy tiện.

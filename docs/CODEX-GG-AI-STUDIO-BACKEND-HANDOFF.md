@@ -76,7 +76,7 @@ Hệ thống quản lý định danh nghiêm ngặt dựa trên JWT Access Token
 
 ### 4.1. Phân biệt hai vai trò duy nhất trong hệ thống
 - **Vai trò `User` (`SystemRole = 1`):** Khách hàng sử dụng ứng dụng di động / web cá nhân.
-- **Vai trò `Admin` (`SystemRole = 2`):** Quản trị viên hệ thống duy nhất (`lethien241205@gmail.com`).
+- **Vai trò `Admin` (`SystemRole = 2`):** Quản trị viên hệ thống duy nhất (`<email Admin được cấu hình>`).
 - *(Các vai trò cũ `SystemAdmin = 0` và `SuperAdmin = 3` bị từ chối truy cập ngay tại tầng bảo mật với mã lỗi `403 Forbidden - legacy_role_rejected`).*
 
 ### 4.2. Luồng xác thực người dùng (Step-by-Step Flow)
@@ -255,7 +255,7 @@ Content-Type: application/json
 
 ## 6. BẢN ĐỒ API PHÂN HỆ ADMIN CHO CODEX (21 CHỨC NĂNG ADM-01 ĐẾN ADM-21)
 
-> Quản trị viên sử dụng duy nhất tài khoản `lethien241205@gmail.com` với token mang `SystemRole = 2`. Mọi thao tác nhạy cảm yêu cầu `adminPin`.
+> Quản trị viên sử dụng duy nhất tài khoản `<email Admin được cấu hình>` với token mang `SystemRole = 2`. Mọi thao tác nhạy cảm yêu cầu `adminPin`.
 
 ### Bảng tóm tắt 21 Chức năng Quản trị:
 ```text
@@ -283,7 +283,7 @@ Content-Type: application/json
   ADM-15: POST /api/v1/admin/support/{caseId}/assign & GET .../support/{id} (Phân công hồ sơ: A5AssignTicketRequest)
   ADM-16: POST /api/admin/cases/support/{id}/messages & POST .../reply-template (Phản hồi & áp dụng templateKey)
   ADM-17: POST /api/v1/admin/support/{caseId}/request-info & /dossier (Yêu cầu thêm chứng từ & trích xuất hồ sơ quỹ)
-  ADM-18: POST /api/admin/cases/support/{id}/status & /correction-grant (Đóng case & cấp lệnh hoàn tiền với adminPin)
+  ADM-18: POST /api/admin/cases/support/{id}/status & /correction-grant (Đổi trạng thái hồ sơ và cấp thêm lượt sửa giao dịch; hai action độc lập)
 
 [Nhóm 5: Truyền thông Hệ thống & Giám sát Ngoại vi]
   ADM-19: POST /api/v1/system/broadcasts & /publish & /status (Vòng đời phát hành thông báo toàn hệ thống)
@@ -297,7 +297,7 @@ Content-Type: application/json
 3. **Admin yêu cầu thông tin:** Gọi `POST /api/v1/admin/support/{caseId}/request-info` (body `A5RequestInfoRequest` `{reason, message, attachments}`) $\rightarrow$ Trạng thái chuyển `WaitingForUser`.
 4. **User trả lời:** Gọi `POST /api/cases/support/{id}/messages` $\rightarrow$ Trạng thái tự động chuyển lại `InReview`.
 5. **Admin giải quyết & Hoàn tiền:**
-   - Cấp lệnh hoàn tiền: Gọi `POST /api/admin/cases/support/{id}/correction-grant` (body `GrantCorrectionRequest` `{amount, reason, adminPin}`) $\rightarrow$ Backend ghi bút toán correction vào sổ cái.
+   - Cấp thêm một lượt sửa giao dịch: `POST /api/admin/cases/support/{id}/correction-grant` nhận `CorrectionGrantRequest` với `adminPin` và `reason`, trả HTTP 200 `SupportCaseDetailDto`. Backend tăng `CorrectionAllowance`, ghi audit và gửi thông báo nội bộ. Không tự đóng hồ sơ, hoàn tiền hoặc ghi ledger.
    - Đóng hồ sơ: Gọi `POST /api/admin/cases/support/{id}/status` `{status: "Resolved"}`.
 
 ---
@@ -327,7 +327,7 @@ Codex cần kiểm tra lần lượt từng mục sau khi dựng giao diện m�
 - [ ] **7. Quỹ Cố định V2:** Tạo quỹ Fixed $\rightarrow$ Chốt nghĩa vụ chia hết $\rightarrow$ Thành viên đóng tiền $\rightarrow$ Chi tiêu Expense trực tiếp thành công.
 - [ ] **8. Quỹ Tự do V1:** Thành viên gửi yêu cầu chi (`Expense`) $\rightarrow$ Chủ duyệt $\rightarrow$ Trạng thái chuyển `ApprovedUnused` (tiền chưa giảm).
 - [ ] **9. Chặn rút vốn an toàn:** Khi có quyền chi `ApprovedUnused`, kiểm tra nút duyệt rút vốn (`Withdrawal`) của chủ quỹ bị vô hiệu hóa chính xác.
-- [ ] **10. Luồng Hỗ trợ Khách hàng:** User tạo Ticket khiếu nại $\rightarrow$ Đăng nhập tài khoản Admin `lethien241205@gmail.com` xem ticket $\rightarrow$ Phân công $\rightarrow$ Gửi phản hồi $\rightarrow$ User xem được phản hồi.
+- [ ] **10. Luồng Hỗ trợ Khách hàng:** User tạo Ticket khiếu nại $\rightarrow$ Đăng nhập tài khoản Admin `<email Admin được cấu hình>` xem ticket $\rightarrow$ Phân công $\rightarrow$ Gửi phản hồi $\rightarrow$ User xem được phản hồi.
 - [ ] **11. Thông báo Toàn hệ thống (Broadcast):** Admin soạn bản thảo $\rightarrow$ Bấm Publish với `adminPin` $\rightarrow$ Đăng nhập tài khoản User kiểm tra thông báo xuất hiện trong In-App Inbox.
 - [ ] **12. Xử lý Lỗi chuẩn hóa:** Các mã lỗi nghiệp vụ 400 (`insufficient_wallet_balance`, `admin_pin_invalid`, `active_group_limit`) được hiển thị thông báo toast thân thiện, không làm trắng màn hình.
 

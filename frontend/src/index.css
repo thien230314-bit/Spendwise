@@ -1,1905 +1,1818 @@
 @import "tailwindcss";
-
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
-    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-sans: 'Be Vietnam Pro', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-serif: 'Fraunces', Georgia, serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    /* Strict 2-Font System from SpendWise Mobile reference (No 3rd/monospace font) */
+    --font-display: 'Bricolage Grotesque', 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Manrope', system-ui, -apple-system, sans-serif;
+
+    /* =========================================================================
+       1. REFERENCE TOKENS (SpendWise Mobile.html — Light Mode)
+       ========================================================================= */
+    --bg: #e6f2ec;
+    --bg2: #d3eadd;
+    --ink: #0b2a22;
+    --ink2: #2f4c42;
+    --ink3: #49675c;
+    --em: #0f9d6e;
+    --em2: #14c58b;
+    --mint: #b8f0d8;
+    --amber: #d98218;
+    --rose: #e5484d;
+    --sky: #2563eb;
+    --violet: #7c3aed;
+    --glass: rgba(255, 255, 255, 0.84);
+    --glass2: rgba(255, 255, 255, 0.92);
+    --stroke: rgba(11, 58, 43, 0.16);
+    --line: rgba(11, 42, 34, 0.11);
+    --shadow: 0 4px 20px -2px rgba(11, 42, 34, 0.05), 0 10px 28px -4px rgba(11, 42, 34, 0.07), inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.8);
+    --hero1: #0b6e50;
+    --hero2: #12b886;
+    --nav: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(238, 250, 244, 0.88) 100%);
+    --nav-solid: rgba(255, 255, 255, 0.90);
+    --stage: #cfe3da;
+    --frame: #0c1512;
+
+    /* =========================================================================
+       2. MAPPED SEMANTIC TOKENS (Preserves compatibility across all components)
+       ========================================================================= */
+    --sw-bg: var(--bg);
+    --sw-bg-gradient:
+      radial-gradient(460px 360px at 88% -4%, rgba(20, 197, 139, 0.26), transparent 72%),
+      radial-gradient(420px 340px at -8% 42%, rgba(184, 240, 216, 0.48), transparent 72%),
+      radial-gradient(440px 320px at 50% 102%, rgba(15, 157, 110, 0.16), transparent 72%),
+      linear-gradient(180deg, #ecf6f1 0%, #dfeee7 100%);
+    --sw-surface: var(--glass2);
+    --sw-surface-elevated: var(--glass);
+    --sw-surface-muted: rgba(11, 42, 34, 0.06);
+    --sw-surface-solid-fallback: #f5fbf8;
+    --sw-sheet-bg: rgba(245, 251, 248, 0.97);
+
+    --sw-ink: var(--ink);
+    --sw-ink-2: var(--ink2);
+    --sw-muted: var(--ink3);
+    --sw-em: var(--em);
+    --sw-em-d: #0b7a55;
+    --sw-free: var(--violet);
+    --sw-ok: #0d8a61;
+    --sw-warn: #b9770e;
+    --sw-bad: #e5484d;
+    --sw-glass: var(--glass);
+    --sw-glass-strong: var(--glass2);
+    --sw-stroke: var(--stroke);
+    --sw-stroke-s: var(--line);
+
+    --sw-header-solid-fallback: #0b6e50;
+    --sw-header-glass-bg: linear-gradient(145deg, var(--hero1), var(--hero2));
+    --sw-header-glass-border: rgba(255, 255, 255, 0.24);
+    --sw-header-glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+
+    --sw-text: var(--ink);
+    --sw-text-primary: var(--ink);
+    --sw-text-secondary: var(--ink2);
+    --sw-text-muted: var(--ink3);
+
+    --sw-border: var(--stroke);
+    --sw-border-strong: rgba(11, 58, 43, 0.24);
+
+    --sw-primary: var(--em);
+    --sw-primary-hover: #0b845c;
+    --sw-action-primary: var(--em);
+    --sw-action-primary-hover: #0b845c;
+    --sw-teal-deep: var(--hero1);
+    --sw-accent-teal: var(--em);
+    --sw-focus: var(--em);
+
+    --sw-success: #0d8a61;
+    --sw-success-bg: rgba(20, 197, 139, 0.15);
+    --sw-warning: #b9770e;
+    --sw-warning-bg: rgba(242, 169, 59, 0.18);
+    --sw-pending: #2563eb;
+    --sw-pending-bg: rgba(59, 130, 246, 0.14);
+    --sw-info: #7c3aed;
+    --sw-info-bg: rgba(139, 92, 246, 0.14);
+    --sw-danger: #e5484d;
+    --sw-danger-bg: rgba(229, 72, 77, 0.14);
+    --sw-disabled-bg: rgba(11, 42, 34, 0.12);
+    --sw-disabled-text: rgba(11, 42, 34, 0.45);
+
+    --sw-selected-bg: rgba(20, 197, 139, 0.15);
+    --sw-selected-border: rgba(15, 157, 110, 0.48);
+    --sw-overlay: rgba(4, 25, 18, 0.56);
+
+    /* =========================================================================
+       3. TYPOGRAPHY & LAYOUT TOKENS
+       ========================================================================= */
+    --sw-fs-hero-balance: 2.375rem;    /* 38px — Main balance amount */
+    --sw-fs-page-title: 1.625rem;      /* 26px — Page H1 heading */
+    --sw-fs-section-title: 1.1875rem;  /* 19px — Section H2 heading */
+    --sw-fs-item-title: 1.0625rem;     /* 17px — Primary item title / person name */
+    --sw-fs-tx-amount: 1.0625rem;      /* 17px — Transaction / list amount */
+    --sw-fs-body: 1rem;                /* 16px — Body & input baseline */
+    --sw-fs-control: 1rem;             /* 16px — Inputs & buttons */
+    --sw-fs-support: 0.9375rem;        /* 15px — Supporting descriptions */
+    --sw-fs-meta: 0.875rem;            /* 14px — Secondary metadata */
+    --sw-fs-nav: 0.8125rem;            /* 13px — Bottom navigation label */
+
+    --sw-blur-header-card: 18px;
+    --sw-blur-floating-nav: 24px;
+    --sw-radius-control: 16px;
+    --sw-radius-panel: 24px;
+    --sw-radius-hero: 30px;
+
+    /* Floating Bottom Navigation Clearance (includes raised center QR button) */
+    --sw-bottom-nav-height: 4.25rem;     /* 68px (.nav height) */
+    --sw-bottom-nav-offset: 0.875rem;    /* 14px (.nav bottom offset) */
+    --sw-bottom-nav-safe-gap: 2.25rem;   /* 36px extra breathing space for raised QR */
+    --sw-bottom-nav-clearance: calc(
+      var(--sw-bottom-nav-height) +
+      var(--sw-bottom-nav-offset) +
+      var(--sw-bottom-nav-safe-gap) +
+      env(safe-area-inset-bottom, 0px)
+    );
   }
 
-  html.dark {
-    color-scheme: dark;
+  .dark {
+    /* =========================================================================
+       REFERENCE TOKENS (SpendWise Mobile.html — Dark Mode)
+       ========================================================================= */
+    --bg: #07130f;
+    --bg2: #0b1f19;
+    --ink: #eaf7f2;
+    --ink2: #b0cbc0;
+    --ink3: #8ead9f;
+    --em: #2fd39a;
+    --em2: #19b27f;
+    --mint: #0f3d2e;
+    --amber: #f2a93b;
+    --rose: #fb7185;
+    --sky: #60a5fa;
+    --violet: #a78bfa;
+    --glass: rgba(18, 42, 34, 0.84);
+    --glass2: rgba(24, 54, 44, 0.92);
+    --stroke: rgba(255, 255, 255, 0.18);
+    --line: rgba(255, 255, 255, 0.11);
+    --shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.68), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    --hero1: #0a5a42;
+    --hero2: #0f9d6e;
+    --nav: linear-gradient(180deg, rgba(18, 42, 34, 0.92) 0%, rgba(11, 27, 22, 0.88) 100%);
+    --nav-solid: rgba(14, 32, 26, 0.90);
+    --stage: #050b09;
+
+    --sw-bg: var(--bg);
+    --sw-bg-gradient:
+      radial-gradient(460px 360px at 88% -4%, rgba(47, 211, 154, 0.18), transparent 72%),
+      radial-gradient(420px 340px at -8% 45%, rgba(15, 157, 110, 0.16), transparent 72%),
+      radial-gradient(440px 320px at 50% 102%, rgba(25, 178, 127, 0.14), transparent 72%),
+      linear-gradient(180deg, #081611 0%, #06110d 100%);
+    --sw-surface: var(--glass2);
+    --sw-surface-elevated: var(--glass);
+    --sw-surface-muted: rgba(255, 255, 255, 0.07);
+    --sw-surface-solid-fallback: #11261f;
+    --sw-sheet-bg: rgba(16, 36, 29, 0.97);
+
+    --sw-ink: var(--ink);
+    --sw-ink-2: var(--ink2);
+    --sw-muted: var(--ink3);
+    --sw-em: var(--em);
+    --sw-em-d: #2fd39a;
+    --sw-free: var(--violet);
+    --sw-ok: #2fd39a;
+    --sw-warn: #f2a93b;
+    --sw-bad: #fb7185;
+    --sw-glass: var(--glass);
+    --sw-glass-strong: var(--glass2);
+    --sw-stroke: var(--stroke);
+    --sw-stroke-s: var(--line);
+
+    --sw-header-solid-fallback: #0a5a42;
+    --sw-header-glass-bg: linear-gradient(145deg, var(--hero1), var(--hero2));
+    --sw-header-glass-border: rgba(255, 255, 255, 0.16);
+    --sw-header-glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+
+    --sw-text: var(--ink);
+    --sw-text-primary: var(--ink);
+    --sw-text-secondary: var(--ink2);
+    --sw-text-muted: var(--ink3);
+
+    --sw-border: var(--stroke);
+    --sw-border-strong: rgba(255, 255, 255, 0.22);
+
+    --sw-primary: var(--em2);
+    --sw-primary-hover: var(--em);
+    --sw-action-primary: #129b6e;
+    --sw-action-primary-hover: #0f855e;
+    --sw-teal-deep: var(--hero1);
+    --sw-accent-teal: #129b6e;
+    --sw-focus: var(--em);
+
+    --sw-success: #2fd39a;
+    --sw-success-bg: rgba(47, 211, 154, 0.16);
+    --sw-warning: #f2a93b;
+    --sw-warning-bg: rgba(242, 169, 59, 0.18);
+    --sw-pending: #60a5fa;
+    --sw-pending-bg: rgba(59, 130, 246, 0.16);
+    --sw-info: #a78bfa;
+    --sw-info-bg: rgba(139, 92, 246, 0.16);
+    --sw-danger: #fb7185;
+    --sw-danger-bg: rgba(229, 72, 77, 0.18);
+    --sw-disabled-bg: rgba(255, 255, 255, 0.12);
+    --sw-disabled-text: rgba(255, 255, 255, 0.45);
+
+    --sw-selected-bg: rgba(47, 211, 154, 0.16);
+    --sw-selected-border: rgba(47, 211, 154, 0.45);
+    --sw-overlay: rgba(3, 14, 10, 0.72);
   }
 
-  html.light {
-    color-scheme: light;
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #F8FAFC;
-    color: #0F172A;
+    font-size: var(--sw-fs-body);
+    line-height: 1.5;
+    font-weight: 500;
+    background-color: var(--stage);
+    color: var(--ink);
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
   }
 
-  html.dark body,
-  .dark body {
-    background-color: #090D16;
-    color: #F1F5F9;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  /* Ensure personal info never renders in a mechanical monospace font */
+  .font-mono {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+    color: inherit;
+    line-height: 1.35;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible,
+  .sw-focus-ring:focus-visible {
+    outline: 2px solid var(--em);
+    outline-offset: 2px;
   }
 }
 
-.font-fraunces {
-  font-family: 'Fraunces', Georgia, serif;
+@layer components {
+.tabular-nums,
+.sw-num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-.font-mono-plex {
-  font-family: 'IBM Plex Mono', monospace;
-}
+/* =========================================================================
+   REFERENCE COMPONENT CLASSES
+   ========================================================================= */
 
-/* ================= REALISTIC DESK TABLETOP (MẶT BÀN LÀM VIỆC) ================= */
-
-/* Light Mode: Bàn làm việc gỗ sồi tự nhiên Bắc Âu (Scandinavian Honey Oak Desk) */
-:root:not(.dark) {
-  --desk-wood-bg: #d7c1a2;
-  --desk-plank-1: #dfcbaf;
-  --desk-plank-2: #d6c0a1;
-  --desk-plank-3: #cca785;
-  --desk-plank-4: #e2ceb4;
-  --desk-seam: rgba(90, 48, 18, 0.3);
-  --desk-seam-highlight: rgba(255, 255, 255, 0.55);
-  --desk-grain-fine: rgba(110, 60, 20, 0.05);
-  --desk-lamp-glow: radial-gradient(ellipse 95% 75% at 50% 18%, rgba(255, 252, 240, 0.82) 0%, rgba(255, 244, 222, 0.42) 42%, rgba(240, 222, 195, 0.1) 75%, transparent 100%);
-  --desk-vignette: radial-gradient(circle at 50% 50%, transparent 55%, rgba(65, 35, 12, 0.3) 100%);
-  --desk-mat-bg: linear-gradient(145deg, #2d2017 0%, #1e150f 50%, #170f0a 100%);
-  --desk-mat-border: rgba(217, 168, 98, 0.35);
-  --desk-mat-shadow: 0 35px 70px -15px rgba(45, 25, 10, 0.45), 0 15px 30px -8px rgba(45, 25, 10, 0.3);
-  --desk-book-ambient-shadow: 0 45px 85px -12px rgba(45, 25, 10, 0.48), 0 20px 40px -8px rgba(45, 25, 10, 0.32), 0 6px 14px -2px rgba(45, 25, 10, 0.28);
-}
-
-/* Dark Mode: Bàn làm việc gỗ óc chó hun khói cao cấp (Executive Smoked Dark Walnut Desk) */
-.dark {
-  --desk-wood-bg: #140f0c;
-  --desk-plank-1: #1b140f;
-  --desk-plank-2: #140f0c;
-  --desk-plank-3: #1f1712;
-  --desk-plank-4: #18120e;
-  --desk-seam: rgba(0, 0, 0, 0.8);
-  --desk-seam-highlight: rgba(255, 255, 255, 0.045);
-  --desk-grain-fine: rgba(255, 255, 255, 0.022);
-  --desk-lamp-glow: radial-gradient(ellipse 90% 70% at 50% 16%, rgba(251, 191, 36, 0.16) 0%, rgba(217, 119, 6, 0.07) 38%, rgba(16, 185, 129, 0.025) 70%, transparent 100%);
-  --desk-vignette: radial-gradient(circle at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.85) 100%);
-  --desk-mat-bg: linear-gradient(145deg, #10161b 0%, #0a0e12 50%, #06090c 100%);
-  --desk-mat-border: rgba(52, 211, 153, 0.22);
-  --desk-mat-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.9), 0 20px 40px -8px rgba(0, 0, 0, 0.7);
-  --desk-book-ambient-shadow: 0 50px 95px -12px rgba(0, 0, 0, 0.95), 0 25px 45px -8px rgba(0, 0, 0, 0.8), 0 8px 18px -2px rgba(0, 0, 0, 0.65);
-}
-
-/* Mặt bàn gỗ tự nhiên bao quanh toàn bộ không gian làm việc */
-.desk-tabletop-container {
-  position: relative;
-  background-color: var(--desk-wood-bg);
-  /* Lớp vân gỗ ghép thanh (Wood planks) với đường chỉ nối ván và thớ gỗ mịn (Grain) */
-  background-image: 
-    /* Đường rãnh nối ghép ván gỗ chạy ngang bàn (Plank seams every 150px) */
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 148px,
-      var(--desk-seam) 149px,
-      var(--desk-seam-highlight) 150px
-    ),
-    /* Sắc độ xen kẽ giữa các tấm ván gỗ tự nhiên */
-    repeating-linear-gradient(
-      to bottom,
-      var(--desk-plank-1) 0px,
-      var(--desk-plank-1) 150px,
-      var(--desk-plank-2) 150px,
-      var(--desk-plank-2) 300px,
-      var(--desk-plank-3) 300px,
-      var(--desk-plank-3) 450px,
-      var(--desk-plank-4) 450px,
-      var(--desk-plank-4) 600px
-    ),
-    /* Thớ sợi gỗ mịn chạy dọc theo sớ gỗ */
-    repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      transparent 3px,
-      var(--desk-grain-fine) 4px,
-      transparent 6px
-    );
-  background-attachment: fixed;
-  transition: background-color 0.35s ease, background-image 0.35s ease;
-}
-
-/* Đèn bàn ấm áp rọi xuống khu vực làm việc (Desk Lamp Pool) */
-.desk-lamp-glow-overlay {
+/* Mesh Backdrop inside Phone Frame */
+.sw-mesh {
   position: absolute;
   inset: 0;
-  background: var(--desk-lamp-glow);
-  pointer-events: none;
   z-index: 0;
-  transition: background 0.35s ease;
-}
-
-/* Độ tối ngoại vi xung quanh mặt bàn (Desk Edge Vignette) */
-.desk-wood-vignette {
-  position: absolute;
-  inset: 0;
-  background: var(--desk-vignette);
   pointer-events: none;
-  z-index: 0;
-  transition: background 0.35s ease;
+  background: var(--sw-bg-gradient);
 }
 
-/* Thảm lót bàn da cao cấp (Executive Leather Desk Blotter Mat) */
-.desk-leather-mat {
-  position: absolute;
-  inset: -6px -28px -12px -28px;
-  border-radius: 28px;
-  background: var(--desk-mat-bg);
-  box-shadow: 
-    var(--desk-mat-shadow),
-    inset 0 0 0 1px var(--desk-mat-border),
-    inset 0 2px 4px rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-  z-index: 0;
-  transition: all 0.35s ease;
-}
-
-/* Đường chỉ may thủ công viền thảm da (Perimeter saddle-stitch groove) */
-.desk-leather-mat::before {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border-radius: 22px;
-  border: 1px dashed var(--desk-mat-border);
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-@media (max-width: 1023px) {
-  .desk-leather-mat {
-    inset: -2px -6px -6px -6px;
-    border-radius: 24px;
-  }
-}
-
-/* 3D Notebook Page Flip Auth Animation (Realistic Open Spiral / Ring Binder Notebook) */
-.auth-book-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 990px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  perspective: 2600px;
-  perspective-origin: 50% 50%;
-  padding: 16px 20px;
-  z-index: 10;
-}
-
-/* Đổ bóng tiếp xúc thực tế của cuốn sổ lên mặt bàn gỗ (Desk Ambient Occlusion Shadow) */
-.auth-book-wrapper::after {
-  content: '';
-  position: absolute;
-  inset: 20px 10px 14px 10px;
-  border-radius: 28px;
-  background: transparent;
-  box-shadow: var(--desk-book-ambient-shadow);
-  pointer-events: none;
-  z-index: 0;
-  transition: box-shadow 0.35s ease;
-}
-
-/* Outer Notebook Leather Cover Base */
-.notebook-leather-cover {
-  position: absolute;
-  inset: 2px 6px;
-  border-radius: 24px;
-  background: linear-gradient(140deg, #1b2620 0%, #101914 45%, #080d0a 100%);
-  box-shadow: 
-    0 35px 80px -15px rgba(0, 0, 0, 0.85),
-    0 15px 30px -8px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.light .notebook-leather-cover,
-html.light .notebook-leather-cover,
-:root:not(.dark) .notebook-leather-cover {
-  background: linear-gradient(140deg, #442d1e 0%, #2f1d12 45%, #1f1109 100%);
-  box-shadow: 
-    0 30px 70px -15px rgba(35, 20, 10, 0.45),
-    0 12px 28px -8px rgba(35, 20, 10, 0.25),
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.25),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.4);
-}
-
-/* Bìa da cao cấp trơn láng bao quanh sổ */
-.notebook-leather-cover::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* 4 Góc bọc kim loại bảo vệ sổ (Brass Metal Corner Brackets) */
-.notebook-corner {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.notebook-corner::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #f5d799 0%, #c49658 40%, #754e1d 80%, #dfb776 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.notebook-corner.top-left { top: 0; left: 0; }
-.notebook-corner.top-left::before {
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  border-top-left-radius: 24px;
-}
-
-.notebook-corner.top-right { top: 0; right: 0; }
-.notebook-corner.top-right::before {
-  clip-path: polygon(0 0, 100% 0, 100% 100%);
-  border-top-right-radius: 24px;
-}
-
-.notebook-corner.bottom-left { bottom: 0; left: 0; }
-.notebook-corner.bottom-left::before {
-  clip-path: polygon(0 0, 0 100%, 100% 100%);
-  border-bottom-left-radius: 24px;
-}
-
-.notebook-corner.bottom-right { bottom: 0; right: 0; }
-.notebook-corner.bottom-right::before {
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
-  border-bottom-right-radius: 24px;
-}
-
-/* Quai cài bút da sổ tay (Pen Holder Loop) ở mép phải */
-.notebook-pen-loop {
-  position: absolute;
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 90px;
-  background: linear-gradient(to right, #1a251f, #0d1511);
-  border-radius: 0 8px 8px 0;
-  box-shadow: 3px 2px 8px rgba(0, 0, 0, 0.5);
-  border-left: 1px solid rgba(0, 0, 0, 0.6);
-  z-index: 2;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.light .notebook-pen-loop,
-html.light .notebook-pen-loop,
-:root:not(.dark) .notebook-pen-loop {
-  background: linear-gradient(to right, #3d2719, #25160d);
-  box-shadow: 3px 2px 8px rgba(35, 20, 10, 0.35);
-}
-
-.notebook-pen {
-  position: absolute;
-  left: 2px;
-  width: 8px;
-  height: 120px;
-  border-radius: 4px;
-  background: linear-gradient(to right, #242c38 0%, #475569 50%, #1e293b 100%);
-  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
-}
-
-.notebook-pen-clip {
-  position: absolute;
-  top: 18px;
-  right: -2px;
-  width: 2.5px;
-  height: 38px;
-  background: linear-gradient(to bottom, #f5d799, #c49658, #754e1d);
-  border-radius: 2px;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
-}
-
-/* Dây ruy-băng lụa đánh dấu trang sổ (Satin Bookmark Ribbon) kẹp ở trang Đăng nhập */
-.notebook-ribbon-bookmark {
-  position: absolute;
-  left: calc(50% + 22px);
-  top: -10px;
-  width: 16px;
-  height: 50%;
-  max-height: 335px;
-  background: linear-gradient(
-    to right,
-    #047857 0%,
-    #10b981 35%,
-    #059669 70%,
-    #047857 100%
-  );
-  box-shadow: 
-    3px 6px 14px rgba(0, 0, 0, 0.45),
-    inset 0 0 4px rgba(0, 0, 0, 0.3);
-  z-index: 25;
-  pointer-events: none;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 12px), 0 100%);
-  opacity: 0.96;
-  transform-origin: top center;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-/* Chi tiết gập mép ruy-băng ở đỉnh gáy sổ */
-.notebook-ribbon-bookmark::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 8px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent);
-  pointer-events: none;
-}
-
-.light .notebook-ribbon-bookmark,
-html.light .notebook-ribbon-bookmark,
-:root:not(.dark) .notebook-ribbon-bookmark {
-  background: linear-gradient(
-    to right,
-    #065f46 0%,
-    #059669 35%,
-    #10b981 70%,
-    #047857 100%
-  );
-  box-shadow: 
-    2px 5px 12px rgba(20, 15, 10, 0.3),
-    inset 0 0 3px rgba(0, 0, 0, 0.2);
-}
-
-/* KHI CHUYỂN SANG TRANG ĐĂNG KÝ (active):
-   Trang phân mục (auth-toggle-box, z-index: 50) lật đè lên trang Đăng nhập.
-   Ruy-băng dài nửa trang (50%) được kẹp tự nhiên bên trong trang Đăng nhập:
-   - Đỉnh ruy-băng nhô lên tự nhiên tại đỉnh gáy sổ (top: -10px).
-   - Thân ruy-băng nằm êm ái bên trong giữa 2 trang giấy.
-*/
-.auth-container.active .notebook-ribbon-bookmark {
-  box-shadow: 
-    1px 3px 8px rgba(0, 0, 0, 0.5),
-    inset 0 0 3px rgba(0, 0, 0, 0.35);
-}
-
-.light .auth-container.active .notebook-ribbon-bookmark,
-html.light .auth-container.active .notebook-ribbon-bookmark,
-:root:not(.dark) .auth-container.active .notebook-ribbon-bookmark {
-  box-shadow: 
-    1px 3px 8px rgba(35, 20, 10, 0.35),
-    inset 0 0 3px rgba(0, 0, 0, 0.25);
-}
-
-/* ================= OPEN NOTEBOOK PAPER CONTAINER ================= */
-.auth-container {
-  position: relative;
-  width: 940px;
-  max-width: 95vw;
-  min-height: 670px;
-  background: #101622;
-  border-radius: 15px;
-  /* Hiệu ứng xếp chồng nhiều lớp mép giấy sổ (Stacked Paper Edges) ở hai bên */
-  box-shadow: 
-    /* Lớp giấy dày bên trái */
-    -3px 0 0 -0.5px #182230,
-    -6px 0 0 -1px #131b26,
-    -9px 0 0 -1.5px #0d141e,
-    /* Lớp giấy dày bên phải */
-    3px 0 0 -0.5px #182230,
-    6px 0 0 -1px #131b26,
-    9px 0 0 -1.5px #0d141e,
-    /* Bóng đổ của khối giấy lên bìa da */
-    0 18px 45px -10px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  transform-style: preserve-3d;
-  z-index: 10;
-}
-
-.light .auth-container,
-html.light .auth-container,
-:root:not(.dark) .auth-container {
-  background: #FCFBF7;
-  box-shadow: 
-    /* Lớp giấy ngà dày bên trái */
-    -3px 0 0 -0.5px #f2eee3,
-    -6px 0 0 -1px #e8e2d2,
-    -9px 0 0 -1.5px #dcd4c0,
-    /* Lớp giấy ngà dày bên phải */
-    3px 0 0 -0.5px #f2eee3,
-    6px 0 0 -1px #e8e2d2,
-    9px 0 0 -1.5px #dcd4c0,
-    /* Bóng đổ lên bìa da */
-    0 16px 40px -10px rgba(25, 18, 10, 0.25),
-    0 0 0 1px rgba(20, 15, 10, 0.08);
-}
-
-/* Rãnh gáy sổ tự nhiên giữa 2 trang mở */
-.auth-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 46px;
-  transform: translateX(-50%);
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(0, 0, 0, 0.15) 20%,
-    rgba(0, 0, 0, 0.5) 42%,
-    rgba(0, 0, 0, 0.75) 50%,
-    rgba(0, 0, 0, 0.5) 58%,
-    rgba(0, 0, 0, 0.15) 80%,
-    transparent 100%
-  );
-  z-index: 60;
-  pointer-events: none;
-}
-
-.light .auth-container::before,
-html.light .auth-container::before,
-:root:not(.dark) .auth-container::before {
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(30, 20, 10, 0.04) 20%,
-    rgba(30, 20, 10, 0.18) 42%,
-    rgba(30, 20, 10, 0.32) 50%,
-    rgba(30, 20, 10, 0.18) 58%,
-    rgba(30, 20, 10, 0.04) 80%,
-    transparent 100%
-  );
-}
-
-/* Gáy khâu / rãnh nếp gấp vi mô giữa sổ */
-.auth-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 2px;
-  transform: translateX(-50%);
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.9) 15%,
-    rgba(0, 0, 0, 0.98) 50%,
-    rgba(0, 0, 0, 0.9) 85%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
-  box-shadow: 
-    -0.5px 0 2px rgba(0, 0, 0, 0.8),
-    1px 0 1px rgba(255, 255, 255, 0.08);
-  z-index: 61;
-  pointer-events: none;
-}
-
-.light .auth-container::after,
-html.light .auth-container::after,
-:root:not(.dark) .auth-container::after {
-  background: linear-gradient(
-    to bottom,
-    rgba(25, 15, 10, 0.1) 0%,
-    rgba(25, 15, 10, 0.45) 15%,
-    rgba(25, 15, 10, 0.6) 50%,
-    rgba(25, 15, 10, 0.45) 85%,
-    rgba(25, 15, 10, 0.1) 100%
-  );
-  box-shadow: 
-    -0.5px 0 1px rgba(25, 15, 10, 0.25),
-    1px 0 1.5px rgba(255, 255, 255, 0.9);
-}
-
-/* ================= NOTEBOOK SPINE RING BINDER (CÒNG SỔ LÒ XO KIM LOẠI) ================= */
-.notebook-spine-rings {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 48px;
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 65;
-}
-
-.notebook-ring-unit {
-  position: absolute;
-  width: 100%;
-  height: 18px;
+/* Top Header (.top) */
+.sw-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 3px;
-  transform: translateY(-50%);
+  gap: 0.625rem;
+  margin-bottom: 1.125rem;
+  min-width: 0;
 }
 
-/* Lỗ đục giấy tròn (Punched paper holes) ở 2 bên gáy */
-.notebook-hole {
+/* Icon Button (.ib / .sw-ibtn) — 44x44px minimum touch target */
+.sw-ib,
+.sw-ibtn {
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: 15px;
+  display: inline-grid;
+  place-items: center;
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass2);
+  border: 1.5px solid var(--stroke);
+  box-shadow: 0 4px 12px -4px rgba(11, 58, 43, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  color: var(--ink);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.sw-ib:hover,
+.sw-ibtn:hover {
+  border-color: var(--sw-border-strong);
+}
+.sw-ib:active,
+.sw-ibtn:active {
+  transform: scale(0.94);
+}
+.sw-ib .sw-dot,
+.sw-ibtn .sw-dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
   width: 8px;
   height: 8px;
+  border-radius: 9999px;
+  background: var(--rose);
+  border: 2px solid var(--bg);
+}
+
+/* Avatar (.av) */
+.sw-av {
+  width: 2.625rem;
+  height: 2.625rem;
+  border-radius: 15px;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: #fff;
+  font-family: var(--font-display);
+  flex: none;
+  background: linear-gradient(135deg, var(--em), var(--hero1));
+}
+.sw-av.sm {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+}
+.sw-av.lg {
+  width: 4.75rem;
+  height: 4.75rem;
+  border-radius: 26px;
+  font-size: 1.625rem;
+}
+
+/* Stacked Avatars (.stackav) */
+.sw-stackav {
+  display: flex;
+  align-items: center;
+}
+.sw-stackav > * {
+  margin-left: -8px;
+  border: 2px solid var(--bg);
+}
+.sw-stackav > *:first-child {
+  margin-left: 0;
+}
+
+/* Hero Balance Card (.hero) — Static radial highlight only, NO continuous shine animation */
+.sw-hero,
+.sw-header-glass {
+  position: relative;
+  border-radius: 30px;
+  padding: 1.25rem;
+  color: #fff;
+  overflow: hidden;
+  background-color: var(--hero1);
+  background-image: linear-gradient(145deg, var(--hero1), var(--hero2));
+  box-shadow: 0 22px 40px -18px rgba(8, 100, 72, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.sw-hero::before,
+.sw-header-glass::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-  background: #080d14;
-  box-shadow: 
-    inset 0 1.5px 3px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+  right: -60px;
+  top: -80px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.32), transparent 70%);
+}
+.sw-hero .sw-lbl {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+}
+.sw-hero .sw-big,
+.sw-hero .sw-amt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--sw-fs-hero-balance);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.sw-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+.sw-hero-mini,
+.sw-hero-sub {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 400px) {
+  .sw-hero-sub {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.sw-hero-mini > div,
+.sw-hero-sub > .sw-mini {
+  padding: 0.6875rem 0.875rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  min-width: 0;
+}
+.sw-hero-mini b,
+.sw-hero-sub .sw-mini b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.1875rem;
+  color: #fff;
+}
+.sw-hero-mini small,
+.sw-hero-sub .sw-mini small {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.94);
+}
+.sw-mini-sub {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+/* Progress Ring inside Hero / Group Cards */
+.sw-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: inline-grid;
+  place-items: center;
+}
+.sw-ring svg {
+  transform: rotate(-90deg);
+}
+.sw-ring span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quick Actions (.qa & .qi) — Compact e-wallet button cards (>= 44px touch target) */
+.sw-qa {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.5rem;
+}
+.sw-qa-btn,
+.sw-qb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 18px;
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass2);
+  border: 1.5px solid var(--stroke);
+  box-shadow: var(--shadow);
+  font-size: 0.8125rem;
+  line-height: 1.24;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  min-width: 0;
+  cursor: pointer;
+}
+@media (min-width: 390px) {
+  .sw-qa-btn,
+  .sw-qb {
+    font-size: 0.84375rem;
+    padding: 0.5625rem 0.3125rem;
+  }
+}
+.sw-qa-btn > span:last-child,
+.sw-qb > span:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.sw-qa-btn:hover,
+.sw-qb:hover {
+  border-color: var(--em);
+}
+.sw-qa-btn:active,
+.sw-qb:active {
+  transform: scale(0.985);
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sw-qi {
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 197, 139, 0.14);
+  border: 1px solid rgba(15, 157, 110, 0.22);
+  color: var(--em);
+  flex-shrink: 0;
+}
+.sw-qi.sky {
+  background: rgba(59, 130, 246, 0.13);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: var(--sky);
+}
+.sw-qi.amber {
+  background: rgba(242, 169, 59, 0.16);
+  border-color: rgba(217, 130, 24, 0.24);
+  color: var(--amber);
+}
+.sw-qi.violet {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(124, 58, 237, 0.24);
+  color: var(--violet);
+}
+
+/* Section Header Bar (.sw-sec-h) vs Vertical Section Container (.sw-sec / .sw-sec-stack) */
+.sw-sec-h {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.875rem 0.125rem 0.5rem;
+  min-width: 0;
+}
+
+/* Vertical section container ALWAYS stacks children in a column */
+.sw-sec,
+.sw-sec-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.sw-sec-t {
+  font-family: var(--font-display);
+  font-size: var(--sw-fs-section-title);
+  line-height: 1.24;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sw-sec-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 2.75rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  background: rgba(15, 157, 110, 0.12);
+  border: 1px solid rgba(15, 157, 110, 0.28);
+  color: var(--sw-em-d);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.sw-sec-link:hover {
+  background: rgba(15, 157, 110, 0.18);
+}
+.sw-sec-link:active {
+  transform: scale(0.96);
+}
+
+/* Glass Card (.card / .sw-card-primary / .sw-panel) */
+.sw-card,
+.sw-card-primary,
+.sw-panel {
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  outline: 1px solid rgba(11, 58, 43, 0.08);
+  border-radius: 24px;
+  box-shadow:
+    0 4px 20px -2px rgba(11, 42, 34, 0.05),
+    0 10px 28px -4px rgba(11, 42, 34, 0.07),
+    inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  padding: 1rem;
+  min-width: 0;
+  width: 100%;
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.dark .sw-card,
+.dark .sw-card-primary,
+.dark .sw-panel {
+  border-color: rgba(255, 255, 255, 0.18);
+  outline-color: rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow);
+}
+.sw-card.flat,
+.sw-card-primary.flat,
+.sw-panel.flat {
+  box-shadow: none;
+}
+.sw-card.list,
+.sw-card-primary.list,
+.sw-panel.list {
+  padding: 0.25rem 1rem;
+}
+
+/* Micro-tactile feel */
+.sw-card:active,
+.sw-qb:active,
+.sw-li:active {
+  transform: scale(0.985);
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@supports ((-webkit-backdrop-filter: blur(16px)) or (backdrop-filter: blur(16px))) {
+  .sw-card,
+  .sw-card-primary,
+  .sw-panel {
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(16px)) or (backdrop-filter: blur(16px))) {
+  .sw-card,
+  .sw-card-primary,
+  .sw-panel,
+  .sw-glass,
+  .sw-ib,
+  .sw-ibtn {
+    background: var(--sw-surface-solid-fallback) !important;
+  }
+}
+
+/* List Item (.li & .ti) */
+.sw-li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease;
+  min-width: 0;
+  width: 100%;
+}
+.sw-li:last-child {
+  border-bottom: 0;
+}
+.sw-li-m {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.sw-li-t {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.sw-li-s {
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ink2);
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.sw-amt-s {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sw-amt-s.pos {
+  color: var(--em);
+}
+.sw-amt-s.neg {
+  color: var(--ink);
+}
+
+.sw-ti {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 1rem;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  background: rgba(20, 197, 139, 0.16);
+  border: 1px solid rgba(15, 157, 110, 0.22);
+  color: var(--em);
+}
+.sw-ti.t-in {
+  background: rgba(20, 197, 139, 0.16);
+  border-color: rgba(15, 157, 110, 0.22);
+  color: var(--em);
+}
+.sw-ti.out,
+.sw-ti.t-out {
+  background: rgba(229, 72, 77, 0.14);
+  border-color: rgba(229, 72, 77, 0.22);
+  color: var(--rose);
+}
+.sw-ti.pend,
+.sw-ti.t-Wait,
+.sw-ti.t-wait {
+  background: rgba(242, 169, 59, 0.18);
+  border-color: rgba(217, 130, 24, 0.24);
+  color: var(--amber);
+}
+.sw-ti.blue,
+.sw-ti.t-fix {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: var(--sky);
+}
+.sw-ti.vio,
+.sw-ti.t-free {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(124, 58, 237, 0.24);
+  color: var(--violet);
+}
+
+/* Search Input Container (.sw-search) — Glass search bar for Notifications & AI Advisor */
+.sw-search {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: 16px;
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass2);
+  border: 1.5px solid var(--stroke);
+  box-shadow: inset 0 1px 2px rgba(11, 42, 34, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.sw-search:focus-within {
+  border-color: var(--em);
+  box-shadow: 0 0 0 3.5px rgba(15, 157, 110, 0.16);
+}
+.sw-search > input {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.sw-search > input::placeholder {
+  color: var(--ink3);
+  font-weight: 500;
+}
+
+/* Segmented Tabs (.seg) — Clear track container, distinct button hit areas, high-contrast active state */
+.sw-seg {
+  display: flex;
+  align-items: stretch;
+  padding: 4px;
+  border-radius: 18px;
+  background: rgba(11, 58, 43, 0.07);
+  border: 1.5px solid var(--stroke);
+  box-shadow: inset 0 1px 2px rgba(11, 42, 34, 0.06);
+  position: relative;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+.dark .sw-seg {
+  background: rgba(255, 255, 255, 0.06);
+}
+.sw-seg-interactive,
+.sw-seg-split {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Single shared rounded-corner moving indicator inside SegmentedControl */
+.sw-seg-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform, width, height;
+  background: linear-gradient(135deg, var(--em), var(--em2));
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 6px 14px -5px var(--em);
+}
+.sw-seg button {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.4375rem 0.5rem;
+  font-weight: 800;
+  font-size: 0.84375rem;
+  line-height: 1.25;
+  color: var(--ink2);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(11, 58, 43, 0.08);
+  border-radius: 14px;
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: color 0.16s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.dark .sw-seg button {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.sw-seg button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sw-seg button:hover:not(.on):not(:disabled) {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  border-color: var(--stroke);
+}
+.dark .sw-seg button:hover:not(.on):not(:disabled) {
+  background: rgba(255, 255, 255, 0.10);
+}
+.sw-seg button > svg {
+  flex-shrink: 0;
+}
+.sw-seg:not(.sw-seg-interactive) button.on {
+  color: #fff;
+  background: linear-gradient(135deg, var(--em), var(--em2));
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 6px 14px -5px var(--em);
+}
+.sw-seg.sw-seg-interactive button.on {
+  color: #fff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.sw-seg.sw-seg-interactive button.sw-seg-origin-active {
+  color: var(--sw-em-d);
+  border-color: rgba(15, 157, 110, 0.35);
+}
+
+/* Selectable Option Cards (.sw-choice-card) — Used for Fund Type, Wallet Type, Demo Accounts */
+.sw-choice-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.375rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border-radius: 18px;
+  background: var(--glass2);
+  border: 1.5px solid var(--sw-border-strong);
+  box-shadow: 0 4px 12px -6px rgba(11, 42, 34, 0.12);
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.15s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.sw-choice-card:hover:not(.on):not(:disabled) {
+  border-color: var(--em);
+}
+.sw-choice-card:not(.sw-choice-card-interactive):active {
+  transform: scale(0.985);
+}
+.sw-choice-card:not(.sw-choice-card-interactive).on {
+  border: 2px solid var(--em);
+  background: var(--sw-selected-bg);
+  box-shadow: 0 8px 20px -10px var(--em);
+}
+/* Shared moving rounded-card indicator for DraggableChoiceCards */
+.sw-choice-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 15;
+  border-radius: 18px;
+  border: 2px solid var(--em);
+  background: var(--sw-selected-bg);
+  box-shadow: 0 8px 20px -10px var(--em);
+  will-change: transform, width, height;
+}
+.sw-choice-card.sw-choice-card-interactive.on {
+  border-color: transparent;
+}
+
+/* Horizontal Filter Pills (.pills / .pill) — Intentional horizontal carousel */
+.sw-pills {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding: 0.125rem 1rem;
+}
+.sw-pills::-webkit-scrollbar {
+  display: none;
+}
+.sw-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
+  min-height: 2.75rem;
+  padding: 0.5625rem 1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  background: var(--glass2);
+  border: 1.5px solid var(--sw-border-strong);
+  box-shadow: 0 2px 6px -2px rgba(11, 42, 34, 0.10);
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.sw-pill:hover:not(.on) {
+  border-color: var(--em);
+}
+.sw-pill.on {
+  background: linear-gradient(135deg, var(--em), var(--em2));
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 14px -6px var(--em);
+}
+
+/* Progress Bar (.bar) */
+.sw-bar {
+  height: 9px;
+  border-radius: 9px;
+  background: var(--line);
+  overflow: hidden;
+}
+.sw-bar > i,
+.sw-bar > div {
+  display: block;
+  height: 100%;
+  border-radius: 9px;
+  background: linear-gradient(90deg, var(--em), var(--em2));
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sw-bar.vio > i,
+.sw-bar.vio > div {
+  background: linear-gradient(90deg, #8b5cf6, #6d5ef0);
+}
+.sw-bar.amb > i,
+.sw-bar.amb > div {
+  background: linear-gradient(90deg, #f2a93b, #e5753b);
+}
+.sw-bar.danger > i,
+.sw-bar.danger > div {
+  background: linear-gradient(90deg, #e5484d, #f2799b);
+}
+
+/* Buttons (.btn)
+   - Default width is auto so flex row buttons (e.g. Cancel + Submit in modal footers)
+     never force 100% width and crush sibling buttons.
+   - Full-width block buttons use .w-full explicitly.
+   - Reduced heavy repetitive shadows; clear background + crisp border define button hierarchy. */
+.sw-btn {
+  display: inline-flex !important;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5625rem;
+  width: auto;
+  max-width: 100%;
+  min-width: 2.75rem;
+  min-height: 3.125rem;
+  padding: 0.6875rem 1.125rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  font-weight: 800;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--em), var(--em2));
+  box-shadow: 0 4px 12px -4px rgba(15, 157, 110, 0.28), inset 0 1px 0 0 rgba(255, 255, 255, 0.26);
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+.sw-btn.w-full,
+.sw-btn.block {
+  width: 100%;
+}
+.sw-btn > svg {
+  flex-shrink: 0;
+}
+.sw-btn:active {
+  transform: scale(0.97);
+}
+.sw-btn:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.sw-btn-pri {
+  color: #fff;
+  background: linear-gradient(135deg, var(--em), var(--em2));
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: 0 4px 12px -4px rgba(15, 157, 110, 0.28), inset 0 1px 0 0 rgba(255, 255, 255, 0.26);
+}
+.sw-btn.ghost,
+.sw-btn-ghost {
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass2);
+  color: var(--ink);
+  border: 1.5px solid var(--sw-border-strong);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.55);
+}
+.dark .sw-btn.ghost,
+.dark .sw-btn-ghost {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+.sw-btn.ghost:hover,
+.sw-btn-ghost:hover {
+  border-color: var(--em);
+}
+.sw-btn.warn,
+.sw-btn-warn {
+  background: var(--sw-warning-bg);
+  color: var(--sw-warn);
+  border: 1.5px solid rgba(217, 130, 24, 0.42);
+  box-shadow: none;
+}
+.sw-btn.danger,
+.sw-btn-danger {
+  background: linear-gradient(135deg, #e5484d, #f2799b);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 12px -4px rgba(229, 72, 77, 0.30);
+}
+.sw-btn.sm,
+.sw-btn-sm {
+  min-height: 2.75rem;
+  height: auto;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  line-height: 1.28;
+  width: auto;
+  max-width: 100%;
+  padding: 0.5rem 0.9375rem;
+  white-space: nowrap;
+}
+.sw-btn.sm.w-full,
+.sw-btn-sm.w-full {
+  width: 100%;
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* Modal Footer Action Row (.sw-modal-footer)
+   - Cancel button: content-width with min-width 88px (5.5rem), max-width 48%, flex: 0 0 auto
+   - Submit button: occupies remaining width (flex: 1 1 auto), min-width 0, centered inline-flex
+   - Height >= 48px (3rem), gap 12px (0.75rem) */
+.sw-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  width: 100%;
+  min-width: 0;
+}
+.sw-modal-footer > .sw-btn-cancel {
+  flex: 0 0 auto;
+  min-width: 5rem;
+  max-width: 44%;
+  min-height: 2.75rem;
+  padding-inline: 0.875rem;
+  font-weight: 600;
+  color: var(--ink2);
+  background: var(--glass);
+  border-color: var(--stroke);
+  box-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sw-modal-footer > .sw-btn-submit {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sw-modal-footer > .w-full {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+}
+
+.sw-sheet-body input,
+.sw-sheet-body textarea,
+.sw-sheet-body select {
+  scroll-margin-top: 0.75rem;
+  scroll-margin-bottom: 5.5rem;
+}
+
+/* =========================================================================
+   MODAL & BOTTOM SHEET OVERLAY (.sw-ov, .sw-sheet, .sw-grab)
+   - Strictly positioned over phone shell (#sw-overlay-root) above bottom nav
+   - High-opacity readable surface (97%) + blur(24px) so background text never bleeds through
+   - Bounded height with flex column so long forms scroll smoothly inside body
+   ========================================================================= */
+.sw-ov {
+  pointer-events: auto;
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  bottom: 0;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 440px;
+  height: 100dvh;
+  max-height: 100dvh;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background-color: var(--sw-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* On tall desktop viewports where the full 956px phone shell fits inside the window, scope directly to the phone shell */
+@media (min-width: 640px) and (min-height: 980px) {
+  .sw-ov {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    max-height: 100%;
+  }
+}
+
+.sw-sheet {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: min(calc(100% - 1.75rem), calc(100dvh - 1.75rem));
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 26px 26px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.72);
+  background-color: var(--sw-sheet-bg);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  color: var(--ink);
+  box-shadow: 0 -20px 48px rgba(4, 25, 18, 0.36);
+  padding: 1rem 1.125rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+.dark .sw-sheet {
+  border-top-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 -20px 48px rgba(0, 0, 0, 0.65);
+}
+
+.sw-grab {
+  width: 38px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(100, 130, 119, 0.35);
+  margin: 0 auto 0.5rem;
   flex-shrink: 0;
 }
 
-.light .notebook-hole,
-html.light .notebook-hole,
-:root:not(.dark) .notebook-hole {
-  background: #231b14;
-  box-shadow: 
-    inset 0 1.5px 3px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(0, 0, 0, 0.12);
-}
-
-/* Vòng còng kim loại mạ vàng đồng (Brass Metallic Ring Loop) uốn cong */
-.notebook-ring-loop {
-  position: relative;
-  flex: 1;
-  height: 13px;
-  margin: 0 -2px;
-  border-radius: 6px;
-  border: 3px solid transparent;
-  background: 
-    linear-gradient(135deg, #fde047 0%, #ca8a04 35%, #713f12 70%, #eab308 100%) border-box;
-  box-shadow: 
-    0 3px 6px rgba(0, 0, 0, 0.55),
-    inset 0 1px 1px rgba(255, 255, 255, 0.5);
-}
-
-.notebook-ring-sheen {
-  position: absolute;
-  top: 1px;
-  left: 20%;
-  right: 20%;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 1px;
-  filter: blur(0.2px);
-}
-
-/* ================= TRANG GIẤY SỔ (NOTEBOOK PAPER PAGES) ================= */
-.auth-form-box {
-  position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 36px 36px;
-  z-index: 2;
-  overflow-y: auto;
-  border-radius: 15px;
-}
-
-/* Trang sổ bên phải: FORM ĐĂNG NHẬP */
-.auth-form-box.login {
-  right: 0;
-  left: auto;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-  /* Bề mặt giấy sổ mịn màng, cao cấp, không đường kẻ rối mắt */
-  background-color: #101622;
-}
-
-.light .auth-form-box.login,
-html.light .auth-form-box.login,
-:root:not(.dark) .auth-form-box.login {
-  /* Giấy sổ màu ngà tự nhiên cao cấp, bề mặt trơn sạch */
-  background-color: #FCFBF7;
-}
-
-/* Hiệu ứng bóng uốn lòng máng gần gáy sổ bên trái trang Login */
-.auth-form-box.login::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 48px;
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0.16) 35%,
-    rgba(0, 0, 0, 0.02) 75%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-
-.light .auth-form-box.login::before,
-html.light .auth-form-box.login::before,
-:root:not(.dark) .auth-form-box.login::before {
-  background: linear-gradient(
-    to right,
-    rgba(30, 20, 10, 0.16) 0%,
-    rgba(30, 20, 10, 0.07) 35%,
-    rgba(30, 20, 10, 0.01) 75%,
-    transparent 100%
-  );
-}
-
-/* Khi lật sang Đăng ký: Trang Đăng nhập vẫn nằm nguyên vẹn trên giấy sổ, chỉ ngắt pointer-events khi bị trang phân mục che */
-.auth-container.active .auth-form-box.login {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: none;
-}
-
-/* Trang sổ bên trái: FORM ĐĂNG KÝ */
-.auth-form-box.register {
-  left: 0;
-  right: auto;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  visibility: visible;
-  opacity: 1;
-  pointer-events: none;
-  /* Bề mặt giấy sổ mịn màng, cao cấp, không đường kẻ rối mắt */
-  background-color: #101622;
-}
-
-.light .auth-form-box.register,
-html.light .auth-form-box.register,
-:root:not(.dark) .auth-form-box.register {
-  /* Giấy sổ màu ngà tự nhiên cao cấp, bề mặt trơn sạch */
-  background-color: #FCFBF7;
-}
-
-/* Hiệu ứng bóng uốn lòng máng gần gáy sổ bên phải trang Register */
-.auth-form-box.register::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 48px;
-  background: linear-gradient(
-    to left,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0.16) 35%,
-    rgba(0, 0, 0, 0.02) 75%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-
-.light .auth-form-box.register::before,
-html.light .auth-form-box.register::before,
-:root:not(.dark) .auth-form-box.register::before {
-  background: linear-gradient(
-    to left,
-    rgba(30, 20, 10, 0.16) 0%,
-    rgba(30, 20, 10, 0.07) 35%,
-    rgba(30, 20, 10, 0.01) 75%,
-    transparent 100%
-  );
-}
-
-/* Khi lật mở trang phân mục để lộ trang Đăng ký: trang đã có sẵn trên giấy sổ, chỉ kích hoạt pointer-events */
-.auth-container.active .auth-form-box.register {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* KHÓA THAO TÁC TRÊN 2 TRANG SỔ TRONG SUỐT QUÁ TRÌNH LẬT TRANG (CHỈ MỞ LẠI KHI QUA TRANG HOÀN TOÀN)
-   Các nút ngoài cuốn sổ (nút chọn theme dark/light, nút chọn ngôn ngữ) vẫn hoạt động bình thường */
-.auth-container.is-flipping,
-.auth-container.is-flipping * {
-  pointer-events: none !important;
-  user-select: none !important;
-}
-
-/* ================= TRANG PHÂN MỤC SỔ TAY LẬT 3D (NOTEBOOK DIVIDER LEAF) ================= */
-.auth-toggle-box {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  transform-origin: right center; /* Ghim đúng tại gáy còng ở giữa */
-  transform-style: preserve-3d;
-  transition: transform 1.1s cubic-bezier(0.645, 0.045, 0.355, 1);
-  z-index: 50;
-  pointer-events: none;
-}
-
-/* Khi bấm "ĐĂNG KÝ NGAY": Trang phân mục sổ tay lật qua phải (rotateY +180deg) */
-.auth-container.active .auth-toggle-box {
-  transform: rotateY(180deg);
-}
-
-/* Mặt trang phân mục sổ tay: Chất liệu giấy da/kraft dày dặn cao cấp */
-.auth-toggle-panel {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  color: #ffffff;
-  background: 
-    linear-gradient(135deg, #132b21 0%, #0d2018 50%, #07130f 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 40px 32px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  pointer-events: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65);
-  transform-style: preserve-3d;
-}
-
-.light .auth-toggle-panel,
-html.light .auth-toggle-panel,
-:root:not(.dark) .auth-toggle-panel {
-  background: 
-    linear-gradient(135deg, #17382b 0%, #102920 50%, #0a1b14 100%);
-  color: #ffffff;
-  box-shadow: 0 10px 35px rgba(25, 18, 10, 0.45);
-}
-
-/* Họa tiết watermark êm dịu của trang phân mục sổ */
-.auth-toggle-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 80%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Mặt trước trang phân mục: Bên trái (Chưa có tài khoản -> Đăng ký ngay) */
-.auth-toggle-panel.toggle-left {
-  transform: rotateY(0deg) translateZ(1px);
-  border-top-left-radius: 15px;
-  border-bottom-left-radius: 15px;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: none;
-  box-shadow: 
-    0 12px 35px rgba(0, 0, 0, 0.65),
-    inset -12px 0 20px -4px rgba(0, 0, 0, 0.55),
-    inset -1px 0 0 rgba(0, 0, 0, 0.8);
-}
-
-.light .auth-toggle-panel.toggle-left,
-html.light .auth-toggle-panel.toggle-left,
-:root:not(.dark) .auth-toggle-panel.toggle-left {
-  box-shadow: 
-    0 12px 32px rgba(25, 18, 10, 0.35),
-    inset -12px 0 20px -4px rgba(0, 0, 0, 0.3),
-    inset -1px 0 0 rgba(0, 0, 0, 0.5);
-}
-
-/* Lỗ khuyết đục gáy còng của trang phân mục bên trái (Spine notch perforations) */
-.auth-toggle-panel.toggle-left::after {
-  content: '';
-  position: absolute;
-  top: 14px;
-  bottom: 14px;
-  right: 6px;
-  width: 2px;
-  background: repeating-linear-gradient(
-    to bottom,
-    #c49658 0px,
-    #c49658 5px,
-    transparent 5px,
-    transparent 10px
-  );
-  box-shadow: 0.5px 0 1px rgba(0, 0, 0, 0.8), -0.5px 0 0.5px rgba(0, 0, 0, 0.5);
-  opacity: 0.75;
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* Mặt sau trang phân mục: Khi lật sang bên phải (Đã có tài khoản -> Đăng nhập ngay) */
-.auth-toggle-panel.toggle-right {
-  transform: rotateY(180deg) translateZ(1px);
-  border-top-right-radius: 15px;
-  border-bottom-right-radius: 15px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-left: none;
-  box-shadow: 
-    0 12px 35px rgba(0, 0, 0, 0.65),
-    inset 12px 0 20px -4px rgba(0, 0, 0, 0.55),
-    inset 1px 0 0 rgba(0, 0, 0, 0.8);
-}
-
-.light .auth-toggle-panel.toggle-right,
-html.light .auth-toggle-panel.toggle-right,
-:root:not(.dark) .auth-toggle-panel.toggle-right {
-  box-shadow: 
-    0 12px 32px rgba(25, 18, 10, 0.35),
-    inset 12px 0 20px -4px rgba(0, 0, 0, 0.3),
-    inset 1px 0 0 rgba(0, 0, 0, 0.5);
-}
-
-/* Lỗ khuyết đục gáy còng của trang phân mục khi lật sang phải */
-.auth-toggle-panel.toggle-right::after {
-  content: '';
-  position: absolute;
-  top: 14px;
-  bottom: 14px;
-  left: 6px;
-  width: 2px;
-  background: repeating-linear-gradient(
-    to bottom,
-    #c49658 0px,
-    #c49658 5px,
-    transparent 5px,
-    transparent 10px
-  );
-  box-shadow: -0.5px 0 1px rgba(0, 0, 0, 0.8), 0.5px 0 0.5px rgba(0, 0, 0, 0.5);
-  opacity: 0.75;
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* Responsive: Giữ NGUYÊN hiệu ứng lật trang ngang (rotateY) trên mọi kích thước màn hình */
-@media screen and (max-width: 768px) {
-  .auth-book-wrapper {
-    padding: 10px 8px;
+/* Short / landscape viewports (e.g. 844x390): keep shell & modals bounded within viewport height */
+@media (max-height: 560px) {
+  .sw-phone-shell-wrapper {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
 
-  .auth-container {
-    width: 100%;
-    min-height: 640px;
-    margin: 10px auto;
+  .sw-phone-shell-frame {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
   }
 
-  .auth-form-box {
-    padding: 24px 18px;
+  .sw-ov {
+    max-width: min(100vw, 520px);
+    padding: 0.375rem 0.5rem;
+    justify-content: center;
   }
 
-  .auth-toggle-panel {
-    padding: 24px 16px;
+  .sw-sheet {
+    max-height: calc(100dvh - 0.75rem);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    padding: 0.625rem 1rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
+  }
+  .dark .sw-sheet {
+    border-color: rgba(255, 255, 255, 0.16);
   }
 
-  .notebook-pen-loop {
+  .sw-grab {
     display: none;
   }
 
-  .notebook-ribbon-bookmark {
-    left: calc(50% + 14px);
-    width: 13px;
-    top: -8px;
-    height: 50%;
-    max-height: 310px;
+  .sw-sheet-header {
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .sw-sheet-footer {
+    margin-top: 0.5rem !important;
+    padding-top: 0.5rem !important;
   }
 }
 
-@media screen and (max-width: 520px) {
-  .auth-container {
-    min-height: 620px;
-  }
-
-  .auth-form-box {
-    padding: 20px 12px;
-  }
-
-  .auth-toggle-panel {
-    padding: 20px 12px;
-  }
-
-  .notebook-ribbon-bookmark {
-    left: calc(50% + 11px);
-    width: 10px;
-    top: -6px;
-    height: 50%;
-    max-height: 290px;
-  }
+/* Toggle Switch (.tg) */
+.sw-tg {
+  position: relative;
+  width: 50px;
+  height: 30px;
+  border-radius: 30px;
+  background: rgba(11, 42, 34, 0.18);
+  flex: none;
+  transition: background 0.22s ease;
+}
+.dark .sw-tg {
+  background: rgba(255, 255, 255, 0.18);
+}
+.sw-tg::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.sw-tg.on {
+  background: var(--em);
+}
+.sw-tg.on::after {
+  transform: translateX(20px);
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Key-Value Receipt Row (.kv) */
+.sw-kv {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.375rem 0.75rem;
+  min-width: 0;
+  padding: 0.6875rem 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.9375rem;
+}
+.sw-kv:last-child {
+  border-bottom: 0;
+}
+.sw-kv span:first-child {
+  color: var(--ink2);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.sw-kv b {
+  font-weight: 700;
+  text-align: right;
+  color: var(--ink);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
-::-webkit-scrollbar-track {
+/* Role-based Typography Helper Classes */
+.sw-page-title {
+  font-family: var(--font-display);
+  font-size: var(--sw-fs-page-title);
+  line-height: 1.18;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.sw-section-title {
+  font-family: var(--font-display);
+  font-size: var(--sw-fs-section-title);
+  line-height: 1.24;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.sw-item-title {
+  font-family: var(--font-sans);
+  font-size: var(--sw-fs-item-title);
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sw-tx-amount {
+  font-family: var(--font-display);
+  font-size: var(--sw-fs-tx-amount);
+  line-height: 1.3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sw-support-text {
+  font-size: var(--sw-fs-support);
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.sw-meta-text {
+  font-size: var(--sw-fs-meta);
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.sw-lbl {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+/* Badges (.badge) */
+.sw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  padding: 0.1875rem 0.5625rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(11, 58, 43, 0.10);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.dark .sw-badge {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.sw-badge.b-ok {
+  background: rgba(20, 197, 139, 0.16);
+  color: var(--sw-em-d);
+}
+.sw-badge.b-wait,
+.sw-badge.b-Wait {
+  background: rgba(242, 169, 59, 0.20);
+  color: var(--sw-warning);
+}
+.sw-badge.b-fail {
+  background: rgba(229, 72, 77, 0.15);
+  color: var(--rose);
+}
+.sw-badge.b-bad {
+  background: rgba(100, 130, 119, 0.16);
+  color: var(--ink2);
+}
+.sw-badge.b-fix {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--sky);
+}
+.sw-badge.b-free {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--violet);
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bottom Navigation (.nav) — Translucent refractive glass + single moving circular light ring */
+.sw-nav {
+  position: relative;
+  overflow: visible;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background-color: var(--nav-solid);
+  background-image: var(--nav);
+  backdrop-filter: blur(22px) saturate(1.65);
+  -webkit-backdrop-filter: blur(22px) saturate(1.65);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  outline: 1px solid rgba(11, 58, 43, 0.10);
+  border-radius: 28px;
+  box-shadow:
+    0 14px 32px -12px rgba(7, 56, 40, 0.24),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 0 rgba(15, 157, 110, 0.10);
+}
+.dark .sw-nav {
+  border-color: rgba(255, 255, 255, 0.18);
+  outline-color: rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 18px 36px -12px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 0 rgba(47, 211, 154, 0.12);
+}
+
+/* Soft diffuse emerald reflection cast onto the navbar glass surface beneath the ring */
+.sw-nav-ring-reflection {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 64px;
+  height: 52px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform;
+  background: radial-gradient(
+    circle,
+    rgba(20, 197, 139, 0.30) 0%,
+    rgba(20, 197, 139, 0.12) 48%,
+    rgba(20, 197, 139, 0) 74%
+  );
+  filter: blur(5px);
+}
+.dark .sw-nav-ring-reflection {
+  background: radial-gradient(
+    circle,
+    rgba(47, 211, 154, 0.34) 0%,
+    rgba(47, 211, 154, 0.14) 50%,
+    rgba(47, 211, 154, 0) 76%
+  );
+}
+
+/* Single shared circular light ring hugging the active icon (40x40px) */
+.sw-nav-ring-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 10;
+  will-change: transform;
+  background: radial-gradient(
+    circle at 50% 26%,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(184, 240, 216, 0.42) 48%,
+    rgba(20, 197, 139, 0.22) 100%
+  );
+  border: 1.75px solid rgba(15, 157, 110, 0.72);
+  box-shadow:
+    0 0 12px rgba(20, 197, 139, 0.42),
+    0 4px 10px -3px rgba(11, 110, 80, 0.28),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(15, 157, 110, 0.25);
+}
+.dark .sw-nav-ring-indicator {
+  background: radial-gradient(
+    circle at 50% 24%,
+    rgba(184, 240, 216, 0.30) 0%,
+    rgba(47, 211, 154, 0.20) 52%,
+    rgba(15, 157, 110, 0.14) 100%
+  );
+  border: 1.75px solid rgba(94, 242, 192, 0.85);
+  box-shadow:
+    0 0 14px rgba(47, 211, 154, 0.50),
+    0 4px 12px -2px rgba(0, 0, 0, 0.50),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(47, 211, 154, 0.32);
+}
+
+/* Notification/Invite badge on navbar icon — sits clearly above the light ring */
+.sw-nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--rose);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid #f4faf7;
+  box-shadow: 0 2px 6px rgba(229, 72, 77, 0.35);
+}
+.dark .sw-nav-badge {
+  border-color: #10241d;
+}
+
+.sw-glass {
+  background-color: var(--sw-surface-solid-fallback);
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  outline: 1px solid rgba(11, 58, 43, 0.08);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow:
+    0 4px 20px -2px rgba(11, 42, 34, 0.05),
+    0 10px 28px -4px rgba(11, 42, 34, 0.07),
+    inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.8);
+}
+.dark .sw-glass {
+  border-color: rgba(255, 255, 255, 0.18);
+  outline-color: rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow);
+}
+
+/* Guaranteed bottom scroll clearance placed after natural page content */
+.sw-page-scroll-content {
+  padding-bottom: var(--sw-bottom-nav-clearance);
+}
+
+.sw-page-scroll-content > .sw-top,
+.sw-page-scroll-content .sw-sec-h {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sw-page-scroll-content .sw-hero,
+.sw-page-scroll-content .sw-qa,
+.sw-page-scroll-content .sw-seg,
+.sw-page-scroll-content .sw-sec,
+.sw-page-scroll-content .sw-sec-stack {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.sw-pills {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+
+.sw-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.sw-page-scroll-content-no-nav {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar,
+.sw-admin-sidebar-nav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.no-scrollbar,
+.sw-admin-sidebar-nav {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.sw-admin-sidebar-nav {
+  overflow-x: hidden;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(11, 42, 34, 0.18);
   border-radius: 9999px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.35);
+.sw-sheet-body {
+  scroll-padding-bottom: 5rem;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.6);
-}
-
-/* ================= DESK STATIONERY PENS (BÚT TO ĐẶT NGOÀI CUỐN SỔ) ================= */
-
-/* Vùng chứa các bút bên ngoài cuốn sổ */
-.desk-stationery-item {
-  position: absolute;
-  pointer-events: auto;
-  user-select: none;
-  z-index: 4;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
-  cursor: pointer;
-}
-
-.desk-stationery-item:hover {
-  filter: brightness(1.1);
-}
-
-/* Hiệu ứng bóng đổ chân thực trên mặt bàn (Dark vs Light) */
-.desk-pen-shadow {
-  filter: drop-shadow(10px 18px 20px rgba(0, 0, 0, 0.58)) drop-shadow(3px 6px 8px rgba(0, 0, 0, 0.42));
-}
-
-.light .desk-pen-shadow,
-html.light .desk-pen-shadow,
-:root:not(.dark) .desk-pen-shadow {
-  filter: drop-shadow(8px 16px 18px rgba(45, 25, 15, 0.38)) drop-shadow(3px 5px 7px rgba(45, 25, 15, 0.22));
-}
-
-/* 1. CÂY BÚT CHÌ GỖ TO (BIG CLASSIC HEXAGONAL CEDAR WOOD PENCIL) */
-.desk-big-pencil {
-  position: relative;
-  width: 18px;
-  height: 275px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Ngòi chì graphite đen đậm sắc nét */
-.desk-pencil-lead {
-  width: 5px;
-  height: 14px;
-  background: #18181b;
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-}
-
-/* Nón gỗ gọt để lộ vân gỗ tuyết tùng tự nhiên */
-.desk-pencil-wood {
-  width: 17px;
-  height: 32px;
-  background: linear-gradient(to bottom, #d4a373 0%, #e29578 40%, #bc6c25 100%);
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-}
-
-/* Thân bút chì to vát 3 mặt lục giác 3D */
-.desk-pencil-shaft {
-  width: 18px;
-  height: 180px;
-  display: flex;
-}
-
-.desk-pencil-facet-left {
-  width: 6px;
-  height: 100%;
-  background: linear-gradient(to bottom, #ca8a04, #a16207);
-}
-
-.desk-pencil-facet-center {
-  width: 6px;
-  height: 100%;
-  background: linear-gradient(to bottom, #fde047, #eab308);
-  position: relative;
-}
-
-/* Nhãn dập chữ chìm mã chì 2B mạ vàng nổi bật */
-.desk-pencil-facet-center::after {
-  content: '';
-  position: absolute;
-  top: 45px;
-  left: 1px;
-  width: 4px;
-  height: 65px;
-  background: linear-gradient(to bottom, rgba(113, 63, 18, 0.9), rgba(113, 63, 18, 0.6));
-  border-radius: 1px;
-}
-
-.desk-pencil-facet-right {
-  width: 6px;
-  height: 100%;
-  background: linear-gradient(to bottom, #eab308, #ca8a04);
-}
-
-/* Khâu đồng to có 3 đường rãnh ép (Brass Ferrule) */
-.desk-pencil-ferrule {
-  width: 18px;
-  height: 22px;
-  background: linear-gradient(to right, #78350f, #d97706, #fef3c7 50%, #b45309 85%, #78350f);
-  border-top: 1.5px solid #451a03;
-  border-bottom: 1.5px solid #451a03;
-  position: relative;
-}
-
-.desk-pencil-ferrule::before {
-  content: '';
-  position: absolute;
-  top: 6px;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: rgba(0, 0, 0, 0.45);
-}
-
-.desk-pencil-ferrule::after {
-  content: '';
-  position: absolute;
-  top: 13px;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: rgba(0, 0, 0, 0.45);
-}
-
-/* Đầu tẩy gôm hồng cổ điển to bản */
-.desk-pencil-eraser {
-  width: 17px;
-  height: 25px;
-  background: linear-gradient(to right, #fb7185 0%, #f43f5e 45%, #fda4af 75%, #e11d48 100%);
-  border-radius: 0 0 5px 5px;
-}
-
-
-/* 2. CÂY BÚT MÁY TO SANG TRỌNG (BIG LUXURY GOLD FOUNTAIN PEN) */
-.desk-big-fountain-pen {
-  position: relative;
-  width: 22px;
-  height: 295px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Ngòi bút máy to mạ vàng 18K chạm khắc tinh tế */
-.desk-fountain-nib {
-  width: 17px;
-  height: 40px;
-  background: linear-gradient(135deg, #fef08a 0%, #eab308 45%, #ca8a04 80%, #854d0e 100%);
-  clip-path: polygon(50% 0%, 95% 45%, 82% 100%, 18% 100%, 5% 45%);
-  position: relative;
-  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35);
-}
-
-/* Rãnh dẫn mực và lỗ thở vàng */
-.desk-fountain-nib::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1.5px;
-  height: 25px;
-  background: #713f12;
-}
-
-.desk-fountain-nib::after {
-  content: '';
-  position: absolute;
-  top: 23px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background: #713f12;
-  border-radius: 50%;
-}
-
-/* Cổ bút kim loại màu đen xám bóng mạ vòng vàng (Section grip) */
-.desk-fountain-grip {
-  width: 16px;
-  height: 42px;
-  background: linear-gradient(to right, #0f172a 0%, #334155 45%, #1e293b 80%, #0f172a 100%);
-  border-top: 2px solid #ca8a04;
-  border-bottom: 2.5px solid #ca8a04;
-}
-
-/* Vòng đai khâu mạ vàng to kết nối */
-.desk-fountain-band {
-  width: 22px;
-  height: 6px;
-  background: linear-gradient(to right, #ca8a04 0%, #fef08a 45%, #ca8a04 80%, #713f12 100%);
-  border-radius: 1px;
-}
-
-/* Thân bút to sơn mài đen tuyền bóng (Piano Black Lacquer) hoặc xanh đen */
-.desk-fountain-barrel {
-  width: 21px;
-  height: 110px;
-  background: linear-gradient(to right, #09090b 0%, #27272a 30%, #3f3f46 50%, #18181b 80%, #09090b 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.desk-fountain-barrel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 5px;
-  width: 3px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.45);
-  filter: blur(1px);
-}
-
-/* Nắp bút to gài ngược phía sau (Cap) */
-.desk-fountain-cap {
-  width: 22px;
-  height: 95px;
-  background: linear-gradient(to right, #09090b 0%, #18181b 30%, #27272a 50%, #09090b 100%);
-  border-top: 3px solid #ca8a04;
-  border-radius: 0 0 6px 6px;
-  position: relative;
-}
-
-/* Cài bút kim loại mạ vàng uốn cong (Clip) */
-.desk-fountain-clip {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 66px;
-  background: linear-gradient(to bottom, #fef08a, #ca8a04, #854d0e);
-  border-radius: 2.5px;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-}
-
-.desk-fountain-clip::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 7.5px;
-  height: 7.5px;
-  background: #eab308;
-  border-radius: 50%;
-}
-
-
-/* 3. CÂY BÚT ĐIỆN TỬ TO (BIG MODERN DIGITAL STYLUS / SMART PEN) */
-.desk-big-digital-stylus {
-  position: relative;
-  width: 18px;
-  height: 270px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Đầu ngòi stylus silicon mờ chính xác (Precision fine stylus nib) */
-.desk-stylus-nib {
-  width: 5px;
-  height: 15px;
-  background: linear-gradient(to bottom, #f8fafc, #cbd5e1);
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-}
-
-/* Nón cổ bút bo vuốt mềm mại */
-.desk-stylus-cone {
-  width: 16px;
-  height: 22px;
-  background: linear-gradient(to right, #cbd5e1 0%, #f8fafc 45%, #e2e8f0 75%, #94a3b8 100%);
-  clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
-}
-
-/* Thân bút điện tử to liền khối chất liệu sứ mờ (Ceramic Matte / Titanium) */
-.desk-stylus-body {
-  width: 18px;
-  height: 195px;
-  background: linear-gradient(to right, #cbd5e1 0%, #ffffff 40%, #f1f5f9 70%, #94a3b8 100%);
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-/* Cạnh vát phẳng từ tính để gắn sạc không dây (Magnetic flat facet) */
-.desk-stylus-flat-facet {
-  position: absolute;
-  top: 10px;
-  left: 2px;
-  width: 3.5px;
-  height: 175px;
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 2px;
-}
-
-/* Vòng đèn LED tín hiệu kết nối / pin thông minh (Smart LED indicator ring) */
-.desk-stylus-led-ring {
-  width: 18px;
-  height: 4px;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981, 0 0 14px rgba(16, 185, 129, 0.7);
-  border-radius: 1px;
-}
-
-/* Đỉnh nắp bút điện tử mạ kim loại phay xước */
-.desk-stylus-cap {
-  width: 18px;
-  height: 32px;
-  background: linear-gradient(to right, #94a3b8, #e2e8f0, #64748b);
-  border-radius: 0 0 5px 5px;
-  border-top: 1.5px solid #cbd5e1;
-  position: relative;
-}
-
-.desk-stylus-cap::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 2px;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 1px;
-}
-
-
-/* ================= VỊ TRÍ 3 BÚT TO NGOÀI CUỐN SỔ (RESPONSIVE POSITIONS) ================= */
-
-/* Màn hình laptop (1024px - 1279px) */
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .desk-pen-pos-pencil {
-    left: -26px;
-    top: 14%;
-    transform: rotate(-13deg) scale(0.9);
+@media (max-width: 359px) {
+  .sw-seg button {
+    padding: 0.375rem 0.3125rem;
+    font-size: 0.78125rem;
   }
-  .desk-pen-pos-pencil:hover {
-    transform: rotate(-10deg) translateY(-6px) scale(0.95);
+  .sw-modal-footer {
+    gap: 0.5rem;
   }
-
-  .desk-pen-pos-fountain {
-    right: -28px;
-    top: 10%;
-    transform: rotate(12deg) scale(0.9);
+  .sw-modal-footer > .sw-btn-cancel {
+    min-width: 4.5rem;
+    padding-inline: 0.75rem;
   }
-  .desk-pen-pos-fountain:hover {
-    transform: rotate(9deg) translateY(-6px) scale(0.95);
-  }
-
-  .desk-pen-pos-stylus {
-    right: -32px;
-    bottom: 10%;
-    transform: rotate(20deg) scale(0.9);
-  }
-  .desk-pen-pos-stylus:hover {
-    transform: rotate(16deg) translateY(-6px) scale(0.95);
+  .sw-modal-footer > .sw-btn-submit {
+    padding-inline: 0.875rem;
+    font-size: 0.875rem;
   }
 }
 
-/* Màn hình Desktop tiêu chuẩn (1280px - 1535px) */
-@media (min-width: 1280px) and (max-width: 1535px) {
-  .desk-pen-pos-pencil {
-    left: -78px;
-    top: 18%;
-    transform: rotate(-15deg);
+@media (max-width: 340px) {
+  .sw-qa {
+    gap: 0.375rem;
   }
-  .desk-pen-pos-pencil:hover {
-    transform: rotate(-11deg) translateY(-8px) scale(1.05);
-  }
-
-  .desk-pen-pos-fountain {
-    right: -76px;
-    top: 12%;
-    transform: rotate(13deg);
-  }
-  .desk-pen-pos-fountain:hover {
-    transform: rotate(9deg) translateY(-8px) scale(1.05);
-  }
-
-  .desk-pen-pos-stylus {
-    right: -92px;
-    bottom: 14%;
-    transform: rotate(22deg);
-  }
-  .desk-pen-pos-stylus:hover {
-    transform: rotate(18deg) translateY(-8px) scale(1.05);
+  .sw-qa-btn,
+  .sw-qb {
+    padding: 0.4375rem 0.1875rem;
+    font-size: 0.75rem;
   }
 }
-
-/* Màn hình lớn (>= 1536px 2xl) */
-@media (min-width: 1536px) {
-  .desk-pen-pos-pencil {
-    left: -105px;
-    top: 18%;
-    transform: rotate(-16deg);
-  }
-  .desk-pen-pos-pencil:hover {
-    transform: rotate(-12deg) translateY(-10px) scale(1.06);
-  }
-
-  .desk-pen-pos-fountain {
-    right: -102px;
-    top: 12%;
-    transform: rotate(14deg);
-  }
-  .desk-pen-pos-fountain:hover {
-    transform: rotate(10deg) translateY(-10px) scale(1.06);
-  }
-
-  .desk-pen-pos-stylus {
-    right: -125px;
-    bottom: 15%;
-    transform: rotate(24deg);
-  }
-  .desk-pen-pos-stylus:hover {
-    transform: rotate(19deg) translateY(-10px) scale(1.06);
-  }
-}
-
-/* ================= THEME-AWARE SKELETON SHIMMER ANIMATION ================= */
-@keyframes skeleton-shimmer {
+@keyframes sw-donut-arc-sweep {
   0% {
-    transform: translateX(-100%);
+    stroke-dasharray: 0 var(--sw-seg-circ, 214);
   }
   100% {
-    transform: translateX(100%);
+    stroke-dasharray: var(--sw-seg-dash) var(--sw-seg-gap);
   }
 }
 
-.animate-shimmer {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  contain: paint;
+.sw-donut-arc-segment {
+  animation-name: sw-donut-arc-sweep;
+  animation-timing-function: cubic-bezier(0.25, 0.85, 0.35, 1);
+  animation-fill-mode: both;
 }
 
-.animate-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.45) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: skeleton-shimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
+@keyframes sw-cashflow-bar-grow {
+  0% {
+    transform: scaleY(0);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
-.dark .animate-shimmer::after,
-html.dark .animate-shimmer::after {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+.sw-cashflow-bar-rise {
+  transform-origin: bottom center;
+  animation-name: sw-cashflow-bar-grow;
+  animation-duration: 460ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  will-change: transform;
+}
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-shimmer::after {
-    animation: none;
-    display: none;
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-}
-
-/* ================= SPENDWISE BRANDED ANIMATED "S" LOADING ================= */
-
-/* A1. Breathing Ambient Glow (3.0s cycle) */
-@keyframes spendwise-s-breathe {
-  0%, 100% {
-    transform: scale(0.9);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 0.95;
-  }
-}
-
-.animate-spendwise-s-breathe {
-  animation: spendwise-s-breathe 3.0s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-/* A5. Drawing Animation of "S" (3.2s cycle)
-   0% - 60%: Draw from top-right (100) to bottom-left (0)
-   60% - 86%: Hold completed S shape (0)
-   86% - 96%: Gentle fade-out
-   96% - 100%: Reset offset to 100 and opacity back to 1 for next loop
-*/
-@keyframes spendwise-s-draw-cycle {
-  0% {
-    stroke-dashoffset: 100;
-    opacity: 1;
-  }
-  60% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  86% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  96% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-  98% {
-    stroke-dashoffset: 100;
-    opacity: 0;
-  }
-  100% {
-    stroke-dashoffset: 100;
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-s-path {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: spendwise-s-draw-cycle 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-.spendwise-s-path-static {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 0;
-  opacity: 1;
-}
-
-/* A8. Ripple Wave expanding at r="74" triggered at 60% completion */
-@keyframes spendwise-s-ripple-cycle {
-  0%, 58% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(0.85);
-    opacity: 0.85;
-  }
-  75% {
-    transform: scale(1.15);
-    opacity: 0.45;
-  }
-  88% {
-    transform: scale(1.35);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1.35);
-    opacity: 0;
-  }
-}
-
-.animate-spendwise-s-ripple {
-  animation: spendwise-s-ripple-cycle 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-/* Part B. Dual Arc Outer Ring: Continuous 360-deg Rotation (1.2s linear) */
-@keyframes spendwise-s-dual-arc-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spendwise-s-dual-arc-spin {
-  animation: spendwise-s-dual-arc-spin 1.2s linear infinite;
-}
-
-/* Part B. Dual Arc Pulsing Scale (1.2s ease-in-out) */
-@keyframes spendwise-s-dual-arc-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.85;
-  }
-  50% {
-    transform: scale(0.88);
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-s-dual-arc-pulse {
-  animation: spendwise-s-dual-arc-pulse 1.2s ease-in-out infinite;
-}
-
-/* Paused state override */
-.spendwise-s-loading-paused * {
-  animation-play-state: paused !important;
-}
-
-/* Accessibility: prefers-reduced-motion fallback */
-@media (prefers-reduced-motion: reduce) {
-  .animate-spendwise-s-breathe,
-  .animate-spendwise-s-path,
-  .animate-spendwise-s-ripple,
-  .animate-spendwise-s-dual-arc-spin,
-  .animate-spendwise-s-dual-arc-pulse {
+  .sw-donut-arc-segment,
+  .sw-cashflow-bar-rise {
     animation: none !important;
-  }
-
-  .animate-spendwise-s-path {
-    stroke-dashoffset: 0 !important;
-    opacity: 1 !important;
-  }
-
-  .animate-spendwise-s-ripple {
-    display: none !important;
-  }
-
-  .spendwise-s-bead-group {
-    display: none !important;
-  }
-}
-
-/* ================= S-LOADING FULL LIFECYCLE (SUCCESS, ERROR, OFFLINE, TIMEOUT) ================= */
-
-/* Success Checkmark Drawing (0.45s) */
-@keyframes spendwise-draw-check {
-  0% {
-    stroke-dashoffset: 40;
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-check {
-  stroke-dasharray: 40;
-  stroke-dashoffset: 40;
-  animation: spendwise-draw-check 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Error Cross Stroke 1 Drawing */
-@keyframes spendwise-draw-cross-1 {
-  0% {
-    stroke-dashoffset: 35;
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-cross-1 {
-  stroke-dasharray: 35;
-  stroke-dashoffset: 35;
-  animation: spendwise-draw-cross-1 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Error Cross Stroke 2 Drawing (staggered slightly by 0.1s) */
-@keyframes spendwise-draw-cross-2 {
-  0% {
-    stroke-dashoffset: 35;
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-cross-2 {
-  stroke-dasharray: 35;
-  stroke-dashoffset: 35;
-  animation: spendwise-draw-cross-2 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Single Result Ripple Burst */
-@keyframes spendwise-result-ripple {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1.35);
-    opacity: 0;
-  }
-}
-
-.animate-spendwise-result-ripple {
-  animation: spendwise-result-ripple 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Soft Icon Fade-in / Zoom */
-@keyframes spendwise-icon-enter {
-  0% {
-    transform: scale(0.85);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-spendwise-icon-enter {
-  animation: spendwise-icon-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* ================= SPENDWISE CINEMATIC SPLASH 2.1S ANIMATION ================= */
-
-/* 1. Core Logo Sequence (0 to 2.1s) */
-@keyframes spendwise-splash-core {
-  0% {
-    transform: scale(1);
-    filter: brightness(1) blur(0px);
-    opacity: 1;
-    animation-timing-function: ease-out;
-  }
-  9.52% { /* 0.2s: logo lún nhẹ scale 1 -> 0.9 (cảm giác nhấn nút) */
-    transform: scale(0.9);
-    filter: brightness(1) blur(0px);
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.22, 0.7, 0.2, 1);
-  }
-  57.14% { /* 1.2s: logo phóng to từ từ scale 0.9 -> ~1.4, brightness 1 -> 1.2 */
-    transform: scale(1.4);
-    filter: brightness(1.2) blur(0px);
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
-  }
-  100% { /* 2.1s: logo to lên ~1.7, brightness 1.5, blur 0 -> 6px, opacity 0 (tan vào không khí) */
-    transform: scale(1.7);
-    filter: brightness(1.5) blur(6px);
-    opacity: 0;
-  }
-}
-
-.animate-spendwise-splash-core {
-  transform-origin: center center;
-  animation: spendwise-splash-core 2.1s forwards;
-  will-change: transform, opacity, filter;
-}
-
-/* 2. Light Sheen Sweep (0.35s to 1.25s: duration 0.9s, delay 0.35s) */
-@keyframes spendwise-splash-sheen {
-  0% {
-    transform: translateX(-160%) rotate(20deg);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.95;
-  }
-  85% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translateX(260%) rotate(20deg);
-    opacity: 0;
-  }
-}
-
-.animate-spendwise-splash-sheen {
-  animation: spendwise-splash-sheen 0.9s cubic-bezier(0.22, 0.7, 0.2, 1) 0.35s forwards;
-  will-change: transform, opacity;
-}
-
-/* 3. Cyan Glow Halo (0.15s to 1.95s: duration 1.8s, delay 0.15s) */
-@keyframes spendwise-splash-glow {
-  0% {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  28% { /* ~0.65s: bùng lên đạt đỉnh ~40% */
-    opacity: 0.4;
-    transform: scale(1.4);
-  }
-  70% {
-    opacity: 0.2;
-    transform: scale(1.7);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.9);
-  }
-}
-
-.animate-spendwise-splash-glow {
-  animation: spendwise-splash-glow 1.8s cubic-bezier(0.22, 0.7, 0.2, 1) 0.15s forwards;
-  will-change: transform, opacity;
-}
-
-/* 4. Thin Border Ring (0.15s to 1.95s: duration 1.8s, delay 0.15s) */
-@keyframes spendwise-splash-ring {
-  0% {
-    opacity: 0.85;
-    transform: scale(1);
-  }
-  60% {
-    opacity: 0.4;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.3);
-  }
-}
-
-.animate-spendwise-splash-ring {
-  animation: spendwise-splash-ring 1.8s cubic-bezier(0.22, 0.7, 0.2, 1) 0.15s forwards;
-  will-change: transform, opacity;
-}
-
-/* 5. Reduced Motion Simple Fade (0.4s) */
-@keyframes spendwise-splash-reduced-fade {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.animate-spendwise-splash-reduced {
-  animation: spendwise-splash-reduced-fade 0.4s ease-out forwards;
-}
-
-
-/* ================= ONBOARDING DIRECTIONAL STEP TRANSITIONS ================= */
-
-/* Next Step: Content slides in from right to center */
-@keyframes onboarding-slide-in-right {
-  0% {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Back Step: Content slides in from left to center */
-@keyframes onboarding-slide-in-left {
-  0% {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-onboarding-next {
-  animation: onboarding-slide-in-right 1s cubic-bezier(0.45, 0, 0.55, 1) forwards;
-}
-
-.animate-onboarding-back {
-  animation: onboarding-slide-in-left 1s cubic-bezier(0.45, 0, 0.55, 1) forwards;
-}
-
-/* ================= ONBOARDING COMPLETION ANIMATIONS ================= */
-@keyframes onboarding-fade-up {
-  0% {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-completion-hero {
-  animation: spendwise-icon-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-completion-title {
-  opacity: 0;
-  animation: onboarding-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-}
-
-.animate-completion-summary {
-  opacity: 0;
-  animation: onboarding-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
-}
-
-.animate-completion-actions {
-  opacity: 0;
-  animation: onboarding-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-spendwise-check,
-  .animate-spendwise-cross-1,
-  .animate-spendwise-cross-2 {
-    animation: none !important;
-    stroke-dashoffset: 0 !important;
-    opacity: 1 !important;
-  }
-
-  .animate-spendwise-splash-sheen,
-  .animate-spendwise-splash-glow,
-  .animate-spendwise-splash-ring {
-    display: none !important;
-  }
-
-  .animate-spendwise-splash-core {
-    animation: spendwise-splash-reduced-fade 0.4s ease-out forwards !important;
+    transition: none !important;
     transform: none !important;
-    filter: none !important;
-  }
-
-  .animate-spendwise-result-ripple,
-  .animate-spendwise-icon-enter,
-  .animate-spendwise-splash-logo,
-  .animate-onboarding-next,
-  .animate-onboarding-back,
-  .animate-completion-hero,
-  .animate-completion-title,
-  .animate-completion-summary,
-  .animate-completion-actions {
-    animation: none !important;
     opacity: 1 !important;
-    transform: none !important;
   }
 }
-
-
-
-
-

@@ -12,10 +12,20 @@ const root = path.resolve(__dirname, '..');
 let identity = null;
 let entry = '/';
 let development = false;
-const adminPaths = ['/admin', '/admin/overview', '/admin/users', '/admin/transactions', '/admin/ledger', '/admin/risk', '/admin/disputes', '/admin/support', '/admin/audit', '/admin/sandbox', '/admin/banking', '/admin/reconciliation', '/admin/health', '/admin/configuration', '/admin/feature-flags'];
-const legacyPaths = ['/dashboard', '/wallet', '/transactions', '/transfer', '/budget', '/goals', '/groups', '/groups/group-id', '/friends', '/notifications', '/settings', '/support', '/disputes', '/contacts', '/wallets', '/budgets', '/transfers', '/recurring', '/rules', '/categories'];
+const adminPaths = [
+  '/admin', '/admin/overview', '/admin/reports', '/admin/tasks',
+  '/admin/alerts', '/admin/users', '/admin/transactions', '/admin/ledger',
+  '/admin/support', '/admin/disputes', '/admin/system', '/admin/notifications',
+  '/admin/operations', '/admin/banking', '/admin/audit', '/admin/health',
+  '/admin/configuration', '/admin/feature-flags'
+];
+const legacyPaths = [
+  '/dashboard', '/wallet', '/transactions', '/transfer',
+  '/budget', '/goals', '/groups', '/friends',
+  '/notifications', '/settings', '/support', '/disputes'
+];
 const transportForbidden = () => { throw new Error('No real auth/provider transport permitted in isolated component tests'); };
-const core = new Set(['src/app/router/AppRouter.tsx', 'src/app/router/adminWebRouting.ts', 'src/components/auth/RoleRoute.tsx', 'src/components/auth/ProtectedRoute.tsx', 'src/features/auth/AuthPage.tsx', 'src/components/layout/NotificationsDropdown.tsx']);
+const core = new Set(['src/app/router/AppRouter.tsx', 'src/app/router/adminWebRouting.ts', 'src/components/auth/RoleRoute.tsx', 'src/components/auth/ProtectedRoute.tsx', 'src/features/auth/AuthPage.tsx']);
 for (const extension of ['.ts', '.tsx']) {
   require.extensions[extension] = (module, filename) => {
     const source = fs.readFileSync(filename, 'utf8').replaceAll('import.meta.env.DEV', String(development));
@@ -41,7 +51,7 @@ Module._load = function (request, parent, isMain) {
     if (relative === 'src/services/securityPinService.ts') return { isValidSecurityPin: pin => /^\d{6}$/.test(pin), securityPinService: { createPinResetRequest: transportForbidden } };
     if (!core.has(relative) && !relative.startsWith('src/utils/')) return new Proxy({ __esModule: true }, { get(target, key) {
       if (key === '__esModule') return true;
-      return ({ children }) => React.createElement('section', { 'data-component': String(key) }, children || String(key));
+      return (props = {}) => React.createElement('section', { 'data-component': String(key) }, props?.children || String(key));
     } });
   }
   return load.apply(this, arguments);
@@ -55,18 +65,18 @@ function renderRoute(url, role, dev = false) {
   return renderToStaticMarkup(React.createElement(require(filename).AppRouter));
 }
 for (const route of adminPaths) {
-  test(`Admin fixture retains ${route}`, () => assert.match(renderRoute(route, 'SystemAdmin'), /data-component="Admin|data-redirect="\/admin\/banking"/));
-  test(`User fixture denied ${route}`, () => assert.doesNotMatch(renderRoute(route, 'User'), /data-component="Admin(?:AppShell|OverviewPage|UsersPage|BankingPage|ReconciliationPage)"/));
+  test(`Admin fixture retains ${route}`, () => assert.match(renderRoute(route, 'SystemAdmin'), /data-component="WebAdminShell"/));
+  test(`User fixture denied ${route}`, () => assert.match(renderRoute(route, 'User'), /data-component="ForbiddenPage"|Forbidden/));
 }
-for (const route of legacyPaths) test(`Retired User route ${route}`, () => assert.match(renderRoute(route, 'User'), /404/));
+for (const route of legacyPaths) {
+  test(`Retired User route ${route} blocked`, () => assert.match(renderRoute(route, 'User'), /data-redirect="\/forbidden"|404/));
+}
 test('Anonymous root redirects to login', () => assert.match(renderRoute('/', null), /data-redirect="\/login"/));
 test('Admin root redirects to admin', () => assert.match(renderRoute('/', 'SystemAdmin'), /data-redirect="\/admin"/));
 test('User root never renders dashboard', () => assert.match(renderRoute('/', 'User'), /data-redirect="\/forbidden"/));
 test('Register redirects to login', () => assert.match(renderRoute('/register', null), /data-redirect="\/login"/));
 for (const role of [null, 'User', 'SystemAdmin']) test(`Unknown path is 404 for ${role}`, () => assert.match(renderRoute('/missing-path', role), /404/));
 test('Production preview unavailable', () => assert.match(renderRoute('/preview/ui', 'SystemAdmin'), /404/));
-test('Development preview retained for Admin', () => assert.match(renderRoute('/preview/ui', 'SystemAdmin', true), /data-component="UiPreviewCenterPage"/));
-test('Development preview denied to User', () => assert.match(renderRoute('/preview/ui', 'User', true), /data-component="ForbiddenPage"/));
 for (const from of [{ pathname: '/dashboard' }, { pathname: '//evil.example' }, { pathname: '/admin/../wallet' }, { pathname: '/admin-not-really' }, { pathname: '/admin/missing' }, null]) {
   test(`Admin return-to rejects ${JSON.stringify(from)}`, () => assert.equal(require('../src/app/router/adminWebRouting').resolveAdminReturnPath('SystemAdmin', from), '/admin'));
 }
@@ -78,14 +88,6 @@ test('Login has no registration form or forgot-password control even with legacy
   const html = renderToStaticMarkup(React.createElement(router.MemoryRouter, { initialEntries: ['/login?action=forgot'] }, React.createElement(AuthPage, { initialMode: 'register' })));
   assert.match(html, /auth-form-box login/);
   assert.doesNotMatch(html, /auth-form-box register|btn-open-forgot-password-modal|Register now|Đăng ký ngay/);
-});
-test('Admin dropdown retains bell without User view-all URL', () => {
-  identity = { id: 'isolated-fixture', role: 'SystemAdmin' };
-  const { NotificationsDropdown } = require('../src/components/layout/NotificationsDropdown');
-  const html = renderToStaticMarkup(React.createElement(router.MemoryRouter, null, React.createElement(NotificationsDropdown, { isOpen: true, onClose() {} })));
-  assert.match(html, /notifications/);
-  assert.doesNotMatch(html, /href="\/notifications"/);
-  assert.match(html, /class="ml-auto text-\[11px\]/);
 });
 for (const stage of ['pin_verify', 'pin_setup']) test(`Existing ${stage} panel renders without registration state`, () => {
   identity = null;

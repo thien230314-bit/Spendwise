@@ -259,13 +259,14 @@ Các action dưới đây kế thừa policy `SystemAdmin` từ `AdminController
 ### 3.4. Nhóm 4: Tiếp nhận & Xử lý Hỗ trợ/Khiếu nại (ADM-14 $\rightarrow$ ADM-18)
 
 #### ADM-14: Tiếp nhận & Tra cứu Hồ sơ Hỗ trợ
-- **Endpoint:** `GET /api/admin/cases/support` hoặc `POST /api/v1/admin/support/tickets/search`
-- **Mô tả:** Danh sách các yêu cầu khiếu nại/hỗ trợ của người dùng, lọc theo trạng thái (`Pending`, `InReview`, `Resolved`, `Rejected`).
-- **Response `200 OK`:** Legacy GET trả danh sách hồ sơ. V1 POST nhận `A5TicketQuery` và trả `A2Page<A5TicketListItem>`; đọc danh sách từ `items`.
+- **Endpoint:** `GET /api/admin/cases/support` hoặc `POST /api/v1/admin/support/tickets/search`.
+- **Mô tả:** Danh sách SupportCase: frontend dùng **giá trị trạng thái server**, không hardcode `Pending`/`InReview` như trạng thái duy nhất. V1 chỉ trả hồ sơ **chưa phân công hoặc đã phân công cho Admin đang đăng nhập**, không cho đọc hồ sơ của Admin khác.
+- **Request POST V1:** `A5TicketQuery {reason,status?,category?,priority?,linkedUserId?,linkedTransactionId?,searchText?,fromUtc?,toUtc?,page=1,pageSize=20}`. `reason` bắt buộc; `toUtc` là cận trên không bao gồm. Bộ lọc trạng thái theo `CaseWorkflowMappings.ParseSupport`.
+- **Response `200 OK`:** Legacy GET trả danh sách hồ sơ. V1 POST trả `A2Page<A5TicketListItem>` có `items,page,pageSize,total,observedAtUtc`; mỗi item mang `ticketNumber,linkedUserId,assignedAdminId?,category,priority,status,subject,description,createdAt` và các metadata liên quan.
 
 #### ADM-15: Phân công & Xem Chi tiết Hồ sơ
-- **Endpoint:** `POST /api/v1/admin/support/{caseId}/assign` & `GET /api/admin/cases/support/{id}`
-- **Mô tả:** Tiếp nhận phân công hồ sơ cho Quản trị viên (`A5.2`) và xem chi tiết nội dung khiếu nại, giao dịch liên quan.
+- **Endpoint:** `POST /api/v1/admin/support/{caseId}/assign` & `GET /api/admin/cases/support/{id}`.
+- **Mô tả:** Tiếp nhận phân công hồ sơ cho Admin đang đăng nhập và xem chi tiết hồ sơ. `A5AssignTicketRequest.operatorId` nếu gửi khác ID Admin đang đăng nhập sẽ bị `403 assignment_denied`; `Guid.Empty` được handler quy đổi thành ID Admin hiện tại. Hồ sơ đã phân công cho người khác hoặc đã đóng không thể tự nhận. Frontend không cho phép chọn tùy ý Admin khác trên action này.
 - **Request Body (`POST .../assign` - `A5AssignTicketRequest`):**
 ```json
 {
@@ -281,6 +282,8 @@ Các action dưới đây kế thừa policy `SystemAdmin` từ `AdminController
 }
 ```
 - **Response `200 OK` (`GET .../cases/support/{id}`):** `SupportCaseDetailDto` (chi tiết hồ sơ kèm lịch sử tin nhắn).
+
+**API hỗ trợ bổ sung thuộc ADM-15:** `POST /api/v1/admin/support/assigned?page=1&pageSize=20` với `OperatorDirectoryRequest {reason}` trả `A5AssignedCaseItem[]` (danh sách hồ sơ chưa phân công hoặc đang được phân công cho chính Admin, chưa đóng). V1 dùng `POST /api/v1/admin/support/{caseId}/detail` với `{reason}` để đọc `V1CaseDetail` theo kiểm tra quyền trong workflow.
 
 #### ADM-16: Phản hồi Khách hàng & Áp dụng Mẫu trả lời
 - **Endpoint:** `POST /api/admin/cases/support/{id}/messages` & `POST /api/v1/admin/support/{caseId}/reply-template`
@@ -333,6 +336,8 @@ Các action dưới đây kế thừa policy `SystemAdmin` từ `AdminController
 ```
 - **Response `200 OK` (`POST .../dossier`):** `A5FundDossierResult` (`caseId, ticketNumber, linkedUserId, userFullName, userEmail, caseStatus, category, priority, linkedFund, linkedDisputes, timeline, attachments, financialAuditNotice`).
 
+**API xử lý kết luận hồ sơ A5:** `POST /api/v1/admin/support/{caseId}/resolve` nhận `A5ResolveRequest {reason,resolutionMessage,isRejected?}` (mặc định `false`); trả `A5ResolveResult {caseId,ticketNumber,oldStatus,newStatus,resolutionMessage,resolvedAt}`. `isRejected:true` chuyển `Rejected`, còn `false` chuyển `Resolved` khi workflow cho phép; **không tự hoàn tiền**. `POST /api/v1/admin/support/templates` nhận `{reason}` và trả `A5SupportTemplateItem[]` để UI chọn `templateKey` và placeholders hợp lệ thay vì hardcode template.
+
 #### ADM-18: Đổi trạng thái hồ sơ / Cấp quyền sửa giao dịch
 - `POST /api/admin/cases/support/{id}/status`: `CaseStatusRequest(string Status, string Message, IReadOnlyList<CaseAttachmentUpload>? Attachments = null)`. JSON: `status`, `message`, `attachments` (tùy chọn). Trả HTTP 200 với `SupportCaseDetailDto`.
 - `POST /api/admin/cases/support/{id}/correction-grant`: `CorrectionGrantRequest(string AdminPin, string Reason)`. JSON: `adminPin`, `reason`. Trả HTTP 200 với `SupportCaseDetailDto`.
@@ -356,7 +361,8 @@ Các action dưới đây kế thừa policy `SystemAdmin` từ `AdminController
 - Cancel nhận `MaintenanceActionRequest`, trả `204`; chỉ áp dụng khi còn Draft/Scheduled và không gắn maintenance plan, nếu không trả `409 broadcast_immutable`.
 
 #### ADM-20: Giám sát Vận hành Trợ lý Gemini AI
-- **Endpoint:** `GET /api/admin/health` & `POST /api/admin/ai/chat`
+- **Endpoint:** `GET /api/admin/health` & `POST /api/admin/ai/chat`.
+- **Chat request:** `AiChatRequest {conversationId?,message,mode?,groupId?,attachmentIds?}`; `mode` mặc định `FinancialQuery`, bỏ `conversationId` được phép để tạo cuộc hội thoại mới. Trả `AiChatResponse {conversationId,message,provider,isFallback,proposedAction?}`. Không coi `provider` là Gemini LIVE nếu response dùng `SpendWisePolicy`.
 - **Mô tả:** Giám sát đo lường telemetry Trợ lý Gemini AI theo **Phương án B**.
 - **Response `200 OK` (health):** JSON object. `aiProvider` phân biệt `providerType`, `totalResponses`, `policyFallbacks`, `liveGeminiResponses`, `lastProviderUsed`, `lastLatencyMs` và `liveVerificationStatus`. Không bind UI vào các trường `SuccessRate`, `AverageLatencyMs` hoặc `QuotaExceededAlert` không có trong handler.
 - `SpendWisePolicy` là fallback. Trạng thái cấu hình/telemetry không phải bằng chứng inference trực tiếp trong lượt đối soát tài liệu này.

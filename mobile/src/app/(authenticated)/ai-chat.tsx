@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
-import { Card, Copy, EmptyState, SectionTitle, Skeleton, UIIcon } from '@/components/MobileUI';
+import { Card, UIIcon } from '@/components/MobileUI';
 import { aiApi, type AiMessageDto } from '@/api/aiApi';
 import { fontStyles, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';

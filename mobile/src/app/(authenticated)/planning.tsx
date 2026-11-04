@@ -1,300 +1,302 @@
 import React, { useState } from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  TextInput,
+  Modal,
+  Alert,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { AppScreen } from '@/components/AppScreen';
-import { Badge, Card, Copy, UIIcon } from '@/components/MobileUI';
-import { fontStyles, radius, spacing } from '@/theme/tokens';
+import { GlassCard } from '@/components/GlassCard';
+import { radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 export default function PlanningScreen() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'budget' | 'goal' | 'recurring'>('budget');
+  const [isAddBudgetModalOpen, setIsAddBudgetModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryLimit, setNewCategoryLimit] = useState('');
 
-  const budgets = [
-    { name: 'Ăn uống & Cà phê', spent: 4200000, limit: 5000000, color: '#10B981', pct: 84 },
-    { name: 'Mua sắm & Tiêu dùng', spent: 2800000, limit: 4000000, color: '#6366F1', pct: 70 },
-    { name: 'Đi lại & Xăng xe', spent: 1800000, limit: 2500000, color: '#F59E0B', pct: 72 },
-    { name: 'Hóa đơn & Dịch vụ', spent: 1200000, limit: 1500000, color: '#EC4899', pct: 80 },
-  ];
+  const [budgets, setBudgets] = useState([
+    { id: 'b-1', name: 'Ăn uống & Cà phê', spent: 4200000, limit: 5000000, color: colors.primary, pct: 84 },
+    { id: 'b-2', name: 'Mua sắm & Tiêu dùng', spent: 2800000, limit: 4000000, color: colors.accent, pct: 70 },
+    { id: 'b-3', name: 'Đi lại & Xăng xe', spent: 1800000, limit: 2500000, color: colors.amber, pct: 72 },
+    { id: 'b-4', name: 'Hóa đơn & Dịch vụ', spent: 1200000, limit: 1500000, color: colors.violet, pct: 80 },
+  ]);
 
   const goals = [
-    { name: 'Quỹ khẩn cấp 6 tháng', current: 36000000, target: 50000000, date: '12/2026', color: '#10B981', pct: 72 },
-    { name: 'Du lịch Nhật Bản mùa xuân', current: 15000000, target: 30000000, date: '04/2027', color: '#06B6D4', pct: 50 },
-    { name: 'Đổi máy tính làm việc', current: 22000000, target: 25000000, date: '11/2026', color: '#8B5CF6', pct: 88 },
+    { id: 'g-1', name: 'Quỹ khẩn cấp 6 tháng', current: 36000000, target: 50000000, date: '12/2026', pct: 72 },
+    { id: 'g-2', name: 'Du lịch Nhật Bản 2027', current: 15000000, target: 30000000, date: '04/2027', pct: 50 },
+    { id: 'g-3', name: 'Đổi máy tính làm việc', current: 22000000, target: 25000000, date: '11/2026', pct: 88 },
   ];
 
   const recurrings = [
-    { name: 'Tiền thuê căn hộ', amount: 8500000, due: 'Ngày 05 hàng tháng', type: 'expense' as const, status: 'Đã thanh toán' },
-    { name: 'Gói mạng Internet FPT', amount: 285000, due: 'Ngày 15 hàng tháng', type: 'expense' as const, status: 'Sắp tới hạn' },
-    { name: 'Đăng ký Spotify Family', amount: 99000, due: 'Ngày 22 hàng tháng', type: 'expense' as const, status: 'Tự động trừ' },
+    { id: 'r-1', name: 'Tiền thuê căn hộ', amount: 8500000, due: 'Ngày 05 hàng tháng', status: 'Đã thanh toán' },
+    { id: 'r-2', name: 'Gói mạng Internet FPT', amount: 285000, due: 'Ngày 15 hàng tháng', status: 'Sắp tới hạn' },
+    { id: 'r-3', name: 'Đăng ký Spotify Family', amount: 99000, due: 'Ngày 22 hàng tháng', status: 'Tự động trừ' },
   ];
 
+  const totalSpent = budgets.reduce((acc, cur) => acc + cur.spent, 0);
+  const totalLimit = budgets.reduce((acc, cur) => acc + cur.limit, 0);
+  const overallPct = Math.round((totalSpent / totalLimit) * 100);
+
+  const handleAddBudget = () => {
+    const limit = parseInt(newCategoryLimit.replace(/\D/g, ''), 10);
+    if (!newCategoryName.trim() || !limit || limit <= 0) {
+      Alert.alert('Lỗi', 'Vui lòng nhập tên danh mục và hạn mức');
+      return;
+    }
+    const newB = {
+      id: `b-${Date.now()}`,
+      name: newCategoryName.trim(),
+      spent: 0,
+      limit,
+      color: colors.primary,
+      pct: 0,
+    };
+    setBudgets([...budgets, newB]);
+    setIsAddBudgetModalOpen(false);
+    setNewCategoryName('');
+    setNewCategoryLimit('');
+    Alert.alert('Thành công', `Đã thêm ngân sách "${newB.name}".`);
+  };
+
   return (
-    <AppScreen
-      title="Kế hoạch tài chính"
-      subtitle="Theo dõi hạn mức ngân sách, mục tiêu tích lũy và thu chi định kỳ."
-    >
+    <AppScreen title="Kế hoạch tài chính" scrollable>
       <View style={styles.container}>
-        {/* 1. Horizontal Tab Filter Pills (Reference Images 1, 2, 3) */}
-        <View
-          style={[
-            styles.segmentRow,
-            {
-              backgroundColor: isDark ? '#101622' : '#F1F5F9',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          {[
-            { id: 'budget', label: 'Ngân sách' },
-            { id: 'goal', label: 'Mục tiêu' },
-            { id: 'recurring', label: 'Định kỳ' },
-          ].map((tab) => {
-            const isSelected = activeTab === tab.id;
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => setActiveTab(tab.id as any)}
-                style={[
-                  styles.tabPillBtn,
-                  isSelected && {
-                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                    shadowColor: '#000000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 2,
-                    elevation: 1,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabPillText,
-                    {
-                      color: isSelected ? (isDark ? '#34D399' : '#047857') : colors.textMuted,
-                      fontWeight: isSelected ? '700' : '500',
-                    },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+        {/* BACK NAV ROW */}
+        <Pressable onPress={() => router.replace('/(authenticated)/home')} style={styles.backRow}>
+          <Ionicons name="arrow-back" size={20} color={colors.primary} />
+          <Text style={[styles.backText, { color: colors.primary }]}>Quay lại Trang chủ</Text>
+        </Pressable>
+
+        {/* 1. FILTER TABS */}
+        <View style={[styles.segmentContainer, { backgroundColor: isDark ? colors.surfaceElevated : '#DCEEE4' }]}>
+          <Pressable
+            onPress={() => setActiveTab('budget')}
+            style={[styles.segmentBtn, activeTab === 'budget' && [styles.segmentBtnActive, { backgroundColor: colors.surface }]]}
+          >
+            <Text style={[styles.segmentText, { color: activeTab === 'budget' ? colors.primary : colors.textMuted }]}>
+              Ngân sách
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('goal')}
+            style={[styles.segmentBtn, activeTab === 'goal' && [styles.segmentBtnActive, { backgroundColor: colors.surface }]]}
+          >
+            <Text style={[styles.segmentText, { color: activeTab === 'goal' ? colors.primary : colors.textMuted }]}>
+              Mục tiêu ({goals.length})
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('recurring')}
+            style={[styles.segmentBtn, activeTab === 'recurring' && [styles.segmentBtnActive, { backgroundColor: colors.surface }]]}
+          >
+            <Text style={[styles.segmentText, { color: activeTab === 'recurring' ? colors.primary : colors.textMuted }]}>
+              Định kỳ ({recurrings.length})
+            </Text>
+          </Pressable>
         </View>
 
-        {/* 2. Content Sections based on Selected Tab */}
+        {/* 2. TAB CONTENT */}
         {activeTab === 'budget' && (
-          <View style={styles.tabContentBlock}>
-            {/* Overall Monthly Budget Hero Card */}
-            <View
-              style={[
-                styles.summaryCard,
-                {
-                  backgroundColor: isDark ? '#101622' : '#FFFFFF',
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <View style={styles.cardHeaderRow}>
+          <View style={styles.tabContentWrap}>
+            {/* Overall Monthly Hero Progress */}
+            <GlassCard style={styles.overallCard}>
+              <View style={styles.overallTopRow}>
                 <View>
-                  <Text style={[styles.cardHeaderSubhead, { color: colors.textMuted }]}>
-                    Tổng ngân sách tháng 10/2026
+                  <Text style={[styles.overallLabel, { color: colors.textMuted }]}>
+                    Tổng chi tiêu ngân sách tháng 11
                   </Text>
-                  <Text style={[styles.cardHeaderAmount, { color: colors.text }]}>
-                    15.000.000 ₫
-                  </Text>
-                </View>
-                <View style={[styles.pctBadge, { backgroundColor: colors.primarySoft }]}>
-                  <Text style={[styles.pctBadgeText, { color: colors.primary }]}>
-                    Đã chi 62%
+                  <Text style={[styles.overallAmount, { color: colors.text }]}>
+                    {totalSpent.toLocaleString('vi-VN')} ₫
                   </Text>
                 </View>
+                <View style={[styles.pctBadge, { backgroundColor: overallPct > 80 ? 'rgba(229,72,77,0.15)' : colors.primarySoft }]}>
+                  <Text style={[styles.pctBadgeText, { color: overallPct > 80 ? colors.danger : colors.primary }]}>
+                    {overallPct}%
+                  </Text>
+                </View>
               </View>
 
-              <View style={[styles.progressTrack, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-                <View style={[styles.progressFill, { width: '62%', backgroundColor: colors.primary }]} />
-              </View>
-
-              <View style={styles.budgetMetaRow}>
-                <Text style={[styles.metaText, { color: colors.textMuted }]}>
-                  Đã tiêu: 9.300.000 ₫
-                </Text>
-                <Text style={[styles.metaText, { color: colors.textMuted }]}>
-                  Còn lại: 5.700.000 ₫ (An toàn)
-                </Text>
-              </View>
-            </View>
-
-            {/* Category Budgets List (Modern Rounded Card Items) */}
-            <View style={styles.listSection}>
-              <View style={styles.sectionTitleRow}>
-                <Text style={[styles.sectionHeading, { color: colors.text }]}>
-                  Hạn mức từng danh mục
-                </Text>
-                <Text style={[styles.createLink, { color: colors.primary }]}>
-                  + Thêm hạn mức
-                </Text>
-              </View>
-
-              {budgets.map((b, idx) => (
+              <View style={[styles.overallTrack, { backgroundColor: isDark ? '#1C382F' : '#D0EADB' }]}>
                 <View
-                  key={idx}
                   style={[
-                    styles.itemCard,
+                    styles.overallFill,
                     {
-                      backgroundColor: isDark ? '#101622' : '#FFFFFF',
-                      borderColor: colors.border,
+                      width: `${Math.min(100, overallPct)}%`,
+                      backgroundColor: overallPct > 80 ? colors.danger : colors.primary,
                     },
                   ]}
-                >
-                  <View style={styles.itemHeader}>
-                    <View style={styles.itemNameWrap}>
-                      <View style={[styles.dotCircle, { backgroundColor: b.color }]} />
-                      <Text style={[styles.itemName, { color: colors.text }]}>
-                        {b.name}
-                      </Text>
-                    </View>
-                    <Text style={[styles.itemPct, { color: b.pct > 80 ? colors.danger : colors.text }]}>
-                      {b.pct}%
+                />
+              </View>
+
+              <View style={styles.overallFooter}>
+                <Text style={[styles.overallFooterText, { color: colors.textMuted }]}>
+                  Hạn mức: {totalLimit.toLocaleString('vi-VN')} ₫ • Còn lại: {(totalLimit - totalSpent).toLocaleString('vi-VN')} ₫
+                </Text>
+              </View>
+            </GlassCard>
+
+            {/* Category Budgets Header + Add Button */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Danh mục chi tiêu</Text>
+              <Pressable onPress={() => setIsAddBudgetModalOpen(true)}>
+                <Text style={[styles.addLink, { color: colors.primary }]}>+ Thêm danh mục</Text>
+              </Pressable>
+            </View>
+
+            {/* Category Cards */}
+            <View style={styles.budgetList}>
+              {budgets.map((b) => (
+                <GlassCard key={b.id} style={styles.categoryCard}>
+                  <View style={styles.categoryHeader}>
+                    <Text style={[styles.categoryName, { color: colors.text }]}>{b.name}</Text>
+                    <Text style={[styles.categoryAmount, { color: colors.text }]}>
+                      {b.spent.toLocaleString('vi-VN')} ₫ / {b.limit.toLocaleString('vi-VN')} ₫
                     </Text>
                   </View>
 
-                  <View style={[styles.progressTrack, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
+                  <View style={[styles.categoryTrack, { backgroundColor: isDark ? '#1C382F' : '#D0EADB' }]}>
                     <View
                       style={[
-                        styles.progressFill,
+                        styles.categoryFill,
                         {
-                          width: `${b.pct}%`,
+                          width: `${Math.min(100, b.pct)}%`,
                           backgroundColor: b.pct > 80 ? colors.danger : b.color,
                         },
                       ]}
                     />
                   </View>
 
-                  <View style={styles.itemFooter}>
-                    <Text style={[styles.itemSpent, { color: colors.textMuted }]}>
-                      Đã chi: {b.spent.toLocaleString('vi-VN')} ₫
+                  <View style={styles.categoryFooter}>
+                    <Text
+                      style={[
+                        styles.categoryStatus,
+                        { color: b.pct > 80 ? colors.danger : colors.textMuted },
+                      ]}
+                    >
+                      {b.pct > 80 ? `Cảnh báo: Đã dùng ${b.pct}% hạn mức` : `Đã dùng ${b.pct}%`}
                     </Text>
-                    <Text style={[styles.itemLimit, { color: colors.textMuted }]}>
-                      Hạn mức: {b.limit.toLocaleString('vi-VN')} ₫
+                    <Text style={[styles.categoryRemaining, { color: colors.textMuted }]}>
+                      Còn {(b.limit - b.spent).toLocaleString('vi-VN')} ₫
                     </Text>
                   </View>
-                </View>
+                </GlassCard>
               ))}
             </View>
           </View>
         )}
 
         {activeTab === 'goal' && (
-          <View style={styles.tabContentBlock}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionHeading, { color: colors.text }]}>
-                Mục tiêu tiết kiệm đang thực hiện
-              </Text>
-              <Text style={[styles.createLink, { color: colors.primary }]}>
-                + Tạo mục tiêu
-              </Text>
-            </View>
-
-            {goals.map((g, idx) => (
-              <View
-                key={idx}
-                style={[
-                  styles.itemCard,
-                  {
-                    backgroundColor: isDark ? '#101622' : '#FFFFFF',
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <View style={styles.itemHeader}>
-                  <View style={styles.itemNameWrap}>
-                    <View style={[styles.dotCircle, { backgroundColor: g.color }]} />
-                    <Text style={[styles.itemName, { color: colors.text }]}>
-                      {g.name}
+          <View style={styles.tabContentWrap}>
+            <View style={styles.goalList}>
+              {goals.map((g) => (
+                <GlassCard key={g.id} style={styles.categoryCard}>
+                  <View style={styles.categoryHeader}>
+                    <Text style={[styles.categoryName, { color: colors.text }]}>{g.name}</Text>
+                    <Text style={[styles.categoryAmount, { color: colors.primary }]}>
+                      {g.pct}%
                     </Text>
                   </View>
-                  <Text style={[styles.itemPct, { color: colors.primary }]}>
-                    {g.pct}%
-                  </Text>
-                </View>
 
-                <View style={[styles.progressTrack, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-                  <View style={[styles.progressFill, { width: `${g.pct}%`, backgroundColor: g.color }]} />
-                </View>
+                  <View style={[styles.categoryTrack, { backgroundColor: isDark ? '#1C382F' : '#D0EADB' }]}>
+                    <View style={[styles.categoryFill, { width: `${g.pct}%`, backgroundColor: colors.primary }]} />
+                  </View>
 
-                <View style={styles.itemFooter}>
-                  <Text style={[styles.itemSpent, { color: colors.text }]}>
-                    Tích lũy: {g.current.toLocaleString('vi-VN')} ₫
-                  </Text>
-                  <Text style={[styles.itemLimit, { color: colors.textMuted }]}>
-                    Mục tiêu: {g.target.toLocaleString('vi-VN')} ₫ ({g.date})
-                  </Text>
-                </View>
-              </View>
-            ))}
+                  <View style={styles.categoryFooter}>
+                    <Text style={[styles.categoryRemaining, { color: colors.textMuted }]}>
+                      Hiện có: {g.current.toLocaleString('vi-VN')} ₫ / Mục tiêu: {g.target.toLocaleString('vi-VN')} ₫
+                    </Text>
+                    <Text style={[styles.categoryRemaining, { color: colors.textMuted }]}>
+                      Hạn: {g.date}
+                    </Text>
+                  </View>
+                </GlassCard>
+              ))}
+            </View>
           </View>
         )}
 
         {activeTab === 'recurring' && (
-          <View style={styles.tabContentBlock}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionHeading, { color: colors.text }]}>
-                Hóa đơn & Giao dịch định kỳ
-              </Text>
-              <Text style={[styles.createLink, { color: colors.primary }]}>
-                + Thêm lịch
-              </Text>
+          <View style={styles.tabContentWrap}>
+            <View style={styles.recurringList}>
+              {recurrings.map((r) => (
+                <GlassCard key={r.id} style={styles.recurringCard}>
+                  <View style={styles.recurringLeft}>
+                    <View style={[styles.recurringIconBg, { backgroundColor: isDark ? '#0F3D2E' : '#E6F8F0' }]}>
+                      <Ionicons name="repeat" size={20} color={colors.primary} />
+                    </View>
+                    <View>
+                      <Text style={[styles.recurringName, { color: colors.text }]}>{r.name}</Text>
+                      <Text style={[styles.recurringDue, { color: colors.textMuted }]}>{r.due}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.recurringRight}>
+                    <Text style={[styles.recurringAmount, { color: colors.text }]}>
+                      {r.amount.toLocaleString('vi-VN')} ₫
+                    </Text>
+                    <Text style={[styles.recurringStatus, { color: colors.primary }]}>{r.status}</Text>
+                  </View>
+                </GlassCard>
+              ))}
             </View>
-
-            {recurrings.map((r, idx) => (
-              <View
-                key={idx}
-                style={[
-                  styles.itemCard,
-                  {
-                    backgroundColor: isDark ? '#101622' : '#FFFFFF',
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <View style={styles.itemHeader}>
-                  <View style={styles.itemNameWrap}>
-                    <SymbolView
-                      name={{ ios: 'calendar.badge.clock', android: 'schedule', web: 'schedule' }}
-                      size={18}
-                      tintColor={colors.primary}
-                    />
-                    <Text style={[styles.itemName, { color: colors.text }]}>
-                      {r.name}
-                    </Text>
-                  </View>
-                  <View style={[styles.pctBadge, { backgroundColor: colors.primarySoft }]}>
-                    <Text style={[styles.pctBadgeText, { color: colors.primary }]}>
-                      {r.status}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.itemFooter}>
-                  <Text style={[styles.itemSpent, { color: colors.danger, fontWeight: '700' }]}>
-                    −{r.amount.toLocaleString('vi-VN')} ₫
-                  </Text>
-                  <Text style={[styles.itemLimit, { color: colors.textMuted }]}>
-                    {r.due}
-                  </Text>
-                </View>
-              </View>
-            ))}
           </View>
         )}
+
+        {/* ADD BUDGET MODAL */}
+        <Modal
+          visible={isAddBudgetModalOpen}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setIsAddBudgetModalOpen(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Thêm danh mục ngân sách</Text>
+                <Pressable onPress={() => setIsAddBudgetModalOpen(false)}>
+                  <Ionicons name="close" size={24} color={colors.text} />
+                </Pressable>
+              </View>
+
+              <View style={styles.modalBody}>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>Tên danh mục</Text>
+                <TextInput
+                  value={newCategoryName}
+                  onChangeText={setNewCategoryName}
+                  placeholder="Ví dụ: Giải trí & Xem phim"
+                  placeholderTextColor={colors.placeholder}
+                  style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
+                />
+
+                <Text style={[styles.inputLabel, { color: colors.text, marginTop: 12 }]}>Hạn mức tháng (₫)</Text>
+                <TextInput
+                  value={newCategoryLimit}
+                  onChangeText={setNewCategoryLimit}
+                  keyboardType="numeric"
+                  placeholder="Ví dụ: 3000000"
+                  placeholderTextColor={colors.placeholder}
+                  style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
+                />
+
+                <Pressable
+                  onPress={handleAddBudget}
+                  style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Text style={styles.modalSubmitText}>Lưu ngân sách</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </AppScreen>
   );
@@ -302,144 +304,230 @@ export default function PlanningScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    padding: spacing.md,
     gap: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 40,
   },
-  segmentRow: {
+  backRow: {
     flexDirection: 'row',
-    padding: 3,
-    borderRadius: 14,
-    borderWidth: 1,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
   },
-  tabPillBtn: {
+  backText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: radius.pill,
+    padding: 4,
+  },
+  segmentBtn: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: radius.pill,
   },
-  tabPillText: {
-    fontSize: 12,
+  segmentBtnActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  tabContentBlock: {
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  tabContentWrap: {
     gap: spacing.md,
   },
-  summaryCard: {
-    borderRadius: 22,
-    borderWidth: 1,
+  overallCard: {
     padding: spacing.md,
-    gap: spacing.sm + 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: 10,
   },
-  cardHeaderRow: {
+  overallTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  cardHeaderSubhead: {
-    fontSize: 11,
-    fontWeight: '500',
+  overallLabel: {
+    fontSize: 12,
   },
-  cardHeaderAmount: {
+  overallAmount: {
     fontSize: 24,
     fontWeight: '800',
-    fontFamily: 'monospace',
-    letterSpacing: -0.4,
     marginTop: 2,
   },
   pctBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
   },
   pctBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  progressTrack: {
+  overallTrack: {
     height: 8,
     borderRadius: 4,
     overflow: 'hidden',
   },
-  progressFill: {
+  overallFill: {
     height: '100%',
     borderRadius: 4,
   },
-  budgetMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  overallFooter: {
+    marginTop: 2,
   },
-  metaText: {
-    fontSize: 11,
-    fontFamily: 'monospace',
-  },
-  listSection: {
-    gap: spacing.sm,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-  },
-  sectionHeading: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  createLink: {
+  overallFooterText: {
     fontSize: 12,
-    fontWeight: '600',
   },
-  itemCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: spacing.md,
-    gap: spacing.sm,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  itemHeader: {
+  sectionHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  itemNameWrap: {
-    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  addLink: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  budgetList: {
+    gap: 10,
+  },
+  categoryCard: {
+    padding: spacing.md,
     gap: 8,
   },
-  dotCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  itemName: {
+  categoryName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  categoryAmount: {
     fontSize: 13,
     fontWeight: '600',
   },
-  itemPct: {
-    fontSize: 12,
-    fontWeight: '700',
-    fontFamily: 'monospace',
+  categoryTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  itemFooter: {
+  categoryFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  categoryFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  categoryStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  categoryRemaining: {
+    fontSize: 11,
+  },
+  goalList: {
+    gap: 10,
+  },
+  recurringList: {
+    gap: 10,
+  },
+  recurringCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: spacing.md,
   },
-  itemSpent: {
-    fontSize: 11,
-    fontFamily: 'monospace',
+  recurringLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  itemLimit: {
+  recurringIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recurringName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  recurringDue: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  recurringRight: {
+    alignItems: 'flex-end',
+  },
+  recurringAmount: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  recurringStatus: {
     fontSize: 11,
-    fontFamily: 'monospace',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    borderTopLeftRadius: radius.panel,
+    borderTopRightRadius: radius.panel,
+    padding: spacing.lg,
+    paddingBottom: 36,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  modalBody: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modalInput: {
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  modalSubmitBtn: {
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+  },
+  modalSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

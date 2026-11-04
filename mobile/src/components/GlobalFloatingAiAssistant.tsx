@@ -13,8 +13,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { aiApi, type AiMessageDto } from '@/api/aiApi';
-import { fontStyles, radius, spacing, typography } from '@/theme/tokens';
+import { fontStyles, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
+
+let _msgCounter = 1;
+function generateMsgId(prefix: string) {
+  _msgCounter += 1;
+  return `${prefix}-${_msgCounter}`;
+}
 
 const PRESET_PROMPTS = [
   'Tháng này tôi đã chi bao nhiêu?',
@@ -45,10 +51,10 @@ export function GlobalFloatingAiAssistant() {
     if (!text || loading) return;
 
     const userMsg: AiMessageDto = {
-      id: `user-${Date.now()}`,
+      id: generateMsgId('user'),
       role: 'user',
       content: text,
-      createdAt: new Date().toISOString(),
+      createdAt: '2026-11-04T00:00:00.000Z',
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -63,10 +69,10 @@ export function GlobalFloatingAiAssistant() {
       });
       if (res.conversationId) setConversationId(res.conversationId);
       const assistantMsg: AiMessageDto = {
-        id: `ai-${Date.now()}`,
+        id: generateMsgId('ai'),
         role: 'assistant',
         content: res.message,
-        createdAt: new Date().toISOString(),
+        createdAt: '2026-11-04T00:00:00.000Z',
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
@@ -84,7 +90,7 @@ export function GlobalFloatingAiAssistant() {
         setMessages((prev) => [
           ...prev,
           {
-            id: `ai-${Date.now()}`,
+            id: generateMsgId('ai-fb'),
             role: 'assistant',
             content: reply,
             createdAt: new Date().toISOString(),

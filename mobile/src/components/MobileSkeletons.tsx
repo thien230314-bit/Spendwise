@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 /**
@@ -20,7 +20,7 @@ export function SkeletonBlock({
   borderRadius?: number;
   style?: object;
 }) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   return (
     <View
       aria-hidden

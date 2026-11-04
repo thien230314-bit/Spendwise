@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  Alert,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { AppScreen } from '@/components/AppScreen';
-import { Badge, Card, Copy, UIIcon } from '@/components/MobileUI';
-import { PrimaryButton } from '@/components/PrimaryButton';
-import { fontStyles, radius, spacing } from '@/theme/tokens';
+import { GlassCard } from '@/components/GlassCard';
+import { radius, spacing, typography } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const QUICK_AMOUNTS = [100000, 200000, 500000, 1000000, 2000000];
+
+const RECENT_RECIPIENTS = [
+  { id: 'rec-1', name: 'An Nguyễn', spendId: 'SW-AN-8899', initials: 'AN' },
+  { id: 'rec-2', name: 'Trần Mai', spendId: 'SW-MAI-1234', initials: 'TM' },
+  { id: 'rec-3', name: 'Bảo Hoàng', spendId: 'SW-BAO-5678', initials: 'BH' },
+];
 
 export default function TransferScreen() {
   const { colors, isDark } = useTheme();
@@ -24,362 +29,194 @@ export default function TransferScreen() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [txCode, setTxCode] = useState('SW-TX-982415');
 
   const parsedAmount = parseInt(amount.replace(/\D/g, ''), 10) || 0;
 
+  const handleSelectRecent = (rec: typeof RECENT_RECIPIENTS[0]) => {
+    setRecipient(rec.spendId);
+  };
+
+  const handleTransfer = () => {
+    if (!recipient.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập người nhận hoặc SpendID');
+      return;
+    }
+    if (parsedAmount <= 0) {
+      Alert.alert('Lỗi', 'Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+    Alert.alert(
+      'Xác nhận chuyển tiền',
+      `Chuyển ${parsedAmount.toLocaleString('vi-VN')} ₫ đến ${recipient}?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xác nhận (Mã PIN)',
+          onPress: () => {
+            setTxCode(`SW-TX-${Math.floor(100000 + Math.random() * 900000)}`);
+            setIsSuccess(true);
+          },
+        },
+      ]
+    );
+  };
+
   if (isSuccess) {
     return (
-      <AppScreen
-        title="Chuyển tiền thành công"
-        subtitle="Giao dịch của bạn đã được thực hiện an toàn trên mạng SpendWise."
-      >
+      <AppScreen title="Chuyển tiền thành công" scrollable>
         <View style={styles.container}>
-          <View
-            style={[
-              styles.cardBox,
-              {
-                backgroundColor: isDark ? '#101622' : '#FFFFFF',
-                borderColor: colors.border,
-                alignItems: 'center',
-                paddingVertical: spacing.xl,
-                gap: spacing.md,
-              },
-            ]}
-          >
-            <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                backgroundColor: isDark ? '#064E3B' : '#ECFDF5',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <SymbolView
-                name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}
-                size={36}
-                tintColor={colors.primary}
-              />
+          <GlassCard style={styles.successCard}>
+            <View style={[styles.successIconWrap, { backgroundColor: colors.primarySoft }]}>
+              <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
             </View>
 
-            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>
+            <Text style={[styles.successAmount, { color: colors.text }]}>
               -{parsedAmount.toLocaleString('vi-VN')} ₫
             </Text>
 
-            <View style={{ width: '100%', gap: 8, paddingHorizontal: spacing.sm, marginTop: spacing.sm }}>
+            <View style={[styles.successTable, { borderColor: colors.border }]}>
               <View style={styles.rowBetween}>
-                <Text style={{ fontSize: 13, color: colors.textMuted }}>Người nhận</Text>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{recipient}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Người nhận</Text>
+                <Text style={[styles.detailValue, { color: colors.text }]}>{recipient}</Text>
               </View>
               <View style={styles.rowBetween}>
-                <Text style={{ fontSize: 13, color: colors.textMuted }}>Thời gian</Text>
-                <Text style={{ fontSize: 13, color: colors.text }}>Vừa xong</Text>
+                <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Thời gian</Text>
+                <Text style={[styles.detailValue, { color: colors.text }]}>Vừa xong</Text>
               </View>
               <View style={styles.rowBetween}>
-                <Text style={{ fontSize: 13, color: colors.textMuted }}>Mã giao dịch</Text>
-                <Text style={{ fontSize: 13, fontFamily: 'monospace', color: colors.text }}>
-                  SW-TX-{Date.now().toString().slice(-6)}
+                <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Mã giao dịch</Text>
+                <Text style={[styles.detailValue, { color: colors.text, fontFamily: typography.brand.fontFamily }]}>
+                  {txCode}
                 </Text>
               </View>
               {note ? (
                 <View style={styles.rowBetween}>
-                  <Text style={{ fontSize: 13, color: colors.textMuted }}>Lời nhắn</Text>
-                  <Text style={{ fontSize: 13, color: colors.text }}>{note}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Lời nhắn</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>{note}</Text>
                 </View>
               ) : null}
             </View>
-          </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              setIsSuccess(false);
-              setAmount('');
-              setRecipient('');
-              setNote('');
-            }}
-            style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-          >
-            <Text style={[styles.submitBtnText, { color: '#FFFFFF' }]}>
-              Thực hiện giao dịch khác
-            </Text>
-          </Pressable>
+            <Pressable
+              onPress={() => {
+                setIsSuccess(false);
+                setAmount('');
+                setRecipient('');
+                setNote('');
+                router.replace('/(authenticated)/home');
+              }}
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.primaryBtnText}>Về trang chủ</Text>
+            </Pressable>
+          </GlassCard>
         </View>
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen
-      title="Chuyển tiền"
-      subtitle="Chuyển tiền nhanh trong hệ thống SpendWise hoặc liên ngân hàng."
-    >
+    <AppScreen title="Chuyển tiền P2P" scrollable>
       <View style={styles.container}>
-        {/* 1. Source Wallet Card (Card bo tròn 22px tinh tế) */}
-        <View
-          style={[
-            styles.cardBox,
-            {
-              backgroundColor: isDark ? '#101622' : '#FFFFFF',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.badgeWrap}>
-              <View style={[styles.dotIndicator, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>
-                1. Nguồn tiền trích nợ
-              </Text>
-            </View>
-            <View style={[styles.walletBadge, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.walletBadgeText, { color: colors.primary }]}>
-                Khả dụng: 14.250.000 ₫
-              </Text>
-            </View>
-          </View>
+        {/* BACK NAV ROW */}
+        <Pressable onPress={() => router.replace('/(authenticated)/home')} style={styles.backRow}>
+          <Ionicons name="arrow-back" size={20} color={colors.primary} />
+          <Text style={[styles.backText, { color: colors.primary }]}>Quay lại Trang chủ</Text>
+        </Pressable>
 
-          <View
-            style={[
-              styles.sourceWalletRow,
-              {
-                backgroundColor: isDark ? '#151D2A' : '#F8FAFC',
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.walletIconCircle,
-                { backgroundColor: isDark ? '#052E26' : '#ECFDF5' },
-              ]}
-            >
-              <UIIcon name="wallet" size={20} color={colors.primary} />
-            </View>
-            <View style={styles.walletDetails}>
-              <Text style={[styles.walletMainName, { color: colors.text }]}>
-                Ví SpendWise Mặc định
-              </Text>
-              <Text style={[styles.walletSubMeta, { color: colors.textMuted }]}>
-                SW-98234-01 • Cá nhân
-              </Text>
-            </View>
-            <SymbolView
-              name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}
-              size={18}
-              tintColor={colors.primary}
-            />
-          </View>
+        {/* 1. RECENT RECIPIENTS BAR */}
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gần đây & Bạn bè</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentRow}>
+            {RECENT_RECIPIENTS.map((rec) => (
+              <Pressable
+                key={rec.id}
+                onPress={() => handleSelectRecent(rec)}
+                style={({ pressed }) => [styles.recentItem, { opacity: pressed ? 0.75 : 1 }]}
+              >
+                <View style={[styles.recentAvatar, { backgroundColor: colors.primarySoft }]}>
+                  <Text style={[styles.recentInitials, { color: colors.primary }]}>{rec.initials}</Text>
+                </View>
+                <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
+                  {rec.name}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
 
-        {/* 2. Recipient Input Card */}
-        <View
-          style={[
-            styles.cardBox,
-            {
-              backgroundColor: isDark ? '#101622' : '#FFFFFF',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.cardTitle, { color: colors.text }]}>
-            2. Người nhận tiền
-          </Text>
-
-          <View
-            style={[
-              styles.inputBox,
-              {
-                backgroundColor: isDark ? '#151D2A' : '#F8FAFC',
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <SymbolView
-              name={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }}
-              size={20}
-              tintColor={colors.textMuted}
-            />
+        {/* 2. TRANSFER FORM */}
+        <GlassCard style={styles.formCard}>
+          {/* Recipient */}
+          <Text style={[styles.inputLabel, { color: colors.text }]}>Người nhận / SpendID</Text>
+          <View style={[styles.inputWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <Ionicons name="person-outline" size={18} color={colors.textMuted} />
             <TextInput
               value={recipient}
               onChangeText={setRecipient}
-              placeholder="Nhập số điện thoại hoặc SpendId người nhận"
-              placeholderTextColor={colors.textMuted}
-              style={[styles.inputField, { color: colors.text }]}
+              placeholder="Nhập SpendID, email hoặc tên bạn bè"
+              placeholderTextColor={colors.placeholder}
+              style={[styles.textInput, { color: colors.text }]}
             />
-            {recipient ? (
-              <Pressable onPress={() => setRecipient('')} hitSlop={8}>
-                <SymbolView
-                  name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
-                  size={16}
-                  tintColor={colors.textMuted}
-                />
-              </Pressable>
-            ) : null}
           </View>
 
-          {/* Quick Contact Chips (Darwin Piodos reference horizontal pill style) */}
-          <View style={styles.quickContactsRow}>
-            <Text style={[styles.quickSubLabel, { color: colors.textMuted }]}>
-              Gần đây:
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.contactsScroll}>
-              {[
-                { name: 'Nguyễn Văn Minh', id: '0912345678' },
-                { name: 'Trần Thị Mai', id: '0987654321' },
-                { name: 'Lê Hoàng Nam', id: '0903456789' },
-              ].map((contact, idx) => (
-                <Pressable
-                  key={idx}
-                  onPress={() => setRecipient(contact.id)}
-                  style={[
-                    styles.contactChip,
-                    {
-                      backgroundColor: isDark ? '#151D2A' : '#F1F5F9',
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.contactChipText, { color: colors.text }]}>
-                    {contact.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-
-        {/* 3. Amount & Fast Presets Card */}
-        <View
-          style={[
-            styles.cardBox,
-            {
-              backgroundColor: isDark ? '#101622' : '#FFFFFF',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.cardTitle, { color: colors.text }]}>
-            3. Số tiền cần chuyển (VND)
-          </Text>
-
-          <View
-            style={[
-              styles.amountInputBox,
-              {
-                backgroundColor: isDark ? '#151D2A' : '#F8FAFC',
-                borderColor: parsedAmount > 14250000 ? colors.danger : colors.border,
-              },
-            ]}
-          >
-            <Text style={[styles.currencyPrefix, { color: colors.primary }]}>₫</Text>
+          {/* Amount */}
+          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>Số tiền chuyển (₫)</Text>
+          <View style={[styles.inputWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <Ionicons name="cash-outline" size={18} color={colors.primary} />
             <TextInput
               value={amount}
-              onChangeText={(val) => {
-                const numeric = val.replace(/\D/g, '');
-                setAmount(numeric ? parseInt(numeric, 10).toLocaleString('vi-VN') : '');
-              }}
+              onChangeText={setAmount}
               keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={colors.textMuted}
-              style={[styles.amountInputText, { color: colors.text }]}
+              placeholder="0 ₫"
+              placeholderTextColor={colors.placeholder}
+              style={[styles.textInput, { color: colors.text, fontSize: 18, fontWeight: '700' }]}
             />
           </View>
 
-          {/* Fast Preset Amount Pills (Reference design inspired) */}
-          <View style={styles.presetsGrid}>
-            {QUICK_AMOUNTS.map((amt) => {
-              const isSelected = parsedAmount === amt;
-              return (
-                <Pressable
-                  key={amt}
-                  onPress={() => setAmount(amt.toLocaleString('vi-VN'))}
-                  style={[
-                    styles.presetPill,
-                    {
-                      backgroundColor: isSelected
-                        ? isDark
-                          ? '#34D399'
-                          : '#047857'
-                        : isDark
-                        ? '#151D2A'
-                        : '#F1F5F9',
-                      borderColor: isSelected ? 'transparent' : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.presetPillText,
-                      {
-                        color: isSelected ? '#FFFFFF' : colors.text,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {(amt / 1000).toLocaleString('vi-VN')}k
-                  </Text>
-                </Pressable>
-              );
-            })}
+          {/* Quick Amounts */}
+          <View style={styles.quickAmountRow}>
+            {QUICK_AMOUNTS.map((amt) => (
+              <Pressable
+                key={amt}
+                onPress={() => setAmount(amt.toString())}
+                style={[
+                  styles.quickPill,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: isDark ? colors.surfaceElevated : '#E6F8F0',
+                  },
+                ]}
+              >
+                <Text style={[styles.quickPillText, { color: colors.primary }]}>
+                  {amt >= 1000000 ? `${amt / 1000000}tr` : `${amt / 1000}k`}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
-          {/* Message Input */}
-          <View
-            style={[
-              styles.inputBox,
-              {
-                backgroundColor: isDark ? '#151D2A' : '#F8FAFC',
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <SymbolView
-              name={{ ios: 'text.bubble', android: 'chat_bubble_outline', web: 'chat_bubble_outline' }}
-              size={18}
-              tintColor={colors.textMuted}
-            />
+          {/* Note */}
+          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>Lời nhắn</Text>
+          <View style={[styles.inputWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <Ionicons name="chatbox-ellipses-outline" size={18} color={colors.textMuted} />
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="Lời nhắn chuyển tiền (không bắt buộc)"
-              placeholderTextColor={colors.textMuted}
-              style={[styles.inputField, { color: colors.text }]}
+              placeholder="Ví dụ: Tiền ăn trưa / Chuyển khoản"
+              placeholderTextColor={colors.placeholder}
+              style={[styles.textInput, { color: colors.text }]}
             />
           </View>
-        </View>
 
-        {/* Submit Action Button */}
-        <Pressable
-          accessibilityRole="button"
-          disabled={!recipient || parsedAmount <= 0}
-          onPress={() => setIsSuccess(true)}
-          style={({ pressed }) => [
-            styles.submitBtn,
-            {
-              backgroundColor:
-                !recipient || parsedAmount <= 0
-                  ? isDark
-                    ? '#1E293B'
-                    : '#CBD5E1'
-                  : colors.primary,
-              opacity: pressed ? 0.85 : 1,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.submitBtnText,
-              {
-                color:
-                  !recipient || parsedAmount <= 0 ? colors.textMuted : '#FFFFFF',
-              },
-            ]}
+          {/* CTA */}
+          <Pressable
+            onPress={handleTransfer}
+            style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 20 }]}
           >
-            Xác nhận chuyển tiền →
-          </Text>
-        </Pressable>
+            <Text style={styles.primaryBtnText}>Tiếp tục xác nhận</Text>
+          </Pressable>
+        </GlassCard>
       </View>
     </AppScreen>
   );
@@ -387,167 +224,133 @@ export default function TransferScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  cardBox: {
-    borderRadius: 22,
-    borderWidth: 1,
     padding: spacing.md,
-    gap: spacing.sm + 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: spacing.md,
+    paddingBottom: 40,
   },
-  cardHeaderRow: {
+  backRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+    paddingVertical: 6,
+  },
+  backText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sectionWrap: {
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  recentRow: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingVertical: 4,
+  },
+  recentItem: {
+    alignItems: 'center',
+    width: 68,
+    gap: 4,
+  },
+  recentAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentInitials: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  recentName: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  formCard: {
+    padding: spacing.lg,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 15,
+  },
+  quickAmountRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  quickPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  quickPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  successCard: {
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  successIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successAmount: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  successTable: {
+    width: '100%',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: spacing.md,
+    gap: 10,
   },
   rowBetween: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
   },
-  badgeWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dotIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  walletBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  walletBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: 'monospace',
-  },
-  sourceWalletRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  walletIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  walletDetails: {
-    flex: 1,
-    gap: 2,
-  },
-  walletMainName: {
+  detailLabel: {
     fontSize: 13,
-    fontWeight: '700',
   },
-  walletSubMeta: {
-    fontSize: 11,
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    height: 46,
-    gap: spacing.sm,
-  },
-  inputField: {
-    flex: 1,
+  detailValue: {
     fontSize: 13,
-    paddingVertical: 0,
-  },
-  quickContactsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingTop: 2,
-  },
-  quickSubLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  contactsScroll: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  contactChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  contactChipText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  amountInputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: spacing.md,
-    height: 56,
-    gap: spacing.xs,
-  },
-  currencyPrefix: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  amountInputText: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: '800',
-    fontFamily: 'monospace',
-    paddingVertical: 0,
-  },
-  presetsGrid: {
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'space-between',
-  },
-  presetPill: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  presetPillText: {
-    fontSize: 11,
-  },
-  submitBtn: {
-    height: 50,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginTop: spacing.xs,
-  },
-  submitBtnText: {
-    fontSize: 14,
     fontWeight: '700',
   },
 });

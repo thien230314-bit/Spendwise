@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
-import { Card, Copy, EmptyState, SectionTitle, Segments, Skeleton, UIIcon, UnwiredNote } from '@/components/MobileUI';
+import { Card, Copy, EmptyState, SectionTitle, Segments, Skeleton, UIIcon } from '@/components/MobileUI';
 import { friendsApi, type FriendContactDto, type FriendDto, type FriendRequestDto } from '@/api/friendsApi';
 import { fontStyles, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -42,7 +42,21 @@ export default function FriendsScreen() {
   };
 
   useEffect(() => {
-    loadData();
+    let ignore = false;
+    Promise.all([
+      friendsApi.getFriends().catch(() => []),
+      friendsApi.getIncomingRequests().catch(() => []),
+      friendsApi.getOutgoingRequests().catch(() => []),
+    ]).then(([f, inc, out]) => {
+      if (!ignore) {
+        setFriends(f);
+        setIncoming(inc);
+        setOutgoing(out);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleSearch = async () => {

@@ -16,7 +16,7 @@ import { environment } from '@/config/environment';
 import { Card, Copy, UIIcon } from './MobileUI';
 import { FormField } from './FormField';
 import { PrimaryButton } from './PrimaryButton';
-import { fontStyles, radius, spacing, typography } from '@/theme/tokens';
+import { fontStyles, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type Props = {

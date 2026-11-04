@@ -5,7 +5,7 @@ import { AppHeader } from './AppHeader';
 import { radius, spacing, typography } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-type Props = PropsWithChildren<{ title: string; message?: string; subtitle?: string }>;
+type Props = PropsWithChildren<{ title: string; message?: string; subtitle?: string; scrollable?: boolean }>;
 
 export function AppScreen({ title, message, subtitle, children }: Props) {
   const { colors } = useTheme();

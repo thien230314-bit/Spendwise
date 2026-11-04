@@ -98,7 +98,7 @@
 
 ### 1.4. Hỗ trợ, tranh chấp, khiếu nại
 
-- Hai loại hồ sơ: **Support** (`POST /api/cases/support` với `category,priority,subject,description,linkedTransactionId?`) và **Dispute** (`POST /api/cases/disputes` với `linkedTransactionId,reason,description?`). Cả hai có danh sách, chi tiết, tin nhắn và đính kèm, riêng biệt theo chủ sở hữu.
+- **Tạo hồ sơ mới qua SupportCase** (`POST /api/cases/support` với `category,priority,subject,description,linkedTransactionId?`); khiếu nại giao dịch dùng `category:"complaint_transaction"` hoặc nhóm `complaint_*` thích hợp. **Không tạo Dispute độc lập mới**: `POST /api/cases/disputes` là route legacy, handler luôn trả HTTP `400 dispute_workflow_deprecated`. Các endpoint xem/trả lời Dispute lịch sử vẫn tồn tại, phân quyền theo chủ sở hữu.
 - Người dùng có thể trao đổi với Admin trong hồ sơ, đính kèm tài liệu. Backend chỉ cho liên kết giao dịch thực sự thuộc chính người tạo. Khi Admin cập nhật trạng thái hồ sơ **không được mặc nhiên suy ra hoàn tiền tự động**; xử lý điều chỉnh/hoàn tiền là nghiệp vụ tài chính riêng có điều kiện và chứng từ.
 - `POST /api/v1/funds/requests/{id}/report` với `Expense` Fixed V2 đã `Completed` có thể tạo SupportCase gắn đúng giao dịch, **không tự đảo ledger hoặc hoàn tiền**. Các trường hợp report trạng thái legacy vẫn có guard riêng.
 
@@ -272,17 +272,20 @@ Ba luồng **khác nhau**, không được gộp một màn xác nhận có cùn
 ### 3.6. Quỹ nhóm & Phân bổ Nghĩa vụ V2 (Groups & V1 Funds)
 
 #### 1. `POST /api/groups`
-- **Mô tả:** Tạo nhóm chi tiêu mới. Người tạo trở thành Chủ nhóm (`Owner`).
-- **Quyền:** User (`Active`).
-- **Request Body:**
+- **Mô tả:** Tạo nhóm chi tiêu **legacy**. Người tạo trở thành Chủ nhóm (`Owner`); khác `POST /api/v1/funds`.
+- **Quyền:** User `Active`, kiểm tra PIN giao dịch và giới hạn số nhóm trong handler.
+- **Request Body (`CreateGroupRequest`):**
 ```json
 {
   "name": "Nhà Trọ 402",
   "description": "Nhóm sinh hoạt phòng 402",
-  "currency": "VND"
+  "type": "Roommates",
+  "currency": "VND",
+  "securityPin": "<PIN>"
 }
 ```
-- **Response `201 Created`:** `GroupDto`.
+- **Bắt buộc:** `name`, `type` hợp lệ (`Family`, `Roommates`, `Trip`, `Couple`, `Friends`, `Other`) và PIN xác minh hợp lệ; `description` tùy chọn, `currency` mặc định `VND`. DTO khai báo `securityPin?` nullable nhưng `CreateGroupCommandHandler` vẫn gọi `FinancialSecurityGuard.VerifyAsync`.
+- **Response `200 OK`:** `GroupDto` (controller trả DTO trực tiếp, không trả `201 Created`).
 
 #### 2. `POST /api/groups/{groupId}/invites`
 - **Mô tả:** Chủ nhóm (`Owner`) gửi lời mời tham gia nhóm cho người dùng khác (yêu cầu hai bên đã là bạn bè được chấp thuận, người được mời chưa quá giới hạn 10 nhóm hoạt động).

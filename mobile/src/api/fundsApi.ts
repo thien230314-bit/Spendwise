@@ -152,8 +152,8 @@ export const fundsApi = {
     requestId: string,
     payload: {
       approved: boolean;
+      reason?: string;
       securityPin: string;
-      reviewReason?: string;
     }
   ) =>
     apiRequest<V1FundRequestDto>(`/api/v1/funds/requests/${requestId}/review`, {
@@ -162,9 +162,15 @@ export const fundsApi = {
       authenticated: true,
     }),
 
-  cancelRequest: (requestId: string) =>
-    apiRequest<void>(`/api/v1/funds/requests/${requestId}/cancel`, {
+  cancelRequest: (
+    requestId: string,
+    payload: {
+      securityPin: string;
+    }
+  ) =>
+    apiRequest<V1FundRequestDto>(`/api/v1/funds/requests/${requestId}/cancel`, {
       method: 'POST',
+      body: JSON.stringify(payload),
       authenticated: true,
     }),
 

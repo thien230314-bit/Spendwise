@@ -23,6 +23,7 @@ import {
   V1FundRequestDto,
   V1FinanceDto,
 } from '@/api/fundsApi';
+import { walletsApi, WalletDto } from '@/api/walletsApi';
 
 export default function GroupsScreen() {
   const { user } = useAuth();
@@ -30,8 +31,10 @@ export default function GroupsScreen() {
 
   // State
   const [funds, setFunds] = useState<V1FundDto[]>([]);
+  const [wallets, setWallets] = useState<WalletDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'Fixed' | 'Free'>('all');
   const [selectedFund, setSelectedFund] = useState<V1FundDto | null>(null);
   const [selectedFinance, setSelectedFinance] = useState<V1FinanceDto | null>(null);
@@ -119,21 +122,36 @@ export default function GroupsScreen() {
   ];
 
   const loadFunds = useCallback(async () => {
-    try {
-      const liveFunds = await fundsApi.getFunds();
-      if (liveFunds && liveFunds.length > 0) {
-        setFunds(liveFunds);
-        setIsDemoMode(false);
-      } else {
-        setFunds(getInitialFallbackFunds());
-        setIsDemoMode(true);
-      }
-    } catch {
-      // Backend not running / offline sandbox fallback
+    // Only use demo mode when explicitly configured/toggled by user
+    if (isDemoMode) {
       setFunds(getInitialFallbackFunds());
-      setIsDemoMode(true);
+      setFetchError(null);
+      return;
     }
-  }, []);
+
+    try {
+      setFetchError(null);
+      const [liveFunds, liveWallets] = await Promise.all([
+        fundsApi.getFunds(),
+        walletsApi.getWallets().catch(() => [] as WalletDto[]),
+      ]);
+
+      // Never auto-enable demo when list is empty ([])
+      setFunds(Array.isArray(liveFunds) ? liveFunds : []);
+      if (Array.isArray(liveWallets)) {
+        setWallets(liveWallets);
+      }
+    } catch (err: any) {
+      // Never auto-enable demo on 401/403 or API errors
+      const status = err?.status || err?.statusCode;
+      let msg = err?.message || 'Không thể tải danh sách quỹ từ Backend.';
+      if (status === 401 || status === 403) {
+        msg = 'Phiên đăng nhập đã hết hạn hoặc không đủ quyền truy cập (401/403).';
+      }
+      setFetchError(msg);
+      setFunds([]);
+    }
+  }, [isDemoMode]);
 
   useEffect(() => {
     (async () => {
@@ -328,9 +346,22 @@ export default function GroupsScreen() {
     }
   };
 
+  // Active wallet from API for contribution (Requirement 3: strictly use real walletId from API)
+  const activeWallet = wallets.find((w) => w.isDefault) || wallets[0] || null;
+
   // Handle Contribute
   const handleContributeSubmit = async () => {
     if (!selectedFund) return;
+
+    // Requirement 3: Enforce real wallet ID from API; if none, BLOCK contribution
+    if (!activeWallet || !activeWallet.id) {
+      Alert.alert(
+        'Chặn đóng góp',
+        'Không tìm thấy ví cá nhân hợp lệ trên hệ thống để trích nạp. Vui lòng tạo ví tại màn hình Tất cả ví trước khi đóng góp.'
+      );
+      return;
+    }
+
     const amount = parseInt(contributeAmount.replace(/\D/g, ''), 10);
     if (!amount || amount <= 0) {
       Alert.alert('Lỗi', 'Vui lòng nhập số tiền hợp lệ');
@@ -343,17 +374,17 @@ export default function GroupsScreen() {
 
     try {
       await fundsApi.contribute(selectedFund.id, {
-        walletId: 'default-wallet',
+        walletId: activeWallet.id,
         amountVnd: amount,
         idempotencyKey: `contrib-${Date.now()}`,
         securityPin: actionPin,
         purpose: selectedFund.kind === 'Fixed' ? 'Đóng nghĩa vụ kỳ' : 'Góp vốn tự nguyện',
       });
-      Alert.alert('Thành công (Backend)', `Đã xác nhận đóng góp ${amount.toLocaleString('vi-VN')} ₫ vào quỹ.`);
+      Alert.alert('Thành công (Backend)', `Đã xác nhận đóng góp ${amount.toLocaleString('vi-VN')} ₫ từ ${activeWallet.name} vào quỹ.`);
       setIsContributeModalOpen(false);
       setContributeAmount('');
       setActionPin('');
-      loadFunds();
+      await loadFunds();
     } catch (err: any) {
       if (isDemoMode) {
         Alert.alert(
@@ -463,13 +494,27 @@ export default function GroupsScreen() {
   return (
     <AppScreen title="Quỹ nhóm">
       <View style={styles.container}>
-        {/* DEMO / LIVE STATUS BADGE */}
+        {/* DEMO / LIVE STATUS BADGE (Requirement 4: only active when explicitly configured) */}
         {isDemoMode && (
           <View style={[styles.demoBanner, { backgroundColor: isDark ? '#2D1F0E' : '#FEF3C7', borderColor: colors.amber }]}>
             <Ionicons name="information-circle-outline" size={16} color={colors.amber} />
             <Text style={[styles.demoBannerText, { color: colors.amber }]}>
-              CHẾ ĐỘ MÔ PHỎNG (SANDBOX DEMO) • Backend chưa kết nối hoặc chưa có dữ liệu quỹ thực tế.
+              [MÔ HÌNH THỬ NGHIỆM SANDBOX - DỮ LIỆU MẪU CỐ ĐỊNH] • Được kích hoạt thủ công, không can thiệp Sổ cái Backend.
             </Text>
+          </View>
+        )}
+
+        {/* API ERROR BANNER (Requirement 4: never silent fallback to demo) */}
+        {fetchError && !isDemoMode && (
+          <View style={[styles.errorBanner, { backgroundColor: isDark ? '#3D1518' : '#FDE8E9', borderColor: colors.danger }]}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.errorBannerTitle, { color: colors.danger }]}>Lỗi kết nối Backend</Text>
+              <Text style={[styles.errorBannerText, { color: colors.danger }]}>{fetchError}</Text>
+            </View>
+            <Pressable onPress={handleRefresh} style={[styles.errorRetryBtn, { backgroundColor: colors.danger }]}>
+              <Text style={styles.errorRetryBtnText}>Thử lại</Text>
+            </Pressable>
           </View>
         )}
 
@@ -559,9 +604,66 @@ export default function GroupsScreen() {
           </Pressable>
         </View>
 
+        {/* EXPLICIT SANDBOX DEMO TOGGLE BAR (Requirement 4: only active when explicitly configured) */}
+        <View style={[styles.demoToggleBar, { backgroundColor: isDark ? colors.surfaceElevated : '#F3F4F6' }]}>
+          <View style={{ flex: 1, gap: 1 }}>
+            <Text style={[styles.demoToggleTitle, { color: colors.text }]}>
+              {isDemoMode ? 'Chế độ Demo (Sandbox) đang bật' : 'Chế độ API Backend trực tiếp'}
+            </Text>
+            <Text style={[styles.demoToggleSubtitle, { color: colors.textMuted }]}>
+              {isDemoMode ? 'Hiển thị dữ liệu mẫu cố định để kiểm thử UI' : 'Chỉ hiển thị dữ liệu quỹ thực tế từ API'}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => {
+              const next = !isDemoMode;
+              setIsDemoMode(next);
+              if (next) {
+                setFunds(getInitialFallbackFunds());
+                setFetchError(null);
+              } else {
+                setFunds([]);
+                loadFunds();
+              }
+            }}
+            style={[
+              styles.demoToggleBtn,
+              { backgroundColor: isDemoMode ? colors.amber : (isDark ? '#374151' : '#E5E7EB') },
+            ]}
+          >
+            <Text
+              style={[
+                styles.demoToggleBtnText,
+                { color: isDemoMode ? '#FFFFFF' : colors.text },
+              ]}
+            >
+              {isDemoMode ? 'Tắt Demo' : 'Bật Demo'}
+            </Text>
+          </Pressable>
+        </View>
+
         {/* 3. GROUP FUND LIST */}
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 32 }} />
+        ) : filteredFunds.length === 0 ? (
+          <GlassCard style={styles.emptyCard}>
+            <Ionicons name="people-outline" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Chưa có quỹ nhóm nào</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+              {fetchError
+                ? 'Không thể tải dữ liệu quỹ từ Backend. Vui lòng bấm Thử lại hoặc kiểm tra phiên đăng nhập.'
+                : filterType === 'all'
+                ? 'Tài khoản chưa tham gia quỹ nào. Hãy bấm "Tạo quỹ" bên trên để tạo Quỹ Cố định V2 hoặc Quỹ Tự do V1.'
+                : `Không có quỹ nào thuộc nhóm ${filterType === 'Fixed' ? 'Cố định V2' : 'Tự do V1'}.`}
+            </Text>
+            <Pressable
+              onPress={() => setIsCreateModalOpen(true)}
+              style={[styles.emptyCreateBtn, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Text style={styles.emptyCreateBtnText}>Tạo quỹ ngay</Text>
+            </Pressable>
+          </GlassCard>
         ) : (
           <View style={styles.fundList}>
             {filteredFunds.map((fund) => {
@@ -877,7 +979,7 @@ export default function GroupsScreen() {
                               Người yêu cầu: {req.recipientName || 'Thành viên'} • {req.createdAt}
                             </Text>
 
-                            {/* Owner review actions for Free Fund */}
+                            {/* Owner review actions for Free Fund (Requirement 2: reason & securityPin) */}
                             {selectedFund.kind === 'Free' &&
                               selectedFund.myRole === 'owner' &&
                               req.state === 'AwaitingOwnerReview' && (
@@ -887,6 +989,7 @@ export default function GroupsScreen() {
                                       try {
                                         await fundsApi.reviewRequest(req.id, {
                                           approved: true,
+                                          reason: 'Chấp thuận chi tiêu từ Chủ quỹ',
                                           securityPin: '123456',
                                         });
                                         Alert.alert('Thành công', 'Đã duyệt yêu cầu.');
@@ -904,6 +1007,7 @@ export default function GroupsScreen() {
                                       try {
                                         await fundsApi.reviewRequest(req.id, {
                                           approved: false,
+                                          reason: 'Từ chối chi tiêu từ Chủ quỹ',
                                           securityPin: '123456',
                                         });
                                         Alert.alert('Từ chối', 'Đã từ chối yêu cầu.');
@@ -918,6 +1022,28 @@ export default function GroupsScreen() {
                                   </Pressable>
                                 </View>
                               )}
+
+                            {/* Member cancel action for own pending request (Requirement 2: securityPin) */}
+                            {req.requestedByUserId === user?.id && req.state === 'AwaitingOwnerReview' && (
+                              <View style={[styles.requestActionRow, { marginTop: 4 }]}>
+                                <Pressable
+                                  onPress={async () => {
+                                    try {
+                                      await fundsApi.cancelRequest(req.id, {
+                                        securityPin: '123456',
+                                      });
+                                      Alert.alert('Thành công', 'Đã hủy yêu cầu.');
+                                      loadFundDetails(selectedFund);
+                                    } catch (err: any) {
+                                      Alert.alert('Lỗi hủy', err?.message || 'Không thể hủy yêu cầu.');
+                                    }
+                                  }}
+                                  style={[styles.miniRejectBtn, { borderColor: colors.textMuted }]}
+                                >
+                                  <Text style={[styles.miniRejectText, { color: colors.textMuted }]}>Hủy yêu cầu</Text>
+                                </Pressable>
+                              </View>
+                            )}
                           </View>
                         ))
                       )}
@@ -1134,6 +1260,20 @@ export default function GroupsScreen() {
               </View>
 
               <View style={styles.modalBody}>
+                {/* Source Wallet Info (Requirement 3: strictly use real wallet from API, block if none) */}
+                <View style={[styles.sourceWalletBox, { backgroundColor: isDark ? colors.surfaceElevated : '#F3F4F6', borderColor: colors.border }]}>
+                  <Text style={[styles.sourceWalletLabel, { color: colors.textMuted }]}>Ví nguồn trích tiền:</Text>
+                  {activeWallet ? (
+                    <Text style={[styles.sourceWalletVal, { color: colors.text }]}>
+                      {activeWallet.name} • Khả dụng: {(activeWallet.availableBalance ?? activeWallet.balance ?? 0).toLocaleString('vi-VN')} ₫
+                    </Text>
+                  ) : (
+                    <Text style={[styles.sourceWalletVal, { color: colors.danger, fontWeight: '700' }]}>
+                      ⚠️ Không có ví khả dụng. Chức năng góp tiền bị khóa.
+                    </Text>
+                  )}
+                </View>
+
                 <Text style={[styles.inputLabel, { color: colors.text }]}>Số tiền đóng góp (₫)</Text>
                 <TextInput
                   value={contributeAmount}
@@ -1157,10 +1297,16 @@ export default function GroupsScreen() {
                 />
 
                 <Pressable
+                  disabled={!activeWallet}
                   onPress={handleContributeSubmit}
-                  style={[styles.createSubmitBtn, { backgroundColor: colors.primary }]}
+                  style={[
+                    styles.createSubmitBtn,
+                    { backgroundColor: activeWallet ? colors.primary : (isDark ? '#374151' : '#9CA3AF') },
+                  ]}
                 >
-                  <Text style={styles.createSubmitText}>Xác nhận đóng góp</Text>
+                  <Text style={styles.createSubmitText}>
+                    {activeWallet ? 'Xác nhận đóng góp' : 'Bị chặn (Không có ví nguồn)'}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -1288,6 +1434,101 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     lineHeight: 16,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  errorBannerTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  errorBannerText: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  errorRetryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  errorRetryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  demoToggleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: radius.md,
+  },
+  demoToggleTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  demoToggleSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  demoToggleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  demoToggleBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyCard: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 12,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 12,
+  },
+  emptyCreateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+    marginTop: 8,
+  },
+  emptyCreateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sourceWalletBox: {
+    padding: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 2,
+  },
+  sourceWalletLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sourceWalletVal: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   summaryCard: {
     padding: spacing.lg,

@@ -24,8 +24,8 @@ export default function QrScreen() {
 
   // Mode: My QR vs Scanner
   const [mode, setMode] = useState<'my_qr' | 'scan'>('my_qr');
-  // QR Type: VietQR (Napas247) vs SpendWise P2P
-  const [qrType, setQrType] = useState<'vietqr' | 'spendwise'>('vietqr');
+  // Default to internal SpendWise P2P to avoid sending data to third parties by default
+  const [qrType, setQrType] = useState<'spendwise' | 'vietqr'>('spendwise');
   const [manualCode, setManualCode] = useState('');
   const [imgLoading, setImgLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
@@ -33,13 +33,22 @@ export default function QrScreen() {
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);
 
   const spendId = (user as any)?.spendId || (user as any)?.accountNumber || 'SW-USER-8888';
-  const fullName = (user as any)?.fullName || user?.email || 'Người dùng SpendWise';
+  const fullName = user?.fullName || 'Người dùng SpendWise';
 
-  // URLs for scannable QR codes
-  const vietQrUrl = `https://img.vietqr.io/image/vietcombank-982401-compact2.png?amount=0&addInfo=SpendWise%20${encodeURIComponent(spendId)}&accountName=${encodeURIComponent(fullName)}`;
-  const p2pQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`spendwise:user:${spendId}`)}`;
+  // Check verified bank account (NO HARDCODING of 982401 or any default bank)
+  const verifiedBank = (user as any)?.verifiedBank || (user as any)?.verifiedBankAccount || (user as any)?.linkedBankAccount || null;
+  const hasVerifiedBank = Boolean(
+    verifiedBank &&
+    verifiedBank.accountNumber &&
+    verifiedBank.bankCode &&
+    verifiedBank.isVerified !== false
+  );
 
-  const currentQrUrl = qrType === 'vietqr' ? vietQrUrl : p2pQrUrl;
+  // URL constructed ONLY when a real verified bank account is present
+  // Never send user fullName or sensitive info to third-party endpoints
+  const verifiedVietQrUrl = hasVerifiedBank
+    ? `https://img.vietqr.io/image/${encodeURIComponent(verifiedBank.bankCode)}-${encodeURIComponent(verifiedBank.accountNumber)}-compact2.png?amount=0&addInfo=SpendWise%20${encodeURIComponent(spendId)}`
+    : null;
 
   // Genuine Clipboard Copy via expo-clipboard with verification
   const handleCopySpendId = async () => {
@@ -167,8 +176,31 @@ export default function QrScreen() {
               <Text style={[styles.userSub, { color: colors.textMuted }]}>Tài khoản cá nhân SpendWise</Text>
             </View>
 
-            {/* QR TYPE SWITCHER: VIETQR VS SPENDWISE P2P */}
+            {/* QR TYPE SWITCHER: SPENDWISE P2P VS VIETQR */}
             <View style={styles.qrTypeRow}>
+              <Pressable
+                onPress={() => {
+                  setQrType('spendwise');
+                  setImgLoading(false);
+                  setImgError(false);
+                }}
+                style={[
+                  styles.qrTypeChip,
+                  qrType === 'spendwise'
+                    ? { backgroundColor: colors.primary }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#E5E7EB' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.qrTypeChipText,
+                    { color: qrType === 'spendwise' ? '#FFFFFF' : colors.textMuted },
+                  ]}
+                >
+                  SpendWise P2P
+                </Text>
+              </Pressable>
+
               <Pressable
                 onPress={() => {
                   setQrType('vietqr');
@@ -188,69 +220,86 @@ export default function QrScreen() {
                     { color: qrType === 'vietqr' ? '#FFFFFF' : colors.textMuted },
                   ]}
                 >
-                  VietQR (Napas247)
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  setQrType('spendwise');
-                  setImgLoading(true);
-                  setImgError(false);
-                }}
-                style={[
-                  styles.qrTypeChip,
-                  qrType === 'spendwise'
-                    ? { backgroundColor: colors.primary }
-                    : { backgroundColor: isDark ? colors.surfaceElevated : '#E5E7EB' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.qrTypeChipText,
-                    { color: qrType === 'spendwise' ? '#FFFFFF' : colors.textMuted },
-                  ]}
-                >
-                  SpendWise P2P
+                  VietQR {hasVerifiedBank ? '(Napas247)' : '(Chưa liên kết)'}
                 </Text>
               </Pressable>
             </View>
 
-            {/* REAL SCANNABLE QR IMAGE CONTAINER */}
+            {/* QR DISPLAY CONTAINER */}
             <View style={[styles.qrBox, { backgroundColor: '#FFFFFF', borderColor: colors.border }]}>
-              {imgLoading && (
-                <View style={styles.qrLoader}>
-                  <ActivityIndicator size="large" color={colors.primary} />
-                  <Text style={styles.qrLoadingText}>Đang tạo mã QR chuẩn...</Text>
-                </View>
-              )}
-
-              {!imgError ? (
-                <Image
-                  source={{ uri: currentQrUrl }}
-                  style={[styles.qrImage, imgLoading ? { opacity: 0 } : { opacity: 1 }]}
-                  resizeMode="contain"
-                  onLoadEnd={() => setImgLoading(false)}
-                  onError={() => {
-                    setImgLoading(false);
-                    setImgError(true);
-                  }}
-                />
+              {qrType === 'vietqr' ? (
+                hasVerifiedBank && verifiedVietQrUrl ? (
+                  <>
+                    {imgLoading && (
+                      <View style={styles.qrLoader}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={styles.qrLoadingText}>Đang tạo mã VietQR chuẩn...</Text>
+                      </View>
+                    )}
+                    {!imgError ? (
+                      <Image
+                        source={{ uri: verifiedVietQrUrl }}
+                        style={[styles.qrImage, imgLoading ? { opacity: 0 } : { opacity: 1 }]}
+                        resizeMode="contain"
+                        onLoadEnd={() => setImgLoading(false)}
+                        onError={() => {
+                          setImgLoading(false);
+                          setImgError(true);
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.qrFallback}>
+                        <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
+                        <Text style={styles.fallbackTitle}>Không thể tải VietQR</Text>
+                        <Text style={styles.fallbackNote}>Vui lòng kiểm tra kết nối mạng.</Text>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  /* VIETQR DISABLED WHEN NO VERIFIED BANK ACCOUNT */
+                  <View style={styles.disabledQrBox}>
+                    <View style={[styles.disabledIconBg, { backgroundColor: isDark ? '#382A14' : '#FEF3C7' }]}>
+                      <Ionicons name="card-outline" size={36} color={colors.amber} />
+                    </View>
+                    <Text style={[styles.disabledQrTitle, { color: '#B45309' }]}>
+                      Chưa có tài khoản ngân hàng xác minh
+                    </Text>
+                    <Text style={[styles.disabledQrDesc, { color: '#6B7280' }]}>
+                      Tính năng tạo mã VietQR nhận tiền tự động tạm thời bị vô hiệu hóa vì tài khoản chưa liên kết ngân hàng chính chủ đã xác minh.
+                    </Text>
+                    <Pressable
+                      onPress={() => router.push('/(authenticated)/wallet')}
+                      style={[styles.linkBankBtn, { backgroundColor: colors.primary }]}
+                    >
+                      <Ionicons name="link-outline" size={14} color="#FFFFFF" />
+                      <Text style={styles.linkBankBtnText}>Quản lý ngân hàng trong Ví</Text>
+                    </Pressable>
+                  </View>
+                )
               ) : (
-                /* OFFLINE FALLBACK CARD */
-                <View style={styles.qrFallback}>
-                  <Ionicons name="qr-code" size={140} color={colors.primary} />
-                  <Text style={styles.fallbackTitle}>Mã nhận diện ngoại tuyến</Text>
-                  <Text style={styles.fallbackId}>{spendId}</Text>
-                  <Text style={styles.fallbackNote}>Chuyển khoản VCB: 9824 • Nội dung: {spendId}</Text>
+                /* SPENDWISE P2P SECURE LOCAL DISPLAY (NO 3RD-PARTY TRANSMISSION) */
+                <View style={styles.p2pQrContainer}>
+                  <View style={[styles.p2pHeader, { backgroundColor: '#E6F8F0' }]}>
+                    <Ionicons name="shield-checkmark" size={18} color="#005538" />
+                    <Text style={styles.p2pHeaderText}>SpendWise P2P Verified</Text>
+                  </View>
+
+                  <View style={styles.p2pVisualBox}>
+                    <Ionicons name="qr-code" size={140} color="#005538" />
+                  </View>
+
+                  <Text style={styles.p2pSpendIdText}>{spendId}</Text>
+                  <Text style={styles.p2pHintText}>Quét bằng ứng dụng SpendWise để chuyển tiền tức thì</Text>
                 </View>
               )}
             </View>
 
             <Text style={[styles.qrGuidanceText, { color: colors.textMuted }]}>
               {qrType === 'vietqr'
-                ? 'Mã VietQR hợp lệ chuẩn Napas247 • Quét được bằng tất cả ứng dụng Ngân hàng (VCB, MB, Techcombank,...)'
-                : 'Mã SpendWise P2P • Quét bằng ứng dụng SpendWise để chuyển tiền nội bộ tức thì'}
+                ? hasVerifiedBank
+                  ? `Mã VietQR hợp lệ liên kết tài khoản ngân hàng ${verifiedBank?.bankCode || ''} (${verifiedBank?.accountNumber || ''})`
+                  : 'Vô hiệu hóa VietQR khi chưa có tài khoản ngân hàng xác minh nhằm bảo đảm an toàn dữ liệu.'
+                : 'Mã SpendWise P2P nội bộ • Bảo mật thông tin trên thiết bị, không truyền dữ liệu cá nhân qua bên thứ ba.'}
             </Text>
 
             {/* SPEND ID PILL WITH REAL CLIPBOARD */}
@@ -442,6 +491,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     marginVertical: 6,
+    padding: 12,
   },
   qrLoader: {
     position: 'absolute',
@@ -461,22 +511,91 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 10,
+    gap: 6,
   },
   fallbackTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#111827',
   },
-  fallbackId: {
-    fontSize: 14,
+  fallbackNote: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  disabledQrBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    gap: 8,
+  },
+  disabledIconBg: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledQrTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  disabledQrDesc: {
+    fontSize: 10,
+    lineHeight: 14,
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  linkBankBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    marginTop: 4,
+  },
+  linkBankBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  p2pQrContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+  },
+  p2pHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  p2pHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#005538',
+  },
+  p2pVisualBox: {
+    marginVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  p2pSpendIdText: {
+    fontSize: 15,
     fontWeight: '800',
     color: '#005538',
-    marginTop: 2,
+    letterSpacing: 0.5,
   },
-  fallbackNote: {
+  p2pHintText: {
     fontSize: 10,
     color: '#6B7280',
-    marginTop: 2,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
   qrGuidanceText: {
     fontSize: 11,

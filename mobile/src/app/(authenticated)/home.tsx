@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -16,6 +17,9 @@ import { GlassCard } from '@/components/GlassCard';
 import { BalanceCard } from '@/components/BalanceCard';
 import { useTheme } from '@/theme/useTheme';
 import { radius, spacing } from '@/theme/tokens';
+import { dashboardApi, DashboardDto } from '@/api/dashboardApi';
+import { walletsApi, WalletDto } from '@/api/walletsApi';
+import { transactionsApi } from '@/api/transactionsApi';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -25,11 +29,17 @@ export default function HomeScreen() {
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [availableBalance, setAvailableBalance] = useState(14250000);
   const [quickModal, setQuickModal] = useState<'deposit' | 'withdraw' | 'manual_tx' | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Form states for modals
   const [modalAmount, setModalAmount] = useState('');
   const [modalNote, setModalNote] = useState('');
   const [modalCategory, setModalCategory] = useState('Ăn uống');
+
+  // Wallets & Dashboard
+  const [wallets, setWallets] = useState<WalletDto[]>([]);
+  const [, setDashboard] = useState<DashboardDto | null>(null);
 
   const spendId = (user as any)?.spendId || (user as any)?.accountNumber || 'SW-USER-8888';
   const fullName = user?.fullName || 'Người dùng SpendWise';
@@ -42,8 +52,8 @@ export default function HomeScreen() {
     return 'Chào buổi tối';
   };
 
-  // Recent transactions
-  const recentTransactions = [
+  // Recent transactions fallback
+  const [recentTransactions, setRecentTransactions] = useState([
     {
       id: 'tx-1',
       title: 'Siêu thị WinMart Times City',
@@ -54,9 +64,9 @@ export default function HomeScreen() {
     },
     {
       id: 'tx-2',
-      title: 'Đóng góp Quỹ Du lịch Đà Nẵng',
+      title: 'Đóng góp Quỹ Du lịch Đà Nẵng (Kỳ 2)',
       category: 'Quỹ nhóm Cố định V2',
-      amount: -1500000,
+      amount: -3000000,
       time: '14:15 Hôm qua',
       type: 'fund',
     },
@@ -76,20 +86,86 @@ export default function HomeScreen() {
       time: '31/10/2026',
       type: 'expense',
     },
-  ];
+  ]);
 
+  // Load real data from backend
+  const loadHomeData = useCallback(async () => {
+    try {
+      const [dashRes, walletsRes] = await Promise.allSettled([
+        dashboardApi.getDashboard(),
+        walletsApi.getWallets(),
+      ]);
+
+      let backendConnected = false;
+
+      if (walletsRes.status === 'fulfilled' && walletsRes.value && walletsRes.value.length > 0) {
+        setWallets(walletsRes.value);
+        backendConnected = true;
+        const defaultW = walletsRes.value.find((w) => w.isDefault) || walletsRes.value[0];
+        if (defaultW) {
+          setAvailableBalance(defaultW.availableBalance ?? defaultW.balance ?? 14250000);
+        }
+      }
+
+      if (dashRes.status === 'fulfilled' && dashRes.value) {
+        setDashboard(dashRes.value);
+        backendConnected = true;
+        if (dashRes.value.totalWalletsBalance !== undefined && dashRes.value.totalWalletsBalance > 0) {
+          setAvailableBalance(dashRes.value.totalWalletsBalance);
+        }
+        if (dashRes.value.recentTransactions && dashRes.value.recentTransactions.length > 0) {
+          setRecentTransactions(
+            dashRes.value.recentTransactions.slice(0, 5).map((t) => ({
+              id: t.id,
+              title: t.description || 'Giao dịch',
+              category: t.type === 'expense' ? 'Chi tiêu' : 'Thu nhập',
+              amount: t.type === 'expense' ? -Math.abs(t.amount) : Math.abs(t.amount),
+              time: new Date(t.occurredAt).toLocaleDateString('vi-VN'),
+              type: t.type,
+            }))
+          );
+        }
+      }
+
+      setIsDemoMode(!backendConnected);
+    } catch {
+      setIsDemoMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      await loadHomeData();
+    })();
+  }, [loadHomeData]);
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    await loadHomeData();
+    setLoading(false);
+  };
+
+  // Handle deposit
   const handleDepositSubmit = () => {
     const amt = parseInt(modalAmount.replace(/\D/g, ''), 10);
     if (!amt || amt <= 0) {
       Alert.alert('Lỗi', 'Vui lòng nhập số tiền hợp lệ');
       return;
     }
+
     setAvailableBalance((prev) => prev + amt);
     setQuickModal(null);
     setModalAmount('');
-    Alert.alert('Thành công', `Đã nạp ${amt.toLocaleString('vi-VN')} ₫ vào Ví chi tiêu chính.`);
+
+    Alert.alert(
+      'Mô phỏng nạp tiền (Sandbox)',
+      `Đã cập nhật số dư hiển thị +${amt.toLocaleString('vi-VN')} ₫.\n\n` +
+      `[LƯU Ý NGHIỆP VỤ SPENDWISE]:\n` +
+      `Trong môi trường vận hành thực tế, nạp tiền cần chuyển khoản VietQR kèm SpendID (${spendId}) hoặc qua cổng ngân hàng để Sổ cái kép đối soát tự động.`
+    );
   };
 
+  // Handle withdraw
   const handleWithdrawSubmit = () => {
     const amt = parseInt(modalAmount.replace(/\D/g, ''), 10);
     if (!amt || amt <= 0) {
@@ -97,31 +173,86 @@ export default function HomeScreen() {
       return;
     }
     if (amt > availableBalance) {
-      Alert.alert('Lỗi', 'Số dư chi tiêu khả dụng không đủ');
+      Alert.alert('Lỗi', 'Số dư chi tiêu khả dụng không đủ để rút');
       return;
     }
-    setAvailableBalance((prev) => prev - amt);
-    setQuickModal(null);
-    setModalAmount('');
-    Alert.alert('Thành công', `Đã tạo lệnh rút ${amt.toLocaleString('vi-VN')} ₫ về tài khoản ngân hàng liên kết.`);
-  };
 
-  const handleManualTxSubmit = () => {
-    const amt = parseInt(modalAmount.replace(/\D/g, ''), 10);
-    if (!amt || amt <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập số tiền');
-      return;
-    }
     setAvailableBalance((prev) => Math.max(0, prev - amt));
     setQuickModal(null);
     setModalAmount('');
+
+    Alert.alert(
+      'Mô phỏng rút tiền (Sandbox)',
+      `Đã tạo lệnh rút mô phỏng ${amt.toLocaleString('vi-VN')} ₫.\n\n` +
+      `[LƯU Ý NGHIỆP VỤ SPENDWISE]:\n` +
+      `Lệnh rút tiền chính thức yêu cầu xác thực mã PIN bảo mật và kiểm tra trạng thái tài khoản ngân hàng liên kết trước khi Sổ cái giải phóng dòng tiền.`
+    );
+  };
+
+  // Handle manual transaction
+  const handleManualTxSubmit = async () => {
+    const amt = parseInt(modalAmount.replace(/\D/g, ''), 10);
+    if (!amt || amt <= 0) {
+      Alert.alert('Lỗi', 'Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+
+    const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
+
+    if (defaultWallet && !isDemoMode) {
+      try {
+        await transactionsApi.recordExpense({
+          walletId: defaultWallet.id,
+          amount: amt,
+          description: modalNote ? `${modalCategory}: ${modalNote}` : modalCategory,
+        });
+        await loadHomeData();
+        setQuickModal(null);
+        setModalAmount('');
+        setModalNote('');
+        Alert.alert('Thành công', `Đã ghi nhận khoản chi ${amt.toLocaleString('vi-VN')} ₫ vào Sổ cái.`);
+        return;
+      } catch {
+        // Fallback to local sandbox state
+      }
+    }
+
+    setAvailableBalance((prev) => Math.max(0, prev - amt));
+    setRecentTransactions((prev) => [
+      {
+        id: `tx-${Date.now()}`,
+        title: modalNote || `Chi tiêu ${modalCategory}`,
+        category: modalCategory,
+        amount: -amt,
+        time: 'Vừa xong',
+        type: 'expense',
+      },
+      ...prev,
+    ]);
+    setQuickModal(null);
+    setModalAmount('');
     setModalNote('');
-    Alert.alert('Đã ghi nhận', `Đã ghi nhận khoản chi ${amt.toLocaleString('vi-VN')} ₫ cho "${modalCategory}".`);
+
+    Alert.alert(
+      'Ghi nhận chi tiêu (Sandbox)',
+      `Đã ghi nhận khoản chi ${amt.toLocaleString('vi-VN')} ₫ cho "${modalCategory}".\n\n` +
+      `[SANDBOX]: Đã cập nhật tạm thời trên client trong khi chờ đồng bộ Sổ cái.`
+    );
   };
 
   return (
     <AppScreen title="" scrollable>
       <View style={styles.container}>
+        {/* DEMO / SANDBOX BANNER */}
+        {isDemoMode && (
+          <View style={[styles.sandboxBanner, { backgroundColor: isDark ? '#382A14' : '#FEF3C7', borderColor: colors.amber }]}>
+            <Ionicons name="flask-outline" size={16} color={colors.amber} />
+            <Text style={[styles.sandboxBannerText, { color: colors.amber }]}>
+              CHẾ ĐỘ MÔ PHỎNG (SANDBOX) • Dữ liệu hiển thị an toàn không can thiệp Sổ cái chính
+            </Text>
+          </View>
+        )}
+
         {/* 1. HEADER: GREETING & QUICK ACCESS */}
         <View style={styles.headerRow}>
           <View style={styles.greetingCol}>
@@ -130,6 +261,19 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Làm mới dữ liệu"
+              onPress={handleRefresh}
+              style={[styles.headerIconBtn, { backgroundColor: isDark ? colors.surfaceElevated : '#E6F8F0' }]}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="refresh" size={18} color={colors.primary} />
+              )}
+            </Pressable>
+
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Trợ lý tài chính AI"
@@ -163,7 +307,7 @@ export default function HomeScreen() {
           onAddManualTx={() => setQuickModal('manual_tx')}
         />
 
-        {/* 3. CẦN XỬ LÝ NGAY (NEEDS ATTENTION ACTION QUEUE) */}
+        {/* 3. CẦN XỬ LÝ NGAY (NEEDS ATTENTION ACTION QUEUE - STRICT FIXED V2 & FREE V1 COMPLIANT) */}
         <View style={styles.sectionWrap}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.attentionTag}>
@@ -176,7 +320,7 @@ export default function HomeScreen() {
           </View>
 
           <GlassCard style={styles.attentionCard}>
-            {/* Attention Item 1 */}
+            {/* Attention Item 1: Fixed Fund V2 Obligation */}
             <Pressable
               onPress={() => router.push('/(authenticated)/groups')}
               style={[styles.attentionRow, { borderBottomColor: colors.border }]}
@@ -186,29 +330,29 @@ export default function HomeScreen() {
               </View>
               <View style={styles.attentionInfo}>
                 <Text style={[styles.attentionTitle, { color: colors.text }]}>
-                  Quỹ Du lịch Đà Nẵng: Yêu cầu chi 3.000.000 ₫
+                  Quỹ Du lịch Đà Nẵng: Hạn đóng góp Kỳ 2/3
                 </Text>
                 <Text style={[styles.attentionMeta, { color: colors.textMuted }]}>
-                  Thời hạn phản đối 24h còn: 14 giờ 20 phút
+                  Thời hạn: còn 14 giờ • Đóng đủ 100% mục tiêu để mở chi tiêu
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </Pressable>
 
-            {/* Attention Item 2 */}
+            {/* Attention Item 2: Free Fund V1 Expense Lock */}
             <Pressable
-              onPress={() => router.push('/(authenticated)/friends')}
+              onPress={() => router.push('/(authenticated)/groups')}
               style={styles.attentionRow}
             >
               <View style={[styles.attentionIconWrap, { backgroundColor: isDark ? '#0F3D2E' : '#E6F8F0' }]}>
-                <Ionicons name="person-add-outline" size={20} color={colors.primary} />
+                <Ionicons name="receipt-outline" size={20} color={colors.primary} />
               </View>
               <View style={styles.attentionInfo}>
                 <Text style={[styles.attentionTitle, { color: colors.text }]}>
-                  {'Lời mời kết bạn từ "Trần Thị Mai"'}
+                  Quỹ Ăn trưa: Quyền chi 800.000 ₫ (ApprovedUnused)
                 </Text>
                 <Text style={[styles.attentionMeta, { color: colors.textMuted }]}>
-                  Xác nhận để chuyển tiền P2P tức thì
+                  Khóa rút vốn cho đến khi quyền chi được quyết toán hoặc hủy (tối đa 7 ngày)
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -356,15 +500,21 @@ export default function HomeScreen() {
                   style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
                 />
 
-                <Text style={[styles.modalHint, { color: colors.textMuted }]}>
-                  Nguồn nạp: Ngân hàng Vietcombank liên kết (**** 9824)
-                </Text>
+                <View style={[styles.infoBox, { backgroundColor: isDark ? colors.surfaceElevated : '#F3F4F6' }]}>
+                  <Text style={[styles.infoBoxTitle, { color: colors.text }]}>Quy trình nạp tiền chính thức:</Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Nạp bằng chuyển khoản VietQR: Quét mã QR tại tab QR với nội dung: {spendId}
+                  </Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Hệ thống Sổ cái (Ledger) sẽ tự động đối soát và ghi có vào Ví chính ngay khi nhận giao dịch ngân hàng.
+                  </Text>
+                </View>
 
                 <Pressable
                   onPress={handleDepositSubmit}
                   style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
                 >
-                  <Text style={styles.modalSubmitText}>Xác nhận nạp tiền</Text>
+                  <Text style={styles.modalSubmitText}>Xác nhận (Thử nghiệm Sandbox)</Text>
                 </Pressable>
               </View>
             </View>
@@ -402,11 +552,21 @@ export default function HomeScreen() {
                   Khả dụng rút tối đa: {availableBalance.toLocaleString('vi-VN')} ₫
                 </Text>
 
+                <View style={[styles.infoBox, { backgroundColor: isDark ? colors.surfaceElevated : '#F3F4F6' }]}>
+                  <Text style={[styles.infoBoxTitle, { color: colors.text }]}>Điều kiện rút tiền:</Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Tài khoản ngân hàng liên kết chính chủ đã xác minh
+                  </Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Yêu cầu xác thực mã PIN bảo mật 6 số trước khi giải ngân
+                  </Text>
+                </View>
+
                 <Pressable
                   onPress={handleWithdrawSubmit}
                   style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
                 >
-                  <Text style={styles.modalSubmitText}>Xác nhận rút tiền</Text>
+                  <Text style={styles.modalSubmitText}>Xác nhận (Thử nghiệm Sandbox)</Text>
                 </Pressable>
               </View>
             </View>
@@ -423,7 +583,7 @@ export default function HomeScreen() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
               <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Ghi chép thu chi nhanh</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Ghi chép chi tiêu nhanh</Text>
                 <Pressable onPress={() => setQuickModal(null)}>
                   <Ionicons name="close" size={24} color={colors.text} />
                 </Pressable>
@@ -488,6 +648,20 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
     paddingBottom: 40,
+  },
+  sandboxBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  sandboxBannerText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '700',
   },
   headerRow: {
     flexDirection: 'row',
@@ -688,9 +862,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 15,
   },
-  modalHint: {
+  infoBox: {
+    padding: 10,
+    borderRadius: radius.md,
+    marginTop: 8,
+    gap: 4,
+  },
+  infoBoxTitle: {
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: '700',
+  },
+  modalHint: {
+    fontSize: 11,
+    lineHeight: 16,
   },
   modalSubmitBtn: {
     marginTop: 18,

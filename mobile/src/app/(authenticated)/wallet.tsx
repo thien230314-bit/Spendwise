@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -14,18 +15,24 @@ import { AppScreen } from '@/components/AppScreen';
 import { GlassCard } from '@/components/GlassCard';
 import { useTheme } from '@/theme/useTheme';
 import { radius, spacing } from '@/theme/tokens';
+import { walletsApi, WalletDto } from '@/api/walletsApi';
 
 export interface WalletItem {
   id: string;
   name: string;
   type: 'primary' | 'sub';
   balance: number;
+  availableBalance: number;
   accountNumber: string;
   isDefault: boolean;
 }
 
 export default function WalletScreen() {
   const { colors, isDark } = useTheme();
+
+  // Loading & Mode
+  const [loading, setLoading] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Balance Scopes (Strictly separated per SpendWise rules)
   const [liquidBalance, setLiquidBalance] = useState(14250000); // Khả dụng chi tiêu
@@ -40,6 +47,7 @@ export default function WalletScreen() {
       name: 'Ví chi tiêu chính',
       type: 'primary',
       balance: 11250000,
+      availableBalance: 11250000,
       accountNumber: 'SW-W1-982401',
       isDefault: true,
     },
@@ -48,6 +56,7 @@ export default function WalletScreen() {
       name: 'Ví phụ: Ăn uống & Cà phê',
       type: 'sub',
       balance: 3000000,
+      availableBalance: 3000000,
       accountNumber: 'SW-W2-982402',
       isDefault: false,
     },
@@ -59,55 +68,144 @@ export default function WalletScreen() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
 
-  const handleCreateSubWallet = () => {
+  // Fetch real wallets from backend
+  const loadWallets = useCallback(async () => {
+    try {
+      const data: WalletDto[] = await walletsApi.getWallets();
+      if (data && data.length > 0) {
+        const mapped: WalletItem[] = data.map((w, idx) => ({
+          id: w.id,
+          name: w.name,
+          type: w.type === 'sub' || !w.isDefault ? 'sub' : 'primary',
+          balance: w.balance ?? w.availableBalance ?? 0,
+          availableBalance: w.availableBalance ?? w.balance ?? 0,
+          accountNumber: `SW-W${idx + 1}-${w.id.slice(0, 6).toUpperCase()}`,
+          isDefault: !!w.isDefault,
+        }));
+        setWallets(mapped);
+        const totalAvail = mapped.reduce((sum, item) => sum + item.availableBalance, 0);
+        setLiquidBalance(totalAvail);
+        setIsDemoMode(false);
+      } else {
+        setIsDemoMode(true);
+      }
+    } catch {
+      setIsDemoMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      await loadWallets();
+    })();
+  }, [loadWallets]);
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    await loadWallets();
+    setLoading(false);
+  };
+
+  // Create Sub-Wallet
+  const handleCreateSubWallet = async () => {
     if (wallets.filter((w) => w.type === 'sub').length >= 2) {
-      Alert.alert('Giới hạn', 'Mỗi tài khoản được phép tạo tối đa 2 ví phụ.');
+      Alert.alert('Giới hạn hệ thống', 'Mỗi người dùng chỉ được phép sở hữu tối đa 2 ví phụ theo quy định SpendWise.');
       return;
     }
     if (!newWalletName.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên ví');
+      Alert.alert('Lỗi', 'Vui lòng nhập tên ví phụ.');
       return;
     }
+
+    if (!isDemoMode) {
+      try {
+        await walletsApi.createWallet({
+          name: newWalletName.trim(),
+          type: 'sub',
+        });
+        await loadWallets();
+        setIsCreateWalletModalOpen(false);
+        setNewWalletName('');
+        Alert.alert('Thành công', `Đã tạo ví phụ "${newWalletName.trim()}" trên hệ thống backend.`);
+        return;
+      } catch (err: any) {
+        Alert.alert('Lỗi tạo ví', err?.message || 'Không thể kết nối backend. Chuyển sang mô phỏng.');
+      }
+    }
+
+    // Sandbox fallback
     const newWallet: WalletItem = {
       id: `w-${Date.now()}`,
       name: newWalletName.trim(),
       type: 'sub',
       balance: 0,
+      availableBalance: 0,
       accountNumber: `SW-W${wallets.length + 1}-${Math.floor(100000 + Math.random() * 900000)}`,
       isDefault: false,
     };
     setWallets([...wallets, newWallet]);
     setIsCreateWalletModalOpen(false);
     setNewWalletName('');
-    Alert.alert('Thành công', `Đã tạo ví phụ "${newWallet.name}".`);
+    Alert.alert('Thành công (Sandbox)', `Đã tạo ví phụ mô phỏng "${newWallet.name}".`);
   };
 
+  // Deposit Handler (Sandbox Simulation with real Ledger notice)
   const handleDeposit = () => {
     const amt = parseInt(depositAmount.replace(/\D/g, ''), 10);
     if (!amt || amt <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập số tiền nạp');
+      Alert.alert('Lỗi', 'Vui lòng nhập số tiền nạp hợp lệ');
       return;
     }
+
     setLiquidBalance((prev) => prev + amt);
     setWallets((prev) =>
-      prev.map((w) => (w.isDefault ? { ...w, balance: w.balance + amt } : w))
+      prev.map((w) => (w.isDefault ? { ...w, balance: w.balance + amt, availableBalance: w.availableBalance + amt } : w))
     );
     setIsDepositModalOpen(false);
     setDepositAmount('');
-    Alert.alert('Thành công', `Đã nạp ${amt.toLocaleString('vi-VN')} ₫ vào Ví chi tiêu chính.`);
+
+    Alert.alert(
+      'Mô phỏng nạp tiền (Sandbox)',
+      `Đã cập nhật số dư hiển thị +${amt.toLocaleString('vi-VN')} ₫ vào Ví chính.\n\n` +
+      `[LƯU Ý NGHIỆP VỤ SPENDWISE]:\n` +
+      `Trong môi trường vận hành thực tế, nạp tiền cần chuyển khoản VietQR tự động hoặc cổng thanh toán xác nhận để Sổ cái kép đối soát trước khi ghi tăng số dư.`
+    );
   };
 
   return (
     <AppScreen title="Tất cả ví & Tài sản" scrollable>
       <View style={styles.container}>
         {/* BACK TO HOME NAVIGATOR BAR */}
-        <Pressable
-          onPress={() => router.replace('/(authenticated)/home')}
-          style={styles.backRow}
-        >
-          <Ionicons name="arrow-back" size={20} color={colors.primary} />
-          <Text style={[styles.backText, { color: colors.primary }]}>Quay lại Trang chủ</Text>
-        </Pressable>
+        <View style={styles.backRow}>
+          <Pressable
+            onPress={() => router.replace('/(authenticated)/home')}
+            style={styles.backBtn}
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.primary} />
+            <Text style={[styles.backText, { color: colors.primary }]}>Quay lại Trang chủ</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleRefresh}
+            style={[styles.refreshBtn, { backgroundColor: isDark ? colors.surfaceElevated : '#E6F8F0' }]}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons name="refresh" size={16} color={colors.primary} />
+            )}
+          </Pressable>
+        </View>
+
+        {/* DEMO / SANDBOX BANNER */}
+        {isDemoMode && (
+          <View style={[styles.sandboxBanner, { backgroundColor: isDark ? '#382A14' : '#FEF3C7', borderColor: colors.amber }]}>
+            <Ionicons name="flask-outline" size={16} color={colors.amber} />
+            <Text style={[styles.sandboxBannerText, { color: colors.amber }]}>
+              CHẾ ĐỘ MÔ PHỎNG (SANDBOX) • Quản lý số dư an toàn không can thiệp Sổ cái chính
+            </Text>
+          </View>
+        )}
 
         {/* 1. HERO LIQUID SPENDABLE CARD */}
         <GlassCard style={styles.heroCard}>
@@ -204,7 +302,7 @@ export default function WalletScreen() {
                 onPress={() => setIsCreateWalletModalOpen(true)}
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={[styles.addWalletLink, { color: colors.primary }]}>+ Tạo ví phụ</Text>
+                <Text style={[styles.addWalletLink, { color: colors.primary }]}>+ Tạo ví phụ (Tối đa 2)</Text>
               </Pressable>
             )}
           </View>
@@ -231,10 +329,10 @@ export default function WalletScreen() {
 
                 <View style={styles.walletCardBody}>
                   <Text style={[styles.walletBalance, { color: colors.text }]}>
-                    {w.balance.toLocaleString('vi-VN')} ₫
+                    {w.availableBalance.toLocaleString('vi-VN')} ₫
                   </Text>
                   <Text style={[styles.walletAccountNo, { color: colors.textMuted }]}>
-                    Số tài khoản: {w.accountNumber}
+                    Mã định danh: {w.accountNumber}
                   </Text>
                 </View>
               </GlassCard>
@@ -291,7 +389,7 @@ export default function WalletScreen() {
                 />
 
                 <Text style={[styles.modalHint, { color: colors.textMuted }]}>
-                  Ví phụ giúp phân tách các khoản tiền chi tiêu định kỳ khỏi ví chính.
+                  Ví phụ giúp phân tách các khoản tiền chi tiêu định kỳ khỏi ví chính (tối đa 2 ví phụ).
                 </Text>
 
                 <Pressable
@@ -332,11 +430,21 @@ export default function WalletScreen() {
                   style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
                 />
 
+                <View style={[styles.infoBox, { backgroundColor: isDark ? colors.surfaceElevated : '#F3F4F6' }]}>
+                  <Text style={[styles.infoBoxTitle, { color: colors.text }]}>Phương thức nạp tiền SpendWise:</Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Nạp chính thức qua quét mã VietQR tự động khớp lệnh trên Sổ cái.
+                  </Text>
+                  <Text style={[styles.modalHint, { color: colors.textMuted }]}>
+                    • Thao tác bên dưới là mô phỏng giao diện trong môi trường Sandbox.
+                  </Text>
+                </View>
+
                 <Pressable
                   onPress={handleDeposit}
                   style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
                 >
-                  <Text style={styles.modalSubmitText}>Xác nhận nạp</Text>
+                  <Text style={styles.modalSubmitText}>Xác nhận (Thử nghiệm Sandbox)</Text>
                 </Pressable>
               </View>
             </View>
@@ -355,12 +463,38 @@ const styles = StyleSheet.create({
   },
   backRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  backBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 6,
   },
   backText: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  refreshBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sandboxBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  sandboxBannerText: {
+    flex: 1,
+    fontSize: 11,
     fontWeight: '700',
   },
   heroCard: {
@@ -448,7 +582,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
     padding: 12,
-    gap: 4,
   },
   scopeCellWide: {
     width: '100%',
@@ -458,31 +591,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   scopeIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   scopeLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   scopeAmount: {
     fontSize: 17,
     fontWeight: '800',
+    marginVertical: 2,
   },
   scopeDesc: {
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 10,
   },
   walletListWrap: {
     gap: 10,
   },
   walletCard: {
     padding: spacing.md,
-    gap: 8,
+    gap: 6,
   },
   walletCardHeader: {
     flexDirection: 'row',
@@ -501,22 +634,24 @@ const styles = StyleSheet.create({
   defaultBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: radius.sm,
+    borderRadius: radius.pill,
   },
   defaultBadgeText: {
     fontSize: 11,
     fontWeight: '700',
   },
   walletCardBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
     marginTop: 4,
   },
   walletBalance: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
   },
   walletAccountNo: {
     fontSize: 12,
-    marginTop: 2,
   },
   bankCard: {
     padding: spacing.md,
@@ -527,14 +662,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   bankIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bankName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   bankAccountNo: {
@@ -575,7 +710,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   modalBody: {
-    gap: 8,
+    gap: 6,
   },
   modalLabel: {
     fontSize: 13,
@@ -588,11 +723,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 15,
   },
-  modalHint: {
+  infoBox: {
+    padding: 10,
+    borderRadius: radius.md,
+    marginTop: 8,
+    gap: 4,
+  },
+  infoBoxTitle: {
     fontSize: 12,
+    fontWeight: '700',
+  },
+  modalHint: {
+    fontSize: 11,
+    lineHeight: 16,
   },
   modalSubmitBtn: {
-    marginTop: 16,
+    marginTop: 18,
     paddingVertical: 14,
     borderRadius: radius.lg,
     alignItems: 'center',

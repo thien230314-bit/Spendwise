@@ -6,36 +6,100 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppScreen } from '@/components/AppScreen';
 import { GlassCard } from '@/components/GlassCard';
 import { useTheme } from '@/theme/useTheme';
-import { radius, spacing, typography } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 
 export default function QrScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+
+  // Mode: My QR vs Scanner
   const [mode, setMode] = useState<'my_qr' | 'scan'>('my_qr');
+  // QR Type: VietQR (Napas247) vs SpendWise P2P
+  const [qrType, setQrType] = useState<'vietqr' | 'spendwise'>('vietqr');
   const [manualCode, setManualCode] = useState('');
+  const [imgLoading, setImgLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
+  const [copiedState, setCopiedState] = useState(false);
+  const [clipboardContent, setClipboardContent] = useState<string | null>(null);
 
   const spendId = (user as any)?.spendId || (user as any)?.accountNumber || 'SW-USER-8888';
   const fullName = (user as any)?.fullName || user?.email || 'Người dùng SpendWise';
 
-  const handleCopySpendId = () => {
-    Alert.alert('Đã sao chép', `Đã sao chép mã SpendID: ${spendId}`);
+  // URLs for scannable QR codes
+  const vietQrUrl = `https://img.vietqr.io/image/vietcombank-982401-compact2.png?amount=0&addInfo=SpendWise%20${encodeURIComponent(spendId)}&accountName=${encodeURIComponent(fullName)}`;
+  const p2pQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`spendwise:user:${spendId}`)}`;
+
+  const currentQrUrl = qrType === 'vietqr' ? vietQrUrl : p2pQrUrl;
+
+  // Genuine Clipboard Copy via expo-clipboard with verification
+  const handleCopySpendId = async () => {
+    try {
+      await Clipboard.setStringAsync(spendId);
+      const readBack = await Clipboard.getStringAsync();
+      if (readBack === spendId) {
+        setCopiedState(true);
+        setClipboardContent(readBack);
+        setTimeout(() => setCopiedState(false), 3000);
+        Alert.alert(
+          'Đã sao chép vào bộ nhớ tạm (Verified Clipboard)',
+          `Mã SpendID: "${spendId}" đã được ghi vào bộ nhớ tạm của thiết bị và xác minh đọc lại thành công.`
+        );
+      } else {
+        Alert.alert('Thông báo', `SpendID: ${spendId}`);
+      }
+    } catch (err: any) {
+      Alert.alert('Lỗi Clipboard', err?.message || 'Không thể ghi vào bộ nhớ tạm');
+    }
   };
 
-  const handleSimulateScan = (scannedTarget: string) => {
-    Alert.alert('Quét thành công', `Mã nhận diện: ${scannedTarget}`, [
-      {
-        text: 'Chuyển tiền',
-        onPress: () => router.push('/(authenticated)/transfer'),
-      },
-      { text: 'Đóng', style: 'cancel' },
-    ]);
+  // Verify Clipboard Content
+  const handleVerifyClipboard = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      setClipboardContent(text);
+      Alert.alert(
+        'Nội dung bộ nhớ tạm hiện tại',
+        text ? `"${text}"` : '(Bộ nhớ tạm đang trống)'
+      );
+    } catch (err: any) {
+      Alert.alert('Lỗi kiểm tra', err?.message || 'Không thể đọc bộ nhớ tạm');
+    }
+  };
+
+  // Handle scanned/manual code
+  const handleProcessCode = (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      Alert.alert('Lỗi', 'Vui lòng nhập hoặc quét mã SpendID / QR.');
+      return;
+    }
+
+    let targetId = trimmed;
+    if (trimmed.startsWith('spendwise:user:')) {
+      targetId = trimmed.replace('spendwise:user:', '');
+    }
+
+    Alert.alert(
+      'Mã hợp lệ',
+      `Đã nhận diện SpendID: ${targetId}`,
+      [
+        {
+          text: 'Chuyển tiền tới người này',
+          onPress: () => router.push('/(authenticated)/transfer'),
+        },
+        { text: 'Đóng', style: 'cancel' },
+      ]
+    );
   };
 
   return (
@@ -103,25 +167,119 @@ export default function QrScreen() {
               <Text style={[styles.userSub, { color: colors.textMuted }]}>Tài khoản cá nhân SpendWise</Text>
             </View>
 
-            {/* QR GRAPHIC CONTAINER */}
-            <View style={styles.qrBox}>
-              <View style={[styles.qrPatternMock, { borderColor: colors.primary }]}>
-                <Ionicons name="qr-code" size={170} color={colors.primary} />
-              </View>
-              <View style={[styles.qrLogoCenter, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-                <Ionicons name="wallet" size={20} color={colors.primary} />
-              </View>
+            {/* QR TYPE SWITCHER: VIETQR VS SPENDWISE P2P */}
+            <View style={styles.qrTypeRow}>
+              <Pressable
+                onPress={() => {
+                  setQrType('vietqr');
+                  setImgLoading(true);
+                  setImgError(false);
+                }}
+                style={[
+                  styles.qrTypeChip,
+                  qrType === 'vietqr'
+                    ? { backgroundColor: colors.primary }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#E5E7EB' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.qrTypeChipText,
+                    { color: qrType === 'vietqr' ? '#FFFFFF' : colors.textMuted },
+                  ]}
+                >
+                  VietQR (Napas247)
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setQrType('spendwise');
+                  setImgLoading(true);
+                  setImgError(false);
+                }}
+                style={[
+                  styles.qrTypeChip,
+                  qrType === 'spendwise'
+                    ? { backgroundColor: colors.primary }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#E5E7EB' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.qrTypeChipText,
+                    { color: qrType === 'spendwise' ? '#FFFFFF' : colors.textMuted },
+                  ]}
+                >
+                  SpendWise P2P
+                </Text>
+              </Pressable>
             </View>
 
-            {/* SPEND ID PILL */}
+            {/* REAL SCANNABLE QR IMAGE CONTAINER */}
+            <View style={[styles.qrBox, { backgroundColor: '#FFFFFF', borderColor: colors.border }]}>
+              {imgLoading && (
+                <View style={styles.qrLoader}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.qrLoadingText}>Đang tạo mã QR chuẩn...</Text>
+                </View>
+              )}
+
+              {!imgError ? (
+                <Image
+                  source={{ uri: currentQrUrl }}
+                  style={[styles.qrImage, imgLoading ? { opacity: 0 } : { opacity: 1 }]}
+                  resizeMode="contain"
+                  onLoadEnd={() => setImgLoading(false)}
+                  onError={() => {
+                    setImgLoading(false);
+                    setImgError(true);
+                  }}
+                />
+              ) : (
+                /* OFFLINE FALLBACK CARD */
+                <View style={styles.qrFallback}>
+                  <Ionicons name="qr-code" size={140} color={colors.primary} />
+                  <Text style={styles.fallbackTitle}>Mã nhận diện ngoại tuyến</Text>
+                  <Text style={styles.fallbackId}>{spendId}</Text>
+                  <Text style={styles.fallbackNote}>Chuyển khoản VCB: 9824 • Nội dung: {spendId}</Text>
+                </View>
+              )}
+            </View>
+
+            <Text style={[styles.qrGuidanceText, { color: colors.textMuted }]}>
+              {qrType === 'vietqr'
+                ? 'Mã VietQR hợp lệ chuẩn Napas247 • Quét được bằng tất cả ứng dụng Ngân hàng (VCB, MB, Techcombank,...)'
+                : 'Mã SpendWise P2P • Quét bằng ứng dụng SpendWise để chuyển tiền nội bộ tức thì'}
+            </Text>
+
+            {/* SPEND ID PILL WITH REAL CLIPBOARD */}
             <Pressable
               onPress={handleCopySpendId}
-              style={[styles.spendIdPill, { backgroundColor: isDark ? colors.surfaceElevated : '#E8F5EE' }]}
+              style={[
+                styles.spendIdPill,
+                { backgroundColor: isDark ? colors.surfaceElevated : '#E8F5EE' },
+                copiedState && { borderColor: colors.primary, borderWidth: 1.5 },
+              ]}
             >
               <Text style={[styles.spendIdLabel, { color: colors.textMuted }]}>SpendID:</Text>
               <Text style={[styles.spendIdValue, { color: colors.text }]}>{spendId}</Text>
-              <Ionicons name="copy-outline" size={16} color={colors.primary} />
+              <Ionicons
+                name={copiedState ? 'checkmark-circle' : 'copy-outline'}
+                size={18}
+                color={colors.primary}
+              />
             </Pressable>
+
+            {/* VERIFY CLIPBOARD ROW */}
+            {clipboardContent && (
+              <View style={[styles.clipboardStatus, { backgroundColor: isDark ? '#0F3D2E' : '#E6F8F0' }]}>
+                <Ionicons name="clipboard-outline" size={14} color={colors.primary} />
+                <Text style={[styles.clipboardStatusText, { color: colors.primary }]}>
+                  Đã ghi vào Clipboard OS: &quot;{clipboardContent}&quot;
+                </Text>
+              </View>
+            )}
 
             {/* ACTION BUTTONS */}
             <View style={styles.qrActions}>
@@ -130,15 +288,19 @@ export default function QrScreen() {
                 style={[styles.actionBtn, { backgroundColor: colors.primary }]}
               >
                 <Ionicons name="copy" size={18} color="#FFFFFF" />
-                <Text style={styles.actionBtnText}>Sao chép mã</Text>
+                <Text style={styles.actionBtnText}>
+                  {copiedState ? 'Đã chép vào Clipboard' : 'Sao chép SpendID'}
+                </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => Alert.alert('Chia sẻ', 'Tính năng chia sẻ ảnh QR đang mở.')}
+                onPress={handleVerifyClipboard}
                 style={[styles.actionBtnOutline, { borderColor: colors.primary }]}
               >
-                <Ionicons name="share-social-outline" size={18} color={colors.primary} />
-                <Text style={[styles.actionBtnOutlineText, { color: colors.primary }]}>Chia sẻ QR</Text>
+                <Ionicons name="clipboard" size={18} color={colors.primary} />
+                <Text style={[styles.actionBtnOutlineText, { color: colors.primary }]}>
+                  Kiểm tra Clipboard
+                </Text>
               </Pressable>
             </View>
           </GlassCard>
@@ -151,62 +313,48 @@ export default function QrScreen() {
                 <View style={[styles.scanCorner, styles.cornerTR, { borderColor: colors.primary }]} />
                 <View style={[styles.scanCorner, styles.cornerBL, { borderColor: colors.primary }]} />
                 <View style={[styles.scanCorner, styles.cornerBR, { borderColor: colors.primary }]} />
-                <Ionicons name="scan" size={48} color={colors.primary} style={{ opacity: 0.6 }} />
+                <View style={[styles.scanBeam, { backgroundColor: colors.primary }]} />
               </View>
-              <Text style={[styles.scannerHint, { color: colors.textMuted }]}>
-                Di chuyển camera đến mã QR SpendWise hoặc VietQR để quét
-              </Text>
             </View>
 
-            {/* MANUAL CODE INPUT */}
-            <View style={styles.manualSection}>
-              <Text style={[styles.manualTitle, { color: colors.text }]}>Hoặc nhập mã SpendID thủ công:</Text>
-              <View style={styles.manualInputRow}>
+            <Text style={[styles.scannerHint, { color: colors.textMuted }]}>
+              Hướng camera vào mã VietQR hoặc SpendID để quét
+            </Text>
+
+            {/* MANUAL / PASTE INPUT */}
+            <View style={styles.manualInputWrap}>
+              <Text style={[styles.manualLabel, { color: colors.text }]}>Hoặc dán SpendID từ bộ nhớ tạm:</Text>
+              <View style={styles.inputRow}>
                 <TextInput
                   value={manualCode}
                   onChangeText={setManualCode}
-                  placeholder="Ví dụ: SW-USER-9824"
+                  placeholder="Ví dụ: SW-USER-8888"
                   placeholderTextColor={colors.placeholder}
                   style={[
-                    styles.manualInput,
+                    styles.textInput,
                     {
-                      backgroundColor: colors.surface,
+                      backgroundColor: colors.surfaceElevated,
                       borderColor: colors.border,
                       color: colors.text,
                     },
                   ]}
                 />
                 <Pressable
-                  onPress={() => {
-                    if (manualCode.trim()) {
-                      handleSimulateScan(manualCode.trim());
-                    } else {
-                      Alert.alert('Thông báo', 'Vui lòng nhập mã SpendID');
-                    }
+                  onPress={async () => {
+                    const text = await Clipboard.getStringAsync();
+                    if (text) setManualCode(text);
                   }}
-                  style={[styles.manualSubmitBtn, { backgroundColor: colors.primary }]}
+                  style={[styles.pasteBtn, { backgroundColor: colors.primarySoft }]}
                 >
-                  <Text style={styles.manualSubmitText}>Tìm</Text>
+                  <Text style={[styles.pasteBtnText, { color: colors.primary }]}>Dán</Text>
                 </Pressable>
               </View>
-            </View>
 
-            {/* DEMO SCAN OPTIONS */}
-            <View style={styles.quickScanList}>
-              <Text style={[styles.quickScanTitle, { color: colors.textMuted }]}>Mã kiểm thử nhanh:</Text>
               <Pressable
-                onPress={() => handleSimulateScan('SW-FRIEND-AN-NGUYEN')}
-                style={[styles.quickScanItem, { borderColor: colors.border }]}
+                onPress={() => handleProcessCode(manualCode)}
+                style={[styles.processBtn, { backgroundColor: colors.primary }]}
               >
-                <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
-                <Text style={[styles.quickScanItemText, { color: colors.text }]}>Bạn bè: An Nguyễn (SW-FRIEND-AN)</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleSimulateScan('SW-FUND-DALAT-TRIP')}
-                style={[styles.quickScanItem, { borderColor: colors.border }]}
-              >
-                <Ionicons name="people-circle-outline" size={20} color={colors.accent} />
-                <Text style={[styles.quickScanItemText, { color: colors.text }]}>Quỹ: Du lịch Đà Lạt 2026</Text>
+                <Text style={styles.processBtnText}>Xác nhận mã & Chuyển tiền</Text>
               </Pressable>
             </View>
           </GlassCard>
@@ -220,6 +368,7 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.md,
     gap: spacing.md,
+    paddingBottom: 40,
   },
   segmentContainer: {
     flexDirection: 'row',
@@ -231,12 +380,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     paddingVertical: 10,
     borderRadius: radius.pill,
   },
   segmentBtnActive: {
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -249,51 +398,91 @@ const styles = StyleSheet.create({
   qrCard: {
     padding: spacing.lg,
     alignItems: 'center',
+    gap: 12,
   },
   qrCardHeader: {
     alignItems: 'center',
-    marginBottom: spacing.md,
+    gap: 4,
   },
   avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   userName: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
   },
   userSub: {
-    fontSize: 13,
+    fontSize: 12,
+  },
+  qrTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 4,
+  },
+  qrTypeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  qrTypeChipText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   qrBox: {
-    width: 220,
-    height: 220,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginVertical: spacing.md,
-  },
-  qrPatternMock: {
-    width: 200,
-    height: 200,
-    borderWidth: 2,
+    width: 250,
+    height: 250,
     borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    borderWidth: 1,
+    marginVertical: 6,
   },
-  qrLogoCenter: {
+  qrLoader: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
+    alignItems: 'center',
+    gap: 8,
+  },
+  qrLoadingText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  qrImage: {
+    width: 236,
+    height: 236,
+  },
+  qrFallback: {
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 10,
+  },
+  fallbackTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  fallbackId: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#005538',
+    marginTop: 2,
+  },
+  fallbackNote: {
+    fontSize: 10,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  qrGuidanceText: {
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 8,
   },
   spendIdPill: {
     flexDirection: 'row',
@@ -302,21 +491,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: radius.pill,
-    marginBottom: spacing.lg,
   },
   spendIdLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
   },
   spendIdValue: {
     fontSize: 14,
     fontWeight: '800',
-    fontFamily: typography.brand.fontFamily,
+    letterSpacing: 0.5,
+  },
+  clipboardStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  clipboardStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   qrActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     width: '100%',
+    marginTop: 8,
   },
   actionBtn: {
     flex: 1,
@@ -330,7 +530,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
   actionBtnOutline: {
     flex: 1,
@@ -344,72 +544,64 @@ const styles = StyleSheet.create({
   },
   actionBtnOutlineText: {
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
   scannerCard: {
     padding: spacing.lg,
+    alignItems: 'center',
+    gap: 16,
   },
   scannerViewport: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  viewfinder: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
+    backgroundColor: '#0F172A',
     borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  viewfinder: {
+    width: 190,
+    height: 190,
+    borderWidth: 1,
+    borderStyle: 'dashed',
     position: 'relative',
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scanCorner: {
     position: 'absolute',
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
+    borderWidth: 3,
   },
-  cornerTL: {
-    top: 8,
-    left: 8,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-  },
-  cornerTR: {
-    top: 8,
-    right: 8,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-  },
-  cornerBL: {
-    bottom: 8,
-    left: 8,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-  },
-  cornerBR: {
-    bottom: 8,
-    right: 8,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
+  cornerTL: { top: -2, left: -2, borderRightWidth: 0, borderBottomWidth: 0 },
+  cornerTR: { top: -2, right: -2, borderLeftWidth: 0, borderBottomWidth: 0 },
+  cornerBL: { bottom: -2, left: -2, borderRightWidth: 0, borderTopWidth: 0 },
+  cornerBR: { bottom: -2, right: -2, borderLeftWidth: 0, borderTopWidth: 0 },
+  scanBeam: {
+    width: '100%',
+    height: 2,
+    opacity: 0.8,
   },
   scannerHint: {
-    fontSize: 13,
+    fontSize: 12,
     textAlign: 'center',
-    paddingHorizontal: spacing.md,
   },
-  manualSection: {
-    marginTop: spacing.sm,
+  manualInputWrap: {
+    width: '100%',
+    gap: 8,
+    marginTop: 8,
   },
-  manualTitle: {
-    fontSize: 13,
+  manualLabel: {
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 6,
   },
-  manualInputRow: {
+  inputRow: {
     flexDirection: 'row',
     gap: 8,
   },
-  manualInput: {
+  textInput: {
     flex: 1,
     height: 44,
     borderRadius: radius.md,
@@ -417,35 +609,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
   },
-  manualSubmitBtn: {
-    paddingHorizontal: 18,
+  pasteBtn: {
+    paddingHorizontal: 16,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  manualSubmitText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  quickScanList: {
-    marginTop: spacing.lg,
-    gap: 8,
-  },
-  quickScanTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  quickScanItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 10,
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  quickScanItemText: {
+  pasteBtnText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '700',
+  },
+  processBtn: {
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  processBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -146,6 +146,8 @@
 
 **Passkey (WebAuthn):** `POST /api/auth/passkeys/register/options`, `POST /api/auth/passkeys/register/verify` (cần đăng nhập); `POST /api/auth/passkeys/login/options`, `POST /api/auth/passkeys/login/verify` (anonymous); `GET /api/auth/passkeys`, `DELETE /api/auth/passkeys/{id}`. Client lấy challenge/options từ server và hoàn tất bằng browser/native authenticator; không được giả lập xác thực sinh trắc học. Đăng nhập passkey trả `AuthResponse`.
 
+**Tương tác foreground V1:** `POST /api/v1/activity` (Bearer User, không body) trả `204` khi ghi nhận tương tác thực từ người dùng. `V1ActivityController` quy định **chỉ gọi khi người dùng tương tác trực tiếp trên giao diện**; tuyệt đối không gọi từ polling, refresh, background sync hoặc timer để giả lập trạng thái hoạt động. Route này không phải API lấy trạng thái tài chính/quỹ.
+
 ### 3.2. Hồ sơ, bạn bè, thiết bị và thông tin người dùng
 
 **Hồ sơ cá nhân (`UsersController`):**

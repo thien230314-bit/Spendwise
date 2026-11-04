@@ -27,6 +27,9 @@ import {
 
 interface AdminUsersSectionProps {
   users: AdminUserDirectoryEntry[];
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onUpdateUsers: React.Dispatch<React.SetStateAction<AdminUserDirectoryEntry[]>>;
   onAppendAuditEvent?: (event: AdminGlobalAuditEvent) => void;
 }
@@ -107,6 +110,9 @@ export function getAccountStatusMeta(
 
 export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   users,
+  isLoading = false,
+  error = null,
+  onRetry,
   onUpdateUsers,
   onAppendAuditEvent,
 }) => {
@@ -129,7 +135,9 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   // Deliberate confirmation modal state
   const [pendingAction, setPendingAction] = useState<PendingSensitiveAction | null>(null);
   const [reasonInput, setReasonInput] = useState('');
+  const [adminPinInput, setAdminPinInput] = useState('');
   const [isDeliberatelyConfirmed, setIsDeliberatelyConfirmed] = useState(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
   // Explicit demo result receipt banner
@@ -201,14 +209,18 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const openSensitiveActionModal = (action: PendingSensitiveAction) => {
     setPendingAction(action);
     setReasonInput('');
+    setAdminPinInput('');
     setIsDeliberatelyConfirmed(false);
+    setIsSubmittingAction(false);
     setConfirmError(null);
   };
 
   const closeSensitiveActionModal = () => {
     setPendingAction(null);
     setReasonInput('');
+    setAdminPinInput('');
     setIsDeliberatelyConfirmed(false);
+    setIsSubmittingAction(false);
     setConfirmError(null);
   };
 
@@ -291,6 +303,25 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
       return;
     }
 
+    const requiresPin =
+      pendingAction.kind === 'change_status' ||
+      pendingAction.kind === 'initiate_password_reset' ||
+      pendingAction.kind === 'initiate_pin_reset';
+
+    const trimmedPin = adminPinInput.trim();
+    if (requiresPin && !/^\d{6}$/.test(trimmedPin)) {
+      setConfirmError(
+        tr(
+          'Vui lòng nhập đúng 6 chữ số Mã PIN Quản trị viên để ủy quyền thao tác này.',
+          'Please enter your 6-digit Admin Security PIN to authorize this sensitive action.'
+        )
+      );
+      return;
+    }
+
+    setIsSubmittingAction(true);
+    setConfirmError(null);
+
     const nowStamp = new Date().toLocaleString('vi-VN');
     const refSuffix = String(Math.floor(1000 + Math.random() * 9000));
     const refCode = `AUD-USR-${refSuffix}`;
@@ -319,233 +350,236 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         await casesApiService.updateAdminUserStatus(selectedUser.id, {
           status: apiStatus,
           reason: trimmedReason,
-          adminPin: '123456',
+          adminPin: trimmedPin,
         });
-        credentialNoticeVi = 'Đã gửi và được Backend API xác thực thành công.';
-        credentialNoticeEn = 'Submitted and verified successfully by Backend API.';
-      } else if (pendingAction.kind === 'revoke_all_sessions') {
+        credentialNoticeVi = 'Trạng thái tài khoản đã được Backend API xác thực và cập nhật thành công.';
+        credentialNoticeEn = 'Account status verified and updated successfully by Backend API.';
+      } else if (pendingAction.kind === 'revoke_all_sessions' || pendingAction.kind === 'revoke_session') {
         await casesApiService.adminRevokeUserSessions(selectedUser.id, trimmedReason);
-        credentialNoticeVi = 'Đã gửi yêu cầu thu hồi toàn bộ phiên tới Backend API thành công.';
-        credentialNoticeEn = 'Revocation request sent and confirmed by Backend API.';
+        credentialNoticeVi = 'Đã gửi yêu cầu thu hồi phiên tới Backend API và được xác nhận.';
+        credentialNoticeEn = 'Session revocation confirmed by Backend API.';
       } else if (pendingAction.kind === 'initiate_password_reset') {
-        await casesApiService.adminResetUserPassword(selectedUser.id, { reason: trimmedReason, adminPin: '123456' });
+        await casesApiService.adminResetUserPassword(selectedUser.id, { reason: trimmedReason, adminPin: trimmedPin });
         credentialNoticeVi = 'Khởi tạo đặt lại mật khẩu thành công qua Backend API.';
         credentialNoticeEn = 'Password reset initiated successfully via Backend API.';
       } else if (pendingAction.kind === 'initiate_pin_reset') {
-        await casesApiService.adminResetUserPin(selectedUser.id, { reason: trimmedReason, adminPin: '123456' });
+        await casesApiService.adminResetUserPin(selectedUser.id, { reason: trimmedReason, adminPin: trimmedPin });
         credentialNoticeVi = 'Khởi tạo đặt lại PIN thành công qua Backend API.';
         credentialNoticeEn = 'PIN reset initiated successfully via Backend API.';
       }
-    } catch (apiErr: any) {
-      console.warn('Backend API action notice:', apiErr);
-      credentialNoticeVi =
-        apiErr?.detail ||
-        apiErr?.message ||
-        'Lưu ý: Không thể kết nối Backend API. Thao tác đang chạy ở chế độ dự phòng.';
-      credentialNoticeEn =
-        apiErr?.detail ||
-        apiErr?.message ||
-        'Notice: Unable to reach Backend API. Running in fallback mode.';
-    }
 
-    onUpdateUsers((prev) =>
-      prev.map((user) => {
-        if (user.id !== pendingAction.userId) return user;
+      onUpdateUsers((prev) =>
+        prev.map((user) => {
+          if (user.id !== pendingAction.userId) return user;
 
-        if (pendingAction.kind === 'revoke_session') {
-          receiptTitleVi = 'Đã thu hồi phiên đăng nhập thiết bị';
-          receiptTitleEn = 'Device session revoked';
-          summaryVi = `Đã thu hồi phiên "${pendingAction.deviceLabel}" của ${user.fullName} (${user.spendId}).`;
-          summaryEn = `Revoked session "${pendingAction.deviceLabel}" for ${user.fullName} (${user.spendId}).`;
+          if (pendingAction.kind === 'revoke_session') {
+            receiptTitleVi = 'Đã thu hồi phiên đăng nhập thiết bị';
+            receiptTitleEn = 'Device session revoked';
+            summaryVi = `Đã thu hồi phiên "${pendingAction.deviceLabel}" của ${user.fullName} (${user.spendId}).`;
+            summaryEn = `Revoked session "${pendingAction.deviceLabel}" for ${user.fullName} (${user.spendId}).`;
 
-          const auditItem: AdminUserAuditEntry = {
-            id: `aud_${Date.now()}`,
-            referenceCode: refCode,
-            timestamp: nowStamp,
-            actionLabelVi: 'Thu hồi phiên thiết bị',
-            actionLabelEn: 'Revoked device session',
-            detailVi: `Thiết bị: ${pendingAction.deviceLabel}`,
-            detailEn: `Device: ${pendingAction.deviceLabel}`,
-            reason: trimmedReason,
-            operator: operatorName,
-          };
+            const auditItem: AdminUserAuditEntry = {
+              id: `aud_${Date.now()}`,
+              referenceCode: refCode,
+              timestamp: nowStamp,
+              actionLabelVi: 'Thu hồi phiên thiết bị',
+              actionLabelEn: 'Revoked device session',
+              detailVi: `Thiết bị: ${pendingAction.deviceLabel}`,
+              detailEn: `Device: ${pendingAction.deviceLabel}`,
+              reason: trimmedReason,
+              operator: operatorName,
+            };
 
-          return {
-            ...user,
-            sessions: user.sessions.map((s) =>
-              s.id === pendingAction.sessionId
-                ? {
-                    ...s,
-                    status: 'revoked',
-                    revokedAt: nowStamp,
-                    revokedReason: trimmedReason,
-                  }
-                : s
-            ),
-            auditLog: [auditItem, ...user.auditLog],
-          };
-        }
+            return {
+              ...user,
+              sessions: user.sessions.map((s) =>
+                s.id === pendingAction.sessionId
+                  ? {
+                      ...s,
+                      status: 'revoked',
+                      revokedAt: nowStamp,
+                      revokedReason: trimmedReason,
+                    }
+                  : s
+              ),
+              auditLog: [auditItem, ...user.auditLog],
+            };
+          }
 
-        if (pendingAction.kind === 'revoke_all_sessions') {
-          receiptTitleVi = 'Đã thu hồi toàn bộ phiên đăng nhập';
-          receiptTitleEn = 'All active sessions revoked';
-          summaryVi = `Đã thu hồi ${pendingAction.activeCount} phiên đang hoạt động của ${user.fullName} (${user.spendId}).`;
-          summaryEn = `Revoked ${pendingAction.activeCount} active sessions for ${user.fullName} (${user.spendId}).`;
+          if (pendingAction.kind === 'revoke_all_sessions') {
+            receiptTitleVi = 'Đã thu hồi toàn bộ phiên đăng nhập';
+            receiptTitleEn = 'All active sessions revoked';
+            summaryVi = `Đã thu hồi ${pendingAction.activeCount} phiên đang hoạt động của ${user.fullName} (${user.spendId}).`;
+            summaryEn = `Revoked ${pendingAction.activeCount} active sessions for ${user.fullName} (${user.spendId}).`;
 
-          const auditItem: AdminUserAuditEntry = {
-            id: `aud_${Date.now()}`,
-            referenceCode: refCode,
-            timestamp: nowStamp,
-            actionLabelVi: 'Thu hồi toàn bộ phiên đăng nhập',
-            actionLabelEn: 'Revoked all active sessions',
-            detailVi: `Tổng số phiên thu hồi: ${pendingAction.activeCount}`,
-            detailEn: `Total sessions revoked: ${pendingAction.activeCount}`,
-            reason: trimmedReason,
-            operator: operatorName,
-          };
+            const auditItem: AdminUserAuditEntry = {
+              id: `aud_${Date.now()}`,
+              referenceCode: refCode,
+              timestamp: nowStamp,
+              actionLabelVi: 'Thu hồi toàn bộ phiên đăng nhập',
+              actionLabelEn: 'Revoked all active sessions',
+              detailVi: `Tổng số phiên thu hồi: ${pendingAction.activeCount}`,
+              detailEn: `Total sessions revoked: ${pendingAction.activeCount}`,
+              reason: trimmedReason,
+              operator: operatorName,
+            };
 
-          return {
-            ...user,
-            sessions: user.sessions.map((s) =>
-              s.status === 'active'
-                ? {
-                    ...s,
-                    status: 'revoked',
-                    revokedAt: nowStamp,
-                    revokedReason: trimmedReason,
-                  }
-                : s
-            ),
-            auditLog: [auditItem, ...user.auditLog],
-          };
-        }
+            return {
+              ...user,
+              sessions: user.sessions.map((s) =>
+                s.status === 'active'
+                  ? {
+                      ...s,
+                      status: 'revoked',
+                      revokedAt: nowStamp,
+                      revokedReason: trimmedReason,
+                    }
+                  : s
+              ),
+              auditLog: [auditItem, ...user.auditLog],
+            };
+          }
 
-        if (pendingAction.kind === 'change_status') {
-          const nextMetaVi = getAccountStatusMeta(
-            pendingAction.targetStatus,
-            (v) => v
-          ).label;
-          const nextMetaEn = getAccountStatusMeta(
-            pendingAction.targetStatus,
-            (_v, e) => e
-          ).label;
+          if (pendingAction.kind === 'change_status') {
+            const nextMetaVi = getAccountStatusMeta(
+              pendingAction.targetStatus,
+              (v) => v
+            ).label;
+            const nextMetaEn = getAccountStatusMeta(
+              pendingAction.targetStatus,
+              (_v, e) => e
+            ).label;
 
-          receiptTitleVi = 'Đã cập nhật trạng thái tài khoản';
-          receiptTitleEn = 'Account status updated';
-          summaryVi = `Tài khoản ${user.fullName} (${user.spendId}) đã chuyển sang trạng thái "${nextMetaVi}".`;
-          summaryEn = `Account ${user.fullName} (${user.spendId}) status changed to "${nextMetaEn}".`;
+            receiptTitleVi = 'Đã cập nhật trạng thái tài khoản';
+            receiptTitleEn = 'Account status updated';
+            summaryVi = `Tài khoản ${user.fullName} (${user.spendId}) đã chuyển sang trạng thái "${nextMetaVi}".`;
+            summaryEn = `Account ${user.fullName} (${user.spendId}) status changed to "${nextMetaEn}".`;
 
-          const auditItem: AdminUserAuditEntry = {
-            id: `aud_${Date.now()}`,
-            referenceCode: refCode,
-            timestamp: nowStamp,
-            actionLabelVi: `Đổi trạng thái tài khoản → ${nextMetaVi}`,
-            actionLabelEn: `Changed account status → ${nextMetaEn}`,
-            detailVi: `Trạng thái trước: ${pendingAction.currentStatus} → Mới: ${pendingAction.targetStatus}`,
-            detailEn: `Previous: ${pendingAction.currentStatus} → New: ${pendingAction.targetStatus}`,
-            reason: trimmedReason,
-            operator: operatorName,
-          };
+            const auditItem: AdminUserAuditEntry = {
+              id: `aud_${Date.now()}`,
+              referenceCode: refCode,
+              timestamp: nowStamp,
+              actionLabelVi: `Đổi trạng thái tài khoản → ${nextMetaVi}`,
+              actionLabelEn: `Changed account status → ${nextMetaEn}`,
+              detailVi: `Trạng thái trước: ${pendingAction.currentStatus} → Mới: ${pendingAction.targetStatus}`,
+              detailEn: `Previous: ${pendingAction.currentStatus} → New: ${pendingAction.targetStatus}`,
+              reason: trimmedReason,
+              operator: operatorName,
+            };
 
-          return {
-            ...user,
-            accountStatus: pendingAction.targetStatus,
-            auditLog: [auditItem, ...user.auditLog],
-          };
-        }
+            return {
+              ...user,
+              accountStatus: pendingAction.targetStatus,
+              auditLog: [auditItem, ...user.auditLog],
+            };
+          }
 
-        if (pendingAction.kind === 'initiate_password_reset') {
-          receiptTitleVi = 'Đã khởi tạo yêu cầu đặt lại Mật khẩu';
-          receiptTitleEn = 'Password reset initiated';
-          summaryVi = `Đã phát hành liên kết đặt lại mật khẩu một lần tới email xác thực (${user.emailMasked}) của ${user.fullName}.`;
-          summaryEn = `Dispatched one-time password recovery link to verified email (${user.emailMasked}) for ${user.fullName}.`;
+          if (pendingAction.kind === 'initiate_password_reset') {
+            receiptTitleVi = 'Đã khởi tạo yêu cầu đặt lại Mật khẩu';
+            receiptTitleEn = 'Password reset initiated';
+            summaryVi = `Đã phát hành liên kết đặt lại mật khẩu một lần tới email xác thực (${user.emailMasked}) của ${user.fullName}.`;
+            summaryEn = `Dispatched one-time password recovery link to verified email (${user.emailMasked}) for ${user.fullName}.`;
+            credentialNoticeVi =
+              'Bảo mật Zero-Credential: Không hiển thị mật khẩu tạm hay mã khôi phục trên màn hình quản trị.';
+            credentialNoticeEn =
+              'Zero-Credential Security: No temporary password or recovery token is ever displayed in Web Admin.';
+
+            const auditItem: AdminUserAuditEntry = {
+              id: `aud_${Date.now()}`,
+              referenceCode: refCode,
+              timestamp: nowStamp,
+              actionLabelVi: 'Khởi tạo đặt lại Mật khẩu',
+              actionLabelEn: 'Initiated password reset',
+              detailVi: `Đã gửi hướng dẫn khôi phục tới ${user.emailMasked} (không lộ thông tin xác thực)`,
+              detailEn: `Sent recovery instructions to ${user.emailMasked} (zero credential exposure)`,
+              reason: trimmedReason,
+              operator: operatorName,
+            };
+
+            return {
+              ...user,
+              passwordResetInitiatedAt: nowStamp,
+              auditLog: [auditItem, ...user.auditLog],
+            };
+          }
+
+          // initiate_pin_reset
+          receiptTitleVi = 'Đã khởi tạo yêu cầu đặt lại Mã PIN giao dịch';
+          receiptTitleEn = 'Transaction PIN reset initiated';
+          summaryVi = `Đã gửi thử thách OTP khôi phục mã PIN tới kênh xác thực của ${user.fullName} (${user.phoneMasked}) và thu hồi các phiên phụ.`;
+          summaryEn = `Dispatched PIN recovery OTP challenge to ${user.fullName} (${user.phoneMasked}) and invalidated secondary sessions.`;
           credentialNoticeVi =
-            'Bảo mật Zero-Credential: Không hiển thị mật khẩu tạm hay mã khôi phục trên màn hình quản trị.';
+            'Bảo mật Zero-Credential: Mã PIN và mã OTP không bao giờ được hiển thị cho quản trị viên.';
           credentialNoticeEn =
-            'Zero-Credential Security: No temporary password or recovery token is ever displayed in Web Admin.';
+            'Zero-Credential Security: Transaction PINs and OTP codes are never exposed to administrators.';
 
           const auditItem: AdminUserAuditEntry = {
             id: `aud_${Date.now()}`,
             referenceCode: refCode,
             timestamp: nowStamp,
-            actionLabelVi: 'Khởi tạo đặt lại Mật khẩu',
-            actionLabelEn: 'Initiated password reset',
-            detailVi: `Đã gửi hướng dẫn khôi phục tới ${user.emailMasked} (không lộ thông tin xác thực)`,
-            detailEn: `Sent recovery instructions to ${user.emailMasked} (zero credential exposure)`,
+            actionLabelVi: 'Khởi tạo đặt lại Mã PIN giao dịch',
+            actionLabelEn: 'Initiated transaction PIN reset',
+            detailVi: `Đã gửi OTP khôi phục PIN tới ${user.phoneMasked} (không hiển thị mã PIN/OTP)`,
+            detailEn: `Sent PIN recovery OTP to ${user.phoneMasked} (zero PIN/OTP exposure)`,
             reason: trimmedReason,
             operator: operatorName,
           };
 
           return {
             ...user,
-            passwordResetInitiatedAt: nowStamp,
+            pinResetInitiatedAt: nowStamp,
             auditLog: [auditItem, ...user.auditLog],
           };
-        }
+        })
+      );
 
-        // initiate_pin_reset
-        receiptTitleVi = 'Đã khởi tạo yêu cầu đặt lại Mã PIN giao dịch';
-        receiptTitleEn = 'Transaction PIN reset initiated';
-        summaryVi = `Đã gửi thử thách OTP khôi phục mã PIN tới kênh xác thực của ${user.fullName} (${user.phoneMasked}) và thu hồi các phiên phụ.`;
-        summaryEn = `Dispatched PIN recovery OTP challenge to ${user.fullName} (${user.phoneMasked}) and invalidated secondary sessions.`;
-        credentialNoticeVi =
-          'Bảo mật Zero-Credential: Mã PIN và mã OTP không bao giờ được hiển thị cho quản trị viên.';
-        credentialNoticeEn =
-          'Zero-Credential Security: Transaction PINs and OTP codes are never exposed to administrators.';
-
-        const auditItem: AdminUserAuditEntry = {
-          id: `aud_${Date.now()}`,
+      if (onAppendAuditEvent) {
+        onAppendAuditEvent({
+          id: `gaud_${Date.now()}`,
           referenceCode: refCode,
           timestamp: nowStamp,
-          actionLabelVi: 'Khởi tạo đặt lại Mã PIN giao dịch',
-          actionLabelEn: 'Initiated transaction PIN reset',
-          detailVi: `Đã gửi OTP khôi phục PIN tới ${user.phoneMasked} (không hiển thị mã PIN/OTP)`,
-          detailEn: `Sent PIN recovery OTP to ${user.phoneMasked} (zero PIN/OTP exposure)`,
+          module: 'users',
+          moduleLabelVi: 'Bảo mật Người dùng',
+          moduleLabelEn: 'User Security',
+          actionTitleVi: receiptTitleVi,
+          actionTitleEn: receiptTitleEn,
+          targetEntity: `${selectedUser.fullName} (${selectedUser.spendId})`,
+          detailVi: summaryVi,
+          detailEn: summaryEn,
           reason: trimmedReason,
           operator: operatorName,
-        };
+        });
+      }
 
-        return {
-          ...user,
-          pinResetInitiatedAt: nowStamp,
-          auditLog: [auditItem, ...user.auditLog],
-        };
-      })
-    );
-
-    if (onAppendAuditEvent) {
-      onAppendAuditEvent({
-        id: `gaud_${Date.now()}`,
+      setLatestResultReceipt({
         referenceCode: refCode,
         timestamp: nowStamp,
-        module: 'users',
-        moduleLabelVi: 'Bảo mật Người dùng',
-        moduleLabelEn: 'User Security',
-        actionTitleVi: receiptTitleVi,
-        actionTitleEn: receiptTitleEn,
-        targetEntity: `${selectedUser.fullName} (${selectedUser.spendId})`,
-        detailVi: summaryVi,
-        detailEn: summaryEn,
+        userFullName: selectedUser.fullName,
+        userSpendId: selectedUser.spendId,
+        titleVi: receiptTitleVi,
+        titleEn: receiptTitleEn,
+        summaryVi,
+        summaryEn,
         reason: trimmedReason,
-        operator: operatorName,
+        credentialSafetyNoticeVi: credentialNoticeVi,
+        credentialSafetyNoticeEn: credentialNoticeEn,
       });
+
+      closeSensitiveActionModal();
+    } catch (apiErr: any) {
+      const errorMsg =
+        apiErr?.detail ||
+        apiErr?.title ||
+        apiErr?.message ||
+        tr(
+          'Máy chủ Backend từ chối thực hiện thao tác. Vui lòng kiểm tra lại Mã PIN và quyền hạn.',
+          'Backend API rejected the action. Please verify your PIN and privileges.'
+        );
+      setConfirmError(errorMsg);
+      // DO NOT close modal. DO NOT fake success.
+    } finally {
+      setIsSubmittingAction(false);
     }
-
-    setLatestResultReceipt({
-      referenceCode: refCode,
-      timestamp: nowStamp,
-      userFullName: selectedUser.fullName,
-      userSpendId: selectedUser.spendId,
-      titleVi: receiptTitleVi,
-      titleEn: receiptTitleEn,
-      summaryVi,
-      summaryEn,
-      reason: trimmedReason,
-      credentialSafetyNoticeVi: credentialNoticeVi,
-      credentialSafetyNoticeEn: credentialNoticeEn,
-    });
-
-    closeSensitiveActionModal();
   };
 
   return (
@@ -738,8 +772,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         </div>
       </div>
 
-      {/* Simulated Directory Error State */}
-      {simulatedDirectoryError ? (
+      {/* Real Backend Error State or Simulated Directory Error State */}
+      {error || simulatedDirectoryError ? (
         <div
           role="alert"
           data-testid="sw-admin-users-error"
@@ -753,23 +787,27 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
             <div className="space-y-1">
               <h2 className="font-display text-[1.0625rem] font-extrabold text-[var(--ink)]">
                 {tr(
-                  'Không thể đồng bộ danh bạ người dùng (Trạng thái lỗi mô phỏng)',
-                  'Unable to load user directory (Simulated Error State)'
+                  'Không thể kết nối Backend API để tải danh bạ người dùng',
+                  'Unable to load user directory from Backend API'
                 )}
               </h2>
               <p className="text-[0.84375rem] text-[var(--ink2)]">
-                {tr(
-                  'Kết nối tới phân vùng dữ liệu mẫu đang tạm gián đoạn để kiểm thử giao diện xử lý lỗi.',
-                  'Connection to synthetic directory slice is paused to verify error state handling.'
-                )}
+                {error ||
+                  tr(
+                    'Kết nối tới phân vùng dữ liệu mẫu đang tạm gián đoạn để kiểm thử giao diện xử lý lỗi.',
+                    'Connection to synthetic directory slice is paused to verify error state handling.'
+                  )}
               </p>
             </div>
           </div>
           <button
             type="button"
             data-testid="sw-admin-users-retry-btn"
-            onClick={() => setSimulatedDirectoryError(false)}
-            className="sw-focus-ring sw-btn sw-btn-pri sm whitespace-nowrap shrink-0"
+            onClick={() => {
+              setSimulatedDirectoryError(false);
+              if (onRetry) onRetry();
+            }}
+            className="sw-focus-ring sw-btn sw-btn-pri sm whitespace-nowrap shrink-0 cursor-pointer"
           >
             <RefreshCw aria-hidden="true" className="h-4 w-4 shrink-0" />
             <span>{tr('Thử tải lại danh bạ', 'Retry Loading Directory')}</span>
@@ -791,35 +829,49 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
               </span>
             </div>
 
-            {filteredUsers.length === 0 ? (
+            {isLoading ? (
+              <div className="p-12 text-center text-[var(--ink2)] space-y-2">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[var(--sw-em-d)]" />
+                <p className="text-[0.875rem] font-bold">{tr('Đang tải danh bạ người dùng từ Backend...', 'Loading users from Backend...')}</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
               <div
                 data-testid="sw-admin-users-empty"
                 className="p-8 text-center space-y-3"
               >
                 <p className="text-[0.9375rem] font-bold text-[var(--ink)]">
-                  {tr(
-                    'Không tìm thấy người dùng nào khớp điều kiện lọc',
-                    'No users match your current search or filter criteria'
-                  )}
+                  {users.length === 0
+                    ? tr('Hệ thống chưa có người dùng nào (Danh sách rỗng)', 'No users found in system directory (Empty)')
+                    : tr('Không tìm thấy người dùng nào khớp điều kiện lọc', 'No users match your current search or filter criteria')}
                 </p>
                 <p className="text-[0.8125rem] text-[var(--ink2)]">
-                  {tr(
-                    'Hãy thử kiểm tra lại mã SpendID, số điện thoại hoặc xóa bộ lọc trạng thái.',
-                    'Try checking the SpendID, phone number, or clearing the status filters.'
-                  )}
+                  {users.length === 0
+                    ? tr('Backend API đã phản hồi danh sách người dùng rỗng (HTTP 200).', 'Backend API returned empty user list (HTTP 200).')
+                    : tr('Hãy thử kiểm tra lại mã SpendID, số điện thoại hoặc xóa bộ lọc trạng thái.', 'Try checking the SpendID, phone number, or clearing the status filters.')}
                 </p>
-                <button
-                  type="button"
-                  data-testid="sw-admin-users-clear-filters-btn"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setStatusFilter('all');
-                    setScopeFilter('all');
-                  }}
-                  className="sw-focus-ring sw-btn ghost sm"
-                >
-                  <span>{tr('Xóa bộ lọc tìm kiếm', 'Clear search filters')}</span>
-                </button>
+                {users.length === 0 && onRetry ? (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="sw-focus-ring sw-btn ghost sm cursor-pointer"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1.5" />
+                    <span>{tr('Tải lại danh bạ', 'Reload directory')}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="sw-admin-users-clear-filters-btn"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setScopeFilter('all');
+                    }}
+                    className="sw-focus-ring sw-btn ghost sm"
+                  >
+                    <span>{tr('Xóa bộ lọc tìm kiếm', 'Clear search filters')}</span>
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -1659,6 +1711,40 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 />
               </div>
 
+              {/* Admin Security PIN Input (Required for sensitive actions) */}
+              {(pendingAction.kind === 'change_status' ||
+                pendingAction.kind === 'initiate_password_reset' ||
+                pendingAction.kind === 'initiate_pin_reset') && (
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="sw-admin-action-pin"
+                    className="block text-[0.8125rem] font-extrabold text-[var(--ink)]"
+                  >
+                    {tr('Mã PIN Quản trị viên (6 chữ số) *', 'Admin Security PIN (6 digits) *')}
+                  </label>
+                  <input
+                    id="sw-admin-action-pin"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    data-testid="sw-admin-action-pin-input"
+                    value={adminPinInput}
+                    onChange={(e) => {
+                      setAdminPinInput(e.target.value.replace(/\D/g, ''));
+                      setConfirmError(null);
+                    }}
+                    placeholder="••••••"
+                    className="w-full rounded-2xl border border-[var(--stroke)] bg-[var(--glass2)] p-3 text-[0.875rem] font-semibold text-[var(--ink)] tracking-widest"
+                  />
+                  <p className="text-[0.75rem] text-[var(--ink3)]">
+                    {tr(
+                      'Bảo mật ủy quyền: Nhập mã PIN cá nhân của Quản trị viên để ký số thao tác này.',
+                      'Authorization security: Enter your personal Admin PIN to sign this action.'
+                    )}
+                  </p>
+                </div>
+              )}
+
               {/* Deliberate Confirmation Checkbox */}
               <label className="flex items-start gap-2.5 cursor-pointer select-none text-[0.8125rem] text-[var(--ink)]">
                 <input
@@ -1673,8 +1759,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 />
                 <span>
                   {tr(
-                    'Tôi xác nhận thao tác này có căn cứ nghiệp vụ hợp lệ và đồng ý ghi nhận vào nhật ký kiểm toán DEMO.',
-                    'I confirm this action has valid operational justification and will be logged in the DEMO audit trail.'
+                    'Tôi xác nhận thao tác này có căn cứ nghiệp vụ hợp lệ và đồng ý ghi nhận vào nhật ký kiểm toán.',
+                    'I confirm this action has valid operational justification and will be logged in the audit trail.'
                   )}
                 </span>
               </label>
@@ -1683,9 +1769,9 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 <div
                   role="alert"
                   data-testid="sw-admin-confirm-error"
-                  className="rounded-xl border border-[var(--rose)]/40 bg-[var(--sw-danger-bg)] px-3 py-2 text-[0.8125rem] font-bold text-[var(--rose)]"
+                  className="rounded-xl border border-[var(--rose)]/40 bg-[var(--sw-danger-bg)] px-3 py-2 text-[0.8125rem] font-bold text-[var(--rose)] flex items-center justify-between gap-2"
                 >
-                  {confirmError}
+                  <span>{confirmError}</span>
                 </div>
               )}
             </div>
@@ -1701,11 +1787,25 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
               </button>
               <button
                 type="submit"
+                disabled={isSubmittingAction}
                 data-testid="sw-admin-confirm-submit-btn"
-                className="sw-focus-ring sw-btn sw-btn-pri sw-btn-submit"
+                className="sw-focus-ring sw-btn sw-btn-pri sw-btn-submit disabled:opacity-50 cursor-pointer"
               >
-                <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
-                <span>{tr('Xác nhận thực thi', 'Confirm & Execute')}</span>
+                {isSubmittingAction ? (
+                  <>
+                    <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin shrink-0" />
+                    <span>{tr('Đang xử lý Backend...', 'Processing Backend...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    <span>
+                      {confirmError
+                        ? tr('Thử lại thao tác', 'Retry Action')
+                        : tr('Xác nhận thực thi', 'Confirm & Execute')}
+                    </span>
+                  </>
+                )}
               </button>
             </div>
           </form>

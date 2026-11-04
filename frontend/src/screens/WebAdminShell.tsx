@@ -458,18 +458,11 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
   >('all');
   const [selectedAlertId, setSelectedAlertId] = useState<string>('alt_901');
 
-  // 5. Users Directory state (ADMIN A2 synthetic fixtures only)
-  const [usersList, setUsersList] = useState<AdminUserDirectoryEntry[]>(() =>
-    ADMIN_USER_DIRECTORY_FIXTURES.map((u) => ({
-      ...u,
-      sessions: u.sessions.map((s) => ({ ...s })),
-      relationships: {
-        ...u.relationships,
-        groupFunds: u.relationships.groupFunds.map((g) => ({ ...g })),
-      },
-      auditLog: u.auditLog.map((a) => ({ ...a })),
-    }))
-  );
+  // Dedicated Demo Mode toggle (isolated from production live database)
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+
+  // 5. Users Directory state (starts empty in Live Mode; populated with synthetic fixtures only in explicit DEMO mode)
+  const [usersList, setUsersList] = useState<AdminUserDirectoryEntry[]>([]);
 
   // 6. Transactions, Synthetic Wallets, Global Audit Log & System Config (ADMIN A3)
   const [ledgerSubTab, setLedgerSubTab] =
@@ -484,18 +477,10 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
     AdminSystemConfigParameter[]
   >(() => ADMIN_SYSTEM_CONFIG_FIXTURES.map((c) => ({ ...c })));
 
-  // 7. Support & Complaints Case Queue state (ADMIN A4 synthetic fixtures only)
+  // 7. Support & Complaints Case Queue state (starts empty in Live Mode; populated with synthetic fixtures only in explicit DEMO mode)
   const [supportCasesList, setSupportCasesList] = useState<
     AdminSupportCaseEntry[]
-  >(() =>
-    ADMIN_SUPPORT_CASES_FIXTURES.map((c) => ({
-      ...c,
-      scopedUser: { ...c.scopedUser },
-      scopedFund: c.scopedFund ? { ...c.scopedFund } : null,
-      refundClaim: c.refundClaim ? { ...c.refundClaim } : null,
-      messages: c.messages.map((m) => ({ ...m })),
-    }))
-  );
+  >([]);
 
   // 8. Broadcast Authoring, AI Operations & Bank Gateway Monitoring state (ADMIN A5)
   const [broadcastsList, setBroadcastsList] = useState<AdminBroadcastEntry[]>(
@@ -554,21 +539,21 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
             spendId: u.spendId || `SPEND-${u.id.slice(0, 4)}`,
             fullName: u.fullName || u.email,
             emailMasked: u.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-            phoneMasked: '098 •••• 824',
+            phoneMasked: tr('Chưa cập nhật SĐT', 'No Phone'),
             accountStatus,
-            kycTierVi: 'eKYC Cấp 2 · Đã xác minh CCCD',
-            kycTierEn: 'eKYC Tier 2 · Citizen ID Verified',
+            kycTierVi: tr('Chưa xác thực eKYC', 'Unverified eKYC'),
+            kycTierEn: 'Unverified eKYC',
             joinedAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '2026-10-28',
-            lastActiveAt: 'Vừa xong',
-            pinConfigured: true,
-            biometricEnrolled: true,
+            lastActiveAt: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('vi-VN') : tr('Chưa ghi nhận', 'Never'),
+            pinConfigured: Boolean(u.hasSecurityPin),
+            biometricEnrolled: false,
             assignedSupportCase: null,
             scopedProfile: {
-              occupationVi: 'Chuyên viên kỹ thuật',
-              occupationEn: 'Technical Specialist',
+              occupationVi: tr('Chưa cập nhật', 'Not updated'),
+              occupationEn: 'Not updated',
               activeWalletsCount: 1,
-              linkedBanksCount: 1,
-              securityNoteVi: 'Hồ sơ người dùng thực từ Backend API',
+              linkedBanksCount: 0,
+              securityNoteVi: tr('Hồ sơ người dùng thực từ Backend API', 'Real user profile from Backend API'),
               securityNoteEn: 'Real user profile from Backend API',
             },
             sessions: [],
@@ -601,10 +586,11 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
       setLiveUsersError(
         err?.detail || err?.title || err?.message || 'Không thể kết nối Backend để lấy danh sách người dùng.'
       );
+      setUsersList([]);
     } finally {
       setIsLiveUsersLoading(false);
     }
-  }, [isAdminAuthenticated]);
+  }, [isAdminAuthenticated, tr]);
 
   // Fetch real support cases from backend
   const fetchRealSupportCases = useCallback(async () => {
@@ -657,13 +643,13 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
               fullName: 'Người dùng SpendWise',
               spendId: 'SPEND',
               emailMasked: 'u***@spendwise.test',
-              phoneMasked: '098 •••• 824',
-              kycTierVi: 'Cấp 2',
-              kycTierEn: 'Tier 2',
+              phoneMasked: tr('Chưa cập nhật SĐT', 'No Phone'),
+              kycTierVi: tr('Chưa xác thực eKYC', 'Unverified eKYC'),
+              kycTierEn: 'Unverified eKYC',
               walletCode: 'WAL-01',
               walletBalanceVnd: 0,
-              recentDeviceSummaryVi: 'Chrome Windows',
-              recentDeviceSummaryEn: 'Chrome Windows',
+              recentDeviceSummaryVi: 'Web Browser',
+              recentDeviceSummaryEn: 'Web Browser',
               securityNoteVi: 'Hồ sơ người dùng thực từ Backend API',
               securityNoteEn: 'Real user profile from Backend API',
             },
@@ -687,10 +673,11 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
       setLiveSupportError(
         err?.detail || err?.title || err?.message || 'Không thể tải danh sách hồ sơ hỗ trợ từ Backend.'
       );
+      setSupportCasesList([]);
     } finally {
       setIsLiveSupportLoading(false);
     }
-  }, [isAdminAuthenticated]);
+  }, [isAdminAuthenticated, tr]);
 
   useEffect(() => {
     if (activeScreen === 'overview') {
@@ -960,6 +947,7 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
   };
 
   const handleResetDemoFixtures = () => {
+    setIsDemoMode(true);
     setTasksList(ADMIN_OPERATIONAL_TASKS_FIXTURES.map((item) => ({ ...item })));
     setAlertsList(ADMIN_SYSTEM_ALERTS_FIXTURES.map((item) => ({ ...item })));
     setUsersList(
@@ -1583,6 +1571,39 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
             </button>
           </div>
         </header>
+
+        {/* Explicit Demo Mode Notification Banner */}
+        {isDemoMode && (
+          <aside
+            role="region"
+            aria-label={tr('Chế độ dữ liệu mẫu', 'Demo data mode')}
+            className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5 flex items-center justify-between gap-3 text-[0.8125rem] text-amber-800 dark:text-amber-200"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[0.6875rem] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                DEMO
+              </span>
+              <span className="font-semibold">
+                {tr(
+                  'Đang xem chế độ Dữ liệu mẫu (Fixtures độc lập). Dữ liệu này không phản ánh cơ sở dữ liệu thật.',
+                  'Viewing synthetic Demo Data (Isolated Fixtures). This data does not reflect the live database.'
+                )}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDemoMode(false);
+                fetchRealUsers();
+                fetchRealSupportCases();
+                fetchLiveDashboard();
+              }}
+              className="sw-focus-ring sw-btn ghost sm !h-7 !min-h-[28px] !px-2.5 !py-0.5 text-[0.75rem] font-bold text-amber-900 dark:text-amber-100 hover:bg-amber-500/20 whitespace-nowrap cursor-pointer"
+            >
+              <span>{tr('Quay lại Dữ liệu thực (Live)', 'Switch to Live Data')}</span>
+            </button>
+          </aside>
+        )}
 
         {/* Main Workspace Container */}
         <main className="mx-auto w-full max-w-[1360px] min-w-0 flex-1 px-2.5 py-3.5 sm:px-5 sm:py-5 lg:px-7 space-y-4 sm:space-y-6">
@@ -2760,6 +2781,9 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
           {activeScreen === 'users' && (
             <AdminUsersSection
               users={usersList}
+              isLoading={isLiveUsersLoading}
+              error={liveUsersError}
+              onRetry={fetchRealUsers}
               onUpdateUsers={setUsersList}
               onAppendAuditEvent={handleAppendGlobalAudit}
             />
@@ -2788,6 +2812,9 @@ export const WebAdminShell: React.FC<WebAdminShellProps> = ({
           {activeScreen === 'support' && (
             <AdminSupportSection
               cases={supportCasesList}
+              isLoading={isLiveSupportLoading}
+              error={liveSupportError}
+              onRetry={fetchRealSupportCases}
               onUpdateCases={setSupportCasesList}
               onAppendAuditEvent={handleAppendGlobalAudit}
             />

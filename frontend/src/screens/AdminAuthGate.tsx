@@ -24,6 +24,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useSpendWise } from '../context/SpendWiseContext';
+import { useAuth } from '../providers/AuthProvider';
 import { AuthLayout } from '../components/AuthLayout';
 import { FormField, glassInputClass } from '../components/FormField';
 import {
@@ -135,9 +136,11 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
   onExitToMobileApp,
 }) => {
   const { tr, language, setLanguage, resolvedTheme, setTheme } = useSpendWise();
+  const { initiateLogin, completePinVerify, currentUser } = useAuth();
 
   const [mode, setMode] = useState<AuthGateMode>('login');
   const [isTyping, setIsTyping] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const bearRef = useRef<TeddyBearHandle | null>(null);
   const typingTimerRef = useRef<number | null>(null);
@@ -303,9 +306,9 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
     }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = emailInput.trim().toLowerCase();
+    const trimmedEmail = emailInput.trim();
 
     if (!trimmedEmail || !trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
       setLoginError(
@@ -329,40 +332,45 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
       return;
     }
 
-    const isMatchingAccount =
-      trimmedEmail === adminAccount.email.toLowerCase() ||
-      trimmedEmail === 'lethien241205@gmail.com' ||
-      trimmedEmail === 'admin@spendwise.vn';
-
-    const isMatchingPassword =
-      passwordInput === currentAdminPassword ||
-      passwordInput === 'Admin@2026!' ||
-      passwordInput === 'SpendWise@Admin2026';
-
-    if (!isMatchingAccount || !isMatchingPassword) {
-      setLoginError(
-        tr(
-          'Email hoặc mật khẩu quản trị không chính xác. Vui lòng kiểm tra lại.',
-          'Invalid administrator email or password. Please verify and try again.'
-        )
-      );
-      bearRef.current?.triggerFail();
-      return;
-    }
-
+    setIsSubmitting(true);
     setLoginError(null);
     setAutofillNotice(null);
-    setPinInput('');
-    setPinError(null);
-    setPinAutofillNotice(null);
-    bearRef.current?.triggerSuccess();
 
-    // Check if this DEMO admin account has already verified its first-login 8-digit OTP
-    if (!hasAdminDemoCompletedFirstOtp(trimmedEmail)) {
-      issueNewFirstLoginOtp(undefined, false);
-      setMode('first_login_otp');
-    } else {
-      setMode('pin_challenge');
+    try {
+      const res = await initiateLogin(trimmedEmail, passwordInput, 'SpendWise Web Admin');
+      if (res.success) {
+        setLoginError(null);
+        setPinInput('');
+        setPinError(null);
+        bearRef.current?.triggerSuccess();
+        if (res.needsPin) {
+          setMode('pin_challenge');
+        } else {
+          onAuthenticated();
+        }
+      } else {
+        setLoginError(
+          res.error ||
+            tr(
+              'Email hoặc mật khẩu quản trị không chính xác.',
+              'Invalid administrator email or password.'
+            )
+        );
+        bearRef.current?.triggerFail();
+      }
+    } catch (err: any) {
+      setLoginError(
+        err?.detail ||
+          err?.title ||
+          err?.message ||
+          tr(
+            'Không thể kết nối máy chủ xác thực Backend.',
+            'Unable to connect to authentication server.'
+          )
+      );
+      bearRef.current?.triggerFail();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -456,7 +464,7 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
     triggerTypingPulse();
   };
 
-  const handlePinSubmit = (e: React.FormEvent) => {
+  const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanedPin = pinInput.trim();
 
@@ -471,20 +479,46 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
       return;
     }
 
-    if (cleanedPin !== adminAccount.securityPin && cleanedPin !== '123456' && cleanedPin !== '246810') {
+    setIsSubmitting(true);
+    setPinError(null);
+
+    try {
+      const res = await completePinVerify(cleanedPin);
+      if (res.success) {
+        if (res.user?.role !== 'SystemAdmin') {
+          setPinError(
+            tr(
+              'Tài khoản không có đặc quyền Quản trị viên hệ thống (SystemAdmin).',
+              'Account does not have SystemAdmin privileges.'
+            )
+          );
+          bearRef.current?.triggerFail();
+          return;
+        }
+        setPinError(null);
+        bearRef.current?.triggerSuccess();
+        onAuthenticated();
+      } else {
+        setPinError(
+          res.error ||
+            tr(
+              'Mã PIN bảo mật không chính xác. Vui lòng thử lại.',
+              'Incorrect security PIN. Please try again.'
+            )
+        );
+        bearRef.current?.triggerFail();
+      }
+    } catch (err: any) {
       setPinError(
-        tr(
-          'Mã PIN bảo mật không chính xác. Vui lòng thử lại.',
-          'Incorrect security PIN. Please try again.'
-        )
+        err?.detail ||
+          err?.title ||
+          err?.message ||
+          tr('Lỗi xác thực mã PIN bảo mật.', 'Security PIN verification error.')
       );
       bearRef.current?.triggerFail();
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setPinError(null);
-    bearRef.current?.triggerSuccess();
-    onAuthenticated();
   };
 
   const handleOpenForgotPassword = () => {
@@ -902,39 +936,22 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
               {/* PRIMARY SIGN IN BUTTON (Matches User AuthScreen primary button) */}
               <button
                 type="submit"
+                disabled={isSubmitting}
                 data-testid="sw-admin-login-submit-btn"
-                className="sw-focus-ring flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--sw-action-primary)] hover:bg-[var(--sw-action-primary-hover)] py-3 px-4 text-[1.0625rem] font-semibold text-white shadow-sm active:scale-[0.99] transition-all"
+                className="sw-focus-ring flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--sw-action-primary)] hover:bg-[var(--sw-action-primary-hover)] py-3 px-4 text-[1.0625rem] font-semibold text-white shadow-sm active:scale-[0.99] transition-all disabled:opacity-60 cursor-pointer"
               >
-                <span>{tr('Đăng nhập', 'Sign In')}</span>
-                <ArrowRight aria-hidden="true" className="h-5 w-5" />
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-5 w-5 animate-spin" />
+                    <span>{tr('Đang xác thực...', 'Authenticating...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{tr('Đăng nhập', 'Sign In')}</span>
+                    <ArrowRight aria-hidden="true" className="h-5 w-5" />
+                  </>
+                )}
               </button>
-
-              {/* DIVIDER FOR DEMO ACCOUNT QUICK FILL */}
-              <div className="relative flex items-center py-0.5">
-                <div className="flex-grow border-t border-[var(--sw-border)]" />
-                <span className="mx-3 shrink-0 text-[0.75rem] font-bold uppercase tracking-wider text-[var(--sw-text-secondary)]">
-                  {tr('Tài khoản mẫu (DEMO)', 'Demo Account')}
-                </span>
-                <div className="flex-grow border-t border-[var(--sw-border)]" />
-              </div>
-
-              {/* EXACTLY ONE CLEARLY MARKED ADMIN DEMO ACCOUNT BUTTON (Fills email & password, does NOT submit) */}
-              <div data-testid="sw-admin-demo-credentials-box">
-                <button
-                  type="button"
-                  data-testid="sw-admin-demo-autofill-btn"
-                  onClick={handleExplicitDemoLoginAutofill}
-                  className="sw-focus-ring flex min-h-[42px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--sw-border)] bg-[var(--sw-surface-muted)] hover:border-[var(--sw-selected-border)] hover:bg-[var(--sw-selected-bg)] px-3.5 py-2.5 text-[0.875rem] font-semibold text-[var(--sw-text-primary)] active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--sw-em-d)]" />
-                  <span>
-                    {tr(
-                      `Quản trị viên DEMO · ${adminAccount.fullName} (${adminAccount.email})`,
-                      `DEMO Admin · ${adminAccount.fullName} (${adminAccount.email})`
-                    )}
-                  </span>
-                </button>
-              </div>
             </form>
           )}
 
@@ -1123,25 +1140,9 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
                 htmlFor="sw-admin-pin-input"
                 label={tr('Mã PIN bảo mật', 'Security PIN')}
                 hint={tr(
-                  `Nhập mã PIN 6 chữ số của ${adminAccount.fullName} (Mã PIN DEMO: ${adminAccount.securityPin})`,
-                  `Enter the 6-digit security PIN for ${adminAccount.fullName} (DEMO PIN: ${adminAccount.securityPin})`
+                  'Nhập mã PIN 6 chữ số đã đăng ký với tài khoản Quản trị viên của bạn.',
+                  'Enter your 6-digit registered Administrator Security PIN.'
                 )}
-                rightLabel={
-                  <button
-                    type="button"
-                    data-testid="sw-admin-demo-pin-autofill-btn"
-                    onClick={handleExplicitDemoPinAutofill}
-                    className="sw-focus-ring inline-flex items-center gap-1 rounded px-2 py-0.5 text-[0.8125rem] font-semibold text-[var(--sw-action-primary)] dark:text-[#2DD4BF] hover:underline cursor-pointer"
-                  >
-                    <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
-                    <span>
-                      {tr(
-                        `Điền PIN mẫu (${adminAccount.securityPin})`,
-                        `Fill DEMO PIN (${adminAccount.securityPin})`
-                      )}
-                    </span>
-                  </button>
-                }
                 error={pinError || undefined}
               >
                 <div className="relative">
@@ -1202,11 +1203,21 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 data-testid="sw-admin-pin-submit-btn"
-                className="sw-focus-ring flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--sw-action-primary)] hover:bg-[var(--sw-action-primary-hover)] py-3 px-4 text-[1.0625rem] font-semibold text-white shadow-sm active:scale-[0.99] transition-all"
+                className="sw-focus-ring flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--sw-action-primary)] hover:bg-[var(--sw-action-primary-hover)] py-3 px-4 text-[1.0625rem] font-semibold text-white shadow-sm active:scale-[0.99] transition-all disabled:opacity-60 cursor-pointer"
               >
-                <span>{tr('Xác nhận đăng nhập', 'Confirm Sign-In')}</span>
-                <ArrowRight aria-hidden="true" className="h-5 w-5" />
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-5 w-5 animate-spin" />
+                    <span>{tr('Đang xác thực...', 'Verifying...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{tr('Xác nhận đăng nhập', 'Confirm Sign-In')}</span>
+                    <ArrowRight aria-hidden="true" className="h-5 w-5" />
+                  </>
+                )}
               </button>
 
               <button

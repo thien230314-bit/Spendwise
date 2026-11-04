@@ -36,6 +36,9 @@ import {
 
 interface AdminSupportSectionProps {
   cases: AdminSupportCaseEntry[];
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onUpdateCases: React.Dispatch<React.SetStateAction<AdminSupportCaseEntry[]>>;
   onAppendAuditEvent: (event: AdminGlobalAuditEvent) => void;
 }
@@ -236,6 +239,9 @@ function getRefundSettlementMeta(
 
 export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
   cases,
+  isLoading = false,
+  error = null,
+  onRetry,
   onUpdateCases,
   onAppendAuditEvent,
 }) => {
@@ -262,6 +268,7 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
   // Reply & Request Info composer state
   const [replyDraft, setReplyDraft] = useState('');
   const [replyFormError, setReplyFormError] = useState<string | null>(null);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Deliberate confirmation modal state for Refund Approval, Resolve, and Close
   const [pendingModalAction, setPendingModalAction] =
@@ -269,6 +276,7 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
   const [modalReasonInput, setModalReasonInput] = useState('');
   const [isModalConfirmed, setIsModalConfirmed] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [isModalSubmitting, setIsModalSubmitting] = useState(false);
 
   // Explicit DEMO action receipt banner
   const [latestReceipt, setLatestReceipt] =
@@ -431,7 +439,7 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
   };
 
   // Send Reply or Request Information Handler
-  const handleSendReplyOrRequestInfo = (mode: 'reply' | 'request_info') => {
+  const handleSendReplyOrRequestInfo = async (mode: 'reply' | 'request_info') => {
     if (!selectedCase) return;
     const trimmed = replyDraft.trim();
 
@@ -460,85 +468,104 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
       ? 'in_progress'
       : selectedCase.status;
 
-    // Send reply to real backend API if possible
-    casesApiService.adminReplySupportCase(selectedCase.id, { message: `${prefixVi}${trimmed}` }).catch((err) => {
-      console.warn('Backend API reply notice:', err);
-    });
-
-    onUpdateCases((prev) =>
-      prev.map((c) => {
-        if (c.id !== selectedCase.id) return c;
-        return {
-          ...c,
-          assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
-          status: nextStatus,
-          updatedAt: nowStamp,
-          messages: [
-            ...c.messages,
-            {
-              id: `msg_${Date.now()}`,
-              senderRole: 'operator',
-              senderName: CURRENT_ADMIN_OPERATOR,
-              timestamp: nowStamp,
-              bodyVi: `${prefixVi}${trimmed}`,
-              bodyEn: `${prefixEn}${trimmed}`,
-              isInfoRequest: isInfoReq,
-            },
-          ],
-        };
-      })
-    );
-
-    setIsScopedInspectionEnabled(true);
-    setReplyDraft('');
+    setIsSubmittingReply(true);
     setReplyFormError(null);
 
-    onAppendAuditEvent({
-      id: `gaud_${Date.now()}`,
-      referenceCode: refCode,
-      timestamp: nowStamp,
-      module: 'support',
-      moduleLabelVi: 'Hỗ trợ & Khiếu nại',
-      moduleLabelEn: 'Support & Complaints',
-      actionTitleVi: isInfoReq
-        ? `Gửi yêu cầu bổ sung thông tin hồ sơ ${selectedCase.caseCode}`
-        : `Gửi phản hồi vận hành hồ sơ ${selectedCase.caseCode}`,
-      actionTitleEn: isInfoReq
-        ? `Requested additional user information on ${selectedCase.caseCode}`
-        : `Sent operator reply on ${selectedCase.caseCode}`,
-      targetEntity: `${selectedCase.caseCode} · ${selectedCase.scopedUser.fullName}`,
-      detailVi: isInfoReq
-        ? 'Chuyển trạng thái hồ sơ sang Chờ bổ sung thông tin'
-        : 'Đã ghi nhận phản hồi vào luồng trao đổi hồ sơ',
-      detailEn: isInfoReq
-        ? 'Transitioned case status to Awaiting User Info'
-        : 'Recorded operator reply in case conversation thread',
-      reason: trimmed,
-      operator: CURRENT_ADMIN_OPERATOR,
-    });
+    try {
+      // Call real backend API - NO fake success
+      await casesApiService.adminReplySupportCase(selectedCase.id, {
+        message: `${prefixVi}${trimmed}`,
+      });
 
-    setLatestReceipt({
-      referenceCode: refCode,
-      timestamp: nowStamp,
-      caseCode: selectedCase.caseCode,
-      titleVi: isInfoReq
-        ? `Đã gửi yêu cầu bổ sung thông tin (${selectedCase.caseCode})`
-        : `Đã gửi phản hồi tới khách hàng (${selectedCase.caseCode})`,
-      titleEn: isInfoReq
-        ? `Information request sent (${selectedCase.caseCode})`
-        : `Operator reply sent (${selectedCase.caseCode})`,
-      summaryVi: isInfoReq
-        ? `Hồ sơ ${selectedCase.caseCode} đã chuyển sang trạng thái "Chờ bổ sung thông tin" kèm nội dung yêu cầu chứng từ.`
-        : `Phản hồi đã được lưu vào luồng trao đổi của hồ sơ ${selectedCase.caseCode}.`,
-      summaryEn: isInfoReq
-        ? `Case ${selectedCase.caseCode} moved to "Awaiting User Info" with your evidence request.`
-        : `Your reply was appended to the conversation timeline for ${selectedCase.caseCode}.`,
-      reason: trimmed,
-      settlementNoticeVi:
-        'Chế độ DEMO: Tin nhắn chỉ lưu trong trạng thái giả lập cục bộ, không gửi email/SMS thực.',
-      settlementNoticeEn:
-        'DEMO Mode: Message is stored in local synthetic state only; no external email/SMS is dispatched.',
-    });
+      // ONLY on backend API success, update local UI state
+      onUpdateCases((prev) =>
+        prev.map((c) => {
+          if (c.id !== selectedCase.id) return c;
+          return {
+            ...c,
+            assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
+            status: nextStatus,
+            updatedAt: nowStamp,
+            messages: [
+              ...c.messages,
+              {
+                id: `msg_${Date.now()}`,
+                senderRole: 'operator',
+                senderName: CURRENT_ADMIN_OPERATOR,
+                timestamp: nowStamp,
+                bodyVi: `${prefixVi}${trimmed}`,
+                bodyEn: `${prefixEn}${trimmed}`,
+                isInfoRequest: isInfoReq,
+              },
+            ],
+          };
+        })
+      );
+
+      setIsScopedInspectionEnabled(true);
+      setReplyDraft('');
+      setReplyFormError(null);
+
+      onAppendAuditEvent({
+        id: `gaud_${Date.now()}`,
+        referenceCode: refCode,
+        timestamp: nowStamp,
+        module: 'support',
+        moduleLabelVi: 'Hỗ trợ & Khiếu nại',
+        moduleLabelEn: 'Support & Complaints',
+        actionTitleVi: isInfoReq
+          ? `Gửi yêu cầu bổ sung thông tin hồ sơ ${selectedCase.caseCode}`
+          : `Gửi phản hồi vận hành hồ sơ ${selectedCase.caseCode}`,
+        actionTitleEn: isInfoReq
+          ? `Requested additional user information on ${selectedCase.caseCode}`
+          : `Sent operator reply on ${selectedCase.caseCode}`,
+        targetEntity: `${selectedCase.caseCode} · ${selectedCase.scopedUser.fullName}`,
+        detailVi: isInfoReq
+          ? 'Chuyển trạng thái hồ sơ sang Chờ bổ sung thông tin'
+          : 'Đã ghi nhận phản hồi vào luồng trao đổi hồ sơ',
+        detailEn: isInfoReq
+          ? 'Transitioned case status to Awaiting User Info'
+          : 'Recorded operator reply in case conversation thread',
+        reason: trimmed,
+        operator: CURRENT_ADMIN_OPERATOR,
+      });
+
+      setLatestReceipt({
+        referenceCode: refCode,
+        timestamp: nowStamp,
+        caseCode: selectedCase.caseCode,
+        titleVi: isInfoReq
+          ? `Đã gửi yêu cầu bổ sung thông tin (${selectedCase.caseCode})`
+          : `Đã gửi phản hồi tới khách hàng (${selectedCase.caseCode})`,
+        titleEn: isInfoReq
+          ? `Information request sent (${selectedCase.caseCode})`
+          : `Operator reply sent (${selectedCase.caseCode})`,
+        summaryVi: isInfoReq
+          ? `Hồ sơ ${selectedCase.caseCode} đã chuyển sang trạng thái "Chờ bổ sung thông tin" kèm nội dung yêu cầu chứng từ.`
+          : `Phản hồi đã được lưu vào luồng trao đổi của hồ sơ ${selectedCase.caseCode}.`,
+        summaryEn: isInfoReq
+          ? `Case ${selectedCase.caseCode} moved to "Awaiting User Info" with your evidence request.`
+          : `Your reply was appended to the conversation timeline for ${selectedCase.caseCode}.`,
+        reason: trimmed,
+        settlementNoticeVi:
+          'Đã gửi thành công phản hồi tới máy chủ Backend.',
+        settlementNoticeEn:
+          'Successfully dispatched reply to Backend server.',
+      });
+    } catch (apiErr: any) {
+      const errMsg =
+        apiErr?.detail ||
+        apiErr?.title ||
+        apiErr?.message ||
+        tr(
+          'Không thể gửi phản hồi lên máy chủ Backend. Vui lòng kiểm tra và thử lại.',
+          'Failed to send reply to Backend server. Please retry.'
+        );
+      setReplyFormError(errMsg);
+      // DO NOT clear replyDraft. User can retry!
+    } finally {
+      setIsSubmittingReply(false);
+    }
   };
 
   // Reopen resolved/closed case
@@ -659,7 +686,7 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
     }
   }, [pendingModalAction, tr]);
 
-  const handleConfirmModalSubmit = (e: React.FormEvent) => {
+  const handleConfirmModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pendingModalAction) return;
 
@@ -684,314 +711,340 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
       return;
     }
 
+    setIsModalSubmitting(true);
+    setModalError(null);
+
     const nowStamp = '03/11/2026 · 10:48';
     const refSuffix = String(Math.floor(1000 + Math.random() * 9000));
     const refCode = `AUD-SUP-20261103-${refSuffix}`;
 
-    if (pendingModalAction.kind === 'approve_refund') {
-      onUpdateCases((prev) =>
-        prev.map((c) => {
-          if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
-          return {
-            ...c,
-            assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
-            updatedAt: nowStamp,
-            refundClaim: {
-              ...c.refundClaim,
-              decisionState: 'approved_demo',
-              settlementStatus: 'approved_awaiting_ledger_batch',
-              decidedByOperator: CURRENT_ADMIN_OPERATOR,
-              decidedAt: nowStamp,
-              decisionReason: trimmedReason,
-            },
-            messages: [
-              ...c.messages,
-              {
-                id: `msg_ref_app_${Date.now()}`,
-                senderRole: 'operator',
-                senderName: CURRENT_ADMIN_OPERATOR,
-                timestamp: nowStamp,
-                bodyVi: `[PHÊ DUYỆT HOÀN TIỀN DEMO] Đã phê duyệt yêu cầu ${
-                  c.refundClaim.claimCode
-                } (${formatVND(
-                  c.refundClaim.requestedAmountVnd
-                )} → ${c.refundClaim.targetWalletCode}). Trạng thái quyết toán độc lập: Chờ lô hạch toán sổ cái DEMO (chưa quyết toán ngân hàng thực). Lý do: ${trimmedReason}`,
-                bodyEn: `[DEMO REFUND APPROVED] Approved claim ${
-                  c.refundClaim.claimCode
-                } (${formatVND(
-                  c.refundClaim.requestedAmountVnd
-                )} → ${c.refundClaim.targetWalletCode}). Separate settlement status: Awaiting DEMO ledger batch (no real bank settlement). Reason: ${trimmedReason}`,
-              },
-            ],
-          };
-        })
-      );
-
-      onAppendAuditEvent({
-        id: `gaud_${Date.now()}`,
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        module: 'support',
-        moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
-        moduleLabelEn: 'Support & Refunds',
-        actionTitleVi: `Phê duyệt hoàn tiền DEMO ${pendingModalAction.claimCode} (${formatVND(
-          pendingModalAction.amountVnd
-        )})`,
-        actionTitleEn: `Approved DEMO refund ${pendingModalAction.claimCode} (${formatVND(
-          pendingModalAction.amountVnd
-        )})`,
-        targetEntity: `${pendingModalAction.caseCode} · Ví nhận: ${pendingModalAction.targetWalletCode}`,
-        detailVi:
-          'Quyết định: Đã phê duyệt (DEMO) · Trạng thái quyết toán độc lập: Chờ lô hạch toán sổ cái DEMO',
-        detailEn:
-          'Decision: Approved (DEMO) · Separate settlement status: Awaiting DEMO ledger batch',
-        reason: trimmedReason,
-        operator: CURRENT_ADMIN_OPERATOR,
-      });
-
-      setLatestReceipt({
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        caseCode: pendingModalAction.caseCode,
-        titleVi: `Đã phê duyệt hoàn tiền DEMO (${pendingModalAction.claimCode})`,
-        titleEn: `DEMO Refund Decision Approved (${pendingModalAction.claimCode})`,
-        summaryVi: `Khoản hoàn ${formatVND(
-          pendingModalAction.amountVnd
-        )} về ví ${pendingModalAction.targetWalletCode} đã chuyển sang trạng thái "Đã phê duyệt (DEMO)". Trạng thái quyết toán được giữ tách biệt ở bước "Chờ lô hạch toán sổ cái DEMO".`,
-        summaryEn: `Refund of ${formatVND(
-          pendingModalAction.amountVnd
-        )} to ${pendingModalAction.targetWalletCode} is now "Approved (DEMO)". Settlement status remains explicitly separate at "Awaiting DEMO Ledger Batch".`,
-        reason: trimmedReason,
-        settlementNoticeVi:
-          'Tách biệt Phê duyệt & Quyết toán: Quyết định phê duyệt không tự động chuyển tiền ngân hàng thực.',
-        settlementNoticeEn:
-          'Approval vs. Settlement Separation: Approving a refund claim does not trigger real bank settlement.',
-      });
-
-      closeConfirmationModal();
-      return;
-    }
-
-    if (pendingModalAction.kind === 'reject_refund') {
-      onUpdateCases((prev) =>
-        prev.map((c) => {
-          if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
-          return {
-            ...c,
-            assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
-            updatedAt: nowStamp,
-            refundClaim: {
-              ...c.refundClaim,
-              decisionState: 'rejected_demo',
-              settlementStatus: 'settlement_cancelled',
-              decidedByOperator: CURRENT_ADMIN_OPERATOR,
-              decidedAt: nowStamp,
-              decisionReason: trimmedReason,
-            },
-            messages: [
-              ...c.messages,
-              {
-                id: `msg_ref_rej_${Date.now()}`,
-                senderRole: 'operator',
-                senderName: CURRENT_ADMIN_OPERATOR,
-                timestamp: nowStamp,
-                bodyVi: `[TỪ CHỐI HOÀN TIỀN DEMO] Đã từ chối yêu cầu ${c.refundClaim.claimCode}. Trạng thái quyết toán: Đã hủy quyết toán. Lý do: ${trimmedReason}`,
-                bodyEn: `[DEMO REFUND REJECTED] Rejected claim ${c.refundClaim.claimCode}. Settlement status: Settlement Cancelled. Reason: ${trimmedReason}`,
-              },
-            ],
-          };
-        })
-      );
-
-      onAppendAuditEvent({
-        id: `gaud_${Date.now()}`,
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        module: 'support',
-        moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
-        moduleLabelEn: 'Support & Refunds',
-        actionTitleVi: `Từ chối yêu cầu hoàn tiền DEMO ${pendingModalAction.claimCode}`,
-        actionTitleEn: `Rejected DEMO refund claim ${pendingModalAction.claimCode}`,
-        targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.claimCode}`,
-        detailVi:
-          'Quyết định: Đã từ chối (DEMO) · Trạng thái quyết toán: Đã hủy quyết toán',
-        detailEn:
-          'Decision: Rejected (DEMO) · Settlement status: Settlement Cancelled',
-        reason: trimmedReason,
-        operator: CURRENT_ADMIN_OPERATOR,
-      });
-
-      setLatestReceipt({
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        caseCode: pendingModalAction.caseCode,
-        titleVi: `Đã từ chối yêu cầu hoàn tiền (${pendingModalAction.claimCode})`,
-        titleEn: `Rejected DEMO Refund Claim (${pendingModalAction.claimCode})`,
-        summaryVi: `Yêu cầu hoàn tiền ${pendingModalAction.claimCode} đã chuyển sang "Đã từ chối (DEMO)" và trạng thái quyết toán chuyển sang "Đã hủy quyết toán".`,
-        summaryEn: `Claim ${pendingModalAction.claimCode} is now "Rejected (DEMO)" with settlement status set to "Settlement Cancelled".`,
-        reason: trimmedReason,
-        settlementNoticeVi:
-          'Mô phỏng DEMO: Đã ghi nhận quyết định từ chối vào Nhật ký Kiểm toán, không phát sinh biến động số dư.',
-        settlementNoticeEn:
-          'DEMO Simulation: Rejection recorded in Audit Trail with zero balance mutation.',
-      });
-
-      closeConfirmationModal();
-      return;
-    }
-
-    if (pendingModalAction.kind === 'simulate_refund_ledger_credit') {
-      onUpdateCases((prev) =>
-        prev.map((c) => {
-          if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
-          return {
-            ...c,
-            updatedAt: nowStamp,
-            refundClaim: {
-              ...c.refundClaim,
-              settlementStatus: 'simulated_ledger_credited_no_bank',
-            },
-            messages: [
-              ...c.messages,
-              {
-                id: `msg_ref_sim_${Date.now()}`,
-                senderRole: 'system',
-                senderName: 'Bộ mô phỏng Sổ cái Nội bộ (DEMO)',
-                timestamp: nowStamp,
-                bodyVi: `[MÔ PHỎNG HẠCH TOÁN SỔ CÁI DEMO] Đã cập nhật trạng thái quyết toán của ${
-                  c.refundClaim.claimCode
-                } sang "Đã ghi Có ví mẫu DEMO (${
-                  c.refundClaim.targetWalletCode
-                }) · Không quyết toán ngân hàng thực". Lý do: ${trimmedReason}`,
-                bodyEn: `[SIMULATED DEMO LEDGER CREDIT] Updated settlement status for ${
-                  c.refundClaim.claimCode
-                } to "Simulated DEMO Wallet Credit (${
-                  c.refundClaim.targetWalletCode
-                }) · No Real Bank Settlement". Reason: ${trimmedReason}`,
-              },
-            ],
-          };
-        })
-      );
-
-      onAppendAuditEvent({
-        id: `gaud_${Date.now()}`,
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        module: 'support',
-        moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
-        moduleLabelEn: 'Support & Refunds',
-        actionTitleVi: `Mô phỏng ghi Có lô sổ cái cho hoàn tiền ${pendingModalAction.claimCode}`,
-        actionTitleEn: `Simulated DEMO ledger credit batch for refund ${pendingModalAction.claimCode}`,
-        targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.targetWalletCode}`,
-        detailVi: `Trạng thái quyết toán độc lập: Đã ghi Có ví mẫu DEMO (${formatVND(
-          pendingModalAction.amountVnd
-        )}) · Không quyết toán ngân hàng thực`,
-        detailEn: `Separate settlement status: Simulated DEMO Wallet Credit (${formatVND(
-          pendingModalAction.amountVnd
-        )}) · No Real Bank Settlement`,
-        reason: trimmedReason,
-        operator: CURRENT_ADMIN_OPERATOR,
-      });
-
-      setLatestReceipt({
-        referenceCode: refCode,
-        timestamp: nowStamp,
-        caseCode: pendingModalAction.caseCode,
-        titleVi: `Đã mô phỏng ghi Có ví mẫu DEMO (${pendingModalAction.claimCode})`,
-        titleEn: `Simulated DEMO Wallet Credit Completed (${pendingModalAction.claimCode})`,
-        summaryVi: `Trạng thái quyết toán độc lập của ${pendingModalAction.claimCode} đã chuyển sang "Đã ghi Có ví mẫu DEMO · Không quyết toán ngân hàng thực".`,
-        summaryEn: `Separate settlement status for ${pendingModalAction.claimCode} updated to "Simulated DEMO Wallet Credit · No Real Bank Settlement".`,
-        reason: trimmedReason,
-        settlementNoticeVi:
-          'Minh bạch tuyệt đối: Đây là trạng thái mô phỏng sổ cái nội bộ DEMO, không phát sinh lệnh chuyển tiền ngân hàng thực.',
-        settlementNoticeEn:
-          'Full Transparency: This is a synthetic internal ledger simulation with zero real banking settlement.',
-      });
-
-      closeConfirmationModal();
-      return;
-    }
-
-    // resolve_case or close_case
-    const isResolving = pendingModalAction.kind === 'resolve_case';
-    const nextCaseStatus: AdminSupportCaseStatus = isResolving
-      ? 'resolved'
-      : 'closed';
-
-    onUpdateCases((prev) =>
-      prev.map((c) => {
-        if (c.id !== pendingModalAction.caseId) return c;
-        return {
-          ...c,
-          assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
+    try {
+      if (pendingModalAction.kind === 'resolve_case' || pendingModalAction.kind === 'close_case') {
+        const nextCaseStatus = pendingModalAction.kind === 'resolve_case' ? 'resolved' : 'closed';
+        await casesApiService.updateAdminSupportStatus(pendingModalAction.caseId, {
           status: nextCaseStatus,
-          updatedAt: nowStamp,
-          resolutionSummaryVi: trimmedReason,
-          resolutionSummaryEn: trimmedReason,
-          messages: [
-            ...c.messages,
-            {
-              id: `msg_res_${Date.now()}`,
-              senderRole: 'operator',
-              senderName: CURRENT_ADMIN_OPERATOR,
-              timestamp: nowStamp,
-              bodyVi: isResolving
-                ? `[ĐÃ GIẢI QUYẾT HỒ SƠ] Kết luận xử lý: ${trimmedReason}`
-                : `[ĐÃ ĐÓNG HỒ SƠ LƯU TRỮ] Lý do đóng: ${trimmedReason}`,
-              bodyEn: isResolving
-                ? `[CASE RESOLVED] Resolution summary: ${trimmedReason}`
-                : `[CASE CLOSED] Closing note: ${trimmedReason}`,
-            },
-          ],
-        };
-      })
-    );
+          message: trimmedReason,
+        });
+      }
 
-    onAppendAuditEvent({
-      id: `gaud_${Date.now()}`,
-      referenceCode: refCode,
-      timestamp: nowStamp,
-      module: 'support',
-      moduleLabelVi: 'Hỗ trợ & Khiếu nại',
-      moduleLabelEn: 'Support & Complaints',
-      actionTitleVi: isResolving
-        ? `Giải quyết hoàn tất hồ sơ ${pendingModalAction.caseCode}`
-        : `Đóng lưu trữ hồ sơ ${pendingModalAction.caseCode}`,
-      actionTitleEn: isResolving
-        ? `Resolved support case ${pendingModalAction.caseCode}`
-        : `Closed support case ${pendingModalAction.caseCode}`,
-      targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.subjectVi}`,
-      detailVi: isResolving
-        ? 'Trạng thái mới: Đã giải quyết (Resolved)'
-        : 'Trạng thái mới: Đã đóng hồ sơ (Closed)',
-      detailEn: isResolving
-        ? 'New status: Resolved'
-        : 'New status: Closed',
-      reason: trimmedReason,
-      operator: CURRENT_ADMIN_OPERATOR,
-    });
+      if (pendingModalAction.kind === 'approve_refund') {
+        onUpdateCases((prev) =>
+          prev.map((c) => {
+            if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
+            return {
+              ...c,
+              assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
+              updatedAt: nowStamp,
+              refundClaim: {
+                ...c.refundClaim,
+                decisionState: 'approved_demo',
+                settlementStatus: 'approved_awaiting_ledger_batch',
+                decidedByOperator: CURRENT_ADMIN_OPERATOR,
+                decidedAt: nowStamp,
+                decisionReason: trimmedReason,
+              },
+              messages: [
+                ...c.messages,
+                {
+                  id: `msg_ref_app_${Date.now()}`,
+                  senderRole: 'operator',
+                  senderName: CURRENT_ADMIN_OPERATOR,
+                  timestamp: nowStamp,
+                  bodyVi: `[PHÊ DUYỆT HOÀN TIỀN DEMO] Đã phê duyệt yêu cầu ${
+                    c.refundClaim.claimCode
+                  } (${formatVND(
+                    c.refundClaim.requestedAmountVnd
+                  )} → ${c.refundClaim.targetWalletCode}). Trạng thái quyết toán độc lập: Chờ lô hạch toán sổ cái DEMO (chưa quyết toán ngân hàng thực). Lý do: ${trimmedReason}`,
+                  bodyEn: `[DEMO REFUND APPROVED] Approved claim ${
+                    c.refundClaim.claimCode
+                  } (${formatVND(
+                    c.refundClaim.requestedAmountVnd
+                  )} → ${c.refundClaim.targetWalletCode}). Separate settlement status: Awaiting DEMO ledger batch (no real bank settlement). Reason: ${trimmedReason}`,
+                },
+              ],
+            };
+          })
+        );
 
-    setLatestReceipt({
-      referenceCode: refCode,
-      timestamp: nowStamp,
-      caseCode: pendingModalAction.caseCode,
-      titleVi: isResolving
-        ? `Đã đánh dấu giải quyết hồ sơ ${pendingModalAction.caseCode}`
-        : `Đã đóng hồ sơ hỗ trợ ${pendingModalAction.caseCode}`,
-      titleEn: isResolving
-        ? `Marked case ${pendingModalAction.caseCode} as Resolved`
-        : `Closed support case ${pendingModalAction.caseCode}`,
-      summaryVi: `Hồ sơ ${pendingModalAction.caseCode} đã được cập nhật trạng thái và lưu kết luận xử lý vào Nhật ký Kiểm toán.`,
-      summaryEn: `Case ${pendingModalAction.caseCode} status updated and resolution recorded in the Audit Log.`,
-      reason: trimmedReason,
-      settlementNoticeVi:
-        'Đã ghi nhận đầy đủ lịch sử xử lý trên dữ liệu mẫu DEMO.',
-      settlementNoticeEn:
-        'Full case lifecycle recorded in synthetic DEMO state.',
-    });
+        onAppendAuditEvent({
+          id: `gaud_${Date.now()}`,
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          module: 'support',
+          moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
+          moduleLabelEn: 'Support & Refunds',
+          actionTitleVi: `Phê duyệt hoàn tiền DEMO ${pendingModalAction.claimCode} (${formatVND(
+            pendingModalAction.amountVnd
+          )})`,
+          actionTitleEn: `Approved DEMO refund ${pendingModalAction.claimCode} (${formatVND(
+            pendingModalAction.amountVnd
+          )})`,
+          targetEntity: `${pendingModalAction.caseCode} · Ví nhận: ${pendingModalAction.targetWalletCode}`,
+          detailVi:
+            'Quyết định: Đã phê duyệt (DEMO) · Trạng thái quyết toán độc lập: Chờ lô hạch toán sổ cái DEMO',
+          detailEn:
+            'Decision: Approved (DEMO) · Separate settlement status: Awaiting DEMO ledger batch',
+          reason: trimmedReason,
+          operator: CURRENT_ADMIN_OPERATOR,
+        });
 
-    closeConfirmationModal();
+        setLatestReceipt({
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          caseCode: pendingModalAction.caseCode,
+          titleVi: `Đã phê duyệt hoàn tiền DEMO (${pendingModalAction.claimCode})`,
+          titleEn: `DEMO Refund Decision Approved (${pendingModalAction.claimCode})`,
+          summaryVi: `Khoản hoàn ${formatVND(
+            pendingModalAction.amountVnd
+          )} về ví ${pendingModalAction.targetWalletCode} đã chuyển sang trạng thái "Đã phê duyệt (DEMO)". Trạng thái quyết toán được giữ tách biệt ở bước "Chờ lô hạch toán sổ cái DEMO".`,
+          summaryEn: `Refund of ${formatVND(
+            pendingModalAction.amountVnd
+          )} to ${pendingModalAction.targetWalletCode} is now "Approved (DEMO)". Settlement status remains explicitly separate at "Awaiting DEMO Ledger Batch".`,
+          reason: trimmedReason,
+          settlementNoticeVi:
+            'Tách biệt Phê duyệt & Quyết toán: Quyết định phê duyệt không tự động chuyển tiền ngân hàng thực.',
+          settlementNoticeEn:
+            'Approval vs. Settlement Separation: Approving a refund claim does not trigger real bank settlement.',
+        });
+
+        closeConfirmationModal();
+        return;
+      }
+
+      if (pendingModalAction.kind === 'reject_refund') {
+        onUpdateCases((prev) =>
+          prev.map((c) => {
+            if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
+            return {
+              ...c,
+              assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
+              updatedAt: nowStamp,
+              refundClaim: {
+                ...c.refundClaim,
+                decisionState: 'rejected_demo',
+                settlementStatus: 'settlement_cancelled',
+                decidedByOperator: CURRENT_ADMIN_OPERATOR,
+                decidedAt: nowStamp,
+                decisionReason: trimmedReason,
+              },
+              messages: [
+                ...c.messages,
+                {
+                  id: `msg_ref_rej_${Date.now()}`,
+                  senderRole: 'operator',
+                  senderName: CURRENT_ADMIN_OPERATOR,
+                  timestamp: nowStamp,
+                  bodyVi: `[TỪ CHỐI HOÀN TIỀN DEMO] Đã từ chối yêu cầu ${c.refundClaim.claimCode}. Trạng thái quyết toán: Đã hủy quyết toán. Lý do: ${trimmedReason}`,
+                  bodyEn: `[DEMO REFUND REJECTED] Rejected claim ${c.refundClaim.claimCode}. Settlement status: Settlement Cancelled. Reason: ${trimmedReason}`,
+                },
+              ],
+            };
+          })
+        );
+
+        onAppendAuditEvent({
+          id: `gaud_${Date.now()}`,
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          module: 'support',
+          moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
+          moduleLabelEn: 'Support & Refunds',
+          actionTitleVi: `Từ chối yêu cầu hoàn tiền DEMO ${pendingModalAction.claimCode}`,
+          actionTitleEn: `Rejected DEMO refund claim ${pendingModalAction.claimCode}`,
+          targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.claimCode}`,
+          detailVi:
+            'Quyết định: Đã từ chối (DEMO) · Trạng thái quyết toán: Đã hủy quyết toán',
+          detailEn:
+            'Decision: Rejected (DEMO) · Settlement status: Settlement Cancelled',
+          reason: trimmedReason,
+          operator: CURRENT_ADMIN_OPERATOR,
+        });
+
+        setLatestReceipt({
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          caseCode: pendingModalAction.caseCode,
+          titleVi: `Đã từ chối yêu cầu hoàn tiền (${pendingModalAction.claimCode})`,
+          titleEn: `Rejected DEMO Refund Claim (${pendingModalAction.claimCode})`,
+          summaryVi: `Yêu cầu hoàn tiền ${pendingModalAction.claimCode} đã chuyển sang "Đã từ chối (DEMO)" và trạng thái quyết toán chuyển sang "Đã hủy quyết toán".`,
+          summaryEn: `Claim ${pendingModalAction.claimCode} is now "Rejected (DEMO)" with settlement status set to "Settlement Cancelled".`,
+          reason: trimmedReason,
+          settlementNoticeVi:
+            'Mô phỏng DEMO: Đã ghi nhận quyết định từ chối vào Nhật ký Kiểm toán, không phát sinh biến động số dư.',
+          settlementNoticeEn:
+            'DEMO Simulation: Rejection recorded in Audit Trail with zero balance mutation.',
+        });
+
+        closeConfirmationModal();
+        return;
+      }
+
+      if (pendingModalAction.kind === 'simulate_refund_ledger_credit') {
+        onUpdateCases((prev) =>
+          prev.map((c) => {
+            if (c.id !== pendingModalAction.caseId || !c.refundClaim) return c;
+            return {
+              ...c,
+              updatedAt: nowStamp,
+              refundClaim: {
+                ...c.refundClaim,
+                settlementStatus: 'simulated_ledger_credited_no_bank',
+              },
+              messages: [
+                ...c.messages,
+                {
+                  id: `msg_ref_sim_${Date.now()}`,
+                  senderRole: 'system',
+                  senderName: 'Bộ mô phỏng Sổ cái Nội bộ (DEMO)',
+                  timestamp: nowStamp,
+                  bodyVi: `[MÔ PHỎNG HẠCH TOÁN SỔ CÁI DEMO] Đã cập nhật trạng thái quyết toán của ${
+                    c.refundClaim.claimCode
+                  } sang "Đã ghi Có ví mẫu DEMO (${
+                    c.refundClaim.targetWalletCode
+                  }) · Không quyết toán ngân hàng thực". Lý do: ${trimmedReason}`,
+                  bodyEn: `[SIMULATED DEMO LEDGER CREDIT] Updated settlement status for ${
+                    c.refundClaim.claimCode
+                  } to "Simulated DEMO Wallet Credit (${
+                    c.refundClaim.targetWalletCode
+                  }) · No Real Bank Settlement". Reason: ${trimmedReason}`,
+                },
+              ],
+            };
+          })
+        );
+
+        onAppendAuditEvent({
+          id: `gaud_${Date.now()}`,
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          module: 'support',
+          moduleLabelVi: 'Hỗ trợ & Hoàn tiền',
+          moduleLabelEn: 'Support & Refunds',
+          actionTitleVi: `Mô phỏng ghi Có lô sổ cái cho hoàn tiền ${pendingModalAction.claimCode}`,
+          actionTitleEn: `Simulated DEMO ledger credit batch for refund ${pendingModalAction.claimCode}`,
+          targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.targetWalletCode}`,
+          detailVi: `Trạng thái quyết toán độc lập: Đã ghi Có ví mẫu DEMO (${formatVND(
+            pendingModalAction.amountVnd
+          )}) · Không quyết toán ngân hàng thực`,
+          detailEn: `Separate settlement status: Simulated DEMO Wallet Credit (${formatVND(
+            pendingModalAction.amountVnd
+          )}) · No Real Bank Settlement`,
+          reason: trimmedReason,
+          operator: CURRENT_ADMIN_OPERATOR,
+        });
+
+        setLatestReceipt({
+          referenceCode: refCode,
+          timestamp: nowStamp,
+          caseCode: pendingModalAction.caseCode,
+          titleVi: `Đã mô phỏng ghi Có ví mẫu DEMO (${pendingModalAction.claimCode})`,
+          titleEn: `Simulated DEMO Wallet Credit Completed (${pendingModalAction.claimCode})`,
+          summaryVi: `Trạng thái quyết toán độc lập của ${pendingModalAction.claimCode} đã chuyển sang "Đã ghi Có ví mẫu DEMO · Không quyết toán ngân hàng thực".`,
+          summaryEn: `Separate settlement status for ${pendingModalAction.claimCode} updated to "Simulated DEMO Wallet Credit · No Real Bank Settlement".`,
+          reason: trimmedReason,
+          settlementNoticeVi:
+            'Minh bạch tuyệt đối: Đây là trạng thái mô phỏng sổ cái nội bộ DEMO, không phát sinh lệnh chuyển tiền ngân hàng thực.',
+          settlementNoticeEn:
+            'Full Transparency: This is a synthetic internal ledger simulation with zero real banking settlement.',
+        });
+
+        closeConfirmationModal();
+        return;
+      }
+
+      // resolve_case or close_case
+      const isResolving = pendingModalAction.kind === 'resolve_case';
+      const nextCaseStatus: AdminSupportCaseStatus = isResolving
+        ? 'resolved'
+        : 'closed';
+
+      onUpdateCases((prev) =>
+        prev.map((c) => {
+          if (c.id !== pendingModalAction.caseId) return c;
+          return {
+            ...c,
+            assignedOperator: c.assignedOperator || CURRENT_ADMIN_OPERATOR,
+            status: nextCaseStatus,
+            updatedAt: nowStamp,
+            resolutionSummaryVi: trimmedReason,
+            resolutionSummaryEn: trimmedReason,
+            messages: [
+              ...c.messages,
+              {
+                id: `msg_res_${Date.now()}`,
+                senderRole: 'operator',
+                senderName: CURRENT_ADMIN_OPERATOR,
+                timestamp: nowStamp,
+                bodyVi: isResolving
+                  ? `[ĐÃ GIẢI QUYẾT HỒ SƠ] Kết luận xử lý: ${trimmedReason}`
+                  : `[ĐÃ ĐÓNG HỒ SƠ LƯU TRỮ] Lý do đóng: ${trimmedReason}`,
+                bodyEn: isResolving
+                  ? `[CASE RESOLVED] Resolution summary: ${trimmedReason}`
+                  : `[CASE CLOSED] Closing note: ${trimmedReason}`,
+              },
+            ],
+          };
+        })
+      );
+
+      onAppendAuditEvent({
+        id: `gaud_${Date.now()}`,
+        referenceCode: refCode,
+        timestamp: nowStamp,
+        module: 'support',
+        moduleLabelVi: 'Hỗ trợ & Khiếu nại',
+        moduleLabelEn: 'Support & Complaints',
+        actionTitleVi: isResolving
+          ? `Giải quyết hoàn tất hồ sơ ${pendingModalAction.caseCode}`
+          : `Đóng lưu trữ hồ sơ ${pendingModalAction.caseCode}`,
+        actionTitleEn: isResolving
+          ? `Resolved support case ${pendingModalAction.caseCode}`
+          : `Closed support case ${pendingModalAction.caseCode}`,
+        targetEntity: `${pendingModalAction.caseCode} · ${pendingModalAction.subjectVi}`,
+        detailVi: isResolving
+          ? 'Trạng thái mới: Đã giải quyết (Resolved)'
+          : 'Trạng thái mới: Đã đóng hồ sơ (Closed)',
+        detailEn: isResolving
+          ? 'New status: Resolved'
+          : 'New status: Closed',
+        reason: trimmedReason,
+        operator: CURRENT_ADMIN_OPERATOR,
+      });
+
+      setLatestReceipt({
+        referenceCode: refCode,
+        timestamp: nowStamp,
+        caseCode: pendingModalAction.caseCode,
+        titleVi: isResolving
+          ? `Đã đánh dấu giải quyết hồ sơ ${pendingModalAction.caseCode}`
+          : `Đã đóng hồ sơ hỗ trợ ${pendingModalAction.caseCode}`,
+        titleEn: isResolving
+          ? `Marked case ${pendingModalAction.caseCode} as Resolved`
+          : `Closed support case ${pendingModalAction.caseCode}`,
+        summaryVi: `Hồ sơ ${pendingModalAction.caseCode} đã được cập nhật trạng thái và lưu kết luận xử lý vào Nhật ký Kiểm toán.`,
+        summaryEn: `Case ${pendingModalAction.caseCode} status updated and resolution recorded in the Audit Log.`,
+        reason: trimmedReason,
+        settlementNoticeVi:
+          'Đã cập nhật trạng thái thành công lên Backend API.',
+        settlementNoticeEn:
+          'Case status successfully updated on Backend API.',
+      });
+
+      closeConfirmationModal();
+    } catch (apiErr: any) {
+      const errMsg =
+        apiErr?.detail ||
+        apiErr?.title ||
+        apiErr?.message ||
+        tr(
+          'Không thể cập nhật trạng thái hồ sơ trên Backend API. Vui lòng thử lại.',
+          'Failed to update case status on Backend API. Please retry.'
+        );
+      setModalError(errMsg);
+      // DO NOT close modal. DO NOT fake success.
+    } finally {
+      setIsModalSubmitting(false);
+    }
   };
 
   const resetFilters = () => {
@@ -1283,7 +1336,7 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
         </div>
       </div>
 
-      {simulatedError ? (
+      {error || simulatedError ? (
         <div
           role="alert"
           data-testid="sw-admin-support-error-state"
@@ -1293,28 +1346,60 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
             <AlertTriangle aria-hidden="true" className="h-5 w-5" />
           </div>
           <h3 className="font-display text-[1rem] font-extrabold text-[var(--ink)]">
-            {tr(
+            {error || tr(
               'Không thể tải hàng đợi Hỗ trợ & Khiếu nại (Mô phỏng lỗi)',
               'Unable to load Support & Complaints case queue (Simulated error)'
             )}
           </h3>
           <p className="text-[0.84375rem] text-[var(--ink2)] max-w-md mx-auto">
-            {tr(
-              'Kết nối tới bộ đọc hàng đợi hồ sơ mẫu đang tạm dừng để kiểm thử trạng thái chịu lỗi của giao diện.',
-              'Connection to the synthetic support queue reader is paused to verify error state resilience.'
-            )}
+            {error
+              ? tr(
+                  'Đã xảy ra lỗi khi kết nối tới máy chủ Backend API. Vui lòng thử lại.',
+                  'An error occurred while connecting to Backend API. Please retry.'
+                )
+              : tr(
+                  'Kết nối tới bộ đọc hàng đợi hồ sơ mẫu đang tạm dừng để kiểm thử trạng thái chịu lỗi của giao diện.',
+                  'Connection to the synthetic support queue reader is paused to verify error state resilience.'
+                )}
           </p>
           <div>
             <button
               type="button"
               data-testid="sw-admin-support-error-retry-btn"
-              onClick={() => setSimulatedError(false)}
+              onClick={() => {
+                setSimulatedError(false);
+                if (onRetry) onRetry();
+              }}
               className="sw-focus-ring sw-btn sw-btn-pri sm"
             >
               <RefreshCw aria-hidden="true" className="h-4 w-4" />
               <span>{tr('Thử tải lại hàng đợi', 'Retry loading queue')}</span>
             </button>
           </div>
+        </div>
+      ) : isLoading ? (
+        <div className="sw-card p-12 text-center text-[var(--ink2)]">
+          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-[var(--sw-em-d)]" />
+          <span>{tr('Đang tải danh sách hồ sơ hỗ trợ...', 'Loading support cases...')}</span>
+        </div>
+      ) : cases.length === 0 ? (
+        <div data-testid="sw-admin-support-empty" className="sw-card p-12 text-center space-y-3">
+          <div className="font-display text-[1rem] font-extrabold text-[var(--ink)]">
+            {tr('Hàng đợi hồ sơ hỗ trợ hiện đang trống', 'Support case queue is currently empty')}
+          </div>
+          <p className="text-[0.84375rem] text-[var(--ink2)] max-w-md mx-auto">
+            {tr('Không có phiếu hỗ trợ hoặc khiếu nại nào từ người dùng trên hệ thống.', 'No support tickets or complaints from users in the system.')}
+          </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="sw-focus-ring sw-btn ghost sm"
+            >
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              <span>{tr('Làm mới danh sách', 'Refresh list')}</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start min-w-0">
@@ -2318,10 +2403,11 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
                       <button
                         type="button"
                         data-testid="sw-admin-support-request-info-btn"
+                        disabled={isSubmittingReply}
                         onClick={() =>
                           handleSendReplyOrRequestInfo('request_info')
                         }
-                        className="sw-focus-ring sw-btn ghost sm whitespace-nowrap"
+                        className="sw-focus-ring sw-btn ghost sm whitespace-nowrap disabled:opacity-50 cursor-pointer"
                       >
                         <HelpCircle aria-hidden="true" className="h-4 w-4" />
                         <span>
@@ -2335,12 +2421,19 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
                       <button
                         type="button"
                         data-testid="sw-admin-support-send-reply-btn"
+                        disabled={isSubmittingReply}
                         onClick={() => handleSendReplyOrRequestInfo('reply')}
-                        className="sw-focus-ring sw-btn sw-btn-pri sm whitespace-nowrap"
+                        className="sw-focus-ring sw-btn sw-btn-pri sm whitespace-nowrap disabled:opacity-50 cursor-pointer"
                       >
-                        <Send aria-hidden="true" className="h-4 w-4" />
+                        {isSubmittingReply ? (
+                          <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send aria-hidden="true" className="h-4 w-4" />
+                        )}
                         <span>
-                          {tr('Gửi phản hồi (DEMO)', 'Send Reply (DEMO)')}
+                          {isSubmittingReply
+                            ? tr('Đang gửi...', 'Sending...')
+                            : tr('Gửi phản hồi', 'Send Reply')}
                         </span>
                       </button>
                     </div>
@@ -2568,11 +2661,18 @@ export const AdminSupportSection: React.FC<AdminSupportSectionProps> = ({
               <button
                 type="submit"
                 data-testid="sw-admin-support-modal-submit-btn"
-                className="sw-focus-ring sw-btn sw-btn-pri sm"
+                disabled={isModalSubmitting}
+                className="sw-focus-ring sw-btn sw-btn-pri sm disabled:opacity-50 cursor-pointer"
               >
-                <Check aria-hidden="true" className="h-4 w-4" />
+                {isModalSubmitting ? (
+                  <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check aria-hidden="true" className="h-4 w-4" />
+                )}
                 <span>
-                  {tr('Xác nhận & Lưu Kiểm toán', 'Confirm & Record Audit')}
+                  {isModalSubmitting
+                    ? tr('Đang xử lý...', 'Processing...')
+                    : tr('Xác nhận & Lưu Kiểm toán', 'Confirm & Record Audit')}
                 </span>
               </button>
             </div>
